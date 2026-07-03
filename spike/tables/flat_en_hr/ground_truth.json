@@ -1,0 +1,78 @@
+{
+  "table_id": "flat_en_hr",
+  "locale": "en",
+  "difficulty": "flat",
+  "description": "Simple flat HR table, EN number format",
+  "records": [
+    {
+      "dimensions": {
+        "employee": "A. Martin",
+        "department": "Sales"
+      },
+      "metrics": {
+        "annual_leave_days": 25,
+        "gross_salary_eur": 52300.5
+      },
+      "raw_values": {
+        "annual_leave_days": "25",
+        "gross_salary_eur": "€52,300.50"
+      }
+    },
+    {
+      "dimensions": {
+        "employee": "B. Chen",
+        "department": "Engineering"
+      },
+      "metrics": {
+        "annual_leave_days": 27,
+        "gross_salary_eur": 68420.0
+      },
+      "raw_values": {
+        "annual_leave_days": "27",
+        "gross_salary_eur": "€68,420.00"
+      }
+    },
+    {
+      "dimensions": {
+        "employee": "C. Dubois",
+        "department": "HR"
+      },
+      "metrics": {
+        "annual_leave_days": 25,
+        "gross_salary_eur": 44150.75
+      },
+      "raw_values": {
+        "annual_leave_days": "25",
+        "gross_salary_eur": "€44,150.75"
+      }
+    },
+    {
+      "dimensions": {
+        "employee": "D. Ionescu",
+        "department": "Finance"
+      },
+      "metrics": {
+        "annual_leave_days": 30,
+        "gross_salary_eur": 71980.25
+      },
+      "raw_values": {
+        "annual_leave_days": "30",
+        "gross_salary_eur": "€71,980.25"
+      }
+    },
+    {
+      "dimensions": {
+        "employee": "E. Haddad",
+        "department": "Support"
+      },
+      "metrics": {
+        "annual_leave_days": 22,
+        "gross_salary_eur": 39990.0
+      },
+      "raw_values": {
+        "annual_leave_days": "22",
+        "gross_salary_eur": "€39,990.00"
+      }
+    }
+  ]
+}

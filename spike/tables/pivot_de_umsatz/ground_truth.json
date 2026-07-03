@@ -1,0 +1,128 @@
+{
+  "table_id": "pivot_de_umsatz",
+  "locale": "de",
+  "difficulty": "pivot",
+  "description": "Pivot DE: nested row dims + year groups, DE decimal format",
+  "records": [
+    {
+      "dimensions": {
+        "region": "DACH",
+        "land": "Deutschland",
+        "jahr": "2023"
+      },
+      "metrics": {
+        "umsatz_eur": 24310480.5,
+        "absatz": 12840
+      },
+      "raw_values": {
+        "umsatz_eur": "24.310.480,50",
+        "absatz": "12.840"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "DACH",
+        "land": "Deutschland",
+        "jahr": "2024"
+      },
+      "metrics": {
+        "umsatz_eur": 26905320.75,
+        "absatz": 13910
+      },
+      "raw_values": {
+        "umsatz_eur": "26.905.320,75",
+        "absatz": "13.910"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "DACH",
+        "land": "Österreich",
+        "jahr": "2023"
+      },
+      "metrics": {
+        "umsatz_eur": 4820150.25,
+        "absatz": 2410
+      },
+      "raw_values": {
+        "umsatz_eur": "4.820.150,25",
+        "absatz": "2.410"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "DACH",
+        "land": "Österreich",
+        "jahr": "2024"
+      },
+      "metrics": {
+        "umsatz_eur": 5104880.0,
+        "absatz": 2580
+      },
+      "raw_values": {
+        "umsatz_eur": "5.104.880,00",
+        "absatz": "2.580"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Benelux",
+        "land": "Niederlande",
+        "jahr": "2023"
+      },
+      "metrics": {
+        "umsatz_eur": 7654321.1,
+        "absatz": 3870
+      },
+      "raw_values": {
+        "umsatz_eur": "7.654.321,10",
+        "absatz": "3.870"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Benelux",
+        "land": "Niederlande",
+        "jahr": "2024"
+      },
+      "metrics": {
+        "umsatz_eur": 8012450.6,
+        "absatz": 4020
+      },
+      "raw_values": {
+        "umsatz_eur": "8.012.450,60",
+        "absatz": "4.020"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Benelux",
+        "land": "Belgien",
+        "jahr": "2023"
+      },
+      "metrics": {
+        "umsatz_eur": 3210987.45,
+        "absatz": 1650
+      },
+      "raw_values": {
+        "umsatz_eur": "3.210.987,45",
+        "absatz": "1.650"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Benelux",
+        "land": "Belgien",
+        "jahr": "2024"
+      },
+      "metrics": {
+        "umsatz_eur": 3402210.3,
+        "absatz": 1720
+      },
+      "raw_values": {
+        "umsatz_eur": "3.402.210,30",
+        "absatz": "1.720"
+      }
+    }
+  ]
+}

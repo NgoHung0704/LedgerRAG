@@ -1,0 +1,98 @@
+[
+  {
+    "table_id": "flat_en_hr",
+    "locale": "en",
+    "difficulty": "flat",
+    "description": "Simple flat HR table, EN number format",
+    "n_records": 5,
+    "n_metric_cells": 10
+  },
+  {
+    "table_id": "flat_fr_conges",
+    "locale": "fr",
+    "difficulty": "flat",
+    "description": "Flat FR HR table, U+202F thousands separator",
+    "n_records": 5,
+    "n_metric_cells": 10
+  },
+  {
+    "table_id": "flat_de_kosten",
+    "locale": "de",
+    "difficulty": "flat",
+    "description": "Flat DE table, dot thousands / comma decimals",
+    "n_records": 4,
+    "n_metric_cells": 8
+  },
+  {
+    "table_id": "flat_es_ventas",
+    "locale": "es",
+    "difficulty": "flat",
+    "description": "Flat ES sales table",
+    "n_records": 4,
+    "n_metric_cells": 8
+  },
+  {
+    "table_id": "percent_fr",
+    "locale": "fr",
+    "difficulty": "flat",
+    "description": "FR percentages and negative numbers",
+    "n_records": 4,
+    "n_metric_cells": 12
+  },
+  {
+    "table_id": "twolevel_en_sales",
+    "locale": "en",
+    "difficulty": "grouped",
+    "description": "Two-level header (year groups), EN",
+    "n_records": 6,
+    "n_metric_cells": 12
+  },
+  {
+    "table_id": "twolevel_fr_effectifs",
+    "locale": "fr",
+    "difficulty": "grouped",
+    "description": "Two-level header (measure groups), FR",
+    "n_records": 6,
+    "n_metric_cells": 12
+  },
+  {
+    "table_id": "pivot_fr_auto",
+    "locale": "fr",
+    "difficulty": "pivot",
+    "description": "Nested pivot FR: 3-level column header, 2 nested row dims (spec flagship example)",
+    "n_records": 18,
+    "n_metric_cells": 36
+  },
+  {
+    "table_id": "pivot_de_umsatz",
+    "locale": "de",
+    "difficulty": "pivot",
+    "description": "Pivot DE: nested row dims + year groups, DE decimal format",
+    "n_records": 8,
+    "n_metric_cells": 16
+  },
+  {
+    "table_id": "pivot_en_regions",
+    "locale": "en",
+    "difficulty": "pivot",
+    "description": "Pivot EN: nested row dims + quarter groups",
+    "n_records": 8,
+    "n_metric_cells": 16
+  },
+  {
+    "table_id": "totals_fr",
+    "locale": "fr",
+    "difficulty": "totals",
+    "description": "FR table with total row+column (arithmetic-check material for Phase 3)",
+    "n_records": 25,
+    "n_metric_cells": 25
+  },
+  {
+    "table_id": "wide_en_technical",
+    "locale": "en",
+    "difficulty": "wide",
+    "description": "Wide technical table with units in headers",
+    "n_records": 4,
+    "n_metric_cells": 24
+  }
+]

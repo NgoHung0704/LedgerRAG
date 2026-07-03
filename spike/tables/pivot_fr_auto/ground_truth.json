@@ -1,0 +1,332 @@
+{
+  "table_id": "pivot_fr_auto",
+  "locale": "fr",
+  "difficulty": "pivot",
+  "description": "Nested pivot FR: 3-level column header, 2 nested row dims (spec flagship example)",
+  "records": [
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Algérie",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "janv."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 7462639,
+        "volume": 426
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "7 462 639",
+        "volume": "426"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Algérie",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "févr."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 6990210,
+        "volume": 401
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "6 990 210",
+        "volume": "401"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Algérie",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "mars"
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 7810455,
+        "volume": 447
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "7 810 455",
+        "volume": "447"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Algérie",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "janv."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 3120500,
+        "volume": 118
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "3 120 500",
+        "volume": "118"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Algérie",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "févr."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 2987340,
+        "volume": 112
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "2 987 340",
+        "volume": "112"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Algérie",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "mars"
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 3305720,
+        "volume": 125
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "3 305 720",
+        "volume": "125"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Maroc",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "janv."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 5240880,
+        "volume": 301
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "5 240 880",
+        "volume": "301"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Maroc",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "févr."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 5102300,
+        "volume": 295
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "5 102 300",
+        "volume": "295"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Maroc",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "mars"
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 5460190,
+        "volume": 314
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "5 460 190",
+        "volume": "314"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Maroc",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "janv."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 2010440,
+        "volume": 76
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "2 010 440",
+        "volume": "76"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Maroc",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "févr."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 1954210,
+        "volume": 73
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "1 954 210",
+        "volume": "73"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Afrique",
+        "pays": "Maroc",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "mars"
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 2120675,
+        "volume": 80
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "2 120 675",
+        "volume": "80"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Europe",
+        "pays": "France",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "janv."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 12480300,
+        "volume": 712
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "12 480 300",
+        "volume": "712"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Europe",
+        "pays": "France",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "févr."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 11920150,
+        "volume": 684
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "11 920 150",
+        "volume": "684"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Europe",
+        "pays": "France",
+        "modele": "Citadine",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "mars"
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 13040620,
+        "volume": 745
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "13 040 620",
+        "volume": "745"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Europe",
+        "pays": "France",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "janv."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 8240110,
+        "volume": 297
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "8 240 110",
+        "volume": "297"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Europe",
+        "pays": "France",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "févr."
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 7980400,
+        "volume": 288
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "7 980 400",
+        "volume": "288"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "Europe",
+        "pays": "France",
+        "modele": "Berline",
+        "annee": "2013",
+        "trimestre": "T1",
+        "mois": "mars"
+      },
+      "metrics": {
+        "chiffre_affaires_eur": 8615230,
+        "volume": 310
+      },
+      "raw_values": {
+        "chiffre_affaires_eur": "8 615 230",
+        "volume": "310"
+      }
+    }
+  ]
+}

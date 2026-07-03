@@ -1,0 +1,64 @@
+{
+  "table_id": "flat_de_kosten",
+  "locale": "de",
+  "difficulty": "flat",
+  "description": "Flat DE table, dot thousands / comma decimals",
+  "records": [
+    {
+      "dimensions": {
+        "abteilung": "Vertrieb",
+        "standort": "München"
+      },
+      "metrics": {
+        "mitarbeiter": 42,
+        "budget_2024_eur": 7462639.5
+      },
+      "raw_values": {
+        "mitarbeiter": "42",
+        "budget_2024_eur": "7.462.639,50 €"
+      }
+    },
+    {
+      "dimensions": {
+        "abteilung": "Entwicklung",
+        "standort": "Berlin"
+      },
+      "metrics": {
+        "mitarbeiter": 118,
+        "budget_2024_eur": 12840100.0
+      },
+      "raw_values": {
+        "mitarbeiter": "118",
+        "budget_2024_eur": "12.840.100,00 €"
+      }
+    },
+    {
+      "dimensions": {
+        "abteilung": "Personal",
+        "standort": "Hamburg"
+      },
+      "metrics": {
+        "mitarbeiter": 15,
+        "budget_2024_eur": 986420.75
+      },
+      "raw_values": {
+        "mitarbeiter": "15",
+        "budget_2024_eur": "986.420,75 €"
+      }
+    },
+    {
+      "dimensions": {
+        "abteilung": "Logistik",
+        "standort": "Köln"
+      },
+      "metrics": {
+        "mitarbeiter": 64,
+        "budget_2024_eur": 3207911.25
+      },
+      "raw_values": {
+        "mitarbeiter": "64",
+        "budget_2024_eur": "3.207.911,25 €"
+      }
+    }
+  ]
+}

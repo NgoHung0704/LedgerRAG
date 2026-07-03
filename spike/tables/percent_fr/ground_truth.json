@@ -1,0 +1,68 @@
+{
+  "table_id": "percent_fr",
+  "locale": "fr",
+  "difficulty": "flat",
+  "description": "FR percentages and negative numbers",
+  "records": [
+    {
+      "dimensions": {
+        "indicateur": "Taux d'absentéisme"
+      },
+      "metrics": {
+        "valeur_2023": 4.2,
+        "valeur_2024": 3.8,
+        "evolution_pct": -9.5
+      },
+      "raw_values": {
+        "valeur_2023": "4,2 %",
+        "valeur_2024": "3,8 %",
+        "evolution_pct": "-9,5 %"
+      }
+    },
+    {
+      "dimensions": {
+        "indicateur": "Turnover"
+      },
+      "metrics": {
+        "valeur_2023": 12.5,
+        "valeur_2024": 10.1,
+        "evolution_pct": -19.2
+      },
+      "raw_values": {
+        "valeur_2023": "12,5 %",
+        "valeur_2024": "10,1 %",
+        "evolution_pct": "-19,2 %"
+      }
+    },
+    {
+      "dimensions": {
+        "indicateur": "Taux de formation"
+      },
+      "metrics": {
+        "valeur_2023": 64.0,
+        "valeur_2024": 71.5,
+        "evolution_pct": 11.7
+      },
+      "raw_values": {
+        "valeur_2023": "64,0 %",
+        "valeur_2024": "71,5 %",
+        "evolution_pct": "11,7 %"
+      }
+    },
+    {
+      "dimensions": {
+        "indicateur": "Résultat net (k€)"
+      },
+      "metrics": {
+        "valeur_2023": -1250.5,
+        "valeur_2024": 2340.0,
+        "evolution_pct": 287.2
+      },
+      "raw_values": {
+        "valeur_2023": "-1 250,5",
+        "valeur_2024": "2 340,0",
+        "evolution_pct": "287,2 %"
+      }
+    }
+  ]
+}

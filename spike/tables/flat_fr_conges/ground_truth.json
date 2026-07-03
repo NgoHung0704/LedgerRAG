@@ -1,0 +1,78 @@
+{
+  "table_id": "flat_fr_conges",
+  "locale": "fr",
+  "difficulty": "flat",
+  "description": "Flat FR HR table, U+202F thousands separator",
+  "records": [
+    {
+      "dimensions": {
+        "categorie": "Cadre",
+        "anciennete": "0-5 ans"
+      },
+      "metrics": {
+        "jours_conges": 25,
+        "prime_annuelle_eur": 1250.0
+      },
+      "raw_values": {
+        "jours_conges": "25",
+        "prime_annuelle_eur": "1 250,00 €"
+      }
+    },
+    {
+      "dimensions": {
+        "categorie": "Cadre",
+        "anciennete": "5-10 ans"
+      },
+      "metrics": {
+        "jours_conges": 27,
+        "prime_annuelle_eur": 1875.5
+      },
+      "raw_values": {
+        "jours_conges": "27",
+        "prime_annuelle_eur": "1 875,50 €"
+      }
+    },
+    {
+      "dimensions": {
+        "categorie": "Agent de maîtrise",
+        "anciennete": "0-5 ans"
+      },
+      "metrics": {
+        "jours_conges": 24,
+        "prime_annuelle_eur": 980.0
+      },
+      "raw_values": {
+        "jours_conges": "24",
+        "prime_annuelle_eur": "980,00 €"
+      }
+    },
+    {
+      "dimensions": {
+        "categorie": "Agent de maîtrise",
+        "anciennete": "10+ ans"
+      },
+      "metrics": {
+        "jours_conges": 29,
+        "prime_annuelle_eur": 2450.75
+      },
+      "raw_values": {
+        "jours_conges": "29",
+        "prime_annuelle_eur": "2 450,75 €"
+      }
+    },
+    {
+      "dimensions": {
+        "categorie": "Employé",
+        "anciennete": "10+ ans"
+      },
+      "metrics": {
+        "jours_conges": 28,
+        "prime_annuelle_eur": 1730.25
+      },
+      "raw_values": {
+        "jours_conges": "28",
+        "prime_annuelle_eur": "1 730,25 €"
+      }
+    }
+  ]
+}

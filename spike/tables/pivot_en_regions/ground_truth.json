@@ -1,0 +1,128 @@
+{
+  "table_id": "pivot_en_regions",
+  "locale": "en",
+  "difficulty": "pivot",
+  "description": "Pivot EN: nested row dims + quarter groups",
+  "records": [
+    {
+      "dimensions": {
+        "region": "EMEA",
+        "country": "France",
+        "quarter": "Q1 2024"
+      },
+      "metrics": {
+        "revenue_eur": 3120400,
+        "units": 2140
+      },
+      "raw_values": {
+        "revenue_eur": "€3,120,400",
+        "units": "2,140"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "EMEA",
+        "country": "France",
+        "quarter": "Q2 2024"
+      },
+      "metrics": {
+        "revenue_eur": 3305150,
+        "units": 2255
+      },
+      "raw_values": {
+        "revenue_eur": "€3,305,150",
+        "units": "2,255"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "EMEA",
+        "country": "Germany",
+        "quarter": "Q1 2024"
+      },
+      "metrics": {
+        "revenue_eur": 4210800,
+        "units": 2980
+      },
+      "raw_values": {
+        "revenue_eur": "€4,210,800",
+        "units": "2,980"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "EMEA",
+        "country": "Germany",
+        "quarter": "Q2 2024"
+      },
+      "metrics": {
+        "revenue_eur": 4402310,
+        "units": 3105
+      },
+      "raw_values": {
+        "revenue_eur": "€4,402,310",
+        "units": "3,105"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "APAC",
+        "country": "Japan",
+        "quarter": "Q1 2024"
+      },
+      "metrics": {
+        "revenue_eur": 2870650,
+        "units": 1890
+      },
+      "raw_values": {
+        "revenue_eur": "€2,870,650",
+        "units": "1,890"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "APAC",
+        "country": "Japan",
+        "quarter": "Q2 2024"
+      },
+      "metrics": {
+        "revenue_eur": 2954020,
+        "units": 1932
+      },
+      "raw_values": {
+        "revenue_eur": "€2,954,020",
+        "units": "1,932"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "APAC",
+        "country": "Korea",
+        "quarter": "Q1 2024"
+      },
+      "metrics": {
+        "revenue_eur": 1980340,
+        "units": 1245
+      },
+      "raw_values": {
+        "revenue_eur": "€1,980,340",
+        "units": "1,245"
+      }
+    },
+    {
+      "dimensions": {
+        "region": "APAC",
+        "country": "Korea",
+        "quarter": "Q2 2024"
+      },
+      "metrics": {
+        "revenue_eur": 2103880,
+        "units": 1310
+      },
+      "raw_values": {
+        "revenue_eur": "€2,103,880",
+        "units": "1,310"
+      }
+    }
+  ]
+}

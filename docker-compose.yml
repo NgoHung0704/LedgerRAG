@@ -1,0 +1,112 @@
+# LedgerRAG self-host stack — `docker compose up -d --build`
+#
+# Model serving (Ollama / vLLM / llama.cpp) is deliberately NOT part of this
+# stack (constraint C3): the deploying engineer runs it wherever the GPUs are
+# and points the LEDGERRAG_MODELS__* variables at it. Defaults assume Ollama
+# on the docker host. For AMD RDNA4 hosts see SPEC Appendix A.3 (OLLAMA_VULKAN=1,
+# pin the Ollama version).
+
+x-backend-env: &backend-env
+  LEDGERRAG_DATABASE_URL: postgresql+psycopg://ledgerrag:ledgerrag@postgres:5432/ledgerrag
+  LEDGERRAG_REDIS_URL: redis://redis:6379/0
+  LEDGERRAG_QDRANT_URL: http://qdrant:6333
+  LEDGERRAG_OBJECT_STORE__BACKEND: minio
+  LEDGERRAG_OBJECT_STORE__ENDPOINT: minio:9000
+  LEDGERRAG_OBJECT_STORE__ACCESS_KEY: ledgerrag
+  LEDGERRAG_OBJECT_STORE__SECRET_KEY: ledgerrag-secret
+  LEDGERRAG_OBJECT_STORE__BUCKET: ledgerrag
+  LEDGERRAG_OBJECT_STORE__SECURE: "false"
+  LEDGERRAG_MODELS__PARSER__PROVIDER: ${LEDGERRAG_MODELS__PARSER__PROVIDER:-ollama}
+  LEDGERRAG_MODELS__PARSER__BASE_URL: ${LEDGERRAG_MODELS__PARSER__BASE_URL:-http://host.docker.internal:11434}
+  LEDGERRAG_MODELS__PARSER__MODEL_NAME: ${LEDGERRAG_MODELS__PARSER__MODEL_NAME:-qwen2.5vl:7b}
+  LEDGERRAG_MODELS__EMBEDDER__PROVIDER: ${LEDGERRAG_MODELS__EMBEDDER__PROVIDER:-ollama}
+  LEDGERRAG_MODELS__EMBEDDER__BASE_URL: ${LEDGERRAG_MODELS__EMBEDDER__BASE_URL:-http://host.docker.internal:11434}
+  LEDGERRAG_MODELS__EMBEDDER__MODEL_NAME: ${LEDGERRAG_MODELS__EMBEDDER__MODEL_NAME:-bge-m3}
+  LEDGERRAG_EMBEDDING_DIM: ${LEDGERRAG_EMBEDDING_DIM:-1024}
+  LEDGERRAG_MODELS__CHAT__PROVIDER: ${LEDGERRAG_MODELS__CHAT__PROVIDER:-ollama}
+  LEDGERRAG_MODELS__CHAT__BASE_URL: ${LEDGERRAG_MODELS__CHAT__BASE_URL:-http://host.docker.internal:11434}
+  LEDGERRAG_MODELS__CHAT__MODEL_NAME: ${LEDGERRAG_MODELS__CHAT__MODEL_NAME:-mistral:latest}
+  LEDGERRAG_MODELS__RERANKER__PROVIDER: ${LEDGERRAG_MODELS__RERANKER__PROVIDER:-disabled}
+  LEDGERRAG_VERIFICATION_ENABLED: ${LEDGERRAG_VERIFICATION_ENABLED:-false}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ledgerrag
+      POSTGRES_PASSWORD: ledgerrag
+      POSTGRES_DB: ledgerrag
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledgerrag"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  minio:
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ledgerrag
+      MINIO_ROOT_PASSWORD: ledgerrag-secret
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    environment: *backend-env
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+      qdrant: { condition: service_started }
+
+  worker:
+    build: .
+    command: celery -A tablerag.ingestion.worker worker --loglevel=info --concurrency=2
+    environment: *backend-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+      qdrant: { condition: service_started }
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  qdrant_data:
+  minio_data:

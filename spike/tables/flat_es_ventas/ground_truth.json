@@ -1,0 +1,64 @@
+{
+  "table_id": "flat_es_ventas",
+  "locale": "es",
+  "difficulty": "flat",
+  "description": "Flat ES sales table",
+  "records": [
+    {
+      "dimensions": {
+        "producto": "Compacto",
+        "region": "Norte"
+      },
+      "metrics": {
+        "unidades": 1240,
+        "ingresos_eur": 1534210.4
+      },
+      "raw_values": {
+        "unidades": "1.240",
+        "ingresos_eur": "1.534.210,40 €"
+      }
+    },
+    {
+      "dimensions": {
+        "producto": "Compacto",
+        "region": "Sur"
+      },
+      "metrics": {
+        "unidades": 987,
+        "ingresos_eur": 1198450.75
+      },
+      "raw_values": {
+        "unidades": "987",
+        "ingresos_eur": "1.198.450,75 €"
+      }
+    },
+    {
+      "dimensions": {
+        "producto": "Berlina",
+        "region": "Norte"
+      },
+      "metrics": {
+        "unidades": 432,
+        "ingresos_eur": 876320.1
+      },
+      "raw_values": {
+        "unidades": "432",
+        "ingresos_eur": "876.320,10 €"
+      }
+    },
+    {
+      "dimensions": {
+        "producto": "SUV",
+        "region": "Centro"
+      },
+      "metrics": {
+        "unidades": 2105,
+        "ingresos_eur": 4310678.9
+      },
+      "raw_values": {
+        "unidades": "2.105",
+        "ingresos_eur": "4.310.678,90 €"
+      }
+    }
+  ]
+}

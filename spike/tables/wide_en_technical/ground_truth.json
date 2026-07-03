@@ -1,0 +1,92 @@
+{
+  "table_id": "wide_en_technical",
+  "locale": "en",
+  "difficulty": "wide",
+  "description": "Wide technical table with units in headers",
+  "records": [
+    {
+      "dimensions": {
+        "part_no": "AX-1042"
+      },
+      "metrics": {
+        "length_mm": 1240.5,
+        "width_mm": 86.2,
+        "weight_kg": 12.75,
+        "max_temp_c": 105,
+        "voltage_v": 24,
+        "unit_price_eur": 1180.99
+      },
+      "raw_values": {
+        "length_mm": "1,240.5",
+        "width_mm": "86.2",
+        "weight_kg": "12.75",
+        "max_temp_c": "105",
+        "voltage_v": "24",
+        "unit_price_eur": "€1,180.99"
+      }
+    },
+    {
+      "dimensions": {
+        "part_no": "AX-1043"
+      },
+      "metrics": {
+        "length_mm": 1310.0,
+        "width_mm": 90.4,
+        "weight_kg": 13.1,
+        "max_temp_c": 110,
+        "voltage_v": 24,
+        "unit_price_eur": 1240.5
+      },
+      "raw_values": {
+        "length_mm": "1,310.0",
+        "width_mm": "90.4",
+        "weight_kg": "13.10",
+        "max_temp_c": "110",
+        "voltage_v": "24",
+        "unit_price_eur": "€1,240.50"
+      }
+    },
+    {
+      "dimensions": {
+        "part_no": "BZ-2201"
+      },
+      "metrics": {
+        "length_mm": 2450.8,
+        "width_mm": 120.0,
+        "weight_kg": 28.6,
+        "max_temp_c": 85,
+        "voltage_v": 48,
+        "unit_price_eur": 3320.0
+      },
+      "raw_values": {
+        "length_mm": "2,450.8",
+        "width_mm": "120.0",
+        "weight_kg": "28.60",
+        "max_temp_c": "85",
+        "voltage_v": "48",
+        "unit_price_eur": "€3,320.00"
+      }
+    },
+    {
+      "dimensions": {
+        "part_no": "BZ-2202"
+      },
+      "metrics": {
+        "length_mm": 2480.2,
+        "width_mm": 122.5,
+        "weight_kg": 29.05,
+        "max_temp_c": 85,
+        "voltage_v": 48,
+        "unit_price_eur": 3410.75
+      },
+      "raw_values": {
+        "length_mm": "2,480.2",
+        "width_mm": "122.5",
+        "weight_kg": "29.05",
+        "max_temp_c": "85",
+        "voltage_v": "48",
+        "unit_price_eur": "€3,410.75"
+      }
+    }
+  ]
+}

@@ -1,0 +1,308 @@
+{
+  "table_id": "totals_fr",
+  "locale": "fr",
+  "difficulty": "totals",
+  "description": "FR table with total row+column (arithmetic-check material for Phase 3)",
+  "records": [
+    {
+      "dimensions": {
+        "poste": "Salaires",
+        "periode": "T1"
+      },
+      "metrics": {
+        "montant_eur": 812400
+      },
+      "raw_values": {
+        "montant_eur": "812 400"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Salaires",
+        "periode": "T2"
+      },
+      "metrics": {
+        "montant_eur": 824100
+      },
+      "raw_values": {
+        "montant_eur": "824 100"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Salaires",
+        "periode": "T3"
+      },
+      "metrics": {
+        "montant_eur": 819750
+      },
+      "raw_values": {
+        "montant_eur": "819 750"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Salaires",
+        "periode": "T4"
+      },
+      "metrics": {
+        "montant_eur": 861200
+      },
+      "raw_values": {
+        "montant_eur": "861 200"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Salaires",
+        "periode": "Total"
+      },
+      "metrics": {
+        "montant_eur": 3317450
+      },
+      "raw_values": {
+        "montant_eur": "3 317 450"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Charges sociales",
+        "periode": "T1"
+      },
+      "metrics": {
+        "montant_eur": 365580
+      },
+      "raw_values": {
+        "montant_eur": "365 580"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Charges sociales",
+        "periode": "T2"
+      },
+      "metrics": {
+        "montant_eur": 370845
+      },
+      "raw_values": {
+        "montant_eur": "370 845"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Charges sociales",
+        "periode": "T3"
+      },
+      "metrics": {
+        "montant_eur": 368888
+      },
+      "raw_values": {
+        "montant_eur": "368 888"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Charges sociales",
+        "periode": "T4"
+      },
+      "metrics": {
+        "montant_eur": 387540
+      },
+      "raw_values": {
+        "montant_eur": "387 540"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Charges sociales",
+        "periode": "Total"
+      },
+      "metrics": {
+        "montant_eur": 1492853
+      },
+      "raw_values": {
+        "montant_eur": "1 492 853"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Formation",
+        "periode": "T1"
+      },
+      "metrics": {
+        "montant_eur": 42300
+      },
+      "raw_values": {
+        "montant_eur": "42 300"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Formation",
+        "periode": "T2"
+      },
+      "metrics": {
+        "montant_eur": 15800
+      },
+      "raw_values": {
+        "montant_eur": "15 800"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Formation",
+        "periode": "T3"
+      },
+      "metrics": {
+        "montant_eur": 22100
+      },
+      "raw_values": {
+        "montant_eur": "22 100"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Formation",
+        "periode": "T4"
+      },
+      "metrics": {
+        "montant_eur": 58400
+      },
+      "raw_values": {
+        "montant_eur": "58 400"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Formation",
+        "periode": "Total"
+      },
+      "metrics": {
+        "montant_eur": 138600
+      },
+      "raw_values": {
+        "montant_eur": "138 600"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Intérim",
+        "periode": "T1"
+      },
+      "metrics": {
+        "montant_eur": 96200
+      },
+      "raw_values": {
+        "montant_eur": "96 200"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Intérim",
+        "periode": "T2"
+      },
+      "metrics": {
+        "montant_eur": 104500
+      },
+      "raw_values": {
+        "montant_eur": "104 500"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Intérim",
+        "periode": "T3"
+      },
+      "metrics": {
+        "montant_eur": 88700
+      },
+      "raw_values": {
+        "montant_eur": "88 700"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Intérim",
+        "periode": "T4"
+      },
+      "metrics": {
+        "montant_eur": 121300
+      },
+      "raw_values": {
+        "montant_eur": "121 300"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Intérim",
+        "periode": "Total"
+      },
+      "metrics": {
+        "montant_eur": 410700
+      },
+      "raw_values": {
+        "montant_eur": "410 700"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Total",
+        "periode": "T1"
+      },
+      "metrics": {
+        "montant_eur": 1316480
+      },
+      "raw_values": {
+        "montant_eur": "1 316 480"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Total",
+        "periode": "T2"
+      },
+      "metrics": {
+        "montant_eur": 1315245
+      },
+      "raw_values": {
+        "montant_eur": "1 315 245"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Total",
+        "periode": "T3"
+      },
+      "metrics": {
+        "montant_eur": 1299438
+      },
+      "raw_values": {
+        "montant_eur": "1 299 438"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Total",
+        "periode": "T4"
+      },
+      "metrics": {
+        "montant_eur": 1428440
+      },
+      "raw_values": {
+        "montant_eur": "1 428 440"
+      }
+    },
+    {
+      "dimensions": {
+        "poste": "Total",
+        "periode": "Total"
+      },
+      "metrics": {
+        "montant_eur": 5359603
+      },
+      "raw_values": {
+        "montant_eur": "5 359 603"
+      }
+    }
+  ]
+}

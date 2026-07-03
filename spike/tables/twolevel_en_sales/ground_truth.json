@@ -1,0 +1,92 @@
+{
+  "table_id": "twolevel_en_sales",
+  "locale": "en",
+  "difficulty": "grouped",
+  "description": "Two-level header (year groups), EN",
+  "records": [
+    {
+      "dimensions": {
+        "product": "Alpha",
+        "year": "2023"
+      },
+      "metrics": {
+        "revenue_eur": 1254300,
+        "volume": 8420
+      },
+      "raw_values": {
+        "revenue_eur": "€1,254,300",
+        "volume": "8,420"
+      }
+    },
+    {
+      "dimensions": {
+        "product": "Alpha",
+        "year": "2024"
+      },
+      "metrics": {
+        "revenue_eur": 1410220,
+        "volume": 9105
+      },
+      "raw_values": {
+        "revenue_eur": "€1,410,220",
+        "volume": "9,105"
+      }
+    },
+    {
+      "dimensions": {
+        "product": "Beta",
+        "year": "2023"
+      },
+      "metrics": {
+        "revenue_eur": 884150,
+        "volume": 5210
+      },
+      "raw_values": {
+        "revenue_eur": "€884,150",
+        "volume": "5,210"
+      }
+    },
+    {
+      "dimensions": {
+        "product": "Beta",
+        "year": "2024"
+      },
+      "metrics": {
+        "revenue_eur": 910640,
+        "volume": 5498
+      },
+      "raw_values": {
+        "revenue_eur": "€910,640",
+        "volume": "5,498"
+      }
+    },
+    {
+      "dimensions": {
+        "product": "Gamma",
+        "year": "2023"
+      },
+      "metrics": {
+        "revenue_eur": 2107880,
+        "volume": 14320
+      },
+      "raw_values": {
+        "revenue_eur": "€2,107,880",
+        "volume": "14,320"
+      }
+    },
+    {
+      "dimensions": {
+        "product": "Gamma",
+        "year": "2024"
+      },
+      "metrics": {
+        "revenue_eur": 1988430,
+        "volume": 13710
+      },
+      "raw_values": {
+        "revenue_eur": "€1,988,430",
+        "volume": "13,710"
+      }
+    }
+  ]
+}
