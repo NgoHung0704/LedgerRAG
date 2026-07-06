@@ -69,6 +69,50 @@ def test_grader_accepts_renamed_keys():
     assert result["matched_records"] == 1
 
 
+def test_grader_accepts_merged_header_values():
+    """'2013' + 'T1' merged into one value '2013 T1' still localizes the cell."""
+    gt = {"table_id": "t", "records": [{
+        "dimensions": {"annee": "2013", "trimestre": "T1", "mois": "janv."},
+        "metrics": {"ca": 7462639}, "raw_values": {"ca": "7 462 639"},
+    }]}
+    parsed = {"records": [{
+        "dimensions": {"periode": "2013 T1", "mois": "janv."},
+        "metrics": {"ca": 7462639}, "raw_values": {"ca": "7 462 639"},
+    }]}
+    result = grade.grade_table(gt, parsed)
+    assert result["correct_cells"] == 1
+    assert result["strict_correct_cells"] == 0  # relaxed, not strict
+
+
+def test_grader_accepts_extra_parsed_dimensions():
+    gt = {"table_id": "t", "records": [{
+        "dimensions": {"pays": "Maroc"}, "metrics": {"m": 5},
+        "raw_values": {"m": "5"},
+    }]}
+    parsed = {"records": [{
+        "dimensions": {"pays": "Maroc", "devise": "EUR"},
+        "metrics": {"m": 5}, "raw_values": {"m": "5"},
+    }]}
+    assert grade.grade_table(gt, parsed)["correct_cells"] == 1
+
+
+def test_grader_rejects_records_missing_dimensions():
+    """One record per row with months folded away = localization failure."""
+    gt = {"table_id": "t", "records": [{
+        "dimensions": {"pays": "Maroc", "mois": "janv."},
+        "metrics": {"ca": 100}, "raw_values": {"ca": "100"},
+    }]}
+    parsed = {"records": [{
+        "dimensions": {"pays": "Maroc"},  # month missing
+        "metrics": {"ca_janv": 100, "ca_fevr": 200},
+        "raw_values": {"ca_janv": "100", "ca_fevr": "200"},
+    }]}
+    result = grade.grade_table(gt, parsed)
+    assert result["correct_cells"] == 0
+    assert result["matched_records"] == 0
+    assert result["misses"][0]["kind"] == "unmatched"
+
+
 def test_grader_rejects_wrong_numbers():
     gt = {"table_id": "t", "records": [{
         "dimensions": {"a": "x"}, "metrics": {"m": 100},

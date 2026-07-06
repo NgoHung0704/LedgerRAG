@@ -55,9 +55,13 @@ def call_ollama(base_url: str, model: str, image_b64: str, user_prompt: str,
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages += history or []
     messages.append({"role": "user", "content": user_prompt, "images": [image_b64]})
+    # explicit num_predict/num_ctx: default limits can silently truncate the
+    # JSON block on wide tables, which shows up as a contract violation
     r = httpx.post(f"{base_url.rstrip('/')}/api/chat",
                    json={"model": model, "messages": messages, "stream": False,
-                         "options": {"temperature": 0}},
+                         "options": {"temperature": 0,
+                                     "num_predict": int(env("SPIKE_NUM_PREDICT", "4096")),
+                                     "num_ctx": int(env("SPIKE_NUM_CTX", "8192"))}},
                    timeout=600)
     r.raise_for_status()
     data = r.json()
@@ -172,6 +176,9 @@ def parse_one(image_path: Path, provider: str, base_url: str, model: str,
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
 
     tps = stats.get("tokens_per_s") if isinstance(stats, dict) else None
+    if tps is None and isinstance(stats, dict):  # retried call: stats are nested
+        tps = stats.get("retry", {}).get("tokens_per_s") \
+            or stats.get("first", {}).get("tokens_per_s")
     tps_msg = f"{tps:.1f} tok/s" if isinstance(tps, (int, float)) else "n/a"
     status = "FAILED (honest)" if "error" in result else \
         f"{len(result.get('records', []))} records"

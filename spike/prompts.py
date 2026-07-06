@@ -80,15 +80,24 @@ blocks and nothing else:
 1. A ```html block: the table as HTML using <table>/<tr>/<th>/<td>, reproducing \
 merged cells with rowspan/colspan attributes. Cell text must be copied verbatim.
 
-2. A ```json block: {"records": [...]} — one record per data cell group. Each \
-record has:
-   - "dimensions": all row/column header values that locate the cell (as strings). \
-Use header names as keys when the table names them; otherwise invent short \
-consistent snake_case keys (e.g. "level_1"). Every record in one table must use \
-the same dimension keys.
-   - "metrics": the numeric values, normalized to JSON numbers — dot as decimal \
-separator, no thousands separators, no currency/unit symbols. A percentage like \
-"12,5 %" becomes 12.5. Unreadable -> null.
+2. A ```json block: {"records": [...]} — one record per INNERMOST data cell \
+group. Granularity rules (critical):
+   - If column headers are nested (e.g. a year spanning months), each innermost \
+column produces its OWN record, and every header level above it becomes a \
+dimension value on that record. In example 2 above: one record per (row, month), \
+with the year AND the month both present as dimensions.
+   - NEVER fold header values into metric key names ("revenue_jan" is WRONG — \
+"jan" belongs in dimensions, the metric key is "revenue").
+   - NEVER aggregate several columns or rows into one record.
+   Each record has:
+   - "dimensions": ALL row header values and ALL column header levels that \
+locate the cell (as strings — split combined headers like "2013 T1" into their \
+own entries when they are separate header cells). Use header names as keys when \
+the table names them; otherwise invent short consistent snake_case keys \
+(e.g. "level_1"). Every record in one table must use the same dimension keys.
+   - "metrics": the numeric values as UNQUOTED JSON numbers — dot as decimal \
+separator, no thousands separators, no currency/unit symbols, never a string. \
+A percentage like "12,5 %" becomes 12.5. Unreadable -> null.
    - "raw_values": the EXACT strings as printed in the image (same keys as metrics).
 
 Number locale hint for this document: {locale_hint}. \
