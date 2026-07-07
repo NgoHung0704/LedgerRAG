@@ -202,7 +202,8 @@ def main() -> None:
                     default=env("LEDGERRAG_MODELS__PARSER__BASE_URL",
                                 "http://localhost:11434"))
     ap.add_argument("--model",
-                    default=env("LEDGERRAG_MODELS__PARSER__MODEL_NAME", "qwen2.5vl:7b"))
+                    default=env("LEDGERRAG_MODELS__PARSER__MODEL_NAME",
+                                "qwen3-vl:8b-instruct"))
     ap.add_argument("--locale", default=None,
                     help="number-locale hint; defaults to ground_truth.json locale")
     args = ap.parse_args()

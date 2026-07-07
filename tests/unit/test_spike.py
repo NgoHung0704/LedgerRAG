@@ -96,6 +96,25 @@ def test_grader_accepts_extra_parsed_dimensions():
     assert grade.grade_table(gt, parsed)["correct_cells"] == 1
 
 
+def test_grader_pools_measures_split_across_records():
+    """Fully-long output (one measure per record, measure name as an extra
+    dimension) is a valid representation and must score all cells."""
+    gt = {"table_id": "t", "records": [{
+        "dimensions": {"product": "Alpha", "year": "2023"},
+        "metrics": {"revenue_eur": 1254300, "volume": 8420},
+        "raw_values": {"revenue_eur": "€1,254,300", "volume": "8,420"},
+    }]}
+    parsed = {"records": [
+        {"dimensions": {"product": "Alpha", "year": "2023", "metric_type": "Revenue"},
+         "metrics": {"revenue_eur": 1254300}, "raw_values": {"revenue_eur": "€1,254,300"}},
+        {"dimensions": {"product": "Alpha", "year": "2023", "metric_type": "Volume"},
+         "metrics": {"volume": 8420}, "raw_values": {"volume": "8,420"}},
+    ]}
+    result = grade.grade_table(gt, parsed)
+    assert result["correct_cells"] == 2
+    assert result["matched_records"] == 1
+
+
 def test_grader_rejects_records_missing_dimensions():
     """One record per row with months folded away = localization failure."""
     gt = {"table_id": "t", "records": [{

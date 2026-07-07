@@ -4,11 +4,20 @@
 > Re-run and re-fill this report every time the parser model OR the hardware
 > changes (SPEC Phase 0: this is a process, not a one-off).
 
-## Status: NOT YET RUN
+## Status: IN PROGRESS — model selection done, prompt iteration running
 
 Phase 0 DoD is **not met** until every box below is checked with real numbers.
 Per SPEC, do not build Phase 2 (table sub-pipeline) on top of an unverified
 parser assumption. Phase 1 (text-only skeleton) does not depend on the parser.
+
+**Campaign so far (2026-07, host MIA-82025, Ollama on :11435):** GPU execution
+verified (steady 77–88 tok/s, no load hang). Model comparison selected
+`qwen3-vl:8b-instruct` as champion — with prompt v2 it reads **every number
+correctly** on flat/wide tables (100% strict) and all remaining losses were
+three structural motifs (dropped header level, wide-instead-of-long records,
+measures split via a `metric_type` dimension), addressed in prompt v3 +
+pooled grading. **Trap:** the default `qwen3-vl` tag is a *thinking* model
+that returns empty output via `/api/chat` — the `-instruct` tag is required.
 
 ## 1. Environment
 
@@ -57,6 +66,10 @@ locale misreads...). Phase 2 prompt engineering starts from this list._
 - [ ] **DoD PASS** → proceed to Phase 2 table sub-pipeline with this model+stack (pin versions in docker-compose)
 - [ ] **DoD FAIL** → stop; try next candidate (InternVL / Pixtral / document-AI API) and re-run this spike
 
-| Attempt | Model | Stack | tok/s | Cell accuracy | Verdict |
-|---------|-------|-------|-------|---------------|---------|
-| 1 | | | | | |
+| Attempt | Model | Stack | tok/s | Cell accuracy (relaxed) | Verdict |
+|---------|-------|-------|-------|-------------------------|---------|
+| 1 | qwen2.5vl:7b | Ollama @ :11435 | ~87 | 5.3% | FAIL — structure + contract violations |
+| 2 | granite (vision) | Ollama @ :11435 | | 6.3% | FAIL |
+| 3 | minicpm-v | Ollama @ :11435 | | 3.2% | FAIL |
+| 4 | qwen3-vl:8b-instruct (prompt v2) | Ollama @ :11435 | ~78 | 45.5% (flat+wide 100% strict; all numbers read correctly, misses purely structural) | champion — prompt v3 iteration |
+| 5 | qwen3-vl:8b-instruct (prompt v3 + pooled grading) | Ollama @ :11435 | | _run me_ | |

@@ -33,7 +33,8 @@ class EndpointConfig(BaseModel):
 
 class ModelsConfig(BaseModel):
     parser: EndpointConfig = EndpointConfig(
-        provider="ollama", base_url="http://localhost:11434", model_name="qwen2.5vl:7b")
+        provider="ollama", base_url="http://localhost:11434",
+        model_name="qwen3-vl:8b-instruct")
     embedder: EndpointConfig = EndpointConfig(
         provider="ollama", base_url="http://localhost:11434", model_name="bge-m3")
     chat: EndpointConfig = EndpointConfig(

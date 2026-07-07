@@ -12,8 +12,12 @@ and values*:
 - But a parsed record MISSING ground-truth dimension tokens (e.g. one record
   per row with months folded into metric names) does NOT match: that is a
   real localization failure.
-- A metric cell counts as correct when the matched record contains the exact
-  ground-truth number (rel tol 1e-4, abs 0.01) among its metric values.
+- All matched candidates share the ground-truth coordinates, so their metric
+  values are POOLED before grading: a fully-long parse (one measure per
+  record, the measure name carried as an extra dimension) is a valid
+  representation and scores identically to the canonical combined record.
+- A metric cell counts as correct when the pooled matched records contain the
+  exact ground-truth number (rel tol 1e-4, abs 0.01).
 
 The report shows both strict (exact dimension-value match) and relaxed
 accuracy; the DoD gate applies to relaxed. `--show-misses N` (default 2)
@@ -60,12 +64,16 @@ def numbers_close(a: float, b: float) -> bool:
     return abs(a - b) <= max(0.01, 1e-4 * max(abs(a), abs(b)))
 
 
-def metric_hits(gt_rec: dict, candidate: dict) -> int:
-    cand_values = [v for v in candidate.get("metrics", {}).values()
-                   if isinstance(v, (int, float))]
+def pooled_metric_hits(gt_rec: dict, candidates: list[dict]) -> int:
+    """Candidates all carry the GT record's coordinates (match levels 1-3),
+    so their metric values are pooled: a parse that splits measures into
+    separate records at the same coordinates is graded like a combined one."""
+    pool = [v for cand in candidates
+            for v in cand.get("metrics", {}).values()
+            if isinstance(v, (int, float))]
     return sum(
         1 for v in gt_rec["metrics"].values()
-        if any(numbers_close(float(v), float(cv)) for cv in cand_values)
+        if any(numbers_close(float(v), float(cv)) for cv in pool)
     )
 
 
@@ -124,14 +132,14 @@ def grade_table(gt: dict, parsed: dict) -> dict:
             misses.append({"kind": "unmatched", "gt": gt_rec, "nearest": nearest})
             continue
         matched += 1
-        best = max(metric_hits(gt_rec, cand) for cand in candidates)
-        correct += best
+        hits = pooled_metric_hits(gt_rec, candidates)
+        correct += hits
         if level == 1:
-            strict_correct += best
-        if best < len(gt_rec["metrics"]):
+            strict_correct += hits
+        if hits < len(gt_rec["metrics"]):
             misses.append({"kind": "wrong_values", "gt": gt_rec,
                            "nearest": candidates[0],
-                           "missing_cells": len(gt_rec["metrics"]) - best})
+                           "missing_cells": len(gt_rec["metrics"]) - hits})
 
     return {**base, "honest_failure": False, "error": None,
             "correct_cells": correct, "strict_correct_cells": strict_correct,

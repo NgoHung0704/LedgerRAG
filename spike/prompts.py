@@ -2,6 +2,15 @@
 
 Prompt is code (spec §5): any change here must be followed by re-running
 `make spike-run && make spike-grade` and pasting results into the PR / REPORT.md.
+
+Iteration history (see REPORT.md for full campaign results):
+- v1: baseline contract. qwen2.5vl:7b ~5% — records matched nothing.
+- v2: granularity rules v1. qwen3-vl:8b-instruct 45.5% — every NUMBER correct,
+  all remaining misses were 3 structural motifs: (1) dropped header levels
+  (trimestre/quarter), (2) wide format (periods as metric keys), (3) measures
+  split into separate records via a metric_type dimension.
+- v3 (current): few-shot example 2 mirrors the hardest real shape (3-level
+  header + two measure groups) and the three rules target the motifs directly.
 """
 
 SYSTEM_PROMPT = """\
@@ -12,7 +21,9 @@ keep whatever you could read in raw_values. Accuracy over completeness.\
 """
 
 # Few-shot examples are textual (no images) on purpose: they teach the output
-# CONTRACT, not the visual task. Example 1 = flat table, example 2 = nested pivot.
+# CONTRACT, not the visual task. Example 1 = flat table, example 2 = nested
+# pivot in exactly the shape that models get wrong (stacked column headers +
+# measure groups + merged row cells).
 FEW_SHOT = """\
 ### Example 1 — flat table
 
@@ -38,39 +49,45 @@ Correct output:
 ]}
 ```
 
-### Example 2 — nested pivot with merged cells
+### Example 2 — nested pivot with merged cells and measure groups
 
-Table (for illustration): rows grouped as Région > Pays (merged with rowspan), \
-columns grouped as year "2013" over months "janv." and "févr.", values are \
-French-formatted revenue.
+Table (for illustration): rows are Région > Pays (merged with rowspan). The \
+column header has three stacked levels: "2013 T1" on top, then two measure \
+groups "Chiffre d'affaires" and "Volume", then months "janv." / "févr." under \
+each group.
 
 Correct output:
 
 ```html
 <table>
-  <tr><th rowspan="2">Région</th><th rowspan="2">Pays</th><th colspan="2">2013</th></tr>
-  <tr><th>janv.</th><th>févr.</th></tr>
-  <tr><td rowspan="2">Afrique</td><td>Algérie</td><td>7 462 639</td><td>6 990 210</td></tr>
-  <tr><td>Maroc</td><td>5 240 880</td><td>5 102 300</td></tr>
+  <tr><th rowspan="3">Région</th><th rowspan="3">Pays</th><th colspan="4">2013 T1</th></tr>
+  <tr><th colspan="2">Chiffre d'affaires</th><th colspan="2">Volume</th></tr>
+  <tr><th>janv.</th><th>févr.</th><th>janv.</th><th>févr.</th></tr>
+  <tr><td rowspan="2">Afrique</td><td>Algérie</td><td>7 462 639</td><td>6 990 210</td><td>426</td><td>401</td></tr>
+  <tr><td>Maroc</td><td>5 240 880</td><td>5 102 300</td><td>301</td><td>295</td></tr>
 </table>
 ```
 
 ```json
 {"records": [
-  {"dimensions": {"region": "Afrique", "pays": "Algérie", "annee": "2013", "mois": "janv."},
-   "metrics": {"chiffre_affaires": 7462639},
-   "raw_values": {"chiffre_affaires": "7 462 639"}},
-  {"dimensions": {"region": "Afrique", "pays": "Algérie", "annee": "2013", "mois": "févr."},
-   "metrics": {"chiffre_affaires": 6990210},
-   "raw_values": {"chiffre_affaires": "6 990 210"}},
-  {"dimensions": {"region": "Afrique", "pays": "Maroc", "annee": "2013", "mois": "janv."},
-   "metrics": {"chiffre_affaires": 5240880},
-   "raw_values": {"chiffre_affaires": "5 240 880"}},
-  {"dimensions": {"region": "Afrique", "pays": "Maroc", "annee": "2013", "mois": "févr."},
-   "metrics": {"chiffre_affaires": 5102300},
-   "raw_values": {"chiffre_affaires": "5 102 300"}}
+  {"dimensions": {"region": "Afrique", "pays": "Algérie", "annee": "2013", "trimestre": "T1", "mois": "janv."},
+   "metrics": {"chiffre_affaires": 7462639, "volume": 426},
+   "raw_values": {"chiffre_affaires": "7 462 639", "volume": "426"}},
+  {"dimensions": {"region": "Afrique", "pays": "Algérie", "annee": "2013", "trimestre": "T1", "mois": "févr."},
+   "metrics": {"chiffre_affaires": 6990210, "volume": 401},
+   "raw_values": {"chiffre_affaires": "6 990 210", "volume": "401"}},
+  {"dimensions": {"region": "Afrique", "pays": "Maroc", "annee": "2013", "trimestre": "T1", "mois": "janv."},
+   "metrics": {"chiffre_affaires": 5240880, "volume": 301},
+   "raw_values": {"chiffre_affaires": "5 240 880", "volume": "301"}},
+  {"dimensions": {"region": "Afrique", "pays": "Maroc", "annee": "2013", "trimestre": "T1", "mois": "févr."},
+   "metrics": {"chiffre_affaires": 5102300, "volume": 295},
+   "raw_values": {"chiffre_affaires": "5 102 300", "volume": "295"}}
 ]}
 ```
+
+Note in example 2: the header "2013 T1" produced BOTH "annee" and "trimestre"; \
+each month is its own record; and chiffre_affaires + volume for the same \
+coordinates live in the SAME record.
 """
 
 INSTRUCTIONS = """\
@@ -80,25 +97,35 @@ blocks and nothing else:
 1. A ```html block: the table as HTML using <table>/<tr>/<th>/<td>, reproducing \
 merged cells with rowspan/colspan attributes. Cell text must be copied verbatim.
 
-2. A ```json block: {"records": [...]} — one record per INNERMOST data cell \
-group. Granularity rules (critical):
-   - If column headers are nested (e.g. a year spanning months), each innermost \
-column produces its OWN record, and every header level above it becomes a \
-dimension value on that record. In example 2 above: one record per (row, month), \
-with the year AND the month both present as dimensions.
-   - NEVER fold header values into metric key names ("revenue_jan" is WRONG — \
-"jan" belongs in dimensions, the metric key is "revenue").
-   - NEVER aggregate several columns or rows into one record.
-   Each record has:
-   - "dimensions": ALL row header values and ALL column header levels that \
-locate the cell (as strings — split combined headers like "2013 T1" into their \
-own entries when they are separate header cells). Use header names as keys when \
-the table names them; otherwise invent short consistent snake_case keys \
-(e.g. "level_1"). Every record in one table must use the same dimension keys.
-   - "metrics": the numeric values as UNQUOTED JSON numbers — dot as decimal \
-separator, no thousands separators, no currency/unit symbols, never a string. \
-A percentage like "12,5 %" becomes 12.5. Unreadable -> null.
-   - "raw_values": the EXACT strings as printed in the image (same keys as metrics).
+2. A ```json block: {"records": [...]} — one record per innermost data cell \
+group, in LONG format. Three granularity rules, all mandatory:
+
+RULE 1 — Keep every header level. Every column-header row above the value \
+cells contributes to "dimensions", and header values are kept complete: a \
+header "2013 T1" gives BOTH "2013" and "T1" (e.g. {"annee": "2013", \
+"trimestre": "T1"}); a year > quarter > month stack gives three entries. \
+Never drop a level.
+
+RULE 2 — Long format only. Time periods and categories from headers (T1, \
+2023, janv., "Q1 2024", ...) are dimension VALUES, never metric key names.
+WRONG: {"dimensions": {"poste": "Salaires"}, "metrics": {"t1": 812400, "t2": 824100}}
+RIGHT: {"dimensions": {"poste": "Salaires", "periode": "T1"}, "metrics": {"montant": 812400}} \
+plus a second record for T2, and so on.
+
+RULE 3 — Measures share one record. Header levels that name a MEASURE \
+(Revenue, Volume, Umsatz, Absatz, Chiffre d'affaires, Effectifs, ...) become \
+the KEYS inside "metrics". All measures of the same coordinates go in the \
+SAME record — never a "metric_type"-style dimension, never one record per \
+measure (see example 2: chiffre_affaires and volume together).
+
+Key naming: use header names as keys when the table names them; otherwise \
+invent short consistent snake_case keys (e.g. "level_1"). Every record in one \
+table must use the same dimension keys.
+
+"metrics" values are UNQUOTED JSON numbers — dot as decimal separator, no \
+thousands separators, no currency/unit symbols, never a string. A percentage \
+like "12,5 %" becomes 12.5. Unreadable -> null.
+"raw_values": the EXACT strings as printed in the image (same keys as metrics).
 
 Number locale hint for this document: {locale_hint}. \
 (fr: space-grouped thousands and comma decimals; de/es: dot thousands and comma \
