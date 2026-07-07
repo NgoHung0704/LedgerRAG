@@ -2,90 +2,90 @@
   "table_id": "twolevel_fr_effectifs",
   "locale": "fr",
   "difficulty": "grouped",
-  "description": "Two-level header (measure groups), FR",
+  "description": "Two-level header (measure groups over years), FR — long-format records",
   "records": [
     {
       "dimensions": {
         "service": "Ventes",
-        "mesure": "Effectifs"
+        "annee": "2023"
       },
       "metrics": {
-        "valeur_2023": 42,
-        "valeur_2024": 45
+        "effectifs": 42,
+        "masse_salariale_eur": 2310400
       },
       "raw_values": {
-        "valeur_2023": "42",
-        "valeur_2024": "45"
+        "effectifs": "42",
+        "masse_salariale_eur": "2 310 400 €"
       }
     },
     {
       "dimensions": {
         "service": "Ventes",
-        "mesure": "Masse salariale"
+        "annee": "2024"
       },
       "metrics": {
-        "valeur_2023": 2310400,
-        "valeur_2024": 2512800
+        "effectifs": 45,
+        "masse_salariale_eur": 2512800
       },
       "raw_values": {
-        "valeur_2023": "2 310 400 €",
-        "valeur_2024": "2 512 800 €"
+        "effectifs": "45",
+        "masse_salariale_eur": "2 512 800 €"
       }
     },
     {
       "dimensions": {
         "service": "R&D",
-        "mesure": "Effectifs"
+        "annee": "2023"
       },
       "metrics": {
-        "valeur_2023": 118,
-        "valeur_2024": 126
+        "effectifs": 118,
+        "masse_salariale_eur": 8420150
       },
       "raw_values": {
-        "valeur_2023": "118",
-        "valeur_2024": "126"
+        "effectifs": "118",
+        "masse_salariale_eur": "8 420 150 €"
       }
     },
     {
       "dimensions": {
         "service": "R&D",
-        "mesure": "Masse salariale"
+        "annee": "2024"
       },
       "metrics": {
-        "valeur_2023": 8420150,
-        "valeur_2024": 9105320
+        "effectifs": 126,
+        "masse_salariale_eur": 9105320
       },
       "raw_values": {
-        "valeur_2023": "8 420 150 €",
-        "valeur_2024": "9 105 320 €"
+        "effectifs": "126",
+        "masse_salariale_eur": "9 105 320 €"
       }
     },
     {
       "dimensions": {
         "service": "RH",
-        "mesure": "Effectifs"
+        "annee": "2023"
       },
       "metrics": {
-        "valeur_2023": 15,
-        "valeur_2024": 16
+        "effectifs": 15,
+        "masse_salariale_eur": 986420
       },
       "raw_values": {
-        "valeur_2023": "15",
-        "valeur_2024": "16"
+        "effectifs": "15",
+        "masse_salariale_eur": "986 420 €"
       }
     },
     {
       "dimensions": {
         "service": "RH",
-        "mesure": "Masse salariale"
+        "annee": "2024"
       },
       "metrics": {
-        "valeur_2023": 986420,
-        "valeur_2024": 1054300
+        "effectifs": 16,
+        "masse_salariale_eur": 1054300
       },
       "raw_values": {
-        "valeur_2023": "986 420 €",
-        "valeur_2024": "1 054 300 €"
+        "effectifs": "16",
+        "masse_salariale_eur": "1 054 300 €"
       }
     }
   ]

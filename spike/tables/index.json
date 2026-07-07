@@ -51,7 +51,7 @@
     "table_id": "twolevel_fr_effectifs",
     "locale": "fr",
     "difficulty": "grouped",
-    "description": "Two-level header (measure groups), FR",
+    "description": "Two-level header (measure groups over years), FR — long-format records",
     "n_records": 6,
     "n_metric_cells": 12
   },

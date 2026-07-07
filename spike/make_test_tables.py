@@ -323,20 +323,39 @@ def t_twolevel_en_sales():
 
 
 def t_twolevel_fr_effectifs():
+    """Measure-outer two-level header (Effectifs / Masse salariale, each over
+    2023/2024). Records follow the long-format convention — year is a
+    dimension, the two measures are metrics — so this stays consistent with
+    prompt RULES 2 & 3 and with its sibling t_twolevel_en_sales (which is
+    year-outer). The visual layout keeps measures as the outer header group."""
+    years = ["2023", "2024"]
     data = [
-        (["Ventes"], [[(42, "42"), (45, "45")],
-                      [(2310400, euro(2310400, "fr")), (2512800, euro(2512800, "fr"))]]),
-        (["R&D"], [[(118, "118"), (126, "126")],
-                   [(8420150, euro(8420150, "fr")), (9105320, euro(9105320, "fr"))]]),
-        (["RH"], [[(15, "15"), (16, "16")],
-                  [(986420, euro(986420, "fr")), (1054300, euro(1054300, "fr"))]]),
+        ("Ventes", [42, 45], [2310400, 2512800]),
+        ("R&D", [118, 126], [8420150, 9105320]),
+        ("RH", [15, 16], [986420, 1054300]),
     ]
-    rows, recs = grouped_table(
-        ["Service"], ["service"],
-        [("Effectifs", ["2023", "2024"]), ("Masse salariale", ["2023", "2024"])],
-        "mesure", ["valeur_2023", "valeur_2024"], data)
-    return rows, recs, {"locale": "fr", "difficulty": "grouped",
-                        "description": "Two-level header (measure groups), FR"}
+    rows: list[list[Cell]] = [
+        [H("Service", rowspan=2), H("Effectifs", colspan=2),
+         H("Masse salariale", colspan=2)],
+        [H(y) for y in years + years],
+    ]
+    records = []
+    for service, effectifs, masse in data:
+        rows.append(
+            [C(service)]
+            + [C(fmt(v, "fr")) for v in effectifs]
+            + [C(euro(v, "fr")) for v in masse])
+        for i, year in enumerate(years):
+            records.append({
+                "dimensions": {"service": service, "annee": year},
+                "metrics": {"effectifs": effectifs[i],
+                            "masse_salariale_eur": masse[i]},
+                "raw_values": {"effectifs": fmt(effectifs[i], "fr"),
+                               "masse_salariale_eur": euro(masse[i], "fr")},
+            })
+    return rows, records, {"locale": "fr", "difficulty": "grouped",
+                           "description": "Two-level header (measure groups over "
+                                          "years), FR — long-format records"}
 
 
 def t_pivot_fr_auto():

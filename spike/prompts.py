@@ -9,8 +9,16 @@ Iteration history (see REPORT.md for full campaign results):
   all remaining misses were 3 structural motifs: (1) dropped header levels
   (trimestre/quarter), (2) wide format (periods as metric keys), (3) measures
   split into separate records via a metric_type dimension.
-- v3 (current): few-shot example 2 mirrors the hardest real shape (3-level
-  header + two measure groups) and the three rules target the motifs directly.
+- v3: few-shot example 2 mirrors the hardest real shape (3-level header + two
+  measure groups) and three granularity rules target the motifs directly.
+  qwen3-vl:8b-instruct 84.1% — 10/12 tables 100%. Two residual failures:
+  twolevel_fr (ground-truth orientation bug, fixed in the generator, not here)
+  and pivot_fr_auto (a genuine READING error: values copied between sub-rows
+  of a deep rowspan).
+- v4 (current): adds an explicit rowspan reading rule aimed at the pivot_fr
+  misread. This is a visual-alignment limit of the model, so the prompt may
+  not fully fix it — if pivot_fr stays low, that is the honest model ceiling
+  on the hardest table (exactly what Phase 3 confidence is built to catch).
 """
 
 SYSTEM_PROMPT = """\
@@ -96,6 +104,13 @@ blocks and nothing else:
 
 1. A ```html block: the table as HTML using <table>/<tr>/<th>/<td>, reproducing \
 merged cells with rowspan/colspan attributes. Cell text must be copied verbatim.
+
+READING rule — merged (rowspan) cells: when a left-hand cell is merged across \
+several rows, its label applies to EVERY spanned row, but each spanned row \
+still has its OWN distinct values in the other columns. Read each data row \
+independently, top to bottom; NEVER copy a value from one sub-row into \
+another. (E.g. under a merged "Algérie", the "Citadine" row and the "Berline" \
+row have different numbers — do not repeat Citadine's figures on Berline.)
 
 2. A ```json block: {"records": [...]} — one record per innermost data cell \
 group, in LONG format. Three granularity rules, all mandatory:

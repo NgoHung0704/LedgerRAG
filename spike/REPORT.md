@@ -72,4 +72,5 @@ locale misreads...). Phase 2 prompt engineering starts from this list._
 | 2 | granite (vision) | Ollama @ :11435 | | 6.3% | FAIL |
 | 3 | minicpm-v | Ollama @ :11435 | | 3.2% | FAIL |
 | 4 | qwen3-vl:8b-instruct (prompt v2) | Ollama @ :11435 | ~78 | 45.5% (flat+wide 100% strict; all numbers read correctly, misses purely structural) | champion — prompt v3 iteration |
-| 5 | qwen3-vl:8b-instruct (prompt v3 + pooled grading) | Ollama @ :11435 | | _run me_ | |
+| 5 | qwen3-vl:8b-instruct (prompt v3 + pooled grading) | Ollama @ :11435 | ~78 | **84.1%** — 10/12 tables 100%. Residual: `twolevel_fr` (ground-truth orientation bug, NOT model) + `pivot_fr_auto` 50% (genuine read error: Citadine values copied onto Berline under deep rowspan) | 2 residual causes diagnosed |
+| 6 | qwen3-vl:8b-instruct (prompt v4 + fixed twolevel_fr GT) | Ollama @ :11435 | | _run me_ — expect ~90%+; `pivot_fr_auto` is a model reading limit, may stay ~50% | |
