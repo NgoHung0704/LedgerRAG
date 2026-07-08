@@ -51,6 +51,9 @@ class TableParse(BaseModel):
     html: str
     records: list[RecordParse]
     raw_response: str = ""
+    # honest failure (SPEC §0.3): contract violation after retry — records are
+    # empty, whatever HTML was salvaged is kept, caller flags needs_review
+    error: str | None = None
 
 
 class ModelProvider(Protocol):
@@ -60,7 +63,8 @@ class ModelProvider(Protocol):
 
     async def embed(self, texts: list[str]) -> list[Vector]: ...
 
-    def chat(self, messages: list[Msg], stream: bool = True) -> AsyncIterator[str]: ...
+    def chat(self, messages: list[Msg], stream: bool = True,
+             temperature: float | None = None) -> AsyncIterator[str]: ...
 
     async def rerank(self, query: str, docs: list[str]) -> list[float]: ...
 

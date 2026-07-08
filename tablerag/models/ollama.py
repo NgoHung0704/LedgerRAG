@@ -19,9 +19,9 @@ class OllamaProvider:
         self.model = cfg.model_name
 
     async def parse_table(self, image: bytes, prompt_ctx: TableCtx) -> TableParse:
-        # The table prompt/validation pipeline is promoted from spike/ in
-        # Phase 2 (ingestion/table_vlm.py drives this role).
-        raise NotImplementedError("table parsing arrives in Phase 2")
+        from tablerag.models.table_parsing import run_table_parse
+
+        return await run_table_parse(self.chat, image, prompt_ctx)
 
     async def embed(self, texts: list[str]) -> list[Vector]:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
@@ -31,12 +31,15 @@ class OllamaProvider:
             data = r.json()
         return [Vector(dense=e) for e in data["embeddings"]]
 
-    async def chat(self, messages: list[Msg], stream: bool = True) -> AsyncIterator[str]:
+    async def chat(self, messages: list[Msg], stream: bool = True,
+                   temperature: float | None = None) -> AsyncIterator[str]:
         payload = {
             "model": self.model,
             "messages": [m.model_dump(exclude_defaults=True) for m in messages],
             "stream": True,
         }
+        if temperature is not None:
+            payload["options"] = {"temperature": temperature}
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             async with client.stream("POST", f"{self.base_url}/api/chat",
                                      json=payload) as r:

@@ -16,7 +16,25 @@ from typing import AsyncIterator, Protocol
 from tablerag.core.config import get_settings
 from tablerag.core.schemas import Citation
 from tablerag.storage.qdrant import SearchHit
-from tablerag.storage.repositories import ChunkContext
+
+
+@dataclass
+class SourceBlock:
+    """One evidence unit handed to the LLM: a text chunk or a whole table
+    (record/summary hits always pull the parent table, SPEC Phase 2 §6)."""
+
+    kind: str  # 'text' | 'table'
+    doc_id: uuid.UUID
+    filename: str
+    page: int
+    element_id: uuid.UUID
+    content: str  # chunk text, or table HTML (+ summary line)
+    snippet: str
+    score: float
+    chunk_id: uuid.UUID | None = None
+    crop_image_path: str | None = None
+    confidence: float | None = None
+    needs_review: bool = False
 
 
 @dataclass
@@ -25,7 +43,7 @@ class QueryContext:
     question: str
     routed_kb_ids: list[uuid.UUID] = field(default_factory=list)
     hits: list[SearchHit] = field(default_factory=list)
-    contexts: list[ChunkContext] = field(default_factory=list)
+    sources: list[SourceBlock] = field(default_factory=list)
     citations: list[Citation] = field(default_factory=list)
     answer: str = ""
     verification: dict | None = None

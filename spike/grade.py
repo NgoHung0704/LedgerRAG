@@ -201,12 +201,18 @@ def main() -> None:
 
     results: list[tuple[dict, dict, Path]] = []
     skipped = []
+    drafts = []
     for gt_path in sorted(args.tables.glob("*/ground_truth.json")):
+        gt = json.loads(gt_path.read_text(encoding="utf-8"))
+        if gt.get("_draft"):
+            # unverified model-drafted ground truth — grading it would score
+            # the model against its own guess (fake 100%). Refuse until fixed.
+            drafts.append(gt_path.parent.name)
+            continue
         parsed_path = gt_path.parent / "parsed.json"
         if not parsed_path.exists():
             skipped.append(gt_path.parent.name)
             continue
-        gt = json.loads(gt_path.read_text(encoding="utf-8"))
         parsed = json.loads(parsed_path.read_text(encoding="utf-8"))
         results.append((gt, grade_table(gt, parsed), gt_path.parent))
 
@@ -236,6 +242,8 @@ def main() -> None:
           f"{overall_strict:>7.1%} {overall:>8.1%}")
     if skipped:
         print(f"\nnot yet parsed (skipped): {', '.join(skipped)}")
+    if drafts:
+        print(f"\nunverified drafts (fix _draft then re-grade): {', '.join(drafts)}")
 
     if args.show_misses > 0:
         print("\n" + "=" * 68)

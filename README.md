@@ -15,12 +15,12 @@ of truth. Implementation follows its phases strictly.
 
 | Phase | Content | Status |
 |-------|---------|--------|
-| 0 | De-risk spike: prove the parser VLM on the deployment hardware | **Tooling complete** — `spike/` is ready to run on the deployment machine; DoD not yet verified (see `spike/REPORT.md`) |
+| 0 | De-risk spike: prove the parser VLM on the deployment hardware | **Campaign run** — champion `qwen3-vl:8b-instruct`, synthetic accuracy ~84–90% band (model non-determinism on deep rowspans); final go/no-go on real documents (see `spike/REPORT.md`) |
 | 1 | Two-pipeline skeleton, text-only, end-to-end | **Code complete** — needs the Phase 1 DoD checks run against a live stack |
-| 2 | Table sub-pipeline (three representations) | Not started — gated on Phase 0 DoD |
-| 3 | Confidence & honest failure | Not started |
+| 2 | Table sub-pipeline (three representations) | **Code complete** — layout detection, simple/VLM paths, locale-aware `core/numbers.py`, records+summaries indexed, tables in retrieval; validate with `make eval-tables` on the deployment box |
+| 3 | Confidence & honest failure | Not started (needs_review plumbing + low-confidence answer guard already in place) |
 | 4 | Hybrid retrieval + answer verification | Not started (plugs exist) |
-| 5 | Multi-KB router + end-user UX | Not started (plugs exist) |
+| 5 | Multi-KB router + end-user UX | Not started (plugs exist; model-provider admin UI shipped early) |
 
 ## Architecture (SPEC §2 — the four principles)
 
@@ -57,6 +57,13 @@ mapped by the deploying engineer to an endpoint via env vars
 (`LEDGERRAG_MODELS__<ROLE>__{PROVIDER,BASE_URL,MODEL_NAME,API_KEY}`, provider
 ∈ `ollama | openai_compat | disabled`). See [.env.example](.env.example).
 `GET /api/health/models` reports per-role endpoint health.
+
+On top of the env base, the **Model Providers page** (`/models` in the UI)
+lets an admin change endpoints/models at runtime, browse the models installed
+on an Ollama server, and pull new ones with streamed progress — overrides are
+stored in Postgres (`app_setting`) and picked up by both the API and the
+worker without restarts. For `qwen3-vl`, use the `-instruct` tag (the default
+tag is a thinking model that returns empty output).
 
 GPU assignment is the deployer's job (e.g. `ROCR_VISIBLE_DEVICES` per Ollama
 instance) — the verified 3× AMD RX 9070 XT reference layout, including the

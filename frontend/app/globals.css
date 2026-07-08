@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}
+
+/* slim, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme("colors.slate.300") transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* HTML tables coming from parsed documents (rendered via dangerouslySetInnerHTML) */
+.doc-table table {
+  @apply w-full border-collapse text-sm;
+}
+.doc-table th {
+  @apply border border-slate-200 bg-slate-50 px-3 py-1.5 text-left font-semibold text-slate-700;
+}
+.doc-table td {
+  @apply border border-slate-200 px-3 py-1.5 text-slate-700;
+}
+
+/* markdown tables inside chat answers */
+.chat-md table {
+  @apply my-2 w-full border-collapse text-sm;
+}
+.chat-md th {
+  @apply border border-slate-200 bg-slate-50 px-2.5 py-1 text-left font-semibold;
+}
+.chat-md td {
+  @apply border border-slate-200 px-2.5 py-1;
+}

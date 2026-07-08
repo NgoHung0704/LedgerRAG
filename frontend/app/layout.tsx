@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "LedgerRAG",
@@ -13,18 +14,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="border-b bg-white">
-          <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-            <a href="/" className="text-lg font-semibold tracking-tight">
-              LedgerRAG
-            </a>
-            <span className="text-xs text-slate-500">
-              parse it right, or fail honestly
-            </span>
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <body>
+        <div className="flex h-screen overflow-hidden">
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto">
+            <div className="mx-auto max-w-6xl px-6 py-6">{children}</div>
+          </main>
+        </div>
       </body>
     </html>
   );

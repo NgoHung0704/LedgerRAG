@@ -11,8 +11,10 @@ router = APIRouter(prefix="/api/kbs", tags=["knowledge-bases"])
 
 @router.post("", response_model=KBOut, status_code=201)
 def create_kb(body: KBCreate) -> KBOut:
+    config = {"locale": body.locale} if body.locale else {}
     with session_scope() as s:
-        kb = repo.create_kb(s, name=body.name, description=body.description)
+        kb = repo.create_kb(s, name=body.name, description=body.description,
+                            config=config)
         return KBOut.model_validate(kb, from_attributes=True)
 
 

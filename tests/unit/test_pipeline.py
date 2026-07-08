@@ -3,12 +3,11 @@ import uuid
 import pytest
 
 from tablerag.core.schemas import Citation
-from tablerag.query.pipeline import QueryContext, QueryPipeline
+from tablerag.query.pipeline import QueryContext, QueryPipeline, SourceBlock
 from tablerag.query.steps.generate import GenerateAnswer, build_context_block
 from tablerag.query.steps.rerank import PassthroughRerank
 from tablerag.query.steps.router import SingleKBRouter
 from tablerag.query.steps.verify import Verify
-from tablerag.storage.repositories import ChunkContext
 
 
 class FakeChatProvider:
@@ -16,30 +15,35 @@ class FakeChatProvider:
         self.tokens = tokens
         self.calls: list[list] = []
 
-    async def chat(self, messages, stream=True):
+    async def chat(self, messages, stream=True, temperature=None):
         self.calls.append(messages)
         for token in self.tokens:
             yield token
 
 
-def make_ctx(with_context: bool = True) -> QueryContext:
+def _block(kind="text", content="Les cadres ont 25 jours de congés.",
+           needs_review=False) -> SourceBlock:
+    return SourceBlock(
+        kind=kind, doc_id=uuid.uuid4(), filename="reglement.pdf", page=4,
+        element_id=uuid.uuid4(), chunk_id=uuid.uuid4() if kind == "text" else None,
+        content=content, snippet=content[:240], score=0.9,
+        crop_image_path="crop.png", confidence=1.0, needs_review=needs_review)
+
+
+def make_ctx(*blocks: SourceBlock) -> QueryContext:
     ctx = QueryContext(kb_id=uuid.uuid4(), question="Combien de jours de congés ?")
-    if with_context:
-        chunk = ChunkContext(
-            chunk_id=uuid.uuid4(), text="Les cadres ont 25 jours de congés.",
-            element_id=uuid.uuid4(), page=4, crop_image_path="crop.png",
-            confidence=1.0, needs_review=False,
-            doc_id=uuid.uuid4(), filename="reglement.pdf")
-        ctx.contexts = [chunk]
-        ctx.citations = [Citation(
-            index=1, doc_id=chunk.doc_id, filename=chunk.filename, page=chunk.page,
-            element_id=chunk.element_id, chunk_id=chunk.chunk_id,
-            snippet=chunk.text, score=0.9)]
+    ctx.sources = list(blocks)
+    ctx.citations = [
+        Citation(index=i + 1, kind=b.kind, doc_id=b.doc_id, filename=b.filename,
+                 page=b.page, element_id=b.element_id, chunk_id=b.chunk_id,
+                 snippet=b.snippet, score=b.score, needs_review=b.needs_review)
+        for i, b in enumerate(blocks)
+    ]
     return ctx
 
 
 async def test_single_kb_router_routes_to_own_kb():
-    ctx = make_ctx(with_context=False)
+    ctx = make_ctx()
     await SingleKBRouter().run(ctx)
     assert ctx.routed_kb_ids == [ctx.kb_id]
 
@@ -48,11 +52,10 @@ async def test_generate_streams_and_accumulates_answer(monkeypatch):
     provider = FakeChatProvider(["Les cadres ", "ont 25 jours ", "[1]."])
     monkeypatch.setattr("tablerag.query.steps.generate.get_provider",
                         lambda role: provider)
-    ctx = make_ctx()
+    ctx = make_ctx(_block())
     tokens = [t async for t in GenerateAnswer().stream(ctx)]
     assert "".join(tokens) == "Les cadres ont 25 jours [1]."
     assert ctx.answer == "Les cadres ont 25 jours [1]."
-    # sources reached the prompt
     user_msg = provider.calls[0][-1]
     assert "reglement.pdf" in user_msg.content
     assert ctx.question in user_msg.content
@@ -62,14 +65,14 @@ async def test_generate_without_context_fails_honestly(monkeypatch):
     monkeypatch.setattr(
         "tablerag.query.steps.generate.get_provider",
         lambda role: pytest.fail("LLM must not be called without sources"))
-    ctx = make_ctx(with_context=False)
+    ctx = make_ctx()
     tokens = [t async for t in GenerateAnswer().stream(ctx)]
     assert tokens, "must still answer something"
     assert ctx.answer  # honest 'nothing found' message, no LLM involved
 
 
 async def test_verify_disabled_is_pure_noop():
-    ctx = make_ctx()
+    ctx = make_ctx(_block())
     result = await Verify(enabled=False).run(ctx)
     assert result is ctx
     assert ctx.verification is None
@@ -84,20 +87,31 @@ async def test_pipeline_stream_event_order(monkeypatch):
         """Stands in for Retrieve+Assemble without external services."""
 
         async def run(self, ctx):
-            seeded = make_ctx()
-            ctx.contexts, ctx.citations = seeded.contexts, seeded.citations
+            seeded = make_ctx(_block())
+            ctx.sources, ctx.citations = seeded.sources, seeded.citations
             return ctx
 
     pipeline = QueryPipeline([
         SingleKBRouter(), SeedContext(), PassthroughRerank(),
         GenerateAnswer(), Verify(enabled=False),
     ])
-    events = [kind async for kind, _ in pipeline.stream(make_ctx(with_context=False))]
+    events = [kind async for kind, _ in pipeline.stream(make_ctx())]
     assert events == ["citations", "token", "done"]
 
 
 def test_context_block_numbers_sources():
-    ctx = make_ctx()
+    ctx = make_ctx(_block())
     block = build_context_block(ctx)
     assert block.startswith("[1] (reglement.pdf, page 4)")
     assert "25 jours" in block
+
+
+def test_context_block_marks_tables_and_low_confidence():
+    table_html = "<table><tr><th>Poste</th><th>T1</th></tr></table>"
+    ctx = make_ctx(
+        _block(),
+        _block(kind="table", content=table_html, needs_review=True))
+    block = build_context_block(ctx)
+    assert "[2] (reglement.pdf, page 4, table)" in block
+    assert "LOW CONFIDENCE" in block
+    assert table_html in block

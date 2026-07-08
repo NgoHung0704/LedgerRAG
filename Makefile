@@ -30,9 +30,11 @@ spike-run:
 spike-grade:
 	python spike/grade.py
 
-# ---- Phase 2+ (placeholder targets, wired later) -------------
+# ---- Phase 2: table-accuracy gate (needs a live parser endpoint) ----
+# Runs every table in spike/tables/ through the PLATFORM parsing path and
+# grades per cell. Run after any prompt/model/parsing change (prompt is code).
 eval-tables:
-	@echo "eval-tables arrives in Phase 2 (tests/eval/tables). For Phase 0 use: make spike-grade"
+	python tests/eval/tables/run_eval.py
 
 lint:
 	ruff check tablerag tests spike

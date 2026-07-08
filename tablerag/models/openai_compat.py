@@ -24,7 +24,9 @@ class OpenAICompatProvider:
         self.headers = {"Authorization": f"Bearer {cfg.api_key}"} if cfg.api_key else {}
 
     async def parse_table(self, image: bytes, prompt_ctx: TableCtx) -> TableParse:
-        raise NotImplementedError("table parsing arrives in Phase 2")
+        from tablerag.models.table_parsing import run_table_parse
+
+        return await run_table_parse(self.chat, image, prompt_ctx)
 
     async def embed(self, texts: list[str]) -> list[Vector]:
         async with httpx.AsyncClient(timeout=_TIMEOUT, headers=self.headers) as client:
@@ -35,7 +37,8 @@ class OpenAICompatProvider:
         data.sort(key=lambda d: d["index"])
         return [Vector(dense=d["embedding"]) for d in data]
 
-    async def chat(self, messages: list[Msg], stream: bool = True) -> AsyncIterator[str]:
+    async def chat(self, messages: list[Msg], stream: bool = True,
+                   temperature: float | None = None) -> AsyncIterator[str]:
         def to_openai(m: Msg) -> dict:
             if not m.images:
                 return {"role": m.role, "content": m.content}
@@ -48,6 +51,8 @@ class OpenAICompatProvider:
 
         payload = {"model": self.model, "stream": True,
                    "messages": [to_openai(m) for m in messages]}
+        if temperature is not None:
+            payload["temperature"] = temperature
         async with httpx.AsyncClient(timeout=_TIMEOUT, headers=self.headers) as client:
             async with client.stream("POST", f"{self.base_url}/v1/chat/completions",
                                      json=payload) as r:

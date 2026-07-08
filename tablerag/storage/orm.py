@@ -146,6 +146,18 @@ class Chunk(Base):
     element: Mapped[Element] = relationship(back_populates="chunks")
 
 
+class AppSetting(Base):
+    """Runtime configuration overrides (e.g. model-role endpoints edited from
+    the admin UI). Env config is the base; these win when present."""
+
+    __tablename__ = "app_setting"
+
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    value: Mapped[dict] = mapped_column(JSONVariant, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class ChatSession(Base):
     __tablename__ = "chat_session"
 

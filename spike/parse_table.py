@@ -60,6 +60,10 @@ def call_ollama(base_url: str, model: str, image_b64: str, user_prompt: str,
     r = httpx.post(f"{base_url.rstrip('/')}/api/chat",
                    json={"model": model, "messages": messages, "stream": False,
                          "options": {"temperature": 0,
+                                     # fixed seed reduces (does NOT eliminate)
+                                     # run-to-run drift; VLMs on GPU still vary
+                                     # on hard tables — hence Phase 3 double-read
+                                     "seed": int(env("SPIKE_SEED", "0")),
                                      "num_predict": int(env("SPIKE_NUM_PREDICT", "4096")),
                                      "num_ctx": int(env("SPIKE_NUM_CTX", "8192"))}},
                    timeout=600)

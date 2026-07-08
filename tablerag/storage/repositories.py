@@ -9,12 +9,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tablerag.storage.orm import (
+    AppSetting,
     ChatMessage,
     ChatSession,
     Chunk,
     Document,
     Element,
     KnowledgeBase,
+    Record,
+    TableElement,
 )
 
 # ---------------------------------------------------------------- knowledge base
@@ -85,13 +88,38 @@ def delete_doc_elements(s: Session, doc_id: uuid.UUID) -> int:
 
 def add_element(s: Session, doc_id: uuid.UUID, page: int, bbox: list[float],
                 type_: str, crop_image_path: str, confidence: float | None = None,
-                needs_review: bool = False, meta: dict | None = None) -> Element:
-    element = Element(doc_id=doc_id, page=page, bbox=bbox, type=type_,
+                needs_review: bool = False, meta: dict | None = None,
+                element_id: uuid.UUID | None = None) -> Element:
+    element = Element(id=element_id or uuid.uuid4(), doc_id=doc_id, page=page,
+                      bbox=bbox, type=type_,
                       crop_image_path=crop_image_path, confidence=confidence,
                       needs_review=needs_review, meta=meta or {})
     s.add(element)
     s.flush()
     return element
+
+
+def add_table_element(s: Session, element_id: uuid.UUID, html: str | None,
+                      summary: str | None, n_rows: int | None, n_cols: int | None,
+                      parse_strategy: str) -> TableElement:
+    table = TableElement(element_id=element_id, html=html, summary=summary,
+                         n_rows=n_rows, n_cols=n_cols,
+                         parse_strategy=parse_strategy)
+    s.add(table)
+    s.flush()
+    return table
+
+
+def add_records(s: Session, table_element_id: uuid.UUID,
+                records: list[dict]) -> list[Record]:
+    """records: [{dimensions, metrics, raw_values, text_repr}, ...]"""
+    rows = [Record(table_element_id=table_element_id,
+                   dimensions=r["dimensions"], metrics=r["metrics"],
+                   raw_values=r["raw_values"], text_repr=r["text_repr"])
+            for r in records]
+    s.add_all(rows)
+    s.flush()
+    return rows
 
 
 def add_chunks(s: Session, element_id: uuid.UUID,
@@ -137,6 +165,82 @@ def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkCont
     }
     # preserve caller's (relevance) ordering
     return [by_id[cid] for cid in chunk_ids if cid in by_id]
+
+
+@dataclass
+class TableSource:
+    """A retrieved table hit hydrated with its parent-table HTML and full
+    provenance (principle #3 + SPEC Phase 2 §6: record hits pull the whole
+    parent table into context, never a lone record)."""
+
+    element_id: uuid.UUID
+    doc_id: uuid.UUID
+    filename: str
+    page: int
+    html: str | None
+    summary: str | None
+    crop_image_path: str
+    confidence: float | None
+    needs_review: bool
+
+
+def get_table_sources(s: Session, element_ids: list[uuid.UUID]) -> list[TableSource]:
+    if not element_ids:
+        return []
+    rows = s.execute(
+        select(TableElement, Element, Document)
+        .join(Element, TableElement.element_id == Element.id)
+        .join(Document, Element.doc_id == Document.id)
+        .where(TableElement.element_id.in_(element_ids))
+    ).all()
+    by_id = {
+        table.element_id: TableSource(
+            element_id=table.element_id, doc_id=document.id,
+            filename=document.filename, page=element.page,
+            html=table.html, summary=table.summary,
+            crop_image_path=element.crop_image_path,
+            confidence=element.confidence, needs_review=element.needs_review)
+        for table, element, document in rows
+    }
+    return [by_id[eid] for eid in element_ids if eid in by_id]
+
+
+def get_element_detail(s: Session, element_id: uuid.UUID) -> dict | None:
+    element = s.get(Element, element_id)
+    if element is None:
+        return None
+    document = s.get(Document, element.doc_id)
+    detail = {
+        "id": element.id, "doc_id": element.doc_id,
+        "filename": document.filename if document else "",
+        "page": element.page, "type": element.type,
+        "confidence": element.confidence, "needs_review": element.needs_review,
+        "meta": element.meta, "table": None,
+    }
+    table = s.get(TableElement, element_id)
+    if table is not None:
+        detail["table"] = {
+            "html": table.html, "summary": table.summary,
+            "n_rows": table.n_rows, "n_cols": table.n_cols,
+            "parse_strategy": table.parse_strategy,
+        }
+    return detail
+
+
+# ---------------------------------------------------------------- app settings
+
+def get_setting(s: Session, key: str) -> dict | None:
+    row = s.get(AppSetting, key)
+    return row.value if row else None
+
+
+def set_setting(s: Session, key: str, value: dict) -> None:
+    row = s.get(AppSetting, key)
+    if row is None:
+        s.add(AppSetting(key=key, value=value))
+    else:
+        row.value = value
+    s.flush()
 
 
 # ---------------------------------------------------------------- chat

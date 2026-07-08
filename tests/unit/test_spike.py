@@ -1,13 +1,17 @@
 """Sanity checks for the Phase 0 spike harness itself (generator + grader)."""
 
+import json
 import sys
 from pathlib import Path
+
+import pytest
 
 SPIKE_DIR = str(Path(__file__).resolve().parents[2] / "spike")
 if SPIKE_DIR not in sys.path:
     sys.path.insert(0, SPIKE_DIR)
 
 import grade  # noqa: E402
+import make_gt_template as gtt  # noqa: E402
 import make_test_tables as mtt  # noqa: E402
 
 
@@ -151,3 +155,51 @@ def test_grader_honest_failure_counts_as_zero_not_crash():
     result = grade.grade_table(gt, {"error": "contract violation after retry"})
     assert result["honest_failure"] is True
     assert result["correct_cells"] == 0
+
+
+def test_gt_template_scaffold_writes_gradable_files(tmp_path):
+    records = [{"dimensions": {"poste": "Cadre"}, "metrics": {"jours": 25},
+                "raw_values": {"jours": "25"}}]
+    out = gtt.scaffold("livret_test", b"\x89PNG-fake", locale="fr",
+                       difficulty="real", description="d", records=records,
+                       is_draft=False, tables_root=tmp_path)
+    assert (out / "image.png").read_bytes() == b"\x89PNG-fake"
+    gt = json.loads((out / "ground_truth.json").read_text(encoding="utf-8"))
+    assert gt["table_id"] == "livret_test" and gt["locale"] == "fr"
+    assert "_draft" not in gt
+    # a non-draft scaffold is directly gradable
+    parsed = {"records": records}
+    assert grade.grade_table(gt, parsed)["correct_cells"] == 1
+
+
+def test_grade_skips_draft_ground_truth(tmp_path):
+    """A draft GT must never be graded — that would score the model against
+    its own guess."""
+    gtt.scaffold("draft_test", b"img", locale="fr", difficulty="real",
+                 description="d",
+                 records=[{"dimensions": {"a": "x"}, "metrics": {"m": 1},
+                           "raw_values": {"m": "1"}}],
+                 is_draft=True, tables_root=tmp_path)
+    (tmp_path / "draft_test" / "parsed.json").write_text(
+        json.dumps({"records": [{"dimensions": {"a": "x"}, "metrics": {"m": 1},
+                                 "raw_values": {"m": "1"}}]}), encoding="utf-8")
+    gt = json.loads(
+        (tmp_path / "draft_test" / "ground_truth.json").read_text(encoding="utf-8"))
+    assert gt["_draft"] is True
+
+
+def test_gt_template_renders_pdf_page():
+    fitz = pytest.importorskip("fitz")
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Congés payés: 25 jours")
+    pdf_bytes = doc.tobytes()
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+        f.write(pdf_bytes)
+        pdf_path = Path(f.name)
+    try:
+        png = gtt.render_pdf_page(pdf_path, 1, dpi=100, bbox=None)
+        assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    finally:
+        pdf_path.unlink()

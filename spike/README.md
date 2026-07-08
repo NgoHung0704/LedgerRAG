@@ -34,9 +34,27 @@ rowspan/colspan (including the spec's Afrique/Algérie/Citadine example with
 `7 462 639 €`), a totals table, and a wide technical table. FR numbers use
 the real narrow no-break space (U+202F).
 
-**Add real scans too**: drop `image.png` + hand-written `ground_truth.json`
-into a new `spike/tables/<your_id>/` folder — the synthetic set is a clean
-lower bound, production PDFs are noisier.
+**Add real scans too** — the synthetic set is a clean lower bound; the parser
+is really decided by how it reads YOUR documents. The fast path from a
+production PDF to a gradable case:
+
+```bash
+# render a page (optionally crop a region) + draft the ground truth with the
+# parser itself, then correct the wrong cells by hand:
+python spike/make_gt_template.py --id livret_salarie \
+    --pdf livret.pdf --page 12 --locale fr --prefill
+# edit spike/tables/livret_salarie/ground_truth.json, set "_draft": false, then
+python spike/parse_table.py --image spike/tables/livret_salarie/image.png
+python spike/grade.py
+```
+
+`grade.py` refuses to score a table while its GT still has `"_draft": true`, so
+you can't accidentally grade the model against its own guess.
+
+**Run-to-run variability:** at `temperature=0` an 8B VLM is still not
+deterministic on nested-rowspan tables — the same table can score 100% one run
+and lower the next. Treat the accuracy as a band, not a point; this is what the
+Phase 3 double-read + confidence layer exists to handle.
 
 ## AMD RDNA4 warning (reference deployment, Appendix A.3)
 
