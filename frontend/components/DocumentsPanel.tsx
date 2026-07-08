@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, FileUp, Files } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, FileUp, Files, ScanSearch } from "lucide-react";
 import { getDocs, uploadDoc, type Doc } from "@/lib/api";
 import { Card, EmptyState, StatusPill } from "@/components/ui";
 
@@ -108,6 +109,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                 <th className="px-4 py-2.5">Status</th>
                 <th className="px-4 py-2.5">Pages</th>
                 <th className="px-4 py-2.5">Added</th>
+                <th className="px-4 py-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -117,9 +119,13 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50"
                 >
                   <td className="max-w-[22rem] px-4 py-2.5">
-                    <div className="truncate font-medium text-slate-800">
+                    <Link
+                      href={`/doc/${d.id}`}
+                      className="block truncate font-medium text-slate-800 hover:text-indigo-700"
+                      title="Inspect parsed output"
+                    >
                       {d.filename}
-                    </div>
+                    </Link>
                     {d.status === "failed" && d.error && (
                       <div className="mt-0.5 text-xs text-red-600">{d.error}</div>
                     )}
@@ -132,6 +138,14 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   </td>
                   <td className="px-4 py-2.5 text-slate-500">
                     {new Date(d.created_at).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <Link
+                      href={`/doc/${d.id}`}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                    >
+                      <ScanSearch size={13} /> Inspect
+                    </Link>
                   </td>
                 </tr>
               ))}

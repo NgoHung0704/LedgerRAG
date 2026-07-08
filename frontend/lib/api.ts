@@ -55,6 +55,42 @@ export type ElementDetail = {
   } | null;
 };
 
+export type RecordPreview = {
+  dimensions: Record<string, string>;
+  metrics: Record<string, number | null>;
+  raw_values: Record<string, string>;
+};
+
+export type ElementView = {
+  id: string;
+  page: number;
+  type: "text" | "table" | "figure";
+  confidence: number | null;
+  needs_review: boolean;
+  parse_error: string | null;
+  caption: string | null;
+  ocr: boolean;
+  chunk_count: number;
+  text_preview: string | null;
+  crop_url: string;
+  table: {
+    html: string | null;
+    summary: string | null;
+    n_rows: number | null;
+    n_cols: number | null;
+    parse_strategy: string | null;
+    records_count: number;
+    records_preview: RecordPreview[];
+  } | null;
+};
+
+export type DocumentView = { document: Doc; elements: ElementView[] };
+
+export const getDocumentView = (docId: string) =>
+  fetch(`${API_URL}/api/documents/${docId}/elements`, { cache: "no-store" }).then(
+    (r) => jsonOrThrow<DocumentView>(r),
+  );
+
 export type ModelRole = {
   role: "parser" | "embedder" | "chat" | "reranker";
   provider: "ollama" | "openai_compat" | "disabled";

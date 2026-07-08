@@ -205,6 +205,52 @@ def get_table_sources(s: Session, element_ids: list[uuid.UUID]) -> list[TableSou
     return [by_id[eid] for eid in element_ids if eid in by_id]
 
 
+def get_document_view(s: Session, doc_id: uuid.UUID,
+                      records_preview: int = 8) -> list[dict]:
+    """Everything ingestion produced for one document, element by element —
+    the inspector view (what did parsing actually output?). Tables expose all
+    three representations (html / records / summary) plus provenance."""
+    elements = list(s.scalars(select(Element).where(Element.doc_id == doc_id)))
+    elements.sort(key=lambda e: (e.page, (e.bbox or [0, 0])[1]
+                                 if isinstance(e.bbox, list) else 0))
+    view = []
+    for element in elements:
+        chunks = list(s.scalars(
+            select(Chunk).where(Chunk.element_id == element.id)))
+        item: dict = {
+            "id": element.id,
+            "page": element.page,
+            "type": element.type,
+            "confidence": element.confidence,
+            "needs_review": element.needs_review,
+            "parse_error": (element.meta or {}).get("parse_error"),
+            "caption": (element.meta or {}).get("caption"),
+            "ocr": bool((element.meta or {}).get("ocr")),
+            "chunk_count": len(chunks),
+            "text_preview": chunks[0].text[:600] if chunks else None,
+            "table": None,
+        }
+        table = s.get(TableElement, element.id)
+        if table is not None:
+            records = list(s.scalars(
+                select(Record).where(Record.table_element_id == element.id)))
+            item["table"] = {
+                "html": table.html,
+                "summary": table.summary,
+                "n_rows": table.n_rows,
+                "n_cols": table.n_cols,
+                "parse_strategy": table.parse_strategy,
+                "records_count": len(records),
+                "records_preview": [
+                    {"dimensions": r.dimensions, "metrics": r.metrics,
+                     "raw_values": r.raw_values}
+                    for r in records[:records_preview]
+                ],
+            }
+        view.append(item)
+    return view
+
+
 def get_element_detail(s: Session, element_id: uuid.UUID) -> dict | None:
     element = s.get(Element, element_id)
     if element is None:

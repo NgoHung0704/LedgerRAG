@@ -193,9 +193,19 @@ def salvage_html(text: str) -> str:
 ChatFn = Callable[..., AsyncIterator[str]]
 
 
-async def _collect(chat: ChatFn, messages: list[Msg]) -> str:
+def parse_options() -> dict:
+    """Generation options proven out in the Phase 0 spike. num_ctx large enough
+    that the few-shot prompt + vision image never truncates (see SPEC/config)."""
+    from tablerag.core.config import get_settings
+
+    s = get_settings()
+    return {"temperature": 0.0, "seed": s.table_parse_seed,
+            "num_ctx": s.table_parse_num_ctx, "num_predict": s.table_parse_num_predict}
+
+
+async def _collect(chat: ChatFn, messages: list[Msg], options: dict) -> str:
     parts = []
-    async for token in chat(messages, stream=True, temperature=0.0):
+    async for token in chat(messages, stream=True, temperature=0.0, options=options):
         parts.append(token)
     return "".join(parts)
 
@@ -204,12 +214,13 @@ async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TablePar
     """One parse attempt + one retry with the concrete error (SPEC Phase 2 §3).
     Never raises on contract failure — returns an honest TableParse.error."""
     image_b64 = base64.b64encode(image).decode()
+    options = parse_options()
     messages = [
         Msg(role="system", content=SYSTEM_PROMPT),
         Msg(role="user", content=build_user_prompt(ctx.locale_hint or "unknown"),
             images=[image_b64]),
     ]
-    text = await _collect(chat, messages)
+    text = await _collect(chat, messages, options)
     raw = text
     try:
         html, records = parse_response(text)
@@ -218,7 +229,7 @@ async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TablePar
             Msg(role="assistant", content=text),
             Msg(role="user", content=build_retry_prompt(str(first_error))),
         ]
-        text2 = await _collect(chat, retry)
+        text2 = await _collect(chat, retry, options)
         raw = f"{text}\n\n=== RETRY ===\n\n{text2}"
         try:
             html, records = parse_response(text2)

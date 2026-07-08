@@ -15,7 +15,7 @@ class FakeChatProvider:
         self.tokens = tokens
         self.calls: list[list] = []
 
-    async def chat(self, messages, stream=True, temperature=None):
+    async def chat(self, messages, stream=True, temperature=None, options=None):
         self.calls.append(messages)
         for token in self.tokens:
             yield token

@@ -57,6 +57,21 @@ def get_document(doc_id: uuid.UUID) -> DocumentOut:
         return DocumentOut.model_validate(doc, from_attributes=True)
 
 
+@router.get("/documents/{doc_id}/elements")
+def get_document_elements(doc_id: uuid.UUID) -> dict:
+    """Inspector: everything ingestion produced for this document — per
+    element, with the three table representations and crop-image links."""
+    with session_scope() as s:
+        doc = repo.get_document(s, doc_id)
+        if doc is None:
+            raise HTTPException(404, "document not found")
+        elements = repo.get_document_view(s, doc_id)
+        document = DocumentOut.model_validate(doc, from_attributes=True)
+    for element in elements:
+        element["crop_url"] = f"/api/elements/{element['id']}/image"
+    return {"document": document, "elements": elements}
+
+
 @router.get("/documents/{doc_id}/pages/{page}/image")
 def get_page_image(doc_id: uuid.UUID, page: int) -> Response:
     """Serve the stored page render — the citation click-through target

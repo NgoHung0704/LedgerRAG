@@ -75,6 +75,15 @@ class Settings(BaseSettings):
     chunk_overlap_ratio: float = 0.10
     retrieve_top_k: int = 12
 
+    # table-parsing generation options — proven out in the Phase 0 spike.
+    # num_ctx MUST be large: the few-shot prompt + a vision image easily
+    # exceeds Ollama's default context, silently truncating the prompt and
+    # degrading structural accuracy (this is what dropped the production eval
+    # ~10 points below the spike until it was fixed).
+    table_parse_num_ctx: int = 8192
+    table_parse_num_predict: int = 4096
+    table_parse_seed: int = 0
+
     # verification layer (Phase 4) — pluggable step exists from Phase 1 (principle #4)
     verification_enabled: bool = False
 

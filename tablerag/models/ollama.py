@@ -41,14 +41,18 @@ class OllamaProvider:
         return [Vector(dense=e) for e in data["embeddings"]]
 
     async def chat(self, messages: list[Msg], stream: bool = True,
-                   temperature: float | None = None) -> AsyncIterator[str]:
+                   temperature: float | None = None,
+                   options: dict | None = None) -> AsyncIterator[str]:
+        opts = dict(options or {})
+        if temperature is not None:
+            opts.setdefault("temperature", temperature)
         payload = {
             "model": self.model,
             "messages": [m.model_dump(exclude_defaults=True) for m in messages],
             "stream": True,
         }
-        if temperature is not None:
-            payload["options"] = {"temperature": temperature}
+        if opts:
+            payload["options"] = opts
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             async with client.stream("POST", f"{self.base_url}/api/chat",
                                      json=payload) as r:

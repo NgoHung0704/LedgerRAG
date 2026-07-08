@@ -56,7 +56,7 @@ def test_parse_response_contract_errors(bad, fragment):
 async def test_run_table_parse_retries_then_succeeds():
     calls = []
 
-    async def chat(messages: list[Msg], stream=True, temperature=None):
+    async def chat(messages: list[Msg], stream=True, temperature=None, options=None):
         calls.append(messages)
         text = "garbage" if len(calls) == 1 else GOOD_RESPONSE
         yield text
@@ -70,12 +70,27 @@ async def test_run_table_parse_retries_then_succeeds():
 
 
 async def test_run_table_parse_honest_failure_after_retry():
-    async def chat(messages, stream=True, temperature=None):
+    async def chat(messages, stream=True, temperature=None, options=None):
         yield "still garbage"
 
     result = await run_table_parse(chat, b"png", TableCtx())
     assert result.error is not None
     assert result.records == []
+
+
+async def test_run_table_parse_passes_large_context_options():
+    """Regression guard: the production path must send num_ctx (the missing
+    option that dropped production eval ~10 points below the spike)."""
+    seen = {}
+
+    async def chat(messages, stream=True, temperature=None, options=None):
+        seen.update(options or {})
+        yield GOOD_RESPONSE
+
+    await run_table_parse(chat, b"png", TableCtx(locale_hint="fr"))
+    assert seen.get("num_ctx", 0) >= 8192
+    assert seen.get("temperature") == 0.0
+    assert "seed" in seen
 
 
 # ---------------------------------------------------------- classifier

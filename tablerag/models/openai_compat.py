@@ -38,7 +38,8 @@ class OpenAICompatProvider:
         return [Vector(dense=d["embedding"]) for d in data]
 
     async def chat(self, messages: list[Msg], stream: bool = True,
-                   temperature: float | None = None) -> AsyncIterator[str]:
+                   temperature: float | None = None,
+                   options: dict | None = None) -> AsyncIterator[str]:
         def to_openai(m: Msg) -> dict:
             if not m.images:
                 return {"role": m.role, "content": m.content}
@@ -49,10 +50,16 @@ class OpenAICompatProvider:
             ]
             return {"role": m.role, "content": content}
 
+        opts = options or {}
         payload = {"model": self.model, "stream": True,
                    "messages": [to_openai(m) for m in messages]}
-        if temperature is not None:
-            payload["temperature"] = temperature
+        temp = opts.get("temperature", temperature)
+        if temp is not None:
+            payload["temperature"] = temp
+        if "seed" in opts:
+            payload["seed"] = opts["seed"]
+        if "num_predict" in opts:  # Ollama name -> OpenAI name; num_ctx is server-side
+            payload["max_tokens"] = opts["num_predict"]
         async with httpx.AsyncClient(timeout=_TIMEOUT, headers=self.headers) as client:
             async with client.stream("POST", f"{self.base_url}/v1/chat/completions",
                                      json=payload) as r:
