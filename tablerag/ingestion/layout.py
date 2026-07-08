@@ -33,6 +33,9 @@ class Region:
     grid: list[list[str | None]] | None = None      # tables: simple-path extraction
     complex: bool = False                           # tables: classifier verdict
     caption: str | None = None                      # figures
+    # tables: region re-rendered straight from the PDF at high DPI — real
+    # pixels for the VLM instead of a crop of the 120-dpi page image
+    crop_png: bytes | None = None
 
 
 @dataclass
@@ -71,7 +74,8 @@ def _overlap_ratio(rect: fitz.Rect, other: fitz.Rect) -> float:
     return inter.get_area() / area if area else 0.0
 
 
-def analyze_page(page: fitz.Page, dpi: int, min_chars: int) -> PageLayout:
+def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
+                 table_dpi: int = 240) -> PageLayout:
     text = page.get_text("text")
     png = page.get_pixmap(dpi=dpi).tobytes("png")
     rect = page.rect
@@ -91,9 +95,11 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int) -> PageLayout:
         grid = table.extract()
         if not grid or (len(grid) == 1 and len(grid[0]) <= 1):
             continue  # degenerate detection
+        clip = (fitz.Rect(table.bbox) + (-6, -6, 6, 6)) & page.rect
         layout.regions.append(Region(
             type="table", bbox=tuple(table.bbox), grid=grid,
-            complex=table_grid_is_complex(grid)))
+            complex=table_grid_is_complex(grid),
+            crop_png=page.get_pixmap(dpi=table_dpi, clip=clip).tobytes("png")))
         table_rects.append(fitz.Rect(table.bbox))
 
     # --- text + figures (blocks not covered by a table) ---
@@ -140,7 +146,8 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int) -> PageLayout:
     return layout
 
 
-def analyze_document(pdf_bytes: bytes, dpi: int, min_chars: int) -> list[PageLayout]:
+def analyze_document(pdf_bytes: bytes, dpi: int, min_chars: int,
+                     table_dpi: int = 240) -> list[PageLayout]:
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     except Exception as e:
@@ -148,7 +155,7 @@ def analyze_document(pdf_bytes: bytes, dpi: int, min_chars: int) -> list[PageLay
     with doc:
         if doc.page_count == 0:
             raise PdfError("The PDF contains no pages.")
-        return [analyze_page(page, dpi, min_chars) for page in doc]
+        return [analyze_page(page, dpi, min_chars, table_dpi) for page in doc]
 
 
 def crop_region_png(page_png: bytes, page_width: float,

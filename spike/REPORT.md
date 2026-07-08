@@ -80,6 +80,29 @@ Across the campaign, with qwen3-vl:8b-instruct + prompt v4:
   to require a perfect parser. A misplaced number lands in a `needs_review`
   table showing the original crop — "parse right, or fail honestly" (§0.3).
 
+## 4b. First real-document test (CETIAT classification grid, 2026-07)
+
+Uploaded through the full platform (UI → ingestion → inspector). Findings:
+
+- **The safety mechanism worked as designed**: the table (deep nested
+  rowspans — one group cell spanning 7 rows — plus empty cells) failed the
+  VLM contract → element flagged `needs_review`, honest banner in the
+  inspector, original crop shown as the authoritative source, **no invented
+  numbers**. This is §0.3 behaving correctly on a real document.
+- **Confirms the known model limit**: deep-rowspan structures are exactly
+  where qwen3-vl:8b oscillates (same family as the Berline/Citadine misread).
+- **New bug found: language drift in summaries** — the routing summary for
+  the failed table came out in mixed Persian/Chinese (Qwen drifting to its
+  training languages on degenerate input) and was embedded into retrieval.
+  Fixed twofold: summaries are no longer generated/indexed for
+  `needs_review` tables, and the summary prompt now pins the output language
+  from the KB's declared locale ("Write the summary in French ONLY... never
+  mix languages").
+- **Image-quality improvement shipped**: table crops are now re-rendered
+  from the PDF at 240 dpi (real pixels) instead of cropping the 120-dpi page
+  image; scan pages are upscaled to ≥1400 px before OCR/parse. Dense tables
+  lose digits at 120 dpi.
+
 ## 5. Decision
 
 **Current position (2026-07):** synthetic accuracy ~84–90% (band, due to model

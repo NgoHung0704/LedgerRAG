@@ -153,6 +153,50 @@ async def test_parse_table_region_simple_path_no_model_call(monkeypatch):
     assert result.records[0]["metrics"]["ca"] == 5240880.0
 
 
+def test_summary_prompt_forces_declared_language():
+    from tablerag.ingestion.table_pipeline import build_summary_prompt
+
+    prompt = build_summary_prompt("<table></table>", "fr")
+    assert "in French ONLY" in prompt
+    assert "never mix languages" in prompt
+
+
+def test_summary_prompt_without_locale_still_forbids_mixing():
+    from tablerag.ingestion.table_pipeline import build_summary_prompt
+
+    prompt = build_summary_prompt("<table></table>", None)
+    assert "dominant language of the table content ONLY" in prompt
+    assert "never mix languages" in prompt
+
+
+def test_ensure_min_width_upscales_small_images():
+    import io
+
+    from PIL import Image
+
+    from tablerag.ingestion.imaging import ensure_min_width
+
+    buf = io.BytesIO()
+    Image.new("RGB", (400, 200), "white").save(buf, format="PNG")
+    out = ensure_min_width(buf.getvalue(), min_width=1400)
+    with Image.open(io.BytesIO(out)) as img:
+        assert img.width == 1400
+        assert img.height == 700  # aspect ratio preserved
+
+
+def test_ensure_min_width_leaves_large_images_untouched():
+    import io
+
+    from PIL import Image
+
+    from tablerag.ingestion.imaging import ensure_min_width
+
+    buf = io.BytesIO()
+    Image.new("RGB", (2000, 900), "white").save(buf, format="PNG")
+    data = buf.getvalue()
+    assert ensure_min_width(data, min_width=1400) is data
+
+
 async def test_parse_table_region_vlm_honest_failure(monkeypatch):
     class FailingParser:
         async def parse_table(self, image, ctx):

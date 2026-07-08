@@ -90,6 +90,11 @@ class Settings(BaseSettings):
     # ingestion: pages with fewer stripped chars are flagged as needing OCR
     scan_min_chars_per_page: int = 32
     page_render_dpi: int = 120
+    # table crops are re-rendered from the PDF at this DPI (real pixels beat
+    # interpolation) — dense tables at 120 dpi lose digits to the VLM
+    table_crop_dpi: int = 240
+    # images sent to the VLM are upscaled to at least this width (scans)
+    vlm_min_image_width: int = 1400
 
     cors_origins: list[str] = ["*"]
 

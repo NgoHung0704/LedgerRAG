@@ -63,7 +63,12 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                      crop_image_path=image_key, confidence=None,
                      needs_review=result.needs_review, meta=meta,
                      element_id=element_id)
-    summary = asyncio.run(summarize_table(result.html)) if result.html else None
+    # no summary for failed parses: summarizing salvaged HTML produces junk
+    # that would get embedded into retrieval (observed: language-drift
+    # gibberish) — the review flag + original image are the honest output
+    summary = None
+    if result.html and not result.needs_review:
+        summary = asyncio.run(summarize_table(result.html, locale))
     repo.add_table_element(s, element_id, result.html or None, summary,
                            result.n_rows, result.n_cols, result.parse_strategy)
     if result.records:
@@ -95,14 +100,19 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
         chunks_out.extend((row.id, row.text, element.id) for row in rows)
 
     if layout.is_scan:
-        # scanned page: everything goes down the VLM path (SPEC Phase 2 §6)
-        text, tables_present = asyncio.run(ocr_page(layout.image_png))
+        # scanned page: everything goes down the VLM path (SPEC Phase 2 §6);
+        # light upscale so the VLM never reads a low-res page
+        from tablerag.ingestion.imaging import ensure_min_width
+
+        vlm_page = ensure_min_width(layout.image_png,
+                                    settings.vlm_min_image_width)
+        text, tables_present = asyncio.run(ocr_page(vlm_page))
         if text:
             add_text_element(text, full_bbox, page_key, confidence=0.85,
                              meta={"ocr": True})
         if tables_present:
             _ingest_table(s, store, kb_id, doc_id, layout.page, full_bbox,
-                          layout.image_png, grid=None, is_complex=True,
+                          vlm_page, grid=None, is_complex=True,
                           locale=locale, records_out=records_out,
                           summaries_out=summaries_out)
         return
@@ -124,8 +134,10 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                                    [(c.text, c.token_count) for c in chunks])
             chunks_out.extend((row.id, row.text, element.id) for row in rows)
         elif region.type == "table":
+            # prefer the high-DPI re-render from the PDF over the page crop
+            table_crop = region.crop_png or crop
             _ingest_table(s, store, kb_id, doc_id, layout.page, region.bbox,
-                          crop, region.grid, region.complex, locale,
+                          table_crop, region.grid, region.complex, locale,
                           records_out, summaries_out)
         elif region.type == "figure":
             # C5: store image + caption, mark figure, never extract data
@@ -160,7 +172,8 @@ def process_document(self, doc_id_str: str) -> None:
     try:
         pdf_bytes = store.get(file_path)
         pages = analyze_document(pdf_bytes, dpi=settings.page_render_dpi,
-                                 min_chars=settings.scan_min_chars_per_page)
+                                 min_chars=settings.scan_min_chars_per_page,
+                                 table_dpi=settings.table_crop_dpi)
 
         # --- idempotency barrier: wipe any previous output for this doc ---
         vector_store.ensure_collections()
