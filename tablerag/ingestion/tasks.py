@@ -52,16 +52,48 @@ async def _embed_all(embedder: ModelProvider, texts: list[str]) -> list[Vector]:
 
 def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                   grid, is_complex: bool, locale: str | None,
-                  records_out: list, summaries_out: list) -> None:
-    """Create one table element with its three representations."""
+                  records_out: list, summaries_out: list,
+                  double_read: bool = True) -> None:
+    """Create one table element with its three representations + confidence."""
+    from tablerag.core.config import get_settings
+    from tablerag.ingestion.confidence import assess
+
+    settings = get_settings()
     result = asyncio.run(parse_table_region(crop_png, grid, is_complex, locale))
+
+    # --- Phase 3 confidence: structural + double-read + arithmetic ---
+    confidence: float | None = None
+    needs_review = result.needs_review
+    confidence_detail: dict | None = None
+    if result.records:
+        second_records = None
+        if (double_read and result.parse_strategy == "vlm"
+                and not result.needs_review):
+            # second independent read (seed+1, slight temperature): where the
+            # model hesitates (rowspan boundaries), two reads diverge -> flag
+            second = asyncio.run(parse_table_region(
+                crop_png, None, True, locale, read_variant=1))
+            if not second.error and second.records:
+                second_records = second.records
+        report = assess(
+            result.html, result.records, second_records,
+            review_threshold=settings.confidence_review_threshold,
+            agreement_threshold=settings.double_read_agreement_threshold)
+        confidence = report.confidence
+        needs_review = needs_review or report.needs_review
+        confidence_detail = report.detail
+
     element_id = uuid.uuid4()
     image_key = element_image_key(kb_id, doc_id, element_id)
     store.put(image_key, crop_png, "image/png")
-    meta = {"parse_error": result.error} if result.error else {}
+    meta: dict = {}
+    if result.error:
+        meta["parse_error"] = result.error
+    if confidence_detail:
+        meta["confidence_detail"] = confidence_detail
     repo.add_element(s, doc_id, page, bbox=list(bbox), type_="table",
-                     crop_image_path=image_key, confidence=None,
-                     needs_review=result.needs_review, meta=meta,
+                     crop_image_path=image_key, confidence=confidence,
+                     needs_review=needs_review, meta=meta,
                      element_id=element_id)
     # no summary for failed parses: summarizing salvaged HTML produces junk
     # that would get embedded into retrieval (observed: language-drift
@@ -76,14 +108,15 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
         records_out.extend((row.id, row.text_repr, element_id) for row in rows)
     if summary:
         summaries_out.append((element_id, summary))
-    if result.needs_review:
-        logger.warning("doc %s page %d: table flagged needs_review (%s)",
-                       doc_id, page, result.error)
+    if needs_review:
+        logger.warning("doc %s page %d: table flagged needs_review "
+                       "(error=%s, confidence=%s)",
+                       doc_id, page, result.error, confidence)
 
 
 def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                  locale: str | None, chunks_out: list, records_out: list,
-                 summaries_out: list) -> None:
+                 summaries_out: list, double_read: bool = True) -> None:
     page_key = page_image_key(kb_id, doc_id, layout.page)
     store.put(page_key, layout.image_png, "image/png")
     full_bbox = [0.0, 0.0, layout.width, layout.height]
@@ -114,7 +147,7 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
             _ingest_table(s, store, kb_id, doc_id, layout.page, full_bbox,
                           vlm_page, grid=None, is_complex=True,
                           locale=locale, records_out=records_out,
-                          summaries_out=summaries_out)
+                          summaries_out=summaries_out, double_read=double_read)
         return
 
     for region in layout.regions:
@@ -138,7 +171,7 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
             table_crop = region.crop_png or crop
             _ingest_table(s, store, kb_id, doc_id, layout.page, region.bbox,
                           table_crop, region.grid, region.complex, locale,
-                          records_out, summaries_out)
+                          records_out, summaries_out, double_read=double_read)
         elif region.type == "figure":
             # C5: store image + caption, mark figure, never extract data
             element_id = uuid.uuid4()
@@ -166,7 +199,11 @@ def process_document(self, doc_id_str: str) -> None:
         kb = repo.get_kb(s, doc.kb_id)
         kb_id, file_path = doc.kb_id, doc.file_path
         # locale is declared per-KB (SPEC Phase 2 §5: prefer declared over guessed)
-        locale = (kb.config or {}).get("locale") if kb else None
+        kb_config = (kb.config or {}) if kb else {}
+        locale = kb_config.get("locale")
+        # double-read is toggleable per-KB (SPEC Phase 3), global default from env
+        double_read = bool(kb_config.get("double_read",
+                                         settings.double_read_enabled))
         repo.set_document_status(s, doc_id, "parsing")
 
     try:
@@ -186,7 +223,8 @@ def process_document(self, doc_id_str: str) -> None:
             repo.delete_doc_elements(s, doc_id)
             for layout in pages:
                 _ingest_page(s, store, settings, kb_id, doc_id, layout, locale,
-                             chunks_out, records_out, summaries_out)
+                             chunks_out, records_out, summaries_out,
+                             double_read=double_read)
             repo.set_document_status(s, doc_id, "indexing", page_count=len(pages))
 
         embedder = get_provider("embedder")

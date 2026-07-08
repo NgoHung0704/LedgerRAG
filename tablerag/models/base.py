@@ -36,6 +36,9 @@ class TableCtx(BaseModel):
     locale_hint: str = "unknown"
     doc_language: str | None = None
     page: int | None = None
+    # Phase 3 double-read: variant > 0 shifts seed/temperature so the second
+    # read is an independent opinion, not a cache replay
+    read_variant: int = 0
 
 
 class RecordParse(BaseModel):

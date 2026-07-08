@@ -226,6 +226,8 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
             "parse_error": (element.meta or {}).get("parse_error"),
             "caption": (element.meta or {}).get("caption"),
             "ocr": bool((element.meta or {}).get("ocr")),
+            "unusable": bool((element.meta or {}).get("unusable")),
+            "confidence_detail": (element.meta or {}).get("confidence_detail"),
             "chunk_count": len(chunks),
             "text_preview": chunks[0].text[:600] if chunks else None,
             "table": None,
@@ -271,6 +273,33 @@ def get_element_detail(s: Session, element_id: uuid.UUID) -> dict | None:
             "parse_strategy": table.parse_strategy,
         }
     return detail
+
+
+# ---------------------------------------------------------------- review flow
+
+def approve_element(s: Session, element_id: uuid.UUID) -> Element | None:
+    """Admin reviewed the parse and confirmed it: clear the flag; records
+    return to normal retrieval treatment (SPEC Phase 3)."""
+    element = s.get(Element, element_id)
+    if element is None:
+        return None
+    element.needs_review = False
+    element.meta = {**(element.meta or {}), "reviewed": "approved"}
+    s.flush()
+    return element
+
+
+def mark_element_unusable(s: Session, element_id: uuid.UUID) -> Element | None:
+    """Admin rejected the parse: records leave retrieval (caller also deletes
+    the vectors), the crop image stays for the honest-fallback display."""
+    element = s.get(Element, element_id)
+    if element is None:
+        return None
+    element.needs_review = False
+    element.meta = {**(element.meta or {}), "unusable": True,
+                    "reviewed": "unusable"}
+    s.flush()
+    return element
 
 
 # ---------------------------------------------------------------- app settings

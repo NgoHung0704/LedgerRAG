@@ -49,7 +49,7 @@ class VectorStore:
                                                distance=qm.Distance.COSINE),
                     },
                 )
-                for field in ("kb_id", "doc_id"):
+                for field in ("kb_id", "doc_id", "element_id"):
                     self.client.create_payload_index(
                         collection_name=name, field_name=field,
                         field_schema=qm.PayloadSchemaType.KEYWORD)
@@ -78,8 +78,17 @@ class VectorStore:
 
     def delete_doc(self, doc_id: uuid.UUID) -> None:
         """Idempotent reprocessing: drop every vector belonging to a document."""
+        self._delete_by(key="doc_id", value=str(doc_id))
+
+    def delete_element(self, element_id: uuid.UUID) -> None:
+        """Review flow 'mark unusable': remove an element's vectors from
+        retrieval (records + summary + chunks); Postgres rows and the crop
+        image stay for the honest fallback."""
+        self._delete_by(key="element_id", value=str(element_id))
+
+    def _delete_by(self, key: str, value: str) -> None:
         flt = qm.Filter(must=[
-            qm.FieldCondition(key="doc_id", match=qm.MatchValue(value=str(doc_id))),
+            qm.FieldCondition(key=key, match=qm.MatchValue(value=value)),
         ])
         for name in ALL_COLLECTIONS:
             if self.client.collection_exists(name):

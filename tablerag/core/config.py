@@ -87,6 +87,12 @@ class Settings(BaseSettings):
     # verification layer (Phase 4) — pluggable step exists from Phase 1 (principle #4)
     verification_enabled: bool = False
 
+    # Phase 3 confidence layer (SPEC: thresholds are config, tuned on the
+    # eval set — never guessed in code review)
+    double_read_enabled: bool = True  # per-KB override: kb.config["double_read"]
+    double_read_agreement_threshold: float = 0.98
+    confidence_review_threshold: float = 0.9
+
     # ingestion: pages with fewer stripped chars are flagged as needing OCR
     scan_min_chars_per_page: int = 32
     page_render_dpi: int = 120

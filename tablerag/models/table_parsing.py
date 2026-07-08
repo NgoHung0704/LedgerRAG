@@ -193,14 +193,18 @@ def salvage_html(text: str) -> str:
 ChatFn = Callable[..., AsyncIterator[str]]
 
 
-def parse_options() -> dict:
+def parse_options(read_variant: int = 0) -> dict:
     """Generation options proven out in the Phase 0 spike. num_ctx large enough
-    that the few-shot prompt + vision image never truncates (see SPEC/config)."""
+    that the few-shot prompt + vision image never truncates (see SPEC/config).
+    read_variant > 0 (Phase 3 double-read) shifts seed and adds a little
+    temperature so the second read is an independent opinion."""
     from tablerag.core.config import get_settings
 
     s = get_settings()
-    return {"temperature": 0.0, "seed": s.table_parse_seed,
-            "num_ctx": s.table_parse_num_ctx, "num_predict": s.table_parse_num_predict}
+    return {"temperature": 0.0 if read_variant == 0 else 0.2,
+            "seed": s.table_parse_seed + read_variant,
+            "num_ctx": s.table_parse_num_ctx,
+            "num_predict": s.table_parse_num_predict}
 
 
 async def _collect(chat: ChatFn, messages: list[Msg], options: dict) -> str:
@@ -214,7 +218,7 @@ async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TablePar
     """One parse attempt + one retry with the concrete error (SPEC Phase 2 §3).
     Never raises on contract failure — returns an honest TableParse.error."""
     image_b64 = base64.b64encode(image).decode()
-    options = parse_options()
+    options = parse_options(ctx.read_variant)
     messages = [
         Msg(role="system", content=SYSTEM_PROMPT),
         Msg(role="user", content=build_user_prompt(ctx.locale_hint or "unknown"),

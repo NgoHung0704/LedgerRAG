@@ -70,6 +70,27 @@ def test_chunk_contexts_preserve_order_and_provenance(db_session):
     assert repo.get_chunk_contexts(db_session, [uuid.uuid4()]) == []
 
 
+def test_review_flow_approve_and_unusable(db_session):
+    """Phase 3 DoD: approve clears the flag; unusable keeps the image but
+    excludes the element from retrieval (vector deletion is the API's job)."""
+    _, doc = _seed_doc(db_session)
+    element = repo.add_element(
+        db_session, doc.id, page=1, bbox=[0, 0, 10, 10], type_="table",
+        crop_image_path="crop.png", needs_review=True,
+        meta={"confidence_detail": {"signals": {"agreement": 0.5}}})
+
+    approved = repo.approve_element(db_session, element.id)
+    assert approved.needs_review is False
+    assert approved.meta["reviewed"] == "approved"
+    assert approved.meta["confidence_detail"]  # detail kept for audit
+
+    unusable = repo.mark_element_unusable(db_session, element.id)
+    assert unusable.meta["unusable"] is True
+    assert unusable.needs_review is False
+
+    assert repo.approve_element(db_session, __import__("uuid").uuid4()) is None
+
+
 def test_chat_session_and_messages(db_session):
     kb, _ = _seed_doc(db_session)
     session = repo.get_or_create_session(db_session, kb.id, None)

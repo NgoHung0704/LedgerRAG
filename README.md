@@ -18,7 +18,7 @@ of truth. Implementation follows its phases strictly.
 | 0 | De-risk spike: prove the parser VLM on the deployment hardware | **Campaign run** — champion `qwen3-vl:8b-instruct`, synthetic accuracy ~84–90% band (model non-determinism on deep rowspans); final go/no-go on real documents (see `spike/REPORT.md`) |
 | 1 | Two-pipeline skeleton, text-only, end-to-end | **Code complete** — needs the Phase 1 DoD checks run against a live stack |
 | 2 | Table sub-pipeline (three representations) | **Code complete** — layout detection, simple/VLM paths, locale-aware `core/numbers.py`, records+summaries indexed, tables in retrieval; validate with `make eval-tables` on the deployment box |
-| 3 | Confidence & honest failure | Not started (needs_review plumbing + low-confidence answer guard already in place) |
+| 3 | Confidence & honest failure | **Code complete** — 3 signals (structural / double-read / arithmetic), per-KB double-read toggle, Approve / Mark-unusable review flow in the inspector; validate with `make eval-flags` on the deployment box |
 | 4 | Hybrid retrieval + answer verification | Not started (plugs exist) |
 | 5 | Multi-KB router + end-user UX | Not started (plugs exist; model-provider admin UI shipped early) |
 

@@ -93,6 +93,22 @@ async def test_run_table_parse_passes_large_context_options():
     assert "seed" in seen
 
 
+async def test_double_read_variant_shifts_seed_and_temperature():
+    """Phase 3: the second read must be an independent opinion."""
+    seen = {}
+
+    async def chat(messages, stream=True, temperature=None, options=None):
+        seen.update(options or {})
+        yield GOOD_RESPONSE
+
+    await run_table_parse(chat, b"png", TableCtx(locale_hint="fr"))
+    base_seed = seen["seed"]
+    await run_table_parse(chat, b"png",
+                          TableCtx(locale_hint="fr", read_variant=1))
+    assert seen["seed"] == base_seed + 1
+    assert seen["temperature"] > 0.0
+
+
 # ---------------------------------------------------------- classifier
 
 def test_classifier_flat_grid_is_simple():

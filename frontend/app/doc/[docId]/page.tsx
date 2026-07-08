@@ -13,12 +13,14 @@ import {
 } from "lucide-react";
 import {
   API_URL,
+  approveElement,
   getDocumentView,
+  markElementUnusable,
   type DocumentView,
   type ElementView,
   type RecordPreview,
 } from "@/lib/api";
-import { Card, Spinner, StatusPill } from "@/components/ui";
+import { Button, Card, Spinner, StatusPill } from "@/components/ui";
 
 /** Document Inspector: everything ingestion produced, element by element.
  * Tables show all three stored representations — HTML (display), records
@@ -127,7 +129,11 @@ export default function DocPage({ params }: { params: { docId: string } }) {
               {elements
                 .filter((e) => e.page === page)
                 .map((element) => (
-                  <ElementCard key={element.id} element={element} />
+                  <ElementCard
+                    key={element.id}
+                    element={element}
+                    onChanged={refresh}
+                  />
                 ))}
             </div>
           </section>
@@ -143,11 +149,35 @@ const TYPE_META = {
   figure: { icon: ImageIcon, label: "Figure" },
 } as const;
 
-function ElementCard({ element }: { element: ElementView }) {
+function ElementCard({
+  element,
+  onChanged,
+}: {
+  element: ElementView;
+  onChanged: () => void;
+}) {
   const { icon: Icon, label } = TYPE_META[element.type];
   const [showOriginal, setShowOriginal] = useState(
     element.type !== "text" || element.needs_review,
   );
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
+  const review = async (action: "approve" | "unusable") => {
+    setReviewBusy(true);
+    setReviewError(null);
+    try {
+      if (action === "approve") await approveElement(element.id);
+      else await markElementUnusable(element.id);
+      onChanged();
+    } catch (e) {
+      setReviewError(String(e));
+    } finally {
+      setReviewBusy(false);
+    }
+  };
+
+  const signals = element.confidence_detail?.signals;
 
   return (
     <Card className="overflow-hidden">
@@ -175,6 +205,11 @@ function ElementCard({ element }: { element: ElementView }) {
             <AlertTriangle size={11} /> needs review
           </span>
         )}
+        {element.unusable && (
+          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+            excluded from retrieval
+          </span>
+        )}
         <button
           onClick={() => setShowOriginal((v) => !v)}
           className="ml-auto text-[11px] font-medium text-indigo-600 hover:text-indigo-500"
@@ -188,6 +223,56 @@ function ElementCard({ element }: { element: ElementView }) {
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             Parse failed honestly: {element.parse_error} — the original image
             below is the authoritative source.
+          </div>
+        )}
+
+        {/* Phase 3: confidence signals + review actions */}
+        {signals && (
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+            <span className="font-medium uppercase tracking-wide text-slate-400">
+              confidence signals:
+            </span>
+            {Object.entries(signals).map(([name, score]) => (
+              <span
+                key={name}
+                className={`rounded-full px-2 py-0.5 font-medium ${
+                  score >= 0.98
+                    ? "bg-emerald-50 text-emerald-700"
+                    : score >= 0.9
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-red-50 text-red-700"
+                }`}
+              >
+                {name} {(score * 100).toFixed(0)}%
+              </span>
+            ))}
+          </div>
+        )}
+
+        {element.needs_review && !element.unusable && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+            <span className="mr-auto text-xs text-amber-800">
+              Review this parse against the original image, then decide:
+            </span>
+            <Button
+              variant="secondary"
+              className="!py-1.5 text-xs"
+              disabled={reviewBusy}
+              onClick={() => review("approve")}
+            >
+              Approve — parse is correct
+            </Button>
+            <Button
+              variant="secondary"
+              className="!py-1.5 text-xs !text-red-600"
+              disabled={reviewBusy}
+              onClick={() => review("unusable")}
+            >
+              Mark unusable
+            </Button>
+            {reviewError && (
+              <span className="w-full text-xs text-red-600">{reviewError}</span>
+            )}
           </div>
         )}
 

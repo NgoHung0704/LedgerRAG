@@ -138,7 +138,8 @@ def _html_shape(html: str) -> tuple[int | None, int | None]:
 
 
 async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | None,
-                             is_complex: bool, locale: str | None) -> TableResult:
+                             is_complex: bool, locale: str | None,
+                             read_variant: int = 0) -> TableResult:
     # --- simple path ---
     if grid and not is_complex:
         try:
@@ -158,7 +159,8 @@ async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | Non
     vlm_image = ensure_min_width(crop_png,
                                  get_settings().vlm_min_image_width)
     parse = await parser.parse_table(
-        vlm_image, TableCtx(locale_hint=locale or "unknown"))
+        vlm_image, TableCtx(locale_hint=locale or "unknown",
+                            read_variant=read_variant))
     n_rows, n_cols = _html_shape(parse.html)
     if parse.error:
         # honest failure: keep the html/crop, flag for review, no records

@@ -25,6 +25,35 @@ def get_element(element_id: uuid.UUID) -> dict:
     return detail
 
 
+@router.post("/{element_id}/approve")
+def approve_element(element_id: uuid.UUID) -> dict:
+    """Review flow: admin confirmed the parse — clear the needs_review flag;
+    answers using this table return to normal (Phase 3 DoD)."""
+    with session_scope() as s:
+        element = repo.approve_element(s, element_id)
+        if element is None:
+            raise HTTPException(404, "element not found")
+        detail = repo.get_element_detail(s, element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    return detail
+
+
+@router.post("/{element_id}/unusable")
+def mark_element_unusable(element_id: uuid.UUID) -> dict:
+    """Review flow: admin rejected the parse — records leave retrieval, the
+    original image stays for the honest fallback."""
+    with session_scope() as s:
+        element = repo.mark_element_unusable(s, element_id)
+        if element is None:
+            raise HTTPException(404, "element not found")
+        detail = repo.get_element_detail(s, element_id)
+    from tablerag.storage.qdrant import get_vector_store
+
+    get_vector_store().delete_element(element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    return detail
+
+
 @router.get("/{element_id}/image")
 def get_element_image(element_id: uuid.UUID) -> Response:
     with session_scope() as s:

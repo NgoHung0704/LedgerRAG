@@ -36,5 +36,11 @@ spike-grade:
 eval-tables:
 	python tests/eval/tables/run_eval.py
 
+# ---- Phase 3: confidence-flag gate (needs a live parser endpoint) ----
+# Clean tables must not be flagged (<=10%), corrupted ones must be (>=90%).
+eval-flags:
+	python spike/make_hard_tables.py
+	python tests/eval/tables/run_flag_eval.py
+
 lint:
 	ruff check tablerag tests spike

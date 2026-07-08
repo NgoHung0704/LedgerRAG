@@ -61,6 +61,13 @@ export type RecordPreview = {
   raw_values: Record<string, string>;
 };
 
+export type ConfidenceDetail = {
+  signals?: Record<string, number>;
+  confidence?: number;
+  arithmetic?: { checks: number; passed: number };
+  agreement?: { cells_first: number; cells_second: number; agreed: number };
+};
+
 export type ElementView = {
   id: string;
   page: number;
@@ -70,6 +77,8 @@ export type ElementView = {
   parse_error: string | null;
   caption: string | null;
   ocr: boolean;
+  unusable: boolean;
+  confidence_detail: ConfidenceDetail | null;
   chunk_count: number;
   text_preview: string | null;
   crop_url: string;
@@ -168,6 +177,18 @@ export const getElement = (elementId: string) =>
 
 export const elementImageUrl = (elementId: string) =>
   `${API_URL}/api/elements/${elementId}/image`;
+
+// review flow (Phase 3): approve clears the flag; unusable removes the
+// element's records from retrieval while keeping the original image
+export const approveElement = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/approve`, { method: "POST" }).then(
+    (r) => jsonOrThrow<unknown>(r),
+  );
+
+export const markElementUnusable = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/unusable`, { method: "POST" }).then(
+    (r) => jsonOrThrow<unknown>(r),
+  );
 
 // ---------- chat (SSE) ----------
 
