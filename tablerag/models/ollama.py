@@ -13,6 +13,15 @@ from tablerag.models.base import Msg, TableCtx, TableParse, Vector
 _TIMEOUT = httpx.Timeout(600.0, connect=10.0)
 
 
+def model_present(model: str, installed: list[str]) -> bool:
+    """Ollama tags carry a ':tag' suffix; a config without one means ':latest'."""
+    if not model or model in installed:
+        return True
+    if ":" not in model:
+        return any(name.split(":")[0] == model for name in installed)
+    return False
+
+
 class OllamaProvider:
     def __init__(self, cfg: EndpointConfig):
         self.base_url = cfg.base_url.rstrip("/")
@@ -59,10 +68,17 @@ class OllamaProvider:
             "or leave the reranker role disabled")
 
     async def health(self) -> tuple[bool, str]:
+        # verify both reachability AND that the configured model is installed —
+        # a reachable Ollama without the model 404s at parse time (honest fail
+        # up front beats a false green in the UI)
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
-                r = await client.get(f"{self.base_url}/api/version")
-                r.raise_for_status()
-                return True, f"ollama {r.json().get('version', '?')}"
+                tags = await client.get(f"{self.base_url}/api/tags")
+                tags.raise_for_status()
+                installed = [m.get("name", "") for m in tags.json().get("models", [])]
         except (httpx.HTTPError, OSError) as e:
-            return False, str(e)
+            return False, f"endpoint unreachable: {e}"
+        if not model_present(self.model, installed):
+            return False, (f"reachable, but model '{self.model}' is not installed "
+                           f"here — pull it or pick an installed model")
+        return True, f"model '{self.model}' ready"
