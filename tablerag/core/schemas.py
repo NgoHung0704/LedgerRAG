@@ -17,6 +17,8 @@ class KBCreate(BaseModel):
     # declared number locale of the documents (SPEC Phase 2 §5: declared beats
     # guessed); None = unknown, the pipeline stays conservative
     locale: str | None = None
+    # answer-number verification (Phase 4); default ON — this is a numbers tool
+    verify: bool = True
 
 
 class KBOut(BaseModel):
@@ -40,6 +42,7 @@ class DocumentOut(BaseModel):
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1)
     session_id: uuid.UUID | None = None
+    verify: bool | None = None  # per-request override of number verification
 
 
 class Citation(BaseModel):

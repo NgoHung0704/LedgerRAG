@@ -122,16 +122,30 @@ through mild blur/rotate, so corrupted != wrong).
   see misattribution); `arithmetic` reliable but only fires on tables with
   Total rows; `agreement` blind to systematic errors as above.
 
-**Implication:** a single small local model cannot reliably self-detect its
-own systematic misreads. Two responses shipped/available: (a) **cross-model
-double-read** (`double_read_model_name`, e.g. minicpm-v) — a different
-architecture doesn't share blind spots; the one lever that adds real
-information, to be measured on the box. (b) The **true safety net is
-architectural and already in place**: every table keeps its source image, and
-the answer path never asserts numbers from a `needs_review`/failed parse — a
-human verifies against the original. The auto-flag is a bonus (catches
-arithmetic errors + random divergence), not the primary guarantee. This is
-"fail honestly": knowing and surfacing the limit rather than hiding it.
+**Cross-model double-read was measured and REJECTED** (verifier = 2nd read):
+
+| verifier (2nd read) | false positives | recall |
+|---------------------|-----------------|--------|
+| qwen3-vl:8b (same-model)   | **0%** | 11% |
+| minicpm-v (cross)          | 63%    | 22% |
+| granite3.2-vision (cross)  | 11%    | 22% |
+
+Cross-model degrades every useful axis: the weaker verifier disagrees on EASY
+tables qwen reads perfectly (FP explodes) while still missing the merged-cell
+misreads (recall stuck at 22%). The three genuinely-wrong pivots slip through
+in ALL configurations — no model self-detects systematic structural misreads.
+
+**Decision (project owner): keep same-model double-read (FP 0%); the ≥90%
+recall DoD is documented as NOT achievable on this hardware/model** — a
+fundamental limit (SPEC §7 open risk), not a hidden failure. The auto-flag is
+a *bonus* at zero false-positive cost (reliably catches arithmetic errors on
+Total tables + random divergence). **The primary safety guarantee is
+architectural and already in place**: every table keeps its source image
+(Inspector), the answer path never asserts numbers from a `needs_review`/
+failed parse ("LOW CONFIDENCE — do not assert numbers" in the Generate
+prompt), and a human can Approve / Mark-unusable. The system never lies about
+a number even when it misreads — it shows the image and lets the human decide.
+This is "fail honestly" applied to the detector's own limits.
 
 ## 5. Decision
 

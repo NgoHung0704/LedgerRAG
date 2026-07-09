@@ -31,10 +31,22 @@ export type Citation = {
   needs_review: boolean;
 };
 
+export type Verification = {
+  enabled: boolean;
+  status: "ok" | "warnings";
+  numbers: { raw: string; value: number; status: "verified" | "computed" | "unverified" }[];
+  unverified: string[];
+};
+
 export type ChatEvent =
   | { type: "citations"; citations: Citation[] }
   | { type: "token"; content: string }
-  | { type: "done"; session_id: string; message_id: string }
+  | {
+      type: "done";
+      session_id: string;
+      message_id: string;
+      verification: Verification | null;
+    }
   | { type: "error"; message: string };
 
 export type ElementDetail = {
@@ -142,11 +154,16 @@ export const getKb = (kbId: string) =>
     jsonOrThrow<KB>(r),
   );
 
-export const createKb = (name: string, description: string, locale: string | null) =>
+export const createKb = (
+  name: string,
+  description: string,
+  locale: string | null,
+  verify: boolean,
+) =>
   fetch(`${API_URL}/api/kbs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, description, locale }),
+    body: JSON.stringify({ name, description, locale, verify }),
   }).then((r) => jsonOrThrow<KB>(r));
 
 // ---------- documents ----------

@@ -113,6 +113,7 @@ function CreateModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [locale, setLocale] = useState("");
+  const [verify, setVerify] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,7 +123,7 @@ function CreateModal({
     setBusy(true);
     setError(null);
     try {
-      await createKb(name.trim(), description.trim(), locale || null);
+      await createKb(name.trim(), description.trim(), locale || null, verify);
       onCreated();
     } catch (err) {
       setError(String(err));
@@ -177,6 +178,22 @@ function CreateModal({
             guessing when normalizing table values.
           </p>
         </div>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 p-3">
+          <input
+            type="checkbox"
+            checked={verify}
+            onChange={(e) => setVerify(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600"
+          />
+          <span className="text-xs leading-4 text-slate-600">
+            <span className="font-medium text-slate-700">
+              Verify numbers in answers
+            </span>
+            <br />
+            Cross-check every figure in an answer against the cited sources and
+            warn on any that can&apos;t be matched. Recommended for tables.
+          </span>
+        </label>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" onClick={onClose}>

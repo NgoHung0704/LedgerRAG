@@ -41,6 +41,7 @@ class SourceBlock:
 class QueryContext:
     kb_id: uuid.UUID
     question: str
+    locale: str | None = None  # KB declared locale, for number verification
     routed_kb_ids: list[uuid.UUID] = field(default_factory=list)
     hits: list[SearchHit] = field(default_factory=list)
     sources: list[SourceBlock] = field(default_factory=list)
@@ -77,7 +78,7 @@ class QueryPipeline:
         yield "done", ctx
 
 
-def default_pipeline() -> QueryPipeline:
+def default_pipeline(verify: bool | None = None) -> QueryPipeline:
     from tablerag.query.steps.assemble import AssembleContext
     from tablerag.query.steps.generate import GenerateAnswer
     from tablerag.query.steps.rerank import PassthroughRerank
@@ -86,11 +87,12 @@ def default_pipeline() -> QueryPipeline:
     from tablerag.query.steps.verify import Verify
 
     settings = get_settings()
+    enabled = settings.verification_enabled if verify is None else verify
     return QueryPipeline([
         SingleKBRouter(),          # Phase 5: LLMRouter plugs in here
         Retrieve(top_k=settings.retrieve_top_k),
         PassthroughRerank(),       # Phase 4: model reranker plugs in here
         AssembleContext(),
         GenerateAnswer(),
-        Verify(enabled=settings.verification_enabled),  # Phase 4 fills this in
+        Verify(enabled=enabled),
     ])

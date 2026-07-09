@@ -27,20 +27,27 @@ def _sse(payload: dict) -> str:
 
 @router.post("/kbs/{kb_id}/chat")
 async def chat(kb_id: uuid.UUID, body: ChatRequest) -> StreamingResponse:
-    def prepare() -> uuid.UUID:
+    def prepare() -> tuple[uuid.UUID, str | None, bool]:
         with session_scope() as s:
-            if repo.get_kb(s, kb_id) is None:
+            kb = repo.get_kb(s, kb_id)
+            if kb is None:
                 raise HTTPException(404, "knowledge base not found")
+            kb_config = kb.config or {}
+            locale = kb_config.get("locale")
+            # verification default ON for KBs that contain tables (SPEC Phase 4)
+            verify = body.verify
+            if verify is None:
+                verify = kb_config.get("verify")
             session = repo.get_or_create_session(s, kb_id, body.session_id)
             repo.add_message(s, session.id, "user", body.question)
-            return session.id
+            return session.id, locale, verify
 
-    session_id = await asyncio.to_thread(prepare)
+    session_id, locale, verify = await asyncio.to_thread(prepare)
 
     async def event_stream():
-        ctx = QueryContext(kb_id=kb_id, question=body.question)
+        ctx = QueryContext(kb_id=kb_id, question=body.question, locale=locale)
         try:
-            async for kind, payload in default_pipeline().stream(ctx):
+            async for kind, payload in default_pipeline(verify=verify).stream(ctx):
                 if kind == "citations":
                     yield _sse({"type": "citations",
                                 "citations": [c.model_dump(mode="json")
@@ -58,7 +65,8 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest) -> StreamingResponse:
 
             message_id = await asyncio.to_thread(persist)
             yield _sse({"type": "done", "session_id": str(session_id),
-                        "message_id": str(message_id)})
+                        "message_id": str(message_id),
+                        "verification": ctx.verification})
         except Exception:  # noqa: BLE001 — stream errors must reach the client readably
             logger.exception("chat pipeline failed (kb=%s)", kb_id)
             yield _sse({"type": "error",

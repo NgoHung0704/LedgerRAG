@@ -3,8 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { AlertTriangle, FileText, Send, Sparkles, Table2 } from "lucide-react";
-import { chatStream, type Citation } from "@/lib/api";
+import {
+  AlertTriangle,
+  BadgeCheck,
+  FileText,
+  Send,
+  Sparkles,
+  Table2,
+} from "lucide-react";
+import { chatStream, type Citation, type Verification } from "@/lib/api";
 import { Spinner } from "@/components/ui";
 import SourceModal from "@/components/SourceModal";
 
@@ -12,6 +19,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   citations?: Citation[];
+  verification?: Verification | null;
   error?: boolean;
 };
 
@@ -54,6 +62,7 @@ export default function ChatPanel({ kbId }: { kbId: string }) {
           patchLast({ citations: ev.citations });
         } else if (ev.type === "done") {
           sessionRef.current = ev.session_id;
+          patchLast({ verification: ev.verification });
         } else if (ev.type === "error") {
           patchLast({ content: ev.message, error: true });
         }
@@ -112,6 +121,10 @@ export default function ChatPanel({ kbId }: { kbId: string }) {
                   ) : null}
                 </div>
 
+                {m.verification && m.verification.enabled && (
+                  <VerificationBadge verification={m.verification} />
+                )}
+
                 {m.citations && m.citations.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {m.citations.map((c) => (
@@ -163,6 +176,46 @@ export default function ChatPanel({ kbId }: { kbId: string }) {
       {openSource && (
         <SourceModal citation={openSource} onClose={() => setOpenSource(null)} />
       )}
+    </div>
+  );
+}
+
+function VerificationBadge({ verification }: { verification: Verification }) {
+  const verified = verification.numbers.filter(
+    (n) => n.status !== "unverified",
+  ).length;
+  const total = verification.numbers.length;
+  if (total === 0) return null;
+
+  if (verification.status === "ok") {
+    return (
+      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+        <BadgeCheck size={12} />
+        {total} number{total === 1 ? "" : "s"} checked against sources
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+      <div className="flex items-center gap-1.5 font-medium">
+        <AlertTriangle size={13} />
+        {verification.unverified.length} number
+        {verification.unverified.length === 1 ? "" : "s"} could not be matched to
+        a source
+      </div>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {verification.unverified.map((raw, i) => (
+          <code
+            key={i}
+            className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px]"
+          >
+            {raw}
+          </code>
+        ))}
+      </div>
+      <div className="mt-1 text-[11px] text-amber-700">
+        {verified}/{total} verified. Check the cited sources for the rest.
+      </div>
     </div>
   );
 }
