@@ -78,6 +78,24 @@ def test_agreement_tolerates_renamed_keys():
     assert score == 1.0
 
 
+def test_agreement_tolerates_accent_and_punctuation_noise():
+    """The false-positive cause on clean tables: minor spelling drift between
+    reads must not read as disagreement (Phase 3 flag-eval fix)."""
+    a = [rec({"annee": "2013", "pays": "Algérie",
+              "indic": "Taux d'absentéisme"}, {"v": 7462639})]
+    b = [rec({"année": "2013", "pays": "Algerie",
+              "indic": "Taux dabsenteisme"}, {"v": 7462639})]
+    score, _ = double_read_agreement(a, b)
+    assert score == 1.0
+
+
+def test_agreement_identical_free_text_labels_not_falsely_zero():
+    records = [rec({"indicateur": "Taux d'absentéisme"}, {"v2023": 4.2, "v2024": 3.8}),
+               rec({"indicateur": "Résultat net (k€)"}, {"v2023": -1250.5, "v2024": 2340.0})]
+    score, _ = double_read_agreement(records, [dict(r) for r in records])
+    assert score == 1.0
+
+
 # ---------------------------------------------------------------- arithmetic
 
 def _totals_records(t1_total=1316480.0):

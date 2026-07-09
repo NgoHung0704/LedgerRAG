@@ -26,26 +26,33 @@ import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 
-_WS_RE = re.compile(r"\s+")
 _TD_RE = re.compile(r"<td\b([^>]*)>", re.IGNORECASE)
 _TR_RE = re.compile(r"<tr\b[^>]*>(.*?)(?=<tr\b|</table|$)", re.IGNORECASE | re.DOTALL)
 _SPAN_RE = {
     "colspan": re.compile(r'colspan\s*=\s*"?(\d+)', re.IGNORECASE),
     "rowspan": re.compile(r'rowspan\s*=\s*"?(\d+)', re.IGNORECASE),
 }
-
-# multilingual total labels (C2: not one locale)
-TOTAL_LABELS = frozenset({
-    "total", "totaux", "somme", "ensemble", "sous-total", "total général",
-    "subtotal", "grand total", "summe", "gesamt", "insgesamt", "zwischensumme",
-    "totale", "suma", "总计", "合计",
-})
+_KEEP_RE = re.compile(r"[^0-9a-z一-鿿]+")  # ascii alnum + CJK; rest -> space
 
 
 def _norm(value: object) -> str:
+    """Normalize a label for robust cross-read matching: lowercase, strip
+    accents, drop punctuation/whitespace. So 'année'=='annee',
+    "d'absentéisme"=='d absenteisme', 'Total général'=='total general' — the
+    naming noise that made the double-read compare labels instead of
+    coordinates (Phase 3 flag-eval false positives)."""
     s = str(value).strip().lower()
-    s = "".join(" " if unicodedata.category(c) == "Zs" else c for c in s)
-    return _WS_RE.sub(" ", s)
+    s = "".join(c for c in unicodedata.normalize("NFKD", s)
+                if not unicodedata.combining(c))
+    return _KEEP_RE.sub(" ", s).strip()
+
+
+# multilingual total labels, pre-normalized (C2: not one locale)
+TOTAL_LABELS = frozenset(_norm(label) for label in (
+    "total", "totaux", "somme", "ensemble", "sous-total", "total général",
+    "subtotal", "grand total", "summe", "gesamt", "insgesamt", "zwischensumme",
+    "totale", "suma", "总计", "合计",
+))
 
 
 @dataclass
@@ -79,35 +86,62 @@ def structural_consistency(html: str, records: list[dict]) -> tuple[float, dict]
 
 # ------------------------------------------------------------- signal 2
 
-def _signature(record: dict) -> frozenset:
+def _dim_tokens(record: dict) -> Counter:
     tokens: Counter = Counter()
     for value in record.get("dimensions", {}).values():
-        tokens.update(t for t in _norm(value).split(" ") if t)
-    return frozenset(tokens.items())
+        for token in _norm(value).split(" "):
+            if token:
+                tokens[token] += 1
+    return tokens
 
 
-def _metric_values(records: list[dict]) -> dict[frozenset, Counter]:
-    grouped: dict[frozenset, Counter] = {}
+def _cells(records: list[dict]) -> list[tuple[Counter, float]]:
+    """One entry per metric cell: (dimension-token multiset, rounded value)."""
+    cells: list[tuple[Counter, float]] = []
     for record in records:
-        bucket = grouped.setdefault(_signature(record), Counter())
+        tokens = _dim_tokens(record)
         for value in record.get("metrics", {}).values():
             if isinstance(value, (int, float)):
-                bucket[round(float(value), 2)] += 1
-    return grouped
+                cells.append((tokens, round(float(value), 2)))
+    return cells
 
 
-def double_read_agreement(first: list[dict],
-                          second: list[dict]) -> tuple[float, dict]:
-    """Fraction of metric cells on which two independent reads agree —
-    matched by dimension-token signature, values pooled per coordinates."""
-    a, b = _metric_values(first), _metric_values(second)
-    total_a = sum(sum(c.values()) for c in a.values())
-    total_b = sum(sum(c.values()) for c in b.values())
-    if total_a == 0 and total_b == 0:
+def _jaccard(a: Counter, b: Counter) -> float:
+    union = sum((a | b).values())
+    return sum((a & b).values()) / union if union else 1.0
+
+
+def double_read_agreement(first: list[dict], second: list[dict],
+                          coord_threshold: float = 0.5) -> tuple[float, dict]:
+    """Fraction of metric cells on which two independent reads agree.
+
+    Value-anchored, coordinate-fuzzy: a cell agrees when the other read has an
+    (unused) cell with the SAME value whose dimension tokens overlap by at
+    least `coord_threshold` (Jaccard). This is robust to key renaming and to
+    accent/punctuation noise (same coordinates, different spelling still
+    match) while still catching coordinate-SWAP misreads — the H/I-type error,
+    where the same value lands on genuinely different coordinates in the two
+    reads (low overlap -> no match -> disagreement)."""
+    a_cells, b_cells = _cells(first), _cells(second)
+    if not a_cells and not b_cells:
         return 0.0, {"cells_first": 0, "cells_second": 0, "agreed": 0}
-    agreed = sum(sum((a[sig] & b[sig]).values()) for sig in a.keys() & b.keys())
-    score = 2 * agreed / (total_a + total_b)
-    return score, {"cells_first": total_a, "cells_second": total_b,
+
+    used = [False] * len(b_cells)
+    agreed = 0
+    for tokens_a, value_a in a_cells:
+        best_i, best_j = -1, coord_threshold
+        for i, (tokens_b, value_b) in enumerate(b_cells):
+            if used[i] or value_b != value_a:
+                continue
+            j = _jaccard(tokens_a, tokens_b)
+            if j >= best_j:
+                best_j, best_i = j, i
+        if best_i >= 0:
+            used[best_i] = True
+            agreed += 1
+
+    score = 2 * agreed / (len(a_cells) + len(b_cells))
+    return score, {"cells_first": len(a_cells), "cells_second": len(b_cells),
                    "agreed": agreed}
 
 
