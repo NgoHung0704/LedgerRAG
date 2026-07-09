@@ -93,6 +93,34 @@ async def test_run_table_parse_passes_large_context_options():
     assert "seed" in seen
 
 
+def test_get_double_read_provider_none_by_default(monkeypatch):
+    from tablerag.core.config import get_settings
+    from tablerag.models import registry
+
+    get_settings.cache_clear()
+    monkeypatch.delenv("LEDGERRAG_DOUBLE_READ_MODEL_NAME", raising=False)
+    assert registry.get_double_read_provider() is None
+
+
+def test_get_double_read_provider_builds_cross_model(monkeypatch):
+    from tablerag.core.config import get_settings
+    from tablerag.models import registry
+
+    get_settings.cache_clear()
+    monkeypatch.setenv("LEDGERRAG_MODELS__PARSER__PROVIDER", "ollama")
+    monkeypatch.setenv("LEDGERRAG_MODELS__PARSER__BASE_URL", "http://gpu:11435")
+    monkeypatch.setenv("LEDGERRAG_MODELS__PARSER__MODEL_NAME", "qwen3-vl:8b-instruct")
+    monkeypatch.setenv("LEDGERRAG_DOUBLE_READ_MODEL_NAME", "minicpm-v:latest")
+    try:
+        provider = registry.get_double_read_provider()
+        assert provider is not None
+        assert provider.model == "minicpm-v:latest"
+        assert provider.base_url == "http://gpu:11435"  # reuses parser base_url
+    finally:
+        get_settings.cache_clear()
+        registry.reset_providers()
+
+
 async def test_double_read_variant_shifts_seed_and_temperature():
     """Phase 3: the second read must be an independent opinion."""
     seen = {}

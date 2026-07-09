@@ -103,6 +103,36 @@ Uploaded through the full platform (UI → ingestion → inspector). Findings:
   image; scan pages are upscaled to ≥1400 px before OCR/parse. Dense tables
   lose digits at 120 dpi.
 
+## 4c. Phase 3 confidence flag-eval finding (2026-07)
+
+`make eval-flags` grades each parse vs ground truth, then measures the flag
+against ACTUAL correctness (not against image corruption — a robust VLM reads
+through mild blur/rotate, so corrupted != wrong).
+
+- False positives: **0%** (DoD ≤10% ✓) after fixing the agreement matcher
+  (value-anchored + accent/punctuation-robust; naming noise no longer reads as
+  disagreement).
+- Recall on genuinely-wrong parses: **11%** (DoD ≥90% ✗). Root cause is
+  fundamental, not a bug: **same-model double-read is blind to systematic
+  errors.** On complex merged tables qwen3-vl:8b is confidently wrong and
+  reproduces the identical misread on both passes → agreement 1.0 → not
+  flagged (8/9 wrong tables). The double-read assumption "uncertain ⇒
+  divergent reads" fails because the error is deterministic.
+- Signal audit: `structural` = 1.0 even on wrong tables (counting cells can't
+  see misattribution); `arithmetic` reliable but only fires on tables with
+  Total rows; `agreement` blind to systematic errors as above.
+
+**Implication:** a single small local model cannot reliably self-detect its
+own systematic misreads. Two responses shipped/available: (a) **cross-model
+double-read** (`double_read_model_name`, e.g. minicpm-v) — a different
+architecture doesn't share blind spots; the one lever that adds real
+information, to be measured on the box. (b) The **true safety net is
+architectural and already in place**: every table keeps its source image, and
+the answer path never asserts numbers from a `needs_review`/failed parse — a
+human verifies against the original. The auto-flag is a bonus (catches
+arithmetic errors + random divergence), not the primary guarantee. This is
+"fail honestly": knowing and surfacing the limit rather than hiding it.
+
 ## 5. Decision
 
 **Current position (2026-07):** synthetic accuracy ~84–90% (band, due to model

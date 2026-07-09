@@ -36,7 +36,7 @@ import grade  # noqa: E402  (spike grader)
 from tablerag.core.config import get_settings  # noqa: E402
 from tablerag.ingestion.confidence import assess  # noqa: E402
 from tablerag.models.base import TableCtx  # noqa: E402
-from tablerag.models.registry import get_provider  # noqa: E402
+from tablerag.models.registry import get_double_read_provider, get_provider  # noqa: E402
 
 CORRECT_CELL_THRESHOLD = 0.95
 
@@ -67,8 +67,13 @@ async def evaluate_table(gt: dict, image: bytes) -> Outcome:
     accuracy = (graded["correct_cells"] / graded["total_cells"]
                 if graded["total_cells"] else 0.0)
 
-    second = await parser.parse_table(
-        image, TableCtx(locale_hint=gt.get("locale", "unknown"), read_variant=1))
+    verifier = get_double_read_provider()
+    if verifier is not None:  # cross-model second read
+        second = await verifier.parse_table(
+            image, TableCtx(locale_hint=gt.get("locale", "unknown")))
+    else:  # same-model seed-shift
+        second = await parser.parse_table(
+            image, TableCtx(locale_hint=gt.get("locale", "unknown"), read_variant=1))
     second_records = ([r.model_dump() for r in second.records]
                       if not second.error and second.records else None)
     report = assess(

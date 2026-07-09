@@ -69,10 +69,17 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
         second_records = None
         if (double_read and result.parse_strategy == "vlm"
                 and not result.needs_review):
-            # second independent read (seed+1, slight temperature): where the
-            # model hesitates (rowspan boundaries), two reads diverge -> flag
-            second = asyncio.run(parse_table_region(
-                crop_png, None, True, locale, read_variant=1))
+            # second independent read. Cross-model when configured (a different
+            # architecture doesn't share qwen's blind spots on merged cells);
+            # otherwise same-model seed-shift (catches only random divergence).
+            from tablerag.models.registry import get_double_read_provider
+
+            verifier = get_double_read_provider()
+            second = asyncio.run(
+                parse_table_region(crop_png, None, True, locale,
+                                   provider=verifier)
+                if verifier is not None else
+                parse_table_region(crop_png, None, True, locale, read_variant=1))
             if not second.error and second.records:
                 second_records = second.records
         report = assess(

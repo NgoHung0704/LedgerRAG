@@ -35,6 +35,11 @@ x-backend-env: &backend-env
   LEDGERRAG_DOUBLE_READ_ENABLED: ${LEDGERRAG_DOUBLE_READ_ENABLED:-true}
   LEDGERRAG_CONFIDENCE_REVIEW_THRESHOLD: ${LEDGERRAG_CONFIDENCE_REVIEW_THRESHOLD:-0.9}
   LEDGERRAG_DOUBLE_READ_AGREEMENT_THRESHOLD: ${LEDGERRAG_DOUBLE_READ_AGREEMENT_THRESHOLD:-0.98}
+  # cross-model double-read (Phase 3): set to a DIFFERENT model on the parser's
+  # server to catch systematic same-model errors, e.g. minicpm-v:latest.
+  # Empty = same-model seed-shift (catches only random divergence).
+  LEDGERRAG_DOUBLE_READ_MODEL_NAME: ${LEDGERRAG_DOUBLE_READ_MODEL_NAME:-}
+  LEDGERRAG_DOUBLE_READ_BASE_URL: ${LEDGERRAG_DOUBLE_READ_BASE_URL:-}
 
 services:
   postgres:

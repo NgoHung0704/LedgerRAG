@@ -83,6 +83,22 @@ def get_provider(role: ModelRole) -> ModelProvider:
     return _cache[key]
 
 
+def get_double_read_provider() -> ModelProvider | None:
+    """Provider for the Phase 3 second read. Returns a DIFFERENT-model provider
+    when configured (cross-model double-read, the only way to catch systematic
+    same-model errors), else None -> caller falls back to same-model seed-shift."""
+    settings = get_settings()
+    if not settings.double_read_model_name:
+        return None
+    base = effective_config("parser")
+    cfg = EndpointConfig(
+        provider=base.provider,
+        base_url=settings.double_read_base_url or base.base_url,
+        model_name=settings.double_read_model_name,
+        api_key=base.api_key)
+    return build_provider(cfg)
+
+
 def reset_providers() -> None:
     """For tests and config updates."""
     _cache.clear()

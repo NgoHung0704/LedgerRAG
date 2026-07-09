@@ -139,7 +139,8 @@ def _html_shape(html: str) -> tuple[int | None, int | None]:
 
 async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | None,
                              is_complex: bool, locale: str | None,
-                             read_variant: int = 0) -> TableResult:
+                             read_variant: int = 0,
+                             provider=None) -> TableResult:
     # --- simple path ---
     if grid and not is_complex:
         try:
@@ -155,7 +156,7 @@ async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | Non
     from tablerag.core.config import get_settings
     from tablerag.ingestion.imaging import ensure_min_width
 
-    parser = get_provider("parser")
+    parser = provider or get_provider("parser")
     vlm_image = ensure_min_width(crop_png,
                                  get_settings().vlm_min_image_width)
     parse = await parser.parse_table(

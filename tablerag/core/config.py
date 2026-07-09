@@ -92,6 +92,12 @@ class Settings(BaseSettings):
     double_read_enabled: bool = True  # per-KB override: kb.config["double_read"]
     double_read_agreement_threshold: float = 0.98
     confidence_review_threshold: float = 0.9
+    # cross-model double-read: same-model re-reads reproduce systematic errors
+    # (confident + wrong + identical twice -> agreement 1.0 -> not flagged), so
+    # a genuinely independent second opinion needs a DIFFERENT architecture.
+    # Empty = fall back to same-model seed-shift.
+    double_read_model_name: str = ""
+    double_read_base_url: str = ""  # empty = reuse the parser base_url
 
     # ingestion: pages with fewer stripped chars are flagged as needing OCR
     scan_min_chars_per_page: int = 32

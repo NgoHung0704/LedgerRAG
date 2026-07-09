@@ -6,11 +6,15 @@ consistency (SPEC Phase 3), via three independent signals:
 1. Structural consistency — the cell count implied by the HTML (td slots,
    expanding rowspan/colspan) must accommodate the records' metric cells, and
    the record count must cover the HTML's data rows.
-2. Double-read agreement — the table is parsed twice (second read with a
-   different seed/temperature); the fraction of agreeing metric values below
-   a threshold means the model is guessing. This is exactly the signal that
-   catches rowspan-boundary confusions (the H/I-type misread): two reads
-   diverge precisely where the model hesitates.
+2. Double-read agreement — the table is parsed twice; the fraction of
+   agreeing metric values below a threshold means the reads diverge.
+   IMPORTANT LIMIT (measured, `make eval-flags`): a SAME-model second read
+   reproduces SYSTEMATIC errors — when the VLM is confidently wrong on a
+   merged-cell table it makes the identical mistake twice (agreement ~1.0,
+   not flagged). Same-model double-read therefore catches only RANDOM
+   divergence (noise), not the dominant confident-and-wrong failure mode.
+   Cross-model double-read (config double_read_model_name -> a different
+   architecture) is the mitigation: two models don't share blind spots.
 3. Arithmetic check — rows/columns labeled Total/Somme/Summe/... must equal
    the sum of their components (rounding tolerance). A failed sum is the
    strongest signal and flags immediately.
