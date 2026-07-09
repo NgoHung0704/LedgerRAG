@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, FileUp, Files, ScanSearch } from "lucide-react";
-import { getDocs, uploadDoc, type Doc } from "@/lib/api";
-import { Card, EmptyState, StatusPill } from "@/components/ui";
+import { AlertCircle, FileUp, Files, ScanSearch, Trash2 } from "lucide-react";
+import { deleteDoc, getDocs, uploadDoc, type Doc } from "@/lib/api";
+import { Card, EmptyState, Spinner, StatusPill } from "@/components/ui";
 
 export default function DocumentsPanel({ kbId }: { kbId: string }) {
   const [docs, setDocs] = useState<Doc[] | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(
@@ -42,6 +43,20 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
       }
     }
     refresh();
+  };
+
+  const remove = async (d: Doc) => {
+    if (!window.confirm(`Delete "${d.filename}" and all its parsed data? This cannot be undone.`))
+      return;
+    setDeleting(d.id);
+    try {
+      await deleteDoc(d.id);
+      await refresh();
+    } catch (e) {
+      setUploadError(String(e));
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -140,12 +155,22 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                     {new Date(d.created_at).toLocaleString()}
                   </td>
                   <td className="px-4 py-2.5">
-                    <Link
-                      href={`/doc/${d.id}`}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
-                    >
-                      <ScanSearch size={13} /> Inspect
-                    </Link>
+                    <div className="flex items-center justify-end gap-1">
+                      <Link
+                        href={`/doc/${d.id}`}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                      >
+                        <ScanSearch size={13} /> Inspect
+                      </Link>
+                      <button
+                        onClick={() => remove(d)}
+                        disabled={deleting === d.id}
+                        title="Delete document"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      >
+                        {deleting === d.id ? <Spinner size={13} /> : <Trash2 size={13} />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

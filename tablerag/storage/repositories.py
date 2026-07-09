@@ -59,6 +59,19 @@ def list_documents(s: Session, kb_id: uuid.UUID) -> list[Document]:
         .order_by(Document.created_at.desc())))
 
 
+def delete_document(s: Session, doc_id: uuid.UUID) -> uuid.UUID | None:
+    """Delete a document and everything it owns in Postgres (elements, chunks,
+    table_element, records cascade). Returns its kb_id so the caller can also
+    drop vectors and object-store files. Returns None if it never existed."""
+    doc = s.get(Document, doc_id)
+    if doc is None:
+        return None
+    kb_id = doc.kb_id
+    s.delete(doc)
+    s.flush()
+    return kb_id
+
+
 def set_document_status(s: Session, doc_id: uuid.UUID, status: str,
                         error: str | None = None,
                         page_count: int | None = None) -> None:

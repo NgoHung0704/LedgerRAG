@@ -107,6 +107,7 @@ def test_get_double_read_provider_builds_cross_model(monkeypatch):
     from tablerag.models import registry
 
     get_settings.cache_clear()
+    monkeypatch.setattr(registry, "_overrides", lambda: {})  # no DB in unit tests
     monkeypatch.setenv("LEDGERRAG_MODELS__PARSER__PROVIDER", "ollama")
     monkeypatch.setenv("LEDGERRAG_MODELS__PARSER__BASE_URL", "http://gpu:11435")
     monkeypatch.setenv("LEDGERRAG_MODELS__PARSER__MODEL_NAME", "qwen3-vl:8b-instruct")

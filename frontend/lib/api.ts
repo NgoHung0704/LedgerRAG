@@ -182,6 +182,11 @@ export const uploadDoc = (kbId: string, file: File) => {
   }).then((r) => jsonOrThrow<Doc>(r));
 };
 
+export const deleteDoc = (docId: string) =>
+  fetch(`${API_URL}/api/documents/${docId}`, { method: "DELETE" }).then((r) => {
+    if (!r.ok && r.status !== 204) throw new Error(`delete failed: ${r.status}`);
+  });
+
 export const pageImageUrl = (docId: string, page: number) =>
   `${API_URL}/api/documents/${docId}/pages/${page}/image`;
 

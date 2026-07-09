@@ -7,7 +7,13 @@ from tablerag.core.queue import TASK_PROCESS_DOCUMENT, celery_app
 from tablerag.core.schemas import DocumentOut
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
-from tablerag.storage.object_store import doc_pdf_key, get_object_store, page_image_key
+from tablerag.storage.object_store import (
+    doc_pdf_key,
+    doc_prefix,
+    get_object_store,
+    page_image_key,
+)
+from tablerag.storage.qdrant import get_vector_store
 
 router = APIRouter(prefix="/api", tags=["documents"])
 
@@ -55,6 +61,24 @@ def get_document(doc_id: uuid.UUID) -> DocumentOut:
         if doc is None:
             raise HTTPException(404, "document not found")
         return DocumentOut.model_validate(doc, from_attributes=True)
+
+
+@router.delete("/documents/{doc_id}", status_code=204)
+def delete_document(doc_id: uuid.UUID) -> Response:
+    """Remove a document from all three stores: vectors (Qdrant), files
+    (object store), then Postgres rows (elements/chunks/records cascade)."""
+    with session_scope() as s:
+        doc = repo.get_document(s, doc_id)
+        if doc is None:
+            raise HTTPException(404, "document not found")
+        kb_id = doc.kb_id
+    # external stores first: if Postgres delete later fails, the doc is still
+    # gone from retrieval and disk (no orphaned vectors serving stale answers)
+    get_vector_store().delete_doc(doc_id)
+    get_object_store().delete_prefix(doc_prefix(kb_id, doc_id))
+    with session_scope() as s:
+        repo.delete_document(s, doc_id)
+    return Response(status_code=204)
 
 
 @router.get("/documents/{doc_id}/elements")

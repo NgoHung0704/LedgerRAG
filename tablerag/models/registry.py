@@ -9,6 +9,7 @@ without restarts; providers are cached by their effective endpoint config.
 from __future__ import annotations
 
 import logging
+import time
 
 from tablerag.core.config import EndpointConfig, ModelRole, get_settings
 from tablerag.core.schemas import RoleHealth
@@ -19,22 +20,34 @@ logger = logging.getLogger(__name__)
 MODEL_ROLES_SETTING = "model_roles"
 ROLES: tuple[ModelRole, ...] = ("parser", "embedder", "chat", "reranker")
 
+# short TTL so config edits propagate cross-process within seconds without a
+# DB round-trip on every single model resolution (get_provider is hot)
+_OVERRIDES_TTL = 5.0
+_overrides_cache: dict = {"value": None, "ts": 0.0}
+
 
 class RoleDisabled(Exception):
     """Raised when code asks for a role the deployer left disabled."""
 
 
 def _overrides() -> dict:
-    """Runtime overrides from Postgres; empty when the DB is unreachable so
-    the platform still works from env config alone."""
+    """Runtime overrides from Postgres (TTL-cached); empty when the DB is
+    unreachable so the platform still works from env config alone."""
+    now = time.monotonic()
+    if (_overrides_cache["value"] is not None
+            and now - _overrides_cache["ts"] < _OVERRIDES_TTL):
+        return _overrides_cache["value"]
     try:
         from tablerag.storage.db import session_scope
         from tablerag.storage.repositories import get_setting
 
         with session_scope() as s:
-            return get_setting(s, MODEL_ROLES_SETTING) or {}
+            value = get_setting(s, MODEL_ROLES_SETTING) or {}
     except Exception:  # noqa: BLE001
-        return {}
+        value = {}
+    _overrides_cache["value"] = value
+    _overrides_cache["ts"] = now
+    return value
 
 
 def effective_config(role: ModelRole) -> EndpointConfig:
@@ -102,6 +115,8 @@ def get_double_read_provider() -> ModelProvider | None:
 def reset_providers() -> None:
     """For tests and config updates."""
     _cache.clear()
+    _overrides_cache["value"] = None
+    _overrides_cache["ts"] = 0.0
 
 
 async def check_role_health(role: ModelRole) -> RoleHealth:

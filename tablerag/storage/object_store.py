@@ -22,6 +22,8 @@ class ObjectStore(Protocol):
 
     def exists(self, key: str) -> bool: ...
 
+    def delete_prefix(self, prefix: str) -> None: ...
+
 
 def _safe_key(key: str) -> PurePosixPath:
     p = PurePosixPath(key)
@@ -48,6 +50,15 @@ class LocalFSStore:
 
     def exists(self, key: str) -> bool:
         return self._path(key).is_file()
+
+    def delete_prefix(self, prefix: str) -> None:
+        import shutil
+
+        path = self.root / _safe_key(prefix)
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        elif path.is_file():
+            path.unlink(missing_ok=True)
 
 
 class MinIOStore:
@@ -83,6 +94,17 @@ class MinIOStore:
         except S3Error:
             return False
 
+    def delete_prefix(self, prefix: str) -> None:
+        from minio.deleteobjects import DeleteObject
+
+        normalized = str(_safe_key(prefix)) + "/"
+        objects = self.client.list_objects(self.bucket, prefix=normalized,
+                                            recursive=True)
+        errors = self.client.remove_objects(
+            self.bucket, (DeleteObject(o.object_name) for o in objects))
+        for _ in errors:  # drain iterator so deletes actually execute
+            pass
+
 
 def build_object_store(cfg: ObjectStoreConfig) -> ObjectStore:
     if cfg.backend == "minio":
@@ -96,6 +118,10 @@ def get_object_store() -> ObjectStore:
 
 
 # canonical key layout
+def doc_prefix(kb_id, doc_id) -> str:
+    return f"kbs/{kb_id}/docs/{doc_id}"
+
+
 def doc_pdf_key(kb_id, doc_id) -> str:
     return f"kbs/{kb_id}/docs/{doc_id}/original.pdf"
 
