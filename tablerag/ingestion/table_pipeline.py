@@ -18,6 +18,7 @@ import re
 from dataclasses import dataclass, field
 
 from tablerag.core.numbers import parse_number
+from tablerag.ingestion.html_tables import collapse_vertical_merges
 from tablerag.models.base import RecordParse, TableCtx
 from tablerag.models.registry import get_provider
 
@@ -147,7 +148,8 @@ async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | Non
             records = records_from_grid(grid, locale)
             if records:
                 return TableResult(
-                    html=_grid_to_html(grid), parse_strategy="simple_parser",
+                    html=collapse_vertical_merges(_grid_to_html(grid)),
+                    parse_strategy="simple_parser",
                     n_rows=len(grid), n_cols=len(grid[0]), records=records)
         except Exception:  # noqa: BLE001 — fall through to the VLM, never crash
             logger.exception("simple table path failed; falling back to VLM")
@@ -172,8 +174,8 @@ async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | Non
         return TableResult(html=parse.html, parse_strategy="vlm",
                            n_rows=n_rows, n_cols=n_cols,
                            needs_review=True, error=parse.error)
-    return TableResult(html=parse.html, parse_strategy="vlm",
-                       n_rows=n_rows, n_cols=n_cols,
+    return TableResult(html=collapse_vertical_merges(parse.html),
+                       parse_strategy="vlm", n_rows=n_rows, n_cols=n_cols,
                        records=_records_from_vlm(parse.records, locale))
 
 
