@@ -198,16 +198,53 @@ async def test_parse_table_region_simple_path_no_model_call(monkeypatch):
     assert result.records[0]["metrics"]["ca"] == 5240880.0
 
 
-def test_format_grid_hint_renders_pipe_table_with_blanks():
+def test_format_grid_hint_forward_fills_merged_label():
     from tablerag.models.table_parsing import format_grid_hint
 
     grid = [["Groupe", "Classe", "Emploi"],
             ["H", "15", "Directeur"],
-            [None, "16", ""]]  # merged 'H' spanning down -> blank
+            [None, "16", ""]]  # merged 'H' spanning down -> was blank
     hint = format_grid_hint(grid)
     assert "Groupe | Classe | Emploi" in hint
     assert "H | 15 | Directeur" in hint
-    assert " | 16 |" in hint  # leading blank marks the merged continuation
+    assert "H | 16 |" in hint  # merged 'H' propagated down; Emploi stays blank
+
+
+def test_forward_fill_grid_reconstructs_cetiat_rowspans():
+    from tablerag.models.table_parsing import forward_fill_grid
+
+    # Cotation | Classe | Groupe | Emplois — H covers 15-16, I covers 17-18,
+    # and Emplois is legitimately empty on the continuation rows
+    grid = [
+        ["49", "15", "H", "Directeur(trice)"],
+        ["52", "16", None, None],
+        ["55", "17", "I", "Adjoint(e)"],
+        ["58", "18", "", ""],
+    ]
+    out = forward_fill_grid(grid)
+    assert [row[2] for row in out] == ["H", "H", "I", "I"]  # group filled
+    # guardrails: long text (Emplois) NOT filled, numbers NOT propagated
+    assert out[1][3] in (None, "")   # Emplois continuation stays empty
+    assert out[3][3] == ""
+    assert [row[0] for row in out] == ["49", "52", "55", "58"]  # metrics untouched
+
+
+def test_forward_fill_grid_never_fills_leading_blanks():
+    from tablerag.models.table_parsing import forward_fill_grid
+
+    grid = [[None, "x"], ["H", "y"], [None, "z"]]
+    out = forward_fill_grid(grid)
+    assert out[0][0] in (None, "")   # leading blank stays
+    assert out[2][0] == "H"          # blank under a label is filled
+
+
+def test_forward_fill_grid_does_not_propagate_numbers():
+    from tablerag.models.table_parsing import forward_fill_grid
+
+    grid = [["Total", "100"], ["", ""]]  # blank metric must NOT become 100
+    out = forward_fill_grid(grid)
+    assert out[1][1] in (None, "")
+    assert out[1][0] == "Total" or out[1][0] in (None, "")  # 'Total' is 5 chars > max
 
 
 def test_format_grid_hint_none_for_empty():

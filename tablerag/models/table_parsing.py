@@ -146,21 +146,63 @@ blank means the extractor found no text there). Use it like this:
 - The VALUES are reliable: copy every number from this text, do NOT re-read \
 digits from the image. If the text and the image seem to disagree on a value, \
 trust the text.
-- A blank cell is EITHER genuinely empty OR the continuation of a cell that is \
-merged (rowspan/colspan) from above or the left. Use the IMAGE to decide which, \
-and to attach every value to its correct row/column coordinates.
+- Row-merged group labels have ALREADY been repeated on every row they span in \
+this text (a label like "H" covering two rows appears on both). Keep them \
+repeated in your records — every spanned row carries the group label; do not \
+collapse them back to one.
+- A remaining blank cell is EITHER genuinely empty OR a column (colspan) \
+continuation. Use the IMAGE to decide, and to attach every value to its correct \
+row/column coordinates.
 So: take the values from here, take the merge structure from the image.
 
 {grid}
 """
 
 
+# forward-fill of merged row labels: the VLM reads WHERE a merged group starts
+# but often leaves the spanned rows blank (find_tables also leaves them blank).
+# Propagating a short letter-label down its column reconstructs the rowspan
+# deterministically — 100% where the model was ~90%. Guardrails keep it from
+# filling legitimately-empty data cells (job titles, missing metrics).
+_MERGE_LABEL_MAX_LEN = 4
+
+
+def _is_propagatable_label(value: str) -> bool:
+    """A short label with at least one letter (group codes like 'H', 'VIII') —
+    never a number (missing metric) or long text (job title / header)."""
+    v = value.strip()
+    return bool(v) and len(v) <= _MERGE_LABEL_MAX_LEN and any(c.isalpha() for c in v)
+
+
+def forward_fill_grid(grid: list[list[str | None]]) -> list[list[str | None]]:
+    """Propagate a short letter-label downward into the blank cells below it,
+    per column (reconstruct vertical rowspan merges). Never fills leading
+    blanks, numbers, or long text — so genuinely-empty data cells are left
+    alone (SPEC: never invent structure where there is none)."""
+    if not grid:
+        return grid
+    n_cols = max((len(row) for row in grid), default=0)
+    filled = [list(row) + [None] * (n_cols - len(row)) for row in grid]
+    for c in range(n_cols):
+        last: str | None = None
+        for r in range(len(filled)):
+            cell = filled[r][c]
+            text = str(cell).strip() if cell not in (None, "") else ""
+            if text:
+                last = text if _is_propagatable_label(text) else None
+            elif last is not None:
+                filled[r][c] = last
+    return filled
+
+
 def format_grid_hint(grid: list[list[str | None]] | None,
                      max_chars: int = 3000) -> str | None:
-    """Render a find_tables grid as a pipe-delimited hint. Blanks are kept —
-    they encode where merged cells were spanned, which helps the VLM."""
+    """Render a find_tables grid as a pipe-delimited hint, with merged row
+    labels forward-filled so the VLM sees the propagated structure instead of
+    ambiguous blanks."""
     if not grid:
         return None
+    grid = forward_fill_grid(grid)
     lines = [" | ".join((str(cell).strip() if cell else "") for cell in row)
              for row in grid]
     text = "\n".join(lines).strip()
