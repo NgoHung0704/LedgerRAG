@@ -74,6 +74,60 @@ def _overlap_ratio(rect: fitz.Rect, other: fitz.Rect) -> float:
     return inter.get_area() / area if area else 0.0
 
 
+# detection strategies from strict to lenient: lines_strict misses tables with
+# imperfect borders (common in real HR grids — this is what dropped the second
+# table on the CETIAT page), so we also try `lines`, and finally text-alignment
+_TABLE_STRATEGIES = ("lines_strict", "lines", "text")
+
+
+def grid_fill_ratio(grid: list[list]) -> float:
+    cells = [c for row in grid for c in row]
+    if not cells:
+        return 0.0
+    return sum(1 for c in cells if c is not None and str(c).strip()) / len(cells)
+
+
+def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
+                 existing: list[fitz.Rect]) -> bool:
+    """Keep a detected table region? Dedupe against already-accepted regions
+    and reject non-table shapes — especially guard the lenient `text` strategy
+    so prose/columns aren't mistaken for a table."""
+    if rect.get_area() <= 0 or not grid:
+        return False
+    if any(_overlap_ratio(rect, ex) > 0.5 or _overlap_ratio(ex, rect) > 0.5
+           for ex in existing):
+        return False
+    n_cols = max((len(row) for row in grid), default=0)
+    if n_cols < 2 or len(grid) < 2:  # need a real 2-D grid
+        return False
+    if strategy == "text" and grid_fill_ratio(grid) < 0.6:
+        return False  # sparse -> probably prose, not a table
+    return True
+
+
+def detect_tables(page: fitz.Page) -> list[tuple]:
+    """Every table region on the page, across detection strategies, deduped by
+    bbox overlap. Returns (table, grid) pairs. A detector crash on one strategy
+    must not kill the page."""
+    found: list[tuple] = []
+    rects: list[fitz.Rect] = []
+    for strategy in _TABLE_STRATEGIES:
+        try:
+            tables = page.find_tables(strategy=strategy).tables
+        except Exception:  # noqa: BLE001
+            continue
+        for table in tables:
+            rect = fitz.Rect(table.bbox)
+            try:
+                grid = table.extract()
+            except Exception:  # noqa: BLE001
+                continue
+            if accept_table(rect, grid, strategy, rects):
+                found.append((table, grid))
+                rects.append(rect)
+    return found
+
+
 def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
                  table_dpi: int = 240) -> PageLayout:
     text = page.get_text("text")
@@ -85,16 +139,9 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
     if layout.is_scan:
         return layout  # no text layer: the whole page goes down the VLM path
 
-    # --- tables ---
+    # --- tables (real pages often have several per page + imperfect borders) ---
     table_rects: list[fitz.Rect] = []
-    try:
-        tables = page.find_tables().tables
-    except Exception:  # noqa: BLE001 — a detector crash must not kill the page
-        tables = []
-    for table in tables:
-        grid = table.extract()
-        if not grid or (len(grid) == 1 and len(grid[0]) <= 1):
-            continue  # degenerate detection
+    for table, grid in detect_tables(page):
         clip = (fitz.Rect(table.bbox) + (-6, -6, 6, 6)) & page.rect
         layout.regions.append(Region(
             type="table", bbox=tuple(table.bbox), grid=grid,
