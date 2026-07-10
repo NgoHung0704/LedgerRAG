@@ -139,9 +139,40 @@ Do not summarize, do not skip rows, do not add commentary.
 
 _FENCE_RE = re.compile(r"```(html|json)\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
 
+_GRID_HINT_TEMPLATE = """\
+EXTRACTED CELL TEXT — this is the raw text of every cell, pulled directly from \
+the document's text layer (one row per line, columns separated by " | ", a \
+blank means the extractor found no text there). Use it like this:
+- The VALUES are reliable: copy every number from this text, do NOT re-read \
+digits from the image. If the text and the image seem to disagree on a value, \
+trust the text.
+- A blank cell is EITHER genuinely empty OR the continuation of a cell that is \
+merged (rowspan/colspan) from above or the left. Use the IMAGE to decide which, \
+and to attach every value to its correct row/column coordinates.
+So: take the values from here, take the merge structure from the image.
 
-def build_user_prompt(locale_hint: str = "unknown") -> str:
-    return FEW_SHOT + "\n" + INSTRUCTIONS.replace("{locale_hint}", locale_hint)
+{grid}
+"""
+
+
+def format_grid_hint(grid: list[list[str | None]] | None,
+                     max_chars: int = 3000) -> str | None:
+    """Render a find_tables grid as a pipe-delimited hint. Blanks are kept —
+    they encode where merged cells were spanned, which helps the VLM."""
+    if not grid:
+        return None
+    lines = [" | ".join((str(cell).strip() if cell else "") for cell in row)
+             for row in grid]
+    text = "\n".join(lines).strip()
+    return text[:max_chars] if text.replace("|", "").strip() else None
+
+
+def build_user_prompt(locale_hint: str = "unknown",
+                      grid_hint: str | None = None) -> str:
+    prompt = FEW_SHOT + "\n" + INSTRUCTIONS.replace("{locale_hint}", locale_hint)
+    if grid_hint:
+        prompt += "\n\n" + _GRID_HINT_TEMPLATE.replace("{grid}", grid_hint)
+    return prompt
 
 
 def build_retry_prompt(error: str) -> str:
@@ -221,7 +252,8 @@ async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TablePar
     options = parse_options(ctx.read_variant)
     messages = [
         Msg(role="system", content=SYSTEM_PROMPT),
-        Msg(role="user", content=build_user_prompt(ctx.locale_hint or "unknown"),
+        Msg(role="user",
+            content=build_user_prompt(ctx.locale_hint or "unknown", ctx.grid_hint),
             images=[image_b64]),
     ]
     text = await _collect(chat, messages, options)

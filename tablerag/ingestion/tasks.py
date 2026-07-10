@@ -75,11 +75,13 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
             from tablerag.models.registry import get_double_read_provider
 
             verifier = get_double_read_provider()
+            # keep the grid available on the 2nd read too (same text-layer hint,
+            # is_complex=True still forces the VLM path)
             second = asyncio.run(
-                parse_table_region(crop_png, None, True, locale,
+                parse_table_region(crop_png, grid, True, locale,
                                    provider=verifier)
                 if verifier is not None else
-                parse_table_region(crop_png, None, True, locale, read_variant=1))
+                parse_table_region(crop_png, grid, True, locale, read_variant=1))
             if not second.error and second.records:
                 second_records = second.records
         report = assess(

@@ -39,6 +39,10 @@ class TableCtx(BaseModel):
     # Phase 3 double-read: variant > 0 shifts seed/temperature so the second
     # read is an independent opinion, not a cache replay
     read_variant: int = 0
+    # text-layer grid extracted by find_tables, rendered as a hint: reliable
+    # cell VALUES so the VLM only has to infer the merge STRUCTURE from the
+    # image (splits the hard problem — see table_parsing.build_user_prompt)
+    grid_hint: str | None = None
 
 
 class RecordParse(BaseModel):

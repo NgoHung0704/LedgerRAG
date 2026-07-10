@@ -198,6 +198,56 @@ async def test_parse_table_region_simple_path_no_model_call(monkeypatch):
     assert result.records[0]["metrics"]["ca"] == 5240880.0
 
 
+def test_format_grid_hint_renders_pipe_table_with_blanks():
+    from tablerag.models.table_parsing import format_grid_hint
+
+    grid = [["Groupe", "Classe", "Emploi"],
+            ["H", "15", "Directeur"],
+            [None, "16", ""]]  # merged 'H' spanning down -> blank
+    hint = format_grid_hint(grid)
+    assert "Groupe | Classe | Emploi" in hint
+    assert "H | 15 | Directeur" in hint
+    assert " | 16 |" in hint  # leading blank marks the merged continuation
+
+
+def test_format_grid_hint_none_for_empty():
+    from tablerag.models.table_parsing import format_grid_hint
+
+    assert format_grid_hint(None) is None
+    assert format_grid_hint([]) is None
+    assert format_grid_hint([[None, ""], ["", None]]) is None
+
+
+def test_build_user_prompt_injects_grid_hint():
+    from tablerag.models.table_parsing import build_user_prompt
+
+    base = build_user_prompt("fr")
+    with_hint = build_user_prompt("fr", "H | 15 | Directeur")
+    assert "EXTRACTED CELL TEXT" not in base
+    assert "EXTRACTED CELL TEXT" in with_hint
+    assert "H | 15 | Directeur" in with_hint
+    assert "take the merge structure from the image" in with_hint
+
+
+async def test_grid_hint_flows_to_vlm_on_complex_text_layer_table(monkeypatch):
+    """CETIAT case: complex table WITH a text-layer grid -> the VLM prompt is
+    grounded in the extracted values."""
+    seen = {}
+
+    class CapturingParser:
+        async def parse_table(self, image, ctx):
+            from tablerag.models.base import TableParse
+            seen["grid_hint"] = ctx.grid_hint
+            return TableParse(html="<table></table>", records=[], error="x")
+
+    monkeypatch.setattr("tablerag.ingestion.table_pipeline.get_provider",
+                        lambda role: CapturingParser())
+    grid = [["Groupe", "Cotation"], ["H", "49"], [None, "52"]]
+    await parse_table_region(b"png", grid, is_complex=True, locale="fr")
+    assert seen["grid_hint"] is not None
+    assert "H | 49" in seen["grid_hint"]
+
+
 def test_summary_prompt_forces_declared_language():
     from tablerag.ingestion.table_pipeline import build_summary_prompt
 

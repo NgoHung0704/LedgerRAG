@@ -155,13 +155,17 @@ async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | Non
     # --- VLM path ---
     from tablerag.core.config import get_settings
     from tablerag.ingestion.imaging import ensure_min_width
+    from tablerag.models.table_parsing import format_grid_hint
 
     parser = provider or get_provider("parser")
     vlm_image = ensure_min_width(crop_png,
                                  get_settings().vlm_min_image_width)
+    # for text-layer tables, ground the VLM in the extracted cell text so it
+    # only has to infer the merge structure from the image (not the values)
+    grid_hint = format_grid_hint(grid)
     parse = await parser.parse_table(
         vlm_image, TableCtx(locale_hint=locale or "unknown",
-                            read_variant=read_variant))
+                            read_variant=read_variant, grid_hint=grid_hint))
     n_rows, n_cols = _html_shape(parse.html)
     if parse.error:
         # honest failure: keep the html/crop, flag for review, no records
