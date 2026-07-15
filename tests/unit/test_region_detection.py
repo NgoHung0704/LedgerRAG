@@ -1,27 +1,49 @@
-"""VLM table-region detection: box parsing/validation + fractional crop.
-This is the scanned-multi-table fix (find_tables can't see scans)."""
+"""VLM table-region detection: box parsing across coordinate conventions +
+fractional crop. This is the scanned-multi-table fix (find_tables can't see
+scans, and Qwen-VL answers in 0-1000 coordinates regardless of instructions)."""
 
 import io
 
 from PIL import Image
 
 from tablerag.ingestion.imaging import crop_fraction
-from tablerag.ingestion.table_pipeline import parse_region_boxes
+from tablerag.ingestion.region_detect import parse_region_boxes
 
 
-def test_parse_two_regions():
-    text = ('Here are the tables: '
-            '[{"x0":0.08,"y0":0.10,"x1":0.92,"y1":0.34},'
+def test_parse_fractions_convention():
+    text = ('[{"x0":0.08,"y0":0.10,"x1":0.92,"y1":0.34},'
             '{"x0":0.08,"y0":0.55,"x1":0.92,"y1":0.71}]')
     boxes = parse_region_boxes(text)
     assert len(boxes) == 2
     assert boxes[0][1] < boxes[1][1]  # sorted top-to-bottom
 
 
+def test_parse_qwen_0_1000_convention():
+    """The convention Qwen-VL actually uses — this was the silent killer:
+    clamping 0-1000 values to 0-1 made every box degenerate -> [] -> whole-page
+    fallback -> only one table element."""
+    text = ('[{"x0":80,"y0":100,"x1":920,"y1":340},'
+            '{"x0":80,"y0":550,"x1":920,"y1":710}]')
+    boxes = parse_region_boxes(text)
+    assert len(boxes) == 2
+    (x0, y0, x1, y1) = boxes[0]
+    assert abs(x0 - 0.08) < 1e-6 and abs(y1 - 0.34) < 1e-6
+
+
+def test_parse_absolute_pixels_with_image_size():
+    text = '[{"x0":120,"y0":1600,"x1":1300,"y1":2100}]'  # > 1050 -> pixels
+    boxes = parse_region_boxes(text, width=1400, height=2200)
+    assert len(boxes) == 1
+    (x0, y0, x1, y1) = boxes[0]
+    assert abs(y0 - 1600 / 2200) < 1e-6
+    assert abs(x1 - 1300 / 1400) < 1e-6
+
+
 def test_parse_empty_and_junk():
     assert parse_region_boxes("[]") == []
     assert parse_region_boxes("no json here") == []
     assert parse_region_boxes("[not valid json") == []
+    assert parse_region_boxes('[{"x0":0.1,"y0":0.1}]') == []  # missing keys
 
 
 def test_parse_clamps_and_orders_coords():
@@ -40,8 +62,11 @@ def test_parse_drops_degenerate_and_dupes():
     assert len(boxes) == 1
 
 
-def test_parse_ignores_missing_keys():
-    assert parse_region_boxes('[{"x0":0.1,"y0":0.1}]') == []
+def test_parse_prose_around_json_tolerated():
+    text = ('The page contains two tables. Here are their coordinates:\n'
+            '[{"x0":60,"y0":40,"x1":950,"y1":480},'
+            '{"x0":60,"y0":660,"x1":950,"y1":800}]\nHope this helps!')
+    assert len(parse_region_boxes(text)) == 2
 
 
 def test_crop_fraction_cuts_the_right_region():

@@ -301,15 +301,24 @@ export type PageDiagnostic = {
   kept: DetectedTable[];
 };
 
+export type VlmDetection = {
+  page: number;
+  count: number;
+  boxes: number[][];
+  raw: string;
+};
+
 export type TableDiagnostics = {
   filename: string;
   page_count: number;
   pages: PageDiagnostic[];
+  vlm?: VlmDetection;
 };
 
-export const diagnoseTableDetection = (file: File) => {
+export const diagnoseTableDetection = (file: File, vlmPage?: number) => {
   const form = new FormData();
   form.append("file", file);
+  if (vlmPage != null) form.append("vlm_page", String(vlmPage));
   return fetch(`${API_URL}/api/diagnostics/table-detection`, {
     method: "POST",
     body: form,

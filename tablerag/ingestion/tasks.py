@@ -153,7 +153,7 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
         # does OCR AND detects the table regions (SPEC Phase 2 §1 fallback),
         # then each region is parsed on its own crop. Light upscale first.
         from tablerag.ingestion.imaging import crop_fraction, ensure_min_width
-        from tablerag.ingestion.table_pipeline import detect_table_regions
+        from tablerag.ingestion.region_detect import detect_table_regions
 
         vlm_page = ensure_min_width(layout.image_png,
                                     settings.vlm_min_image_width)
@@ -163,6 +163,9 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                              meta={"ocr": True})
         if tables_present:
             regions = asyncio.run(detect_table_regions(vlm_page))
+            logger.info("scan page %d: %d table region(s) detected%s",
+                        layout.page, len(regions),
+                        "" if regions else " — falling back to whole page")
             targets = ([(crop_fraction(vlm_page, box), _box_to_bbox(box, layout))
                         for box in regions]
                        if regions else [(vlm_page, full_bbox)])
