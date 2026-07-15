@@ -61,12 +61,24 @@ def build_text_repr(dimensions: dict, metrics: dict, raw_values: dict) -> str:
 def _grid_to_html(grid: list[list[str | None]]) -> str:
     rows = []
     for i, row in enumerate(grid):
+        if i > 0 and not any(c and str(c).strip() for c in row):
+            continue  # fully-empty row (e.g. page-seam artifact of a merge)
         tag = "th" if i == 0 else "td"
         cells = "".join(
             f"<{tag}>{html_mod.escape(str(c).strip()) if c else ''}</{tag}>"
             for c in row)
         rows.append(f"  <tr>{cells}</tr>")
     return "<table>\n" + "\n".join(rows) + "\n</table>"
+
+
+def grid_display_html(grid: list[list[str | None]]) -> str:
+    """Representation 1 for TEXT-LAYER tables, built deterministically from
+    the extracted grid: geometry-faithful column alignment (the VLM is free to
+    misplace columns when it reconstructs layout — observed on nested tables),
+    merged row labels forward-filled then re-collapsed into rowspan."""
+    from tablerag.models.table_parsing import forward_fill_grid
+
+    return collapse_vertical_merges(_grid_to_html(forward_fill_grid(grid)))
 
 
 def records_from_grid(grid: list[list[str | None]],
@@ -168,14 +180,25 @@ async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | Non
     parse = await parser.parse_table(
         vlm_image, TableCtx(locale_hint=locale or "unknown",
                             read_variant=read_variant, grid_hint=grid_hint))
-    n_rows, n_cols = _html_shape(parse.html)
+
+    # display html: for text-layer tables the geometry-derived grid is
+    # authoritative (column alignment is exact); the VLM's html is only used
+    # when there is no grid (scans)
+    if grid:
+        html = grid_display_html(grid)
+        n_rows = len(grid)
+        n_cols = max(len(row) for row in grid)
+    else:
+        html = collapse_vertical_merges(parse.html)
+        n_rows, n_cols = _html_shape(parse.html)
+
     if parse.error:
         # honest failure: keep the html/crop, flag for review, no records
-        return TableResult(html=parse.html, parse_strategy="vlm",
+        return TableResult(html=html, parse_strategy="vlm",
                            n_rows=n_rows, n_cols=n_cols,
                            needs_review=True, error=parse.error)
-    return TableResult(html=collapse_vertical_merges(parse.html),
-                       parse_strategy="vlm", n_rows=n_rows, n_cols=n_cols,
+    return TableResult(html=html, parse_strategy="vlm",
+                       n_rows=n_rows, n_cols=n_cols,
                        records=_records_from_vlm(parse.records, locale))
 
 

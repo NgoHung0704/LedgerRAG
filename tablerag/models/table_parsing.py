@@ -167,18 +167,24 @@ So: take the values from here, take the merge structure from the image.
 _MERGE_LABEL_MAX_LEN = 4
 
 
-def _is_propagatable_label(value: str) -> bool:
-    """A short label with at least one letter (group codes like 'H', 'VIII') —
-    never a number (missing metric) or long text (job title / header)."""
+def _is_propagatable_label(value: str, col: int) -> bool:
+    """Column 0 is the leftmost dimension: a blank under a label there almost
+    always means a merged continuation, so any-length labels propagate
+    ('Fabrication', 'Maintenance'). Other columns only propagate short letter
+    codes ('H', 'VIII') — never numbers (missing metrics) or long text
+    (job titles like 'Directeur(trice)' above genuinely-empty cells)."""
     v = value.strip()
-    return bool(v) and len(v) <= _MERGE_LABEL_MAX_LEN and any(c.isalpha() for c in v)
+    if not v or not any(c.isalpha() for c in v):
+        return False
+    return col == 0 or len(v) <= _MERGE_LABEL_MAX_LEN
 
 
 def forward_fill_grid(grid: list[list[str | None]]) -> list[list[str | None]]:
-    """Propagate a short letter-label downward into the blank cells below it,
-    per column (reconstruct vertical rowspan merges). Never fills leading
-    blanks, numbers, or long text — so genuinely-empty data cells are left
-    alone (SPEC: never invent structure where there is none)."""
+    """Propagate merged row labels downward into the blank cells below them,
+    per column (reconstruct vertical rowspan merges). Guardrails: the header
+    row (row 0) never propagates, leading blanks stay, numbers never fill —
+    so genuinely-empty data cells are left alone (SPEC: never invent
+    structure where there is none)."""
     if not grid:
         return grid
     n_cols = max((len(row) for row in grid), default=0)
@@ -188,8 +194,10 @@ def forward_fill_grid(grid: list[list[str | None]]) -> list[list[str | None]]:
         for r in range(len(filled)):
             cell = filled[r][c]
             text = str(cell).strip() if cell not in (None, "") else ""
-            if text:
-                last = text if _is_propagatable_label(text) else None
+            if r == 0:
+                last = None  # headers never propagate into data rows
+            elif text:
+                last = text if _is_propagatable_label(text, c) else None
             elif last is not None:
                 filled[r][c] = last
     return filled

@@ -216,17 +216,18 @@ def test_forward_fill_grid_reconstructs_cetiat_rowspans():
     # Cotation | Classe | Groupe | Emplois — H covers 15-16, I covers 17-18,
     # and Emplois is legitimately empty on the continuation rows
     grid = [
+        ["Cotation", "Classe", "Groupe", "Emplois"],
         ["49", "15", "H", "Directeur(trice)"],
         ["52", "16", None, None],
         ["55", "17", "I", "Adjoint(e)"],
         ["58", "18", "", ""],
     ]
     out = forward_fill_grid(grid)
-    assert [row[2] for row in out] == ["H", "H", "I", "I"]  # group filled
+    assert [row[2] for row in out[1:]] == ["H", "H", "I", "I"]  # group filled
     # guardrails: long text (Emplois) NOT filled, numbers NOT propagated
-    assert out[1][3] in (None, "")   # Emplois continuation stays empty
-    assert out[3][3] == ""
-    assert [row[0] for row in out] == ["49", "52", "55", "58"]  # metrics untouched
+    assert out[2][3] in (None, "")   # Emplois continuation stays empty
+    assert out[4][3] == ""
+    assert [row[0] for row in out[1:]] == ["49", "52", "55", "58"]  # untouched
 
 
 def test_forward_fill_grid_never_fills_leading_blanks():
@@ -236,6 +237,67 @@ def test_forward_fill_grid_never_fills_leading_blanks():
     out = forward_fill_grid(grid)
     assert out[0][0] in (None, "")   # leading blank stays
     assert out[2][0] == "H"          # blank under a label is filled
+
+
+def test_forward_fill_first_column_propagates_long_domain_labels():
+    """Glossaire case: 'Fabrication' spans many rows in the leftmost column."""
+    from tablerag.models.table_parsing import forward_fill_grid
+
+    grid = [
+        ["Domaines professionnels", "Techniques", "Activités"],
+        ["Fabrication", "Chaudronnerie", "Assemblage"],
+        [None, "Usinage-outillage", "Réglage"],
+        [None, "Production sidérurgique", "Chargement"],
+        ["Maintenance", "Mécanique", "Diagnostic"],
+        [None, "Energétique", "Dépannage"],
+    ]
+    out = forward_fill_grid(grid)
+    assert [row[0] for row in out[1:]] == [
+        "Fabrication", "Fabrication", "Fabrication",
+        "Maintenance", "Maintenance"]
+    # header never propagates
+    assert out[0][0] == "Domaines professionnels"
+
+
+def test_forward_fill_header_row_never_propagates():
+    from tablerag.models.table_parsing import forward_fill_grid
+
+    grid = [["Groupe", "Val"], [None, "1"], ["H", "2"], [None, "3"]]
+    out = forward_fill_grid(grid)
+    assert out[1][0] in (None, "")   # blank right under the header stays blank
+    assert out[3][0] == "H"
+
+
+def test_forward_fill_other_columns_still_short_labels_only():
+    from tablerag.models.table_parsing import forward_fill_grid
+
+    grid = [["A", "Emploi"],
+            ["1", "Directeur(trice)"],
+            ["2", None]]  # genuinely empty job cell (col != 0)
+    out = forward_fill_grid(grid)
+    assert out[2][1] in (None, "")  # long text not propagated outside col 0
+
+
+async def test_vlm_path_display_html_comes_from_grid_not_model(monkeypatch):
+    """Text-layer: the geometry-derived grid is authoritative for display —
+    the model's (possibly misaligned) html must not be used."""
+    class SloppyParser:
+        async def parse_table(self, image, ctx):
+            from tablerag.models.base import RecordParse, TableParse
+            return TableParse(
+                html="<table><tr><td>totally</td><td>wrong</td></tr></table>",
+                records=[RecordParse(dimensions={"d": "Fabrication"},
+                                     metrics={"n": 1}, raw_values={"n": "1"})])
+
+    monkeypatch.setattr("tablerag.ingestion.table_pipeline.get_provider",
+                        lambda role: SloppyParser())
+    grid = [["Domaine", "Technique"],
+            ["Fabrication", "Chaudronnerie"],
+            [None, "Usinage"]]
+    result = await parse_table_region(b"png", grid, is_complex=True, locale="fr")
+    assert "totally" not in result.html          # model html discarded
+    assert 'rowspan="2">Fabrication' in result.html  # filled + re-merged
+    assert result.records                        # records still from the VLM
 
 
 def test_forward_fill_grid_does_not_propagate_numbers():
