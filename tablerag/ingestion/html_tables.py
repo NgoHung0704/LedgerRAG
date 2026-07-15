@@ -70,6 +70,56 @@ def _build_occupancy(rows: list[list[dict]]) -> dict[tuple[int, int], dict]:
     return occ
 
 
+def _labelish_columns(rows: list[list[dict]], n_cols: int) -> set[int]:
+    """Columns whose non-empty data cells are mostly text (labels), as opposed
+    to numeric columns — only label columns take part in horizontal merging."""
+    non_empty = [0] * n_cols
+    with_alpha = [0] * n_cols
+    for row in rows:
+        for cell in row:
+            if cell["tag"] != "td":
+                continue
+            text = _norm(cell["text"])
+            if not text:
+                continue
+            c = cell["c"]
+            non_empty[c] += 1
+            if any(ch.isalpha() for ch in text):
+                with_alpha[c] += 1
+    return {c for c in range(n_cols)
+            if non_empty[c] > 0 and with_alpha[c] / non_empty[c] >= 0.5}
+
+
+def _merge_horizontal_blanks(rows: list[list[dict]], n_cols: int) -> None:
+    """An INTERIOR run of blank cells widens the label cell on its left into
+    colspan — reconstructing horizontal merges that the grid extraction turned
+    into empty columns (e.g. a Techniques cell spanning family+sub columns).
+    Guardrails: both the left column and the blank columns must be label
+    columns (numeric columns keep their genuinely-missing blanks), and a run
+    that reaches the end of the row is trailing, never merged."""
+    labelish = _labelish_columns(rows, n_cols)
+    for row in rows:
+        cells = [c for c in row if not c.get("removed")]
+        for i, cur in enumerate(cells):
+            if (cur["tag"] != "td" or cur.get("removed")
+                    or not _norm(cur["text"]) or cur["c"] not in labelish
+                    or cur["rowspan"] != 1):
+                continue
+            j = i + 1
+            run: list[dict] = []
+            while (j < len(cells) and cells[j]["tag"] == "td"
+                   and not _norm(cells[j]["text"])
+                   and cells[j]["colspan"] == 1 and cells[j]["rowspan"] == 1
+                   and cells[j]["c"] in labelish):
+                run.append(cells[j])
+                j += 1
+            # interior only: something non-empty must follow the run
+            if run and j < len(cells) and _norm(cells[j]["text"]):
+                for blank in run:
+                    cur["colspan"] += blank["colspan"]
+                    blank["removed"] = True
+
+
 def collapse_vertical_merges(html: str | None) -> str | None:
     if not html or "<t" not in html.lower():
         return html
@@ -82,6 +132,7 @@ def collapse_vertical_merges(html: str | None) -> str | None:
         occ = _build_occupancy(rows)
         n_rows = len(rows)
         n_cols = max((c for _, c in occ), default=-1) + 1
+        _merge_horizontal_blanks(rows, n_cols)
 
         for col in range(n_cols):
             # the origin cells occupying this column, top to bottom

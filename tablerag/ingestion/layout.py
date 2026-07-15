@@ -257,15 +257,50 @@ def _norm_row(row: list) -> list[str]:
     return [str(c).strip().lower() if c else "" for c in row]
 
 
+def _blank(value) -> bool:
+    return value is None or not str(value).strip()
+
+
 def merge_grids(top: list[list] | None,
                 bottom: list[list] | None) -> list[list] | None:
-    """Concatenate two grid fragments; a repeated header row on the
-    continuation page is dropped."""
+    """Concatenate two grid fragments. A repeated header row on the
+    continuation page is dropped, and the SEAM is healed: continuation pages
+    don't reprint the labels of a group that was cut mid-way, so blank cells
+    forming the leading (left) prefix of the first continuation rows inherit
+    the column's last label from the previous fragment — per column, until
+    that column gets a value of its own. Only letter-labels are carried
+    (numbers are data, never duplicated across pages); blanks sitting to the
+    right of content are untouched (genuinely empty cells)."""
     if not top or not bottom:
         return top or bottom
     if _norm_row(bottom[0]) == _norm_row(top[0]):
         bottom = bottom[1:]
-    return top + bottom
+    if not bottom:
+        return top
+
+    n_cols = max(len(row) for row in top + bottom)
+    carry: dict[int, str] = {}
+    for c in range(n_cols):
+        for row in reversed(top):
+            if c < len(row) and not _blank(row[c]):
+                value = str(row[c]).strip()
+                if any(ch.isalpha() for ch in value):
+                    carry[c] = value
+                break
+
+    healed: list[list] = []
+    for row in bottom:
+        padded = list(row) + [None] * (n_cols - len(row))
+        original = list(padded)
+        for c in range(n_cols):
+            if _blank(original[c]):
+                is_leading_prefix = all(_blank(original[k]) for k in range(c))
+                if c in carry and is_leading_prefix:
+                    padded[c] = carry[c]
+            else:
+                carry.pop(c, None)  # the column speaks for itself again
+        healed.append(padded)
+    return top + healed
 
 
 def _tables_continue(last: Region, cur_height: float,

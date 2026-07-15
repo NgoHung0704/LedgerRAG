@@ -39,6 +39,44 @@ def test_merge_grids_keeps_different_first_row():
     assert len(merge_grids(top, bottom)) == 3
 
 
+def test_merge_grids_heals_seam_leading_prefix():
+    """Glossaire case: the continuation page doesn't reprint 'Fabrication'
+    (col 0) nor 'Production sidérurgique' (col 1) for the group cut mid-way."""
+    top = [
+        ["Domaine", "Famille", "Technique", "Activités"],
+        ["Fabrication", "Assemblage/Montage", "Mécanique", "Vissage"],
+        [None, "Production sidérurgique", "Fusion", "Chargement-addition"],
+    ]
+    bottom = [
+        [None, None, "Coulée Laminage", "Affinage"],          # cut group
+        [None, "Transformation des métaux", "Matriçage", "Montage"],
+        ["Maintenance", "Mécanique", "Diagnostic", "Dépannage"],
+    ]
+    merged = merge_grids(top, bottom)
+    seam_row = merged[3]
+    assert seam_row[0] == "Fabrication"               # carried across the seam
+    assert seam_row[1] == "Production sidérurgique"   # carried across the seam
+    # next row: col 1 speaks for itself, col 0 still carried
+    assert merged[4][0] == "Fabrication"
+    assert merged[4][1] == "Transformation des métaux"
+    # once a column gets its own value, the carry stops
+    assert merged[5][0] == "Maintenance"
+
+
+def test_merge_grids_seam_never_carries_numbers_or_right_side_blanks():
+    top = [["Poste", "T1", "Emploi"],
+           ["Salaires", "812400", "Directeur"]]
+    bottom = [[None, None, None],            # fully blank row
+              ["Interim", "96200", None]]    # blank on the RIGHT of content
+    merged = merge_grids(top, bottom)
+    # col 0 label carried on the fully-blank seam row...
+    assert merged[2][0] == "Salaires"
+    # ...but the numeric column is NEVER duplicated across pages
+    assert merged[2][1] in (None, "")
+    # and a blank sitting right of content is untouched (genuinely empty)
+    assert merged[3][2] in (None, "")
+
+
 def test_stitch_vertical_stacks_and_pads():
     out = stitch_vertical(_png(100, 50), _png(80, 30))
     with Image.open(io.BytesIO(out)) as img:

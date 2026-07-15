@@ -63,6 +63,43 @@ def test_distinct_values_untouched():
     assert "rowspan" not in out
 
 
+def test_interior_blank_run_merges_into_left_label_as_colspan():
+    """Glossaire: Maintenance rows have Techniques as ONE wide cell in the
+    original; the grid turned it into [label, blank] -> re-merge as colspan."""
+    html = (
+        "<table>"
+        "<tr><th>Domaine</th><th>Famille</th><th>Sous</th><th>Activités</th></tr>"
+        "<tr><td>Fabrication</td><td>Chaudronnerie</td><td>Tuyauterie</td><td>Assemblage</td></tr>"
+        "<tr><td>Maintenance</td><td>Mécanique Electrotechnique</td><td></td><td>Diagnostic</td></tr>"
+        "</table>")
+    out = collapse_vertical_merges(html)
+    assert '<td colspan="2">Mécanique Electrotechnique</td>' in out
+    # the Fabrication row keeps its two separate technique cells
+    assert "<td>Chaudronnerie</td>" in out and "<td>Tuyauterie</td>" in out
+
+
+def test_numeric_columns_keep_their_missing_blanks():
+    html = (
+        "<table>"
+        "<tr><th>Poste</th><th>T1</th><th>T2</th></tr>"
+        "<tr><td>Salaires</td><td>812400</td><td>824100</td></tr>"
+        "<tr><td>Formation</td><td></td><td>15800</td></tr>"
+        "</table>")
+    out = collapse_vertical_merges(html)
+    # the missing T1 value must NOT be swallowed into a colspan
+    assert "colspan" not in out
+
+
+def test_trailing_blanks_never_merged():
+    html = ("<table>"
+            "<tr><th>A</th><th>B</th><th>C</th></tr>"
+            "<tr><td>lbl</td><td>x</td><td>y</td></tr>"
+            "<tr><td>lbl2</td><td>x2</td><td></td></tr>"
+            "</table>")
+    out = collapse_vertical_merges(html)
+    assert "colspan" not in out
+
+
 def test_malformed_html_returns_original():
     junk = "not <table html at all"
     assert collapse_vertical_merges(junk) == junk
