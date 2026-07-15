@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Database, SlidersHorizontal, ShieldCheck } from "lucide-react";
+import {
+  Database,
+  FileSearch,
+  ShieldCheck,
+  SlidersHorizontal,
+} from "lucide-react";
 
 const NAV = [
-  { href: "/", label: "Knowledge Bases", icon: Database, match: /^\/($|kb)/ },
+  { href: "/", label: "Knowledge Bases", icon: Database, match: /^\/($|kb|doc)/ },
   { href: "/models", label: "Model Providers", icon: SlidersHorizontal, match: /^\/models/ },
+  { href: "/diagnostics", label: "Diagnostics", icon: FileSearch, match: /^\/diagnostics/ },
 ];
 
 export default function Sidebar() {

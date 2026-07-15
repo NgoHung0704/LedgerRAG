@@ -69,6 +69,21 @@ def test_two_tables_on_one_page_both_detected():
     assert len(tables) >= 2, f"expected both tables, got {len(tables)}"
 
 
+def test_diagnose_pdf_tables_reports_per_strategy():
+    from tablerag.ingestion.layout import diagnose_pdf_tables
+
+    doc = fitz.open()
+    page = doc.new_page()
+    _draw_table(page, 50, 60, n_rows=3, n_cols=3)
+    _draw_table(page, 50, 230, n_rows=3, n_cols=3)
+    report = diagnose_pdf_tables(doc.tobytes())
+    assert len(report) == 1
+    page_report = report[0]
+    assert set(page_report["strategies"]) == {"lines_strict", "lines", "text"}
+    assert page_report["kept"] and len(page_report["kept"]) >= 2
+    assert "text_chars" in page_report
+
+
 def test_detect_tables_returns_empty_on_prose_page():
     doc = fitz.open()
     page = doc.new_page()

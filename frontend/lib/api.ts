@@ -279,6 +279,43 @@ export async function* pullModel(
   yield* sseStream<PullEvent>(res);
 }
 
+// ---------- diagnostics ----------
+
+export type DetectedTable = {
+  bbox: number[];
+  rows: number;
+  cols: number;
+  fill?: number;
+  accept?: boolean;
+  complex?: boolean;
+};
+
+export type PageDiagnostic = {
+  width: number;
+  height: number;
+  text_chars: number;
+  strategies: Record<
+    string,
+    { count?: number; tables?: DetectedTable[]; error?: string }
+  >;
+  kept: DetectedTable[];
+};
+
+export type TableDiagnostics = {
+  filename: string;
+  page_count: number;
+  pages: PageDiagnostic[];
+};
+
+export const diagnoseTableDetection = (file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return fetch(`${API_URL}/api/diagnostics/table-detection`, {
+    method: "POST",
+    body: form,
+  }).then((r) => jsonOrThrow<TableDiagnostics>(r));
+};
+
 export const formatBytes = (n: number | null) => {
   if (!n) return "";
   const units = ["B", "KB", "MB", "GB"];

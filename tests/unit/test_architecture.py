@@ -38,7 +38,11 @@ def test_query_does_not_import_ingestion():
     assert_no_imports("query", "tablerag.ingestion")
 
 
-def test_api_does_not_import_ingestion():
-    # the API enqueues jobs by task name; importing worker code would drag
-    # ingestion dependencies into the gateway process
-    assert_no_imports("api", "tablerag.ingestion")
+def test_api_does_not_import_ingestion_task_pipeline():
+    # the gateway enqueues jobs by task name; it must not import the worker's
+    # task/parse pipeline (which drags in the model dependencies). Stateless
+    # helpers like layout detection (used by the diagnostics endpoint) are fine
+    # — ingestion and query still never call each other, which is principle #1.
+    assert_no_imports("api", "tablerag.ingestion.tasks")
+    assert_no_imports("api", "tablerag.ingestion.worker")
+    assert_no_imports("api", "tablerag.ingestion.table_pipeline")

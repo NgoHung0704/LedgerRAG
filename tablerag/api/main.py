@@ -41,7 +41,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    from tablerag.api.routes import chat, documents, elements, health, kb, models
+    from tablerag.api.routes import (
+        chat,
+        diagnostics,
+        documents,
+        elements,
+        health,
+        kb,
+        models,
+    )
 
     app.include_router(health.router)
     app.include_router(kb.router)
@@ -49,6 +57,7 @@ def create_app() -> FastAPI:
     app.include_router(chat.router)
     app.include_router(elements.router)
     app.include_router(models.router)
+    app.include_router(diagnostics.router)
     return app
 
 

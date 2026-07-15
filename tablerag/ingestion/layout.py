@@ -105,6 +105,44 @@ def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
     return True
 
 
+def diagnose_page_tables(page: fitz.Page) -> dict:
+    """Per-strategy detection breakdown for one page — powers the Diagnostics
+    UI so a missing real-document table can be debugged without shell access."""
+    strategies: dict[str, dict] = {}
+    for strat in _TABLE_STRATEGIES:
+        try:
+            tables = page.find_tables(strategy=strat).tables
+        except Exception as e:  # noqa: BLE001
+            strategies[strat] = {"error": str(e), "count": 0, "tables": []}
+            continue
+        items = []
+        for t in tables:
+            grid = t.extract()
+            items.append({
+                "bbox": [round(x, 1) for x in t.bbox],
+                "rows": len(grid),
+                "cols": max((len(r) for r in grid), default=0),
+                "fill": round(grid_fill_ratio(grid), 2),
+                "accept": accept_table(fitz.Rect(t.bbox), grid, strat, []),
+            })
+        strategies[strat] = {"count": len(tables), "tables": items}
+    kept = detect_tables(page)
+    return {
+        "width": round(page.rect.width),
+        "height": round(page.rect.height),
+        "text_chars": len(page.get_text("text").strip()),
+        "strategies": strategies,
+        "kept": [{"bbox": [round(x, 1) for x in t.bbox], "rows": len(g),
+                  "cols": max((len(r) for r in g), default=0),
+                  "complex": table_grid_is_complex(g)} for t, g in kept],
+    }
+
+
+def diagnose_pdf_tables(pdf_bytes: bytes) -> list[dict]:
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        return [diagnose_page_tables(page) for page in doc]
+
+
 def detect_tables(page: fitz.Page) -> list[tuple]:
     """Every table region on the page, across detection strategies, deduped by
     bbox overlap. Returns (table, grid) pairs. A detector crash on one strategy
