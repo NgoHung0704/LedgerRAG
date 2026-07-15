@@ -309,6 +309,26 @@ def test_forward_fill_grid_does_not_propagate_numbers():
     assert out[1][0] == "Total" or out[1][0] in (None, "")  # 'Total' is 5 chars > max
 
 
+def test_format_grid_hint_flattens_in_cell_newlines():
+    from tablerag.models.table_parsing import format_grid_hint
+
+    grid = [["Domaine", "Techniques"],
+            ["Admin", "Comptabilité\nContrôle de gestion\nAudit"]]
+    hint = format_grid_hint(grid)
+    assert "Admin | Comptabilité; Contrôle de gestion; Audit" in hint
+    assert len(hint.splitlines()) == 2  # one line per grid row, always
+
+
+def test_grid_display_html_keeps_in_cell_newlines():
+    from tablerag.ingestion.table_pipeline import grid_display_html
+
+    grid = [["Domaine", "Techniques"],
+            ["Admin", "Comptabilité\nContrôle de gestion\nFinances\nAudit"]]
+    html = grid_display_html(grid)
+    assert ("Comptabilité<br>Contrôle de gestion<br>Finances<br>Audit"
+            in html)
+
+
 def test_format_grid_hint_none_for_empty():
     from tablerag.models.table_parsing import format_grid_hint
 

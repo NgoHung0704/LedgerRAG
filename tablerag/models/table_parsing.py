@@ -211,8 +211,14 @@ def format_grid_hint(grid: list[list[str | None]] | None,
     if not grid:
         return None
     grid = forward_fill_grid(grid)
-    lines = [" | ".join((str(cell).strip() if cell else "") for cell in row)
-             for row in grid]
+
+    def cell_text(cell) -> str:
+        if not cell:
+            return ""
+        # in-cell line breaks would break the one-line-per-row format
+        return "; ".join(p.strip() for p in str(cell).splitlines() if p.strip())
+
+    lines = [" | ".join(cell_text(cell) for cell in row) for row in grid]
     text = "\n".join(lines).strip()
     return text[:max_chars] if text.replace("|", "").strip() else None
 

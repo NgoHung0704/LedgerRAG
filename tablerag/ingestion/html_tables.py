@@ -22,6 +22,13 @@ def _norm(text: str) -> str:
     return _WS.sub(" ", text or "").strip()
 
 
+def _display(text: str) -> str:
+    """Emission form of a cell: whitespace normalized per line, line breaks
+    preserved as <br> (multi-line PDF cells stay multi-line)."""
+    lines = [_WS.sub(" ", line).strip() for line in (text or "").split("\n")]
+    return "<br>".join(escape(line) for line in lines if line)
+
+
 class _TableParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -41,6 +48,12 @@ class _TableParser(HTMLParser):
                     return 1
             self._cell = {"tag": tag, "colspan": _span(a.get("colspan")),
                           "rowspan": _span(a.get("rowspan")), "text": ""}
+        elif tag == "br" and self._cell is not None:
+            self._cell["text"] += "\n"  # keep in-cell line breaks
+
+    def handle_startendtag(self, tag, attrs):
+        if tag == "br" and self._cell is not None:
+            self._cell["text"] += "\n"
 
     def handle_endtag(self, tag):
         if tag in ("td", "th") and self._cell is not None and self._row is not None:
@@ -101,13 +114,18 @@ def _merge_horizontal_blanks(rows: list[list[dict]], n_cols: int) -> None:
     for row in rows:
         cells = [c for c in row if not c.get("removed")]
         for i, cur in enumerate(cells):
-            if (cur["tag"] != "td" or cur.get("removed")
+            # headers (th) participate too: a blank th between labeled th's is
+            # the same colspan-reconstruction case (e.g. a 'Techniques' header
+            # spanning family+sub columns). The labelish guard still protects
+            # numeric columns, and trailing blanks (empty header over a data
+            # column, CETIAT-style) are excluded by the interior-only rule.
+            if (cur["tag"] not in ("td", "th") or cur.get("removed")
                     or not _norm(cur["text"]) or cur["c"] not in labelish
                     or cur["rowspan"] != 1):
                 continue
             j = i + 1
             run: list[dict] = []
-            while (j < len(cells) and cells[j]["tag"] == "td"
+            while (j < len(cells) and cells[j]["tag"] == cur["tag"]
                    and not _norm(cells[j]["text"])
                    and cells[j]["colspan"] == 1 and cells[j]["rowspan"] == 1
                    and cells[j]["c"] in labelish):
@@ -175,7 +193,7 @@ def collapse_vertical_merges(html: str | None) -> str | None:
                 if cell["colspan"] > 1:
                     attrs += f' colspan="{cell["colspan"]}"'
                 cells.append(
-                    f'<{cell["tag"]}{attrs}>{escape(_norm(cell["text"]))}'
+                    f'<{cell["tag"]}{attrs}>{_display(cell["text"])}'
                     f'</{cell["tag"]}>')
             out.append("  <tr>" + "".join(cells) + "</tr>")
         out.append("</table>")

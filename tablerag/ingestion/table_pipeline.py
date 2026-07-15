@@ -58,15 +58,21 @@ def build_text_repr(dimensions: dict, metrics: dict, raw_values: dict) -> str:
     return " | ".join(dims + mets)
 
 
+def _cell_html(cell) -> str:
+    """Escape a grid cell, preserving in-cell line breaks (multi-line cells in
+    the PDF must stay multi-line in the display) as <br>."""
+    if not cell:
+        return ""
+    return html_mod.escape(str(cell).strip()).replace("\n", "<br>")
+
+
 def _grid_to_html(grid: list[list[str | None]]) -> str:
     rows = []
     for i, row in enumerate(grid):
         if i > 0 and not any(c and str(c).strip() for c in row):
             continue  # fully-empty row (e.g. page-seam artifact of a merge)
         tag = "th" if i == 0 else "td"
-        cells = "".join(
-            f"<{tag}>{html_mod.escape(str(c).strip()) if c else ''}</{tag}>"
-            for c in row)
+        cells = "".join(f"<{tag}>{_cell_html(c)}</{tag}>" for c in row)
         rows.append(f"  <tr>{cells}</tr>")
     return "<table>\n" + "\n".join(rows) + "\n</table>"
 

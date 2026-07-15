@@ -100,6 +100,46 @@ def test_trailing_blanks_never_merged():
     assert "colspan" not in out
 
 
+def test_blank_header_th_merges_into_left_label_header():
+    """Glossaire header: 'Techniques' spans family+sub columns; the blank th
+    must merge as colspan so the header aligns with the data rows."""
+    html = (
+        "<table>"
+        "<tr><th>Domaines</th><th>Techniques</th><th></th><th>Activités</th></tr>"
+        "<tr><td>Fabrication</td><td>Chaudronnerie</td><td>Tuyauterie</td><td>Assemblage</td></tr>"
+        "</table>")
+    out = collapse_vertical_merges(html)
+    assert '<th colspan="2">Techniques</th>' in out
+
+
+def test_trailing_blank_header_over_data_column_not_merged():
+    """CETIAT-style: the salary column has an EMPTY header — it must stay its
+    own (trailing) cell, never swallowed into 'Classe d'emploi'."""
+    html = (
+        "<table>"
+        "<tr><th>Groupe</th><th>Classe</th><th></th></tr>"
+        "<tr><td>A</td><td>1</td><td>21 700</td></tr>"
+        "</table>")
+    out = collapse_vertical_merges(html)
+    assert "colspan" not in out
+
+
+def test_in_cell_line_breaks_preserved():
+    html = ("<table><tr><th>Techniques</th></tr>"
+            "<tr><td>Comptabilité<br>Contrôle de gestion<br>Finances<br>Audit</td></tr>"
+            "</table>")
+    out = collapse_vertical_merges(html)
+    assert "Comptabilité<br>Contrôle de gestion<br>Finances<br>Audit" in out
+
+
+def test_multiline_cells_still_merge_vertically():
+    html = ("<table><tr><th>T</th></tr>"
+            "<tr><td>A<br>B</td></tr>"
+            "<tr><td>A<br>B</td></tr></table>")
+    out = collapse_vertical_merges(html)
+    assert '<td rowspan="2">A<br>B</td>' in out
+
+
 def test_malformed_html_returns_original():
     junk = "not <table html at all"
     assert collapse_vertical_merges(junk) == junk
