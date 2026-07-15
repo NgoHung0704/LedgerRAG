@@ -43,6 +43,13 @@ def element_image_key(kb_id, doc_id, element_id) -> str:
     return f"kbs/{kb_id}/docs/{doc_id}/elements/{element_id}.png"
 
 
+def _box_to_bbox(box: tuple[float, float, float, float], layout) -> list[float]:
+    """Fractional region box -> PDF-point bbox for provenance."""
+    x0, y0, x1, y1 = box
+    return [x0 * layout.width, y0 * layout.height,
+            x1 * layout.width, y1 * layout.height]
+
+
 async def _embed_all(embedder: ModelProvider, texts: list[str]) -> list[Vector]:
     vectors: list[Vector] = []
     for i in range(0, len(texts), EMBED_BATCH):
@@ -142,9 +149,11 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
         chunks_out.extend((row.id, row.text, element.id) for row in rows)
 
     if layout.is_scan:
-        # scanned page: everything goes down the VLM path (SPEC Phase 2 §6);
-        # light upscale so the VLM never reads a low-res page
-        from tablerag.ingestion.imaging import ensure_min_width
+        # scanned page: no text layer, so find_tables sees nothing — the VLM
+        # does OCR AND detects the table regions (SPEC Phase 2 §1 fallback),
+        # then each region is parsed on its own crop. Light upscale first.
+        from tablerag.ingestion.imaging import crop_fraction, ensure_min_width
+        from tablerag.ingestion.table_pipeline import detect_table_regions
 
         vlm_page = ensure_min_width(layout.image_png,
                                     settings.vlm_min_image_width)
@@ -153,10 +162,16 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
             add_text_element(text, full_bbox, page_key, confidence=0.85,
                              meta={"ocr": True})
         if tables_present:
-            _ingest_table(s, store, kb_id, doc_id, layout.page, full_bbox,
-                          vlm_page, grid=None, is_complex=True,
-                          locale=locale, records_out=records_out,
-                          summaries_out=summaries_out, double_read=double_read)
+            regions = asyncio.run(detect_table_regions(vlm_page))
+            targets = ([(crop_fraction(vlm_page, box), _box_to_bbox(box, layout))
+                        for box in regions]
+                       if regions else [(vlm_page, full_bbox)])
+            for crop, bbox in targets:
+                _ingest_table(s, store, kb_id, doc_id, layout.page, bbox,
+                              crop, grid=None, is_complex=True, locale=locale,
+                              records_out=records_out,
+                              summaries_out=summaries_out,
+                              double_read=double_read)
         return
 
     for region in layout.regions:

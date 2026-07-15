@@ -12,7 +12,9 @@ result (needs_review=True, salvaged html, no records) — never a crashed job.
 
 from __future__ import annotations
 
+import base64
 import html as html_mod
+import json
 import logging
 import re
 from dataclasses import dataclass, field
@@ -201,6 +203,88 @@ def build_summary_prompt(html: str, locale: str | None) -> str:
         "Write the summary in the dominant language of the table content ONLY.")
     return _SUMMARY_PROMPT.format(language_rule=language_rule,
                                   html=html[:_SUMMARY_HTML_LIMIT])
+
+
+# --- VLM table-region detection (scanned pages: find_tables can't see them) ---
+
+_REGION_PROMPT = (
+    "The attached image is a full document page. Return the bounding box of "
+    "EACH distinct data table (a grid of rows and columns of values). Ignore "
+    "body paragraphs, titles and figures. Give coordinates as fractions of the "
+    "page size between 0 and 1: x0,y0 = top-left corner, x1,y1 = bottom-right. "
+    "Reply with ONLY a JSON array and nothing else, e.g. "
+    '[{"x0":0.08,"y0":0.10,"x1":0.92,"y1":0.34}]. If there are no tables, reply []'
+)
+_JSON_ARRAY_RE = re.compile(r"\[.*\]", re.DOTALL)
+Box = tuple[float, float, float, float]
+
+
+def _clamp01(v: float) -> float:
+    return 0.0 if v < 0 else 1.0 if v > 1 else v
+
+
+def _iou_ish(a: Box, b: Box) -> float:
+    ix0, iy0 = max(a[0], b[0]), max(a[1], b[1])
+    ix1, iy1 = min(a[2], b[2]), min(a[3], b[3])
+    inter = max(0.0, ix1 - ix0) * max(0.0, iy1 - iy0)
+    area_a = (a[2] - a[0]) * (a[3] - a[1])
+    return inter / area_a if area_a else 0.0
+
+
+def parse_region_boxes(text: str) -> list[Box]:
+    """Extract, validate and dedupe table bounding boxes from the VLM reply.
+    Pure function — testable without a model."""
+    match = _JSON_ARRAY_RE.search(text or "")
+    if not match:
+        return []
+    try:
+        raw = json.loads(match.group())
+    except (json.JSONDecodeError, ValueError):
+        return []
+    if not isinstance(raw, list):
+        return []
+    boxes: list[Box] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        try:
+            x0, y0, x1, y1 = (float(item["x0"]), float(item["y0"]),
+                              float(item["x1"]), float(item["y1"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        x0, x1 = sorted((_clamp01(x0), _clamp01(x1)))
+        y0, y1 = sorted((_clamp01(y0), _clamp01(y1)))
+        if (x1 - x0) < 0.03 or (y1 - y0) < 0.02:  # degenerate
+            continue
+        box = (x0, y0, x1, y1)
+        if any(_iou_ish(box, kept) > 0.6 or _iou_ish(kept, box) > 0.6
+               for kept in boxes):
+            continue  # dedupe near-duplicates
+        boxes.append(box)
+    boxes.sort(key=lambda b: (b[1], b[0]))  # reading order, top to bottom
+    return boxes
+
+
+async def detect_table_regions(image_png: bytes) -> list[Box]:
+    """Table bounding boxes (page fractions) via the parser VLM. Empty on
+    failure -> caller falls back to treating the whole page as one table."""
+    from tablerag.core.config import get_settings
+    from tablerag.models.base import Msg
+
+    parser = get_provider("parser")
+    b64 = base64.b64encode(image_png).decode()
+    try:
+        parts = []
+        async for token in parser.chat(
+                [Msg(role="user", content=_REGION_PROMPT, images=[b64])],
+                stream=True, temperature=0.0,
+                options={"temperature": 0.0,
+                         "num_ctx": get_settings().table_parse_num_ctx}):
+            parts.append(token)
+        return parse_region_boxes("".join(parts))
+    except Exception:  # noqa: BLE001 — detection failure must not kill the page
+        logger.exception("VLM table-region detection failed (non-fatal)")
+        return []
 
 
 async def summarize_table(html: str, locale: str | None = None) -> str | None:
