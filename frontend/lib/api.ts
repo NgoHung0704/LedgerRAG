@@ -91,6 +91,7 @@ export type ElementView = {
   ocr: boolean;
   unusable: boolean;
   confidence_detail: ConfidenceDetail | null;
+  span_pages: number[] | null;
   chunk_count: number;
   text_preview: string | null;
   crop_url: string;

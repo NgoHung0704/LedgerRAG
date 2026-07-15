@@ -36,6 +36,8 @@ class Region:
     # tables: region re-rendered straight from the PDF at high DPI — real
     # pixels for the VLM instead of a crop of the 120-dpi page image
     crop_png: bytes | None = None
+    # cross-page tables: additional pages this (merged) table continues onto
+    span_pages: list[int] = field(default_factory=list)
 
 
 @dataclass
@@ -231,6 +233,83 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
     return layout
 
 
+# ---- cross-page table merging (text-layer PDFs) ---------------------------
+# A table that continues onto the next page shows up as: a region ending near
+# the bottom of page N + a region starting near the top of page N+1 with
+# compatible columns. Merged deterministically: grids concatenated (repeated
+# header dropped), crops stitched vertically, parsed once as one table.
+# NOTE: SPEC Phase 2 declared cross-page tables out of MVP scope; the project
+# owner explicitly widened scope (frequent in the real corpus). Scanned PDFs
+# are not merged yet — their regions only exist at ingest time, not here.
+
+_BOTTOM_FRAC = 0.85   # table must end in the last 15% of the page
+_TOP_FRAC = 0.18      # continuation must start in the first 18% of the page
+_MIN_X_OVERLAP = 0.7  # horizontal footprint must match
+
+
+def _x_overlap_frac(a: tuple, b: tuple) -> float:
+    inter = min(a[2], b[2]) - max(a[0], b[0])
+    narrower = min(a[2] - a[0], b[2] - b[0])
+    return inter / narrower if narrower > 0 else 0.0
+
+
+def _norm_row(row: list) -> list[str]:
+    return [str(c).strip().lower() if c else "" for c in row]
+
+
+def merge_grids(top: list[list] | None,
+                bottom: list[list] | None) -> list[list] | None:
+    """Concatenate two grid fragments; a repeated header row on the
+    continuation page is dropped."""
+    if not top or not bottom:
+        return top or bottom
+    if _norm_row(bottom[0]) == _norm_row(top[0]):
+        bottom = bottom[1:]
+    return top + bottom
+
+
+def _tables_continue(last: Region, cur_height: float,
+                     first: Region, nxt_height: float) -> bool:
+    if last.bbox[3] < _BOTTOM_FRAC * cur_height:
+        return False
+    if first.bbox[1] > _TOP_FRAC * nxt_height:
+        return False
+    if _x_overlap_frac(last.bbox, first.bbox) < _MIN_X_OVERLAP:
+        return False
+    if last.grid and first.grid:
+        cols_a = max(len(r) for r in last.grid)
+        cols_b = max(len(r) for r in first.grid)
+        if cols_a != cols_b:
+            return False
+    return True
+
+
+def merge_cross_page_tables(pages: list[PageLayout]) -> None:
+    """Mutates `pages`: continuation fragments are absorbed into the table on
+    the page where it starts. Iterates last-to-first so a table spanning three
+    pages chains naturally (5→4 first, then the merged 4 into 3)."""
+    from tablerag.ingestion.imaging import stitch_vertical
+
+    for i in range(len(pages) - 2, -1, -1):
+        cur, nxt = pages[i], pages[i + 1]
+        if cur.is_scan or nxt.is_scan:
+            continue
+        cur_tables = [r for r in cur.regions if r.type == "table"]
+        nxt_tables = [r for r in nxt.regions if r.type == "table"]
+        if not cur_tables or not nxt_tables:
+            continue
+        last = max(cur_tables, key=lambda r: r.bbox[3])
+        first = min(nxt_tables, key=lambda r: r.bbox[1])
+        if not _tables_continue(last, cur.height, first, nxt.height):
+            continue
+        last.grid = merge_grids(last.grid, first.grid)
+        last.complex = table_grid_is_complex(last.grid)
+        if last.crop_png and first.crop_png:
+            last.crop_png = stitch_vertical(last.crop_png, first.crop_png)
+        last.span_pages = [nxt.page] + first.span_pages
+        nxt.regions.remove(first)
+
+
 def analyze_document(pdf_bytes: bytes, dpi: int, min_chars: int,
                      table_dpi: int = 240) -> list[PageLayout]:
     try:
@@ -240,7 +319,9 @@ def analyze_document(pdf_bytes: bytes, dpi: int, min_chars: int,
     with doc:
         if doc.page_count == 0:
             raise PdfError("The PDF contains no pages.")
-        return [analyze_page(page, dpi, min_chars, table_dpi) for page in doc]
+        pages = [analyze_page(page, dpi, min_chars, table_dpi) for page in doc]
+    merge_cross_page_tables(pages)
+    return pages
 
 
 def crop_region_png(page_png: bytes, page_width: float,

@@ -210,6 +210,11 @@ function ElementCard({
             excluded from retrieval
           </span>
         )}
+        {element.span_pages && element.span_pages.length > 1 && (
+          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 ring-1 ring-blue-200">
+            spans pages {element.span_pages.join("–")}
+          </span>
+        )}
         <button
           onClick={() => setShowOriginal((v) => !v)}
           className="ml-auto text-[11px] font-medium text-indigo-600 hover:text-indigo-500"

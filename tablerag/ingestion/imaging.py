@@ -31,6 +31,24 @@ def crop_fraction(png_bytes: bytes,
         return out.getvalue()
 
 
+def stitch_vertical(top_png: bytes, bottom_png: bytes) -> bytes:
+    """Stack two images vertically (white background, left-aligned) — used to
+    reassemble a table that continues onto the next page. Fail-safe: if either
+    image is unreadable, returns the top image unchanged."""
+    try:
+        with Image.open(io.BytesIO(top_png)) as top, \
+                Image.open(io.BytesIO(bottom_png)) as bottom:
+            width = max(top.width, bottom.width)
+            canvas = Image.new("RGB", (width, top.height + bottom.height), "white")
+            canvas.paste(top.convert("RGB"), (0, 0))
+            canvas.paste(bottom.convert("RGB"), (0, top.height))
+            out = io.BytesIO()
+            canvas.save(out, format="PNG")
+            return out.getvalue()
+    except UnidentifiedImageError:
+        return top_png
+
+
 def ensure_min_width(png_bytes: bytes, min_width: int = 1400) -> bytes:
     """Upscale (LANCZOS) so the VLM never reads a table below `min_width` px.
     Real re-rendering at higher DPI is preferred where possible (text-layer

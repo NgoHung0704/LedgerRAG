@@ -60,7 +60,8 @@ async def _embed_all(embedder: ModelProvider, texts: list[str]) -> list[Vector]:
 def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                   grid, is_complex: bool, locale: str | None,
                   records_out: list, summaries_out: list,
-                  double_read: bool = True) -> None:
+                  double_read: bool = True,
+                  extra_meta: dict | None = None) -> None:
     """Create one table element with its three representations + confidence."""
     from tablerag.core.config import get_settings
     from tablerag.ingestion.confidence import assess
@@ -102,7 +103,7 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
     element_id = uuid.uuid4()
     image_key = element_image_key(kb_id, doc_id, element_id)
     store.put(image_key, crop_png, "image/png")
-    meta: dict = {}
+    meta: dict = dict(extra_meta or {})
     if result.error:
         meta["parse_error"] = result.error
     if confidence_detail:
@@ -196,9 +197,12 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
         elif region.type == "table":
             # prefer the high-DPI re-render from the PDF over the page crop
             table_crop = region.crop_png or crop
+            extra = ({"span_pages": [layout.page] + region.span_pages}
+                     if region.span_pages else None)
             _ingest_table(s, store, kb_id, doc_id, layout.page, region.bbox,
                           table_crop, region.grid, region.complex, locale,
-                          records_out, summaries_out, double_read=double_read)
+                          records_out, summaries_out, double_read=double_read,
+                          extra_meta=extra)
         elif region.type == "figure":
             # C5: store image + caption, mark figure, never extract data
             element_id = uuid.uuid4()
