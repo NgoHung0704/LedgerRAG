@@ -62,6 +62,27 @@ class Citation(BaseModel):
     needs_review: bool = False
 
 
+class RecordEdit(BaseModel):
+    dimensions: dict = {}
+    metrics: dict = {}
+    raw_values: dict = {}
+
+
+class ElementEdit(BaseModel):
+    """Manual correction of a parsed element (SPEC §0.3 human-in-the-loop).
+    Any provided field is applied; the element is re-indexed so answers use the
+    corrected data. Fields not sent are left unchanged."""
+
+    text: str | None = None          # text elements: re-chunked + re-embedded
+    html: str | None = None          # table display / answer context
+    summary: str | None = None       # table routing summary (re-embedded)
+    records: list[RecordEdit] | None = None  # table records (re-embedded)
+
+
+class BulkDeleteRequest(BaseModel):
+    doc_ids: list[uuid.UUID] = Field(min_length=1)
+
+
 class RoleHealth(BaseModel):
     role: str
     provider: str

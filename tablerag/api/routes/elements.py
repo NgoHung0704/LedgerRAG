@@ -3,11 +3,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
+from tablerag.core.schemas import ElementEdit
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 from tablerag.storage.object_store import get_object_store
@@ -21,6 +23,26 @@ def get_element(element_id: uuid.UUID) -> dict:
         detail = repo.get_element_detail(s, element_id)
     if detail is None:
         raise HTTPException(404, "element not found")
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    return detail
+
+
+@router.patch("/{element_id}")
+async def edit_element(element_id: uuid.UUID, body: ElementEdit) -> dict:
+    """Manual correction of a parsed element, then re-index so answers use the
+    corrected data (SPEC §0.3 human-in-the-loop)."""
+    from tablerag import indexing
+
+    records = ([r.model_dump() for r in body.records]
+               if body.records is not None else None)
+    ok = await asyncio.to_thread(
+        indexing.apply_element_edit, element_id,
+        text=body.text, html=body.html, summary=body.summary, records=records)
+    if not ok:
+        raise HTTPException(404, "element not found")
+    await indexing.reindex_element(element_id)
+    with session_scope() as s:
+        detail = repo.get_element_detail(s, element_id)
     detail["crop_url"] = f"/api/elements/{element_id}/image"
     return detail
 

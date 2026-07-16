@@ -49,6 +49,12 @@ export type ChatEvent =
     }
   | { type: "error"; message: string };
 
+export type RecordEdit = {
+  dimensions: Record<string, unknown>;
+  metrics: Record<string, unknown>;
+  raw_values: Record<string, unknown>;
+};
+
 export type ElementDetail = {
   id: string;
   doc_id: string;
@@ -57,14 +63,24 @@ export type ElementDetail = {
   type: "text" | "table" | "figure";
   confidence: number | null;
   needs_review: boolean;
+  edited: boolean;
   crop_url: string;
+  text: string | null;
   table: {
     html: string | null;
     summary: string | null;
     n_rows: number | null;
     n_cols: number | null;
     parse_strategy: string | null;
+    records: RecordEdit[];
   } | null;
+};
+
+export type ElementEdit = {
+  text?: string;
+  html?: string;
+  summary?: string;
+  records?: RecordEdit[];
 };
 
 export type RecordPreview = {
@@ -90,6 +106,7 @@ export type ElementView = {
   caption: string | null;
   ocr: boolean;
   unusable: boolean;
+  edited: boolean;
   confidence_detail: ConfidenceDetail | null;
   span_pages: number[] | null;
   chunk_count: number;
@@ -212,6 +229,20 @@ export const markElementUnusable = (elementId: string) =>
   fetch(`${API_URL}/api/elements/${elementId}/unusable`, { method: "POST" }).then(
     (r) => jsonOrThrow<unknown>(r),
   );
+
+export const editElement = (elementId: string, edit: ElementEdit) =>
+  fetch(`${API_URL}/api/elements/${elementId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(edit),
+  }).then((r) => jsonOrThrow<ElementDetail>(r));
+
+export const bulkDeleteDocs = (kbId: string, docIds: string[]) =>
+  fetch(`${API_URL}/api/kbs/${kbId}/documents/bulk-delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ doc_ids: docIds }),
+  }).then((r) => jsonOrThrow<{ deleted: number }>(r));
 
 // ---------- chat (SSE) ----------
 

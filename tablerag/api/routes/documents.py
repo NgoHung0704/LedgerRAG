@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, UploadFile
 from fastapi.responses import Response
 
 from tablerag.core.queue import TASK_PROCESS_DOCUMENT, celery_app
-from tablerag.core.schemas import DocumentOut
+from tablerag.core.schemas import BulkDeleteRequest, DocumentOut
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 from tablerag.storage.object_store import (
@@ -63,22 +63,42 @@ def get_document(doc_id: uuid.UUID) -> DocumentOut:
         return DocumentOut.model_validate(doc, from_attributes=True)
 
 
-@router.delete("/documents/{doc_id}", status_code=204)
-def delete_document(doc_id: uuid.UUID) -> Response:
-    """Remove a document from all three stores: vectors (Qdrant), files
-    (object store), then Postgres rows (elements/chunks/records cascade)."""
+def _purge_document(doc_id: uuid.UUID) -> bool:
+    """Remove one document from all three stores. Returns False if unknown.
+    External stores first: if the Postgres delete later fails, the doc is
+    still gone from retrieval and disk (no orphaned vectors serving stale
+    answers)."""
     with session_scope() as s:
         doc = repo.get_document(s, doc_id)
         if doc is None:
-            raise HTTPException(404, "document not found")
+            return False
         kb_id = doc.kb_id
-    # external stores first: if Postgres delete later fails, the doc is still
-    # gone from retrieval and disk (no orphaned vectors serving stale answers)
     get_vector_store().delete_doc(doc_id)
     get_object_store().delete_prefix(doc_prefix(kb_id, doc_id))
     with session_scope() as s:
         repo.delete_document(s, doc_id)
+    return True
+
+
+@router.delete("/documents/{doc_id}", status_code=204)
+def delete_document(doc_id: uuid.UUID) -> Response:
+    """Remove a document from all three stores (vectors, files, Postgres)."""
+    if not _purge_document(doc_id):
+        raise HTTPException(404, "document not found")
     return Response(status_code=204)
+
+
+@router.post("/kbs/{kb_id}/documents/bulk-delete")
+def bulk_delete_documents(kb_id: uuid.UUID, body: BulkDeleteRequest) -> dict:
+    """Delete several documents at once (select-many / delete-all in the UI).
+    Only documents that belong to this KB are touched."""
+    with session_scope() as s:
+        if repo.get_kb(s, kb_id) is None:
+            raise HTTPException(404, "knowledge base not found")
+        owned = {d.id for d in repo.list_documents(s, kb_id)}
+    deleted = sum(1 for doc_id in body.doc_ids
+                  if doc_id in owned and _purge_document(doc_id))
+    return {"deleted": deleted}
 
 
 @router.get("/documents/{doc_id}/elements")

@@ -3,14 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, FileUp, Files, ScanSearch, Trash2 } from "lucide-react";
-import { deleteDoc, getDocs, uploadDoc, type Doc } from "@/lib/api";
-import { Card, EmptyState, Spinner, StatusPill } from "@/components/ui";
+import { bulkDeleteDocs, deleteDoc, getDocs, uploadDoc, type Doc } from "@/lib/api";
+import { Button, Card, EmptyState, Spinner, StatusPill } from "@/components/ui";
 
 export default function DocumentsPanel({ kbId }: { kbId: string }) {
   const [docs, setDocs] = useState<Doc[] | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(
@@ -51,11 +53,47 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
     setDeleting(d.id);
     try {
       await deleteDoc(d.id);
+      setSelected((s) => {
+        const next = new Set(s);
+        next.delete(d.id);
+        return next;
+      });
       await refresh();
     } catch (e) {
       setUploadError(String(e));
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const allDocs = docs ?? [];
+  const allSelected = allDocs.length > 0 && selected.size === allDocs.length;
+  const toggle = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(allDocs.map((d) => d.id)));
+
+  const removeSelected = async () => {
+    if (selected.size === 0) return;
+    if (!window.confirm(
+      `Delete ${selected.size} document${selected.size === 1 ? "" : "s"} and all their parsed data? This cannot be undone.`,
+    ))
+      return;
+    setBulkBusy(true);
+    setUploadError(null);
+    try {
+      await bulkDeleteDocs(kbId, Array.from(selected));
+      setSelected(new Set());
+      await refresh();
+    } catch (e) {
+      setUploadError(String(e));
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -117,9 +155,42 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
         />
       ) : (
         <Card className="overflow-hidden">
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-indigo-50/50 px-4 py-2">
+              <span className="text-sm text-slate-600">
+                {selected.size} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSelected(new Set())}
+                  className="text-xs text-slate-500 hover:text-slate-700"
+                >
+                  Clear
+                </button>
+                <Button
+                  variant="secondary"
+                  className="!py-1.5 text-xs !text-red-600"
+                  disabled={bulkBusy}
+                  onClick={removeSelected}
+                >
+                  {bulkBusy ? <Spinner size={13} /> : <Trash2 size={13} />}
+                  Delete selected
+                </Button>
+              </div>
+            </div>
+          )}
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+                <th className="w-10 px-4 py-2.5">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                    title="Select all"
+                  />
+                </th>
                 <th className="px-4 py-2.5">Document</th>
                 <th className="px-4 py-2.5">Status</th>
                 <th className="px-4 py-2.5">Pages</th>
@@ -131,8 +202,18 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
               {(docs ?? []).map((d) => (
                 <tr
                   key={d.id}
-                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50"
+                  className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/50 ${
+                    selected.has(d.id) ? "bg-indigo-50/40" : ""
+                  }`}
                 >
+                  <td className="px-4 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(d.id)}
+                      onChange={() => toggle(d.id)}
+                      className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                    />
+                  </td>
                   <td className="max-w-[22rem] px-4 py-2.5">
                     <Link
                       href={`/doc/${d.id}`}

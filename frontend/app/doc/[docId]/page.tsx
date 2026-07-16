@@ -7,10 +7,12 @@ import {
   ArrowLeft,
   FileText,
   Image as ImageIcon,
+  Pencil,
   RefreshCw,
   ScanText,
   Table2,
 } from "lucide-react";
+import ElementEditor from "@/components/ElementEditor";
 import {
   API_URL,
   approveElement,
@@ -162,6 +164,7 @@ function ElementCard({
   );
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const review = async (action: "approve" | "unusable") => {
     setReviewBusy(true);
@@ -215,13 +218,36 @@ function ElementCard({
             spans pages {element.span_pages.join("–")}
           </span>
         )}
-        <button
-          onClick={() => setShowOriginal((v) => !v)}
-          className="ml-auto text-[11px] font-medium text-indigo-600 hover:text-indigo-500"
-        >
-          {showOriginal ? "hide original image" : "show original image"}
-        </button>
+        {element.edited && (
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+            edited
+          </span>
+        )}
+        <div className="ml-auto flex items-center gap-2">
+          {element.type !== "figure" && (
+            <button
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              <Pencil size={12} /> edit
+            </button>
+          )}
+          <button
+            onClick={() => setShowOriginal((v) => !v)}
+            className="text-[11px] font-medium text-slate-500 hover:text-slate-700"
+          >
+            {showOriginal ? "hide original image" : "show original image"}
+          </button>
+        </div>
       </div>
+
+      {editing && (
+        <ElementEditor
+          elementId={element.id}
+          onClose={() => setEditing(false)}
+          onSaved={onChanged}
+        />
+      )}
 
       <div className="space-y-4 p-4">
         {element.parse_error && (

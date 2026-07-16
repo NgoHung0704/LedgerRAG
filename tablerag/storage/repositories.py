@@ -240,6 +240,7 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
             "caption": (element.meta or {}).get("caption"),
             "ocr": bool((element.meta or {}).get("ocr")),
             "unusable": bool((element.meta or {}).get("unusable")),
+            "edited": bool((element.meta or {}).get("edited")),
             "confidence_detail": (element.meta or {}).get("confidence_detail"),
             "span_pages": (element.meta or {}).get("span_pages"),
             "chunk_count": len(chunks),
@@ -272,19 +273,27 @@ def get_element_detail(s: Session, element_id: uuid.UUID) -> dict | None:
     if element is None:
         return None
     document = s.get(Document, element.doc_id)
+    chunks = list(s.scalars(select(Chunk).where(Chunk.element_id == element_id)))
     detail = {
         "id": element.id, "doc_id": element.doc_id,
         "filename": document.filename if document else "",
         "page": element.page, "type": element.type,
         "confidence": element.confidence, "needs_review": element.needs_review,
-        "meta": element.meta, "table": None,
+        "edited": bool((element.meta or {}).get("edited")),
+        "meta": element.meta,
+        "text": "\n\n".join(c.text for c in chunks) if chunks else None,
+        "table": None,
     }
     table = s.get(TableElement, element_id)
     if table is not None:
+        records = list(s.scalars(
+            select(Record).where(Record.table_element_id == element_id)))
         detail["table"] = {
             "html": table.html, "summary": table.summary,
             "n_rows": table.n_rows, "n_cols": table.n_cols,
             "parse_strategy": table.parse_strategy,
+            "records": [{"dimensions": r.dimensions, "metrics": r.metrics,
+                         "raw_values": r.raw_values} for r in records],
         }
     return detail
 
