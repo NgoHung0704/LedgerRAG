@@ -145,26 +145,76 @@ def diagnose_pdf_tables(pdf_bytes: bytes) -> list[dict]:
         return [diagnose_page_tables(page) for page in doc]
 
 
+def resolve_by_quality(candidates: list[tuple]) -> list[int]:
+    """Pick winners among possibly-overlapping candidates by GRID QUALITY,
+    not by strategy order. candidates: (cells, area, priority, rect) tuples;
+    returns indices of the kept ones.
+
+    Measured necessity (Cotation emplois CETIAT): lines_strict detected a
+    TRUNCATED region (7x3 blob, right column cut) while `lines` found the full
+    19x4 grid — first-strategy-wins kept the truncated one. Ranking: more
+    cells (finer real structure beats a blob), then larger area (fuller
+    coverage), then strategy priority (strict wins exact ties)."""
+    order = sorted(range(len(candidates)),
+                   key=lambda i: (candidates[i][0], candidates[i][1],
+                                  -candidates[i][2]),
+                   reverse=True)
+    kept: list[int] = []
+    kept_rects: list = []
+    for i in order:
+        rect = candidates[i][3]
+        if any(_overlap_ratio(rect, ex) > 0.5 or _overlap_ratio(ex, rect) > 0.5
+               for ex in kept_rects):
+            continue
+        kept.append(i)
+        kept_rects.append(rect)
+    return kept
+
+
 def detect_tables(page: fitz.Page) -> list[tuple]:
-    """Every table region on the page, across detection strategies, deduped by
-    bbox overlap. Returns (table, grid) pairs. A detector crash on one strategy
-    must not kill the page."""
-    found: list[tuple] = []
-    rects: list[fitz.Rect] = []
-    for strategy in _TABLE_STRATEGIES:
+    """Every table region on the page. Line-based strategies (lines_strict,
+    lines) compete on quality; the lenient `text` strategy only fills gaps
+    where they found nothing (it exists to catch borderless tables, never to
+    override a ruled detection). Returns (table, grid) pairs in reading order.
+    A detector crash on one strategy must not kill the page."""
+    line_candidates: list[tuple] = []   # (cells, area, priority, rect)
+    line_payloads: list[tuple] = []     # (table, grid)
+    for priority, strategy in enumerate(("lines_strict", "lines")):
         try:
             tables = page.find_tables(strategy=strategy).tables
         except Exception:  # noqa: BLE001
             continue
         for table in tables:
-            rect = fitz.Rect(table.bbox)
             try:
                 grid = table.extract()
             except Exception:  # noqa: BLE001
                 continue
-            if accept_table(rect, grid, strategy, rects):
-                found.append((table, grid))
-                rects.append(rect)
+            rect = fitz.Rect(table.bbox)
+            n_cols = max((len(row) for row in grid), default=0) if grid else 0
+            if rect.get_area() <= 0 or n_cols < 2 or len(grid) < 2:
+                continue
+            line_candidates.append(
+                (len(grid) * n_cols, rect.get_area(), priority, rect))
+            line_payloads.append((table, grid))
+
+    found = [line_payloads[i] for i in resolve_by_quality(line_candidates)]
+    rects = [fitz.Rect(table.bbox) for table, _ in found]
+
+    try:
+        text_tables = page.find_tables(strategy="text").tables
+    except Exception:  # noqa: BLE001
+        text_tables = []
+    for table in text_tables:
+        try:
+            grid = table.extract()
+        except Exception:  # noqa: BLE001
+            continue
+        rect = fitz.Rect(table.bbox)
+        if accept_table(rect, grid, "text", rects):
+            found.append((table, grid))
+            rects.append(rect)
+
+    found.sort(key=lambda pair: (pair[0].bbox[1], pair[0].bbox[0]))
     return found
 
 

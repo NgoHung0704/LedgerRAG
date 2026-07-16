@@ -84,6 +84,35 @@ def test_diagnose_pdf_tables_reports_per_strategy():
     assert "text_chars" in page_report
 
 
+def test_resolve_by_quality_prefers_finer_fuller_grid():
+    """Cotation regression: lines_strict returned a TRUNCATED 7x3 blob while
+    `lines` found the full 19x4 grid — quality must win over strategy order."""
+    from tablerag.ingestion.layout import resolve_by_quality
+
+    truncated = (7 * 3, 247.0 * 607, 0, R(69, 134, 316, 741))   # lines_strict
+    full = (19 * 4, 459.0 * 632, 1, R(68, 135, 527, 767))       # lines
+    kept = resolve_by_quality([truncated, full])
+    assert kept == [1]  # the full grid wins; the overlapping blob is dropped
+
+
+def test_resolve_by_quality_identical_candidates_prefer_strict():
+    from tablerag.ingestion.layout import resolve_by_quality
+
+    strict = (6 * 4, 100.0, 0, R(32, 113, 571, 725))
+    loose = (6 * 4, 100.0, 1, R(32, 113, 571, 725))  # Glossaire: identical
+    kept = resolve_by_quality([strict, loose])
+    assert kept == [0]  # exact tie -> lines_strict
+
+
+def test_resolve_by_quality_keeps_disjoint_candidates():
+    from tablerag.ingestion.layout import resolve_by_quality
+
+    a = (12, 100.0, 0, R(0, 0, 100, 100))
+    b = (9, 80.0, 0, R(0, 200, 100, 300))  # no overlap: both kept
+    kept = resolve_by_quality([a, b])
+    assert sorted(kept) == [0, 1]
+
+
 def test_detect_tables_returns_empty_on_prose_page():
     doc = fitz.open()
     page = doc.new_page()
