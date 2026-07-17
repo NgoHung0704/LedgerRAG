@@ -36,9 +36,16 @@ REFUSAL_MARKERS = [
 ]
 
 
+import re
+
+_WS = re.compile(r"\s+")
+
+
 def _norm(s: str) -> str:
     s = unicodedata.normalize("NFKD", s.lower())
-    return "".join(c for c in s if not unicodedata.combining(c))
+    s = "".join(" " if unicodedata.category(c) == "Zs" else c
+                for c in s if not unicodedata.combining(c))
+    return _WS.sub(" ", s)
 
 
 def ask(api: str, kb_id: str, question: str) -> tuple[str, list[dict], dict | None]:
