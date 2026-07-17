@@ -260,32 +260,38 @@ def process_document(self, doc_id_str: str) -> None:
 
         embedder = get_provider("embedder")
         if chunks_out:
-            vectors = asyncio.run(_embed_all(embedder, [t for _, t, _ in chunks_out]))
+            texts = [t for _, t, _ in chunks_out]
+            vectors = asyncio.run(_embed_all(embedder, texts))
             vector_store.upsert(
                 COLLECTION_CHUNKS,
                 ids=[cid for cid, _, _ in chunks_out],
                 dense=[v.dense for v in vectors],
                 payloads=[{"kb_id": str(kb_id), "doc_id": str(doc_id),
                            "element_id": str(eid), "chunk_id": str(cid)}
-                          for cid, _, eid in chunks_out])
+                          for cid, _, eid in chunks_out],
+                texts=texts)
         if records_out:
-            vectors = asyncio.run(_embed_all(embedder, [t for _, t, _ in records_out]))
+            texts = [t for _, t, _ in records_out]
+            vectors = asyncio.run(_embed_all(embedder, texts))
             vector_store.upsert(
                 COLLECTION_RECORDS,
                 ids=[rid for rid, _, _ in records_out],
                 dense=[v.dense for v in vectors],
                 payloads=[{"kb_id": str(kb_id), "doc_id": str(doc_id),
                            "element_id": str(eid), "record_id": str(rid)}
-                          for rid, _, eid in records_out])
+                          for rid, _, eid in records_out],
+                texts=texts)
         if summaries_out:
-            vectors = asyncio.run(_embed_all(embedder, [t for _, t in summaries_out]))
+            texts = [t for _, t in summaries_out]
+            vectors = asyncio.run(_embed_all(embedder, texts))
             vector_store.upsert(
                 COLLECTION_TABLE_SUMMARIES,
                 ids=[eid for eid, _ in summaries_out],  # 1:1 with the table element
                 dense=[v.dense for v in vectors],
                 payloads=[{"kb_id": str(kb_id), "doc_id": str(doc_id),
                            "element_id": str(eid)}
-                          for eid, _ in summaries_out])
+                          for eid, _ in summaries_out],
+                texts=texts)
 
         with session_scope() as s:
             repo.set_document_status(s, doc_id, "done", page_count=len(pages))

@@ -1,0 +1,4 @@
+{"id": "t1", "type": "table", "question": "Quelle est la cotation pour la classe d'emploi 16 ?", "expected_answer_contains": ["52 à 54"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
+{"id": "t2", "type": "table", "question": "À quel groupe d'emplois appartient la classe 16 ?", "expected_answer_contains": ["H"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
+{"id": "x1", "type": "text", "question": "Que signifie « diagnostic » dans le référentiel d'analyse ?", "expected_answer_contains": ["dysfonctionnement"], "expected_doc": "Glossaire-Classification.pdf"}
+{"id": "p1", "type": "trap", "question": "Quel est le salaire exact d'un Directeur en 2019 ?", "expected_answer_contains": []}

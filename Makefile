@@ -42,5 +42,13 @@ eval-flags:
 	python spike/make_hard_tables.py
 	python tests/eval/tables/run_flag_eval.py
 
+# ---- Phase 4: answer-quality gate (needs the full live stack) --------
+# Usage: make eval-qa KB=<kb_id>   (questions: tests/eval/qa/questions.jsonl)
+eval-qa:
+	python tests/eval/qa/run_eval_qa.py --kb $(KB)
+
+# ---- Phase 4: hybrid migration (run INSIDE the api container) --------
+# docker compose exec api python -m tablerag.scripts.reindex_all
+
 lint:
 	ruff check tablerag tests spike

@@ -82,6 +82,10 @@ async def test_pipeline_stream_event_order(monkeypatch):
     provider = FakeChatProvider(["ok"])
     monkeypatch.setattr("tablerag.query.steps.generate.get_provider",
                         lambda role: provider)
+    # keep the Rerank step off the network/DB in unit tests
+    monkeypatch.setattr(
+        "tablerag.query.steps.rerank.effective_config",
+        lambda role: type("Cfg", (), {"provider": "disabled"})())
 
     class SeedContext:
         """Stands in for Retrieve+Assemble without external services."""
@@ -92,7 +96,8 @@ async def test_pipeline_stream_event_order(monkeypatch):
             return ctx
 
     pipeline = QueryPipeline([
-        SingleKBRouter(), SeedContext(), PassthroughRerank(),
+        SingleKBRouter(), SeedContext(),
+        PassthroughRerank(fallback_top_k=12),
         GenerateAnswer(), Verify(enabled=False),
     ])
     events = [kind async for kind, _ in pipeline.stream(make_ctx())]

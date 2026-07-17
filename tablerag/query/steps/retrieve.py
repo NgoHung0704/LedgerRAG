@@ -1,22 +1,21 @@
-"""Retrieve step. Phase 2: dense search over all three collections
-(chunks / records / table_summaries), merged by score — same embedder and
-cosine metric, so scores are comparable.
+"""Retrieve step (Phase 4): hybrid dense+sparse with RRF fusion over all
+three collections (chunks / records / table_summaries), merged by score.
 
-Phase 4 upgrades this slot to hybrid dense+sparse with RRF fusion.
+Sparse lexical matching catches the rare tokens dense embeddings blur
+(product codes, "T1 2013", proper names). When a collection predates the
+sparse upgrade, the store degrades that collection to dense-only until
+`python -m tablerag.scripts.reindex_all` migrates it.
 """
 
 from __future__ import annotations
 
 from tablerag.models.registry import get_provider
 from tablerag.query.pipeline import QueryContext
-from tablerag.storage.qdrant import (
-    ALL_COLLECTIONS,
-    get_vector_store,
-)
+from tablerag.storage.qdrant import ALL_COLLECTIONS, get_vector_store
 
 
 class Retrieve:
-    def __init__(self, top_k: int = 12):
+    def __init__(self, top_k: int = 50):
         self.top_k = top_k
 
     async def run(self, ctx: QueryContext) -> QueryContext:
@@ -26,7 +25,8 @@ class Retrieve:
         hits = []
         for collection in ALL_COLLECTIONS:
             for hit in store.search(collection, query_vector.dense,
-                                    ctx.routed_kb_ids, self.top_k):
+                                    ctx.routed_kb_ids, self.top_k,
+                                    query_text=ctx.question):
                 hit.payload["_collection"] = collection
                 hits.append(hit)
         hits.sort(key=lambda h: h.score, reverse=True)

@@ -81,7 +81,7 @@ class QueryPipeline:
 def default_pipeline(verify: bool | None = None) -> QueryPipeline:
     from tablerag.query.steps.assemble import AssembleContext
     from tablerag.query.steps.generate import GenerateAnswer
-    from tablerag.query.steps.rerank import PassthroughRerank
+    from tablerag.query.steps.rerank import Rerank
     from tablerag.query.steps.retrieve import Retrieve
     from tablerag.query.steps.router import SingleKBRouter
     from tablerag.query.steps.verify import Verify
@@ -90,8 +90,9 @@ def default_pipeline(verify: bool | None = None) -> QueryPipeline:
     enabled = settings.verification_enabled if verify is None else verify
     return QueryPipeline([
         SingleKBRouter(),          # Phase 5: LLMRouter plugs in here
-        Retrieve(top_k=settings.retrieve_top_k),
-        PassthroughRerank(),       # Phase 4: model reranker plugs in here
+        Retrieve(top_k=settings.retrieve_candidates),
+        Rerank(top_k=settings.rerank_top_k,
+               fallback_top_k=settings.retrieve_top_k),
         AssembleContext(),
         GenerateAnswer(),
         Verify(enabled=enabled),

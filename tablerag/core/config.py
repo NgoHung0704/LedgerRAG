@@ -73,7 +73,9 @@ class Settings(BaseSettings):
 
     chunk_target_tokens: int = 500
     chunk_overlap_ratio: float = 0.10
-    retrieve_top_k: int = 12
+    retrieve_top_k: int = 12       # final context size when no reranker
+    retrieve_candidates: int = 50  # hybrid candidate pool fed to the reranker
+    rerank_top_k: int = 8          # final context size after reranking
 
     # table-parsing generation options — proven out in the Phase 0 spike.
     # num_ctx MUST be large: the few-shot prompt + a vision image easily

@@ -112,12 +112,13 @@ async def reindex_element(element_id: uuid.UUID) -> None:
         return
     embedder = get_provider("embedder")
     vectors = await embedder.embed([job[2] for job in jobs])
-    grouped: dict[str, tuple[list, list, list]] = defaultdict(
-        lambda: ([], [], []))
-    for (collection, id_, _, payload), vector in zip(jobs, vectors):
-        ids, dense, payloads = grouped[collection]
+    grouped: dict[str, tuple[list, list, list, list]] = defaultdict(
+        lambda: ([], [], [], []))
+    for (collection, id_, text, payload), vector in zip(jobs, vectors):
+        ids, dense, payloads, texts = grouped[collection]
         ids.append(id_)
         dense.append(vector.dense)
         payloads.append(payload)
-    for collection, (ids, dense, payloads) in grouped.items():
-        store.upsert(collection, ids, dense, payloads)
+        texts.append(text)
+    for collection, (ids, dense, payloads, texts) in grouped.items():
+        store.upsert(collection, ids, dense, payloads, texts=texts)
