@@ -25,7 +25,10 @@ from tablerag.storage.repositories import (
 )
 
 SNIPPET_CHARS = 240
-TABLE_HTML_LIMIT = 6000
+# must hold a full multi-page merged table: truncating mid-table silently
+# amputates the later rows (the Glossaire cross-page table is ~2x the old
+# 6000 limit). Budgeted against chat_num_ctx=16384.
+TABLE_HTML_LIMIT = 12000
 
 
 class AssembleContext:

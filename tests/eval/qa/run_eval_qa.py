@@ -110,9 +110,11 @@ def main() -> None:
              if line.strip()]
 
     results: dict[str, list[bool]] = {}
+    transcript: list[dict] = []
     print(f"{'id':6s} {'type':6s} {'verdict':8s} detail")
     print("-" * 72)
     for item in items:
+        answer, citations, verification = "", [], None
         try:
             answer, citations, verification = ask(args.api, args.kb,
                                                   item["question"])
@@ -120,8 +122,24 @@ def main() -> None:
         except Exception as e:  # noqa: BLE001
             ok, detail = False, f"error: {e}"
         results.setdefault(item.get("type", "text"), []).append(ok)
+        transcript.append({**item, "ok": ok, "detail": detail,
+                           "answer": answer,
+                           "cited": [c.get("filename") for c in citations],
+                           "verification": verification})
         print(f"{item.get('id', '?'):6s} {item.get('type', 'text'):6s} "
               f"{'PASS' if ok else 'FAIL':8s} {detail}")
+        if not ok:
+            snippet = " ".join(answer.split())[:220]
+            print(f"       answer: {snippet}{'…' if len(answer) > 220 else ''}")
+            if item.get("expected_doc"):
+                print(f"       cited : {[c.get('filename') for c in citations]}")
+
+    out_path = Path(__file__).parent / "results" / "last_run.jsonl"
+    out_path.parent.mkdir(exist_ok=True)
+    out_path.write_text(
+        "\n".join(json.dumps(t, ensure_ascii=False) for t in transcript),
+        encoding="utf-8")
+    print(f"\nfull transcript: {out_path}")
 
     print("-" * 72)
     exit_code = 0

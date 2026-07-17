@@ -112,9 +112,10 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                      crop_image_path=image_key, confidence=confidence,
                      needs_review=needs_review, meta=meta,
                      element_id=element_id)
-    # no summary for failed parses: summarizing salvaged HTML produces junk
-    # that would get embedded into retrieval (observed: language-drift
-    # gibberish) — the review flag + original image are the honest output
+    # no LLM summary for failed parses: summarizing salvaged HTML produces
+    # junk (observed: language-drift gibberish) — but the table must still be
+    # RETRIEVABLE, otherwise the honest-failure path (LOW CONFIDENCE source +
+    # original image) never triggers: fall back to indexing the raw cell text.
     summary = None
     if result.html and not result.needs_review:
         summary = asyncio.run(summarize_table(result.html, locale))
@@ -125,6 +126,12 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
         records_out.extend((row.id, row.text_repr, element_id) for row in rows)
     if summary:
         summaries_out.append((element_id, summary))
+    elif result.html:
+        from tablerag.ingestion.html_tables import html_to_text
+
+        cell_text = html_to_text(result.html)[:2000]
+        if cell_text:
+            summaries_out.append((element_id, cell_text))
     if needs_review:
         logger.warning("doc %s page %d: table flagged needs_review "
                        "(error=%s, confidence=%s)",

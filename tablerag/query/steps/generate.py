@@ -18,8 +18,14 @@ SYSTEM_PROMPT = """\
 You are a careful document assistant. Answer the user's question using ONLY \
 the numbered sources provided. Rules:
 - Cite every claim with its source marker, e.g. [1] or [2][3].
-- Copy numbers EXACTLY as written in the sources; never compute, round or \
-invent figures.
+- Copy numbers, ranges and units EXACTLY as written in the sources, keeping \
+their digit grouping and spacing (write « 34 900 » and « 52 à 54 » exactly as \
+in the source — never « 34900 » or « 52-54 »); never compute, round or invent \
+figures.
+- Answer about the EXACT class, group, entity and time period asked. If the \
+question asks about a year, class, group or item the sources do not cover, \
+say the information is not in the documents — never substitute a figure that \
+belongs to a different year, class or group.
 - Some sources are HTML tables. When quoting them, keep the row/column \
 relationships intact — render comparisons as a markdown table rather than \
 flattening them into prose, and always cite the table.
@@ -59,9 +65,14 @@ class GenerateAnswer:
                 f"Sources:\n\n{build_context_block(ctx)}\n\n"
                 f"Question: {ctx.question}")),
         ]
+        from tablerag.core.config import get_settings
+
         chat = get_provider("chat")
         ctx.answer = ""
-        async for token in chat.chat(messages, stream=True):
+        # num_ctx must cover the assembled sources: Ollama's default silently
+        # drops the top of an over-long prompt (rules + best-ranked sources)
+        options = {"num_ctx": get_settings().chat_num_ctx}
+        async for token in chat.chat(messages, stream=True, options=options):
             ctx.answer += token
             yield token
 

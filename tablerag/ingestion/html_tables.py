@@ -12,10 +12,24 @@ fail-safe (any parse problem returns the original HTML).
 from __future__ import annotations
 
 import re
-from html import escape
+from html import escape, unescape
 from html.parser import HTMLParser
 
 _WS = re.compile(r"\s+")
+_TAG = re.compile(r"<[^>]+>")
+
+
+def html_to_text(html: str | None) -> str:
+    """Plain text of a table's HTML, cells space-separated.
+
+    Used as the indexable text for the table_summaries collection when no LLM
+    summary exists (failed/flagged parses): a parsed table must always be
+    retrievable, otherwise the honest-failure path (LOW CONFIDENCE source +
+    original image) can never trigger for it.
+    """
+    if not html:
+        return ""
+    return _WS.sub(" ", unescape(_TAG.sub(" ", html))).strip()
 
 
 def _norm(text: str) -> str:

@@ -21,6 +21,7 @@ import logging
 from sqlalchemy import select
 
 from tablerag.core.logging import setup_logging
+from tablerag.ingestion.html_tables import html_to_text
 from tablerag.models.registry import get_provider
 from tablerag.storage.db import session_scope
 from tablerag.storage.orm import Chunk, Document, Element, Record, TableElement
@@ -63,12 +64,18 @@ def _collect_jobs() -> list[tuple[str, object, str, dict]]:
                              {**payload, "record_id": str(record.id)}))
         for table in s.scalars(select(TableElement)):
             element = elements.get(table.element_id)
-            if table.summary and element is not None \
-                    and not (element.meta or {}).get("unusable"):
-                payload = base(table.element_id)
-                if payload:
-                    jobs.append((COLLECTION_TABLE_SUMMARIES, table.element_id,
-                                 table.summary, payload))
+            if element is None or (element.meta or {}).get("unusable"):
+                continue
+            # same fallback as ingest: a table with no LLM summary (failed /
+            # flagged parse) is indexed by its raw cell text so it stays
+            # retrievable and can surface as a LOW CONFIDENCE source
+            text = table.summary or html_to_text(table.html)[:2000]
+            if not text:
+                continue
+            payload = base(table.element_id)
+            if payload:
+                jobs.append((COLLECTION_TABLE_SUMMARIES, table.element_id,
+                             text, payload))
     return jobs
 
 

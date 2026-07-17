@@ -86,8 +86,18 @@ class Settings(BaseSettings):
     table_parse_num_predict: int = 4096
     table_parse_seed: int = 0
 
-    # verification layer (Phase 4) — pluggable step exists from Phase 1 (principle #4)
-    verification_enabled: bool = False
+    # verification layer (Phase 4) — pluggable step exists from Phase 1
+    # (principle #4). Default ON: it is the honesty net for number questions
+    # and for KBs created before the per-KB toggle existed (their config has
+    # no "verify" key and falls back to this).
+    verification_enabled: bool = True
+
+    # answer generation context — same silent-truncation trap as the parser
+    # (see table_parse_num_ctx below): the assembled sources easily exceed
+    # Ollama's default num_ctx, which then drops the TOP of the prompt — the
+    # system rules and the highest-ranked sources — while the answer still
+    # streams normally. Must cover retrieve_top_k blocks incl. table HTML.
+    chat_num_ctx: int = 16384
 
     # Phase 3 confidence layer (SPEC: thresholds are config, tuned on the
     # eval set — never guessed in code review)
