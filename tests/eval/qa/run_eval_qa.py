@@ -29,20 +29,38 @@ from pathlib import Path
 
 import httpx
 
+# Fragments (accent-folded, apostrophe-free) that mark an honest "not in the
+# documents" answer. Checked as substrings of the normalized answer, so keep
+# them free of accents and apostrophes (see _norm). French + English + Vietnamese.
 REFUSAL_MARKERS = [
-    "ne contient", "ne figure", "pas disponible", "aucune information",
-    "je ne sais", "not found", "no relevant", "không tìm thấy", "không có",
-    "sources do not", "cannot answer", "je ne peux pas",
+    # French — "the documents do not contain / say / mention ..."
+    "ne contient", "ne figure", "ne mentionne", "mentionne pas",
+    "ne precise", "precise pas", "non precise", "n indique", "indique pas",
+    "ne fournit", "ne comporte", "ne permettent", "ne permet pas",
+    "existe pas", "apparait pas", "n apparait", "aucune information",
+    "aucune mention", "aucune indication", "aucune donnee", "pas mentionne",
+    "pas d information", "pas disponible", "il n y a pas", "n est pas mentionne",
+    "n est pas precise", "n est pas indique", "ne dispose pas",
+    "impossible de repondre", "je ne peux pas", "je ne trouve",
+    # English
+    "not found", "no relevant", "sources do not", "cannot answer",
+    "not in the document", "does not contain", "no information",
+    # Vietnamese
+    "khong tim thay", "khong co", "khong de cap", "khong nhac", "khong ton tai",
 ]
 
 
 import re
 
 _WS = re.compile(r"\s+")
+# typographic apostrophes/primes -> ASCII so markers like "n indique" match
+# whether the model wrote « n'indique », « n’indique » or « n‛indique »
+_APOS = str.maketrans({"'": " ", "’": " ", "ʼ": " ", "‘": " ",
+                       "‛": " ", "′": " ", "`": " "})
 
 
 def _norm(s: str) -> str:
-    s = unicodedata.normalize("NFKD", s.lower())
+    s = unicodedata.normalize("NFKD", s.lower()).translate(_APOS)
     s = "".join(" " if unicodedata.category(c) == "Zs" else c
                 for c in s if not unicodedata.combining(c))
     return _WS.sub(" ", s)

@@ -2,11 +2,30 @@
 
 import re
 
-from tablerag.ingestion.html_tables import collapse_vertical_merges
+from tablerag.ingestion.html_tables import collapse_vertical_merges, html_to_text
 
 
 def _cells(html):
     return re.findall(r"<t[dh][^>]*>.*?</t[dh]>", html)
+
+
+def test_html_to_text_flattens_cells_for_indexing():
+    html = ("<table><tr><th>Domaine</th><th>Techniques</th></tr>"
+            "<tr><td>Chaudronnerie</td><td>Tuyauterie<br>Soudure</td></tr>"
+            "</table>")
+    text = html_to_text(html)
+    for token in ("Domaine", "Chaudronnerie", "Tuyauterie", "Soudure"):
+        assert token in text
+    assert "<" not in text and ">" not in text  # tags gone
+
+
+def test_html_to_text_unescapes_entities():
+    assert html_to_text("<td>52&nbsp;&agrave;&nbsp;54</td>") == "52 à 54"
+
+
+def test_html_to_text_empty_is_blank():
+    assert html_to_text(None) == ""
+    assert html_to_text("") == ""
 
 
 def test_collapses_repeated_group_labels_into_rowspan():
