@@ -218,6 +218,19 @@ def get_table_sources(s: Session, element_ids: list[uuid.UUID]) -> list[TableSou
     return [by_id[eid] for eid in element_ids if eid in by_id]
 
 
+def get_record_texts(s: Session,
+                     record_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
+    """`text_repr` of specific records, keyed by id.
+
+    Retrieval knows WHICH rows matched, but a record hit is expanded to the
+    whole parent table for context (SPEC Phase 2 §6). Keeping the matched rows
+    lets the answer step point at the needle as well as the haystack."""
+    if not record_ids:
+        return {}
+    return {r.id: r.text_repr for r in
+            s.scalars(select(Record).where(Record.id.in_(record_ids)))}
+
+
 def get_document_view(s: Session, doc_id: uuid.UUID,
                       records_preview: int = 8) -> list[dict]:
     """Everything ingestion produced for one document, element by element —

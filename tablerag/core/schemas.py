@@ -21,6 +21,17 @@ class KBCreate(BaseModel):
     verify: bool = True
 
 
+class KBUpdate(BaseModel):
+    """Partial update of a KB's settings. Every field optional: only what is
+    sent is changed, so a KB created before a setting existed can adopt it
+    without being recreated (run 2 could not enable verification on an
+    existing KB — its stored config pinned it off)."""
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = None
+    locale: str | None = None
+    verify: bool | None = None
+
+
 class KBOut(BaseModel):
     id: uuid.UUID
     name: str

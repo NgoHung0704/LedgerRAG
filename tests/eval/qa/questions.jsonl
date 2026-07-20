@@ -26,7 +26,7 @@
 {"id": "g2", "type": "text", "question": "Qu'est-ce qu'un « contrôle ponctuel » selon le glossaire ?", "expected_answer_contains": ["aléatoire"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g3", "type": "text", "question": "Qu'est-ce qu'une « négociation complexe » selon le glossaire ?", "expected_answer_contains": ["multi-acteurs"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g4", "type": "text", "question": "Que recouvrent les « connaissances élémentaires » dans le glossaire ?", "expected_answer_contains": ["lire", "compter"], "expected_doc": "Glossaire-Classification.pdf"}
-{"id": "g5", "type": "table", "question": "Quelles techniques relèvent de la chaudronnerie d'après le tableau illustratif ?", "expected_answer_contains": ["Tuyauterie", "Soudure"], "expected_doc": "Glossaire-Classification.pdf"}
+{"id": "g5", "type": "table", "question": "Quelles activités relèvent de la technique « Chaudronnerie » d'après le tableau illustratif ?", "expected_answer_contains": ["Tuyauterie", "Soudure"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g6", "type": "table", "question": "À quel domaine professionnel appartient la « Transformation des métaux » ?", "expected_answer_contains": ["Fabrication"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g7", "type": "table", "question": "Citez des activités du domaine professionnel Maintenance d'après le tableau illustratif.", "expected_answer_contains": ["Diagnostic", "Dépannage"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g8", "type": "table", "question": "Quelles techniques relèvent du domaine « Administration et finance » ?", "expected_answer_contains": ["Comptabilité", "Audit"], "expected_doc": "Glossaire-Classification.pdf"}

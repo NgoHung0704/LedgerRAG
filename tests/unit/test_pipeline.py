@@ -120,3 +120,47 @@ def test_context_block_marks_tables_and_low_confidence():
     assert "[2] (reglement.pdf, page 4, table)" in block
     assert "LOW CONFIDENCE" in block
     assert table_html in block
+
+
+# --- matched-row highlighting (run 2: values read off the wrong row/table) ---
+
+def _table_source(**over):
+    from tablerag.storage.repositories import TableSource
+
+    base = dict(element_id=uuid.uuid4(), doc_id=uuid.uuid4(),
+                filename="Cotation.pdf", page=1,
+                html="<table><tr><td>16</td><td>52 à 54</td></tr></table>",
+                summary="Grille de cotation des emplois",
+                crop_image_path="k", confidence=0.99, needs_review=False)
+    base.update(over)
+    return TableSource(**base)
+
+
+def test_table_block_surfaces_matched_rows_before_the_grid():
+    from tablerag.query.steps.assemble import AssembleContext
+
+    table = _table_source()
+    block = AssembleContext._table_block(
+        table, {table.element_id: 0.9},
+        ["Cotations: 52 à 54 | Classes: 16 | Groupes: H"])
+    assert "Rows matching the question:" in block.content
+    # the needle must come before the haystack so a small model reads it first
+    assert block.content.index("52 à 54") < block.content.index("<table>")
+    assert "Grille de cotation" in block.content  # summary still leads
+
+
+def test_table_block_without_matched_rows_is_unchanged():
+    from tablerag.query.steps.assemble import AssembleContext
+
+    table = _table_source()
+    block = AssembleContext._table_block(table, {table.element_id: 0.5})
+    assert "Rows matching" not in block.content
+    assert block.content.startswith("Table summary:")
+
+
+def test_unparsed_table_still_reports_image_only():
+    from tablerag.query.steps.assemble import AssembleContext
+
+    table = _table_source(html=None, summary=None)
+    block = AssembleContext._table_block(table, {})
+    assert "could not be parsed" in block.content

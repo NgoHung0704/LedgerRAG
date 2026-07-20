@@ -23,34 +23,69 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import unicodedata
 from pathlib import Path
 
 import httpx
 
-# Fragments (accent-folded, apostrophe-free) that mark an honest "not in the
-# documents" answer. Checked as substrings of the normalized answer, so keep
-# them free of accents and apostrophes (see _norm). French + English + Vietnamese.
-REFUSAL_MARKERS = [
-    # French — "the documents do not contain / say / mention ..."
-    "ne contient", "ne figure", "ne mentionne", "mentionne pas",
-    "ne precise", "precise pas", "non precise", "n indique", "indique pas",
-    "ne fournit", "ne comporte", "ne permettent", "ne permet pas",
-    "existe pas", "apparait pas", "n apparait", "aucune information",
-    "aucune mention", "aucune indication", "aucune donnee", "pas mentionne",
-    "pas d information", "pas disponible", "il n y a pas", "n est pas mentionne",
-    "n est pas precise", "n est pas indique", "ne dispose pas",
-    "impossible de repondre", "je ne peux pas", "je ne trouve",
+# Honest "it is not in the documents" detection.
+#
+# Literal phrase lists are a losing game here: run 2 scored three correct
+# refusals as failures because the model wrote "ne contienNENT" (not a
+# superstring of "ne contient"), "aucune RÉFÉRENCE" (only "aucune information"
+# was listed) and refused in Chinese. So match negation FAMILIES by regex —
+# a negator plus any verb/noun of "containing / mentioning / stating" —
+# instead of enumerating surface forms. Applied to the normalized answer
+# (accent- and apostrophe-folded, see _norm).
+_VERBS = (r"contien\w*|mentionn\w*|figur\w*|precis\w*|indiqu\w*|fourni\w*"
+          r"|comport\w*|permet\w*|dispos\w*|present\w*|apparai\w*|exist\w*"
+          r"|trouv\w*|donn\w*|abord\w*|evoqu\w*|specifi\w*")
+_NOUNS = (r"information\w*|mention\w*|reference\w*|donnee\w*|indication\w*"
+          r"|precision\w*|element\w*|detail\w*")
+REFUSAL_PATTERNS = [
+    # French: "ne contiennent pas", "n indiquent pas", "ne sont pas precises"
+    re.compile(rf"\bne?\s+(?:se\s+|sont\s+|est\s+|peu\w+\s+|pas\s+)*(?:{_VERBS})"),
+    # "aucune reference", "aucun element", "sans mention"
+    re.compile(rf"\baucun\w*\s+(?:autre\s+)?(?:{_NOUNS})"),
+    re.compile(rf"\bsans\s+(?:{_NOUNS})"),
+    # "pas de donnees", "pas d information", "n est pas disponible"
+    re.compile(rf"\bpas\s+d\s*(?:{_NOUNS})"),
+    re.compile(r"\bpas\s+(?:disponible|mentionne\w*|precise\w*|indique\w*"
+               r"|present\w*|connu\w*)"),
+    re.compile(r"\bimpossible\s+de\b|\bje\s+ne\s+(?:peux|sais|trouve)\b"),
     # English
-    "not found", "no relevant", "sources do not", "cannot answer",
-    "not in the document", "does not contain", "no information",
+    re.compile(r"\b(?:do|does|did)\s+not\s+(?:contain|mention|state|specify"
+               r"|include|provide)\b"),
+    re.compile(r"\bnot\s+(?:found|available|mentioned|specified|in\s+the\s+"
+               r"(?:document|source))\b|\bno\s+(?:information|relevant|data|"
+               r"mention)\b|\bcannot\s+(?:answer|determine|be\s+determined)\b"),
     # Vietnamese
-    "khong tim thay", "khong co", "khong de cap", "khong nhac", "khong ton tai",
+    re.compile(r"khong\s+(?:tim\s+thay|co|de\s+cap|nhac|ton\s+tai|xac\s+dinh|"
+               r"duoc\s+neu|thay)"),
+    # Chinese (the chat model drifts to it — run 2 refused p7 entirely in zh)
+    re.compile(r"无法|没有(?:提供|给出|包含|明确)|未(?:提供|给出|直接给出|说明|包含)"
+               r"|不能确定|未能找到"),
 ]
 
 
-import re
+def is_refusal(normalized: str) -> bool:
+    return any(p.search(normalized) for p in REFUSAL_PATTERNS)
+
+
+# Markdown/HTML table rows dumped into an answer are NOT a claim: run 2 had
+# answers that stated the wrong cell in prose ("Comptable -> classe 2") or
+# refused outright, while pasting a grid that happened to contain the expected
+# string. Grading must read what the answer SAYS, not what it pastes.
+_MD_ROW = re.compile(r"^\s*\|.*$", re.MULTILINE)
+_HTML_TAG = re.compile(r"<[^>]+>")
+
+
+def prose_only(answer: str) -> str:
+    """The answer minus dumped table rows — the part that actually asserts."""
+    return _HTML_TAG.sub(" ", _MD_ROW.sub(" ", answer))
+
 
 _WS = re.compile(r"\s+")
 # typographic apostrophes/primes -> ASCII so markers like "n indique" match
@@ -89,18 +124,25 @@ def ask(api: str, kb_id: str, question: str) -> tuple[str, list[dict], dict | No
 
 def grade(item: dict, answer: str, citations: list[dict],
           verification: dict | None) -> tuple[bool, str]:
-    normalized = _norm(answer)
+    # grade what the answer ASSERTS: dumped table rows are evidence the model
+    # pasted, not a claim it made (run 2 had answers stating the wrong cell in
+    # prose while pasting a grid containing the right string)
+    claim = _norm(prose_only(answer))
     if item.get("type") == "trap":
         if verification and verification.get("status") == "warnings":
             return True, "verification warned"
         if not citations:
             return True, "no sources asserted"
-        if any(marker in normalized for marker in REFUSAL_MARKERS):
+        if is_refusal(claim):
             return True, "refused honestly"
         return False, "answered a trap without warning (review by hand)"
 
+    # a hedged/refusing answer cannot also be a correct one, even if the
+    # expected string appears somewhere in a pasted table
+    if is_refusal(claim):
+        return False, "answer refuses/hedges instead of stating the value"
     missing = [s for s in item.get("expected_answer_contains", [])
-               if _norm(s) not in normalized]
+               if _norm(s) not in claim]
     if missing:
         return False, f"answer missing: {missing}"
     expected_doc = item.get("expected_doc")

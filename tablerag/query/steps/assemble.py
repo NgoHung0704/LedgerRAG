@@ -21,6 +21,7 @@ from tablerag.storage.repositories import (
     ChunkContext,
     TableSource,
     get_chunk_contexts,
+    get_record_texts,
     get_table_sources,
 )
 
@@ -29,6 +30,8 @@ SNIPPET_CHARS = 240
 # amputates the later rows (the Glossaire cross-page table is ~2x the old
 # 6000 limit). Budgeted against chat_num_ctx=16384.
 TABLE_HTML_LIMIT = 12000
+# how many matched rows to surface above a table before it becomes noise again
+MAX_MATCHED_ROWS = 4
 
 
 class AssembleContext:
@@ -37,6 +40,8 @@ class AssembleContext:
         chunk_scores: dict[uuid.UUID, float] = {}
         table_ids: list[uuid.UUID] = []
         table_scores: dict[uuid.UUID, float] = {}
+        # which rows made this table match, in relevance order (see MAX_MATCHED_ROWS)
+        matched: dict[uuid.UUID, list[uuid.UUID]] = {}
 
         for hit in ctx.hits:  # already sorted by score desc
             if hit.payload.get("_collection") == COLLECTION_CHUNKS:
@@ -55,11 +60,21 @@ class AssembleContext:
                 if element_id not in table_scores:
                     table_ids.append(element_id)
                     table_scores[element_id] = hit.score
+                record_raw = hit.payload.get("record_id")
+                if record_raw:
+                    rows = matched.setdefault(element_id, [])
+                    record_id = uuid.UUID(record_raw)
+                    if record_id not in rows:
+                        rows.append(record_id)
 
-        chunks, tables = await asyncio.to_thread(self._fetch, chunk_ids, table_ids)
+        chunks, tables, record_texts = await asyncio.to_thread(
+            self._fetch, chunk_ids, table_ids, matched)
 
         blocks: list[SourceBlock] = [self._text_block(c, chunk_scores) for c in chunks]
-        blocks += [self._table_block(t, table_scores) for t in tables]
+        blocks += [self._table_block(t, table_scores,
+                                     [record_texts[r] for r in matched.get(t.element_id, [])
+                                      if r in record_texts][:MAX_MATCHED_ROWS])
+                   for t in tables]
         blocks.sort(key=lambda b: b.score, reverse=True)
 
         ctx.sources = blocks
@@ -83,10 +98,17 @@ class AssembleContext:
             needs_review=c.needs_review)
 
     @staticmethod
-    def _table_block(t: TableSource, scores: dict) -> SourceBlock:
+    def _table_block(t: TableSource, scores: dict,
+                     matched_rows: list[str] | None = None) -> SourceBlock:
         parts = []
         if t.summary:
             parts.append(f"Table summary: {t.summary}")
+        # the rows that actually matched the question, ahead of the full grid:
+        # a small model asked for one cell otherwise has to scan a 19-row table
+        # among a dozen sources (run 2: values read off the wrong row/table)
+        if matched_rows:
+            parts.append("Rows matching the question:\n"
+                         + "\n".join(f"- {row}" for row in matched_rows))
         if t.html:
             parts.append(t.html[:TABLE_HTML_LIMIT])
         content = "\n".join(parts) or "(table could not be parsed — image only)"
@@ -99,8 +121,12 @@ class AssembleContext:
             needs_review=t.needs_review)
 
     @staticmethod
-    def _fetch(chunk_ids: list[uuid.UUID],
-               table_ids: list[uuid.UUID]) -> tuple[list, list]:
+    def _fetch(chunk_ids: list[uuid.UUID], table_ids: list[uuid.UUID],
+               matched: dict[uuid.UUID, list[uuid.UUID]]
+               ) -> tuple[list, list, dict]:
+        record_ids = [r for rows in matched.values()
+                      for r in rows[:MAX_MATCHED_ROWS]]
         with session_scope() as s:
             return (get_chunk_contexts(s, chunk_ids),
-                    get_table_sources(s, table_ids))
+                    get_table_sources(s, table_ids),
+                    get_record_texts(s, record_ids))
