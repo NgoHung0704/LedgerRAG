@@ -58,8 +58,9 @@ def _collect_jobs() -> list[tuple[str, object, str, dict]]:
             if payload:
                 jobs.append((COLLECTION_CHUNKS, chunk.id, chunk.text,
                              {**payload, "chunk_id": str(chunk.id)}))
-        rebuilt = 0
+        rebuilt = n_records = 0
         for record in s.scalars(select(Record)):
+            n_records += 1
             # recompute from the stored dimensions/metrics so rows indexed by
             # an older build adopt the current representation without a
             # re-parse (principle #1: the parsed truth is already in Postgres)
@@ -73,8 +74,14 @@ def _collect_jobs() -> list[tuple[str, object, str, dict]]:
                 jobs.append((COLLECTION_RECORDS, record.id,
                              record.text_repr or text,
                              {**payload, "record_id": str(record.id)}))
-        if rebuilt:
-            logger.info("reindex: rewrote text_repr of %d records", rebuilt)
+        # always report: a silent step makes "did not run" and "nothing to do"
+        # look identical, which is exactly how a stale container hides itself
+        logger.info("reindex: %d records, %d text_repr rewritten", n_records,
+                    rebuilt)
+        if n_records and not rebuilt:
+            logger.warning(
+                "reindex: no record text changed — either this build is stale "
+                "or the records carry no dimension names")
         for table in s.scalars(select(TableElement)):
             element = elements.get(table.element_id)
             if element is None or (element.meta or {}).get("unusable"):
