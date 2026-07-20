@@ -121,6 +121,14 @@ the KEYS inside "metrics". All measures of the same coordinates go in the \
 SAME record — never a "metric_type"-style dimension, never one record per \
 measure.
 
+RULE 4 — Cover every column. Each record must account for EVERY column of the \
+table. Numeric columns go to "metrics"; every other column becomes a \
+"dimensions" entry keyed by its column header — including columns holding \
+long text, job titles or lists. Never drop a column because it is wordy, \
+multi-line or empty on some rows: a multi-line cell keeps its lines joined by \
+" / ", an empty cell becomes "". A record that omits a column loses the only \
+searchable copy of it.
+
 Key naming: use header names as keys when the table names them; otherwise \
 invent short consistent snake_case keys (e.g. "level_1"). Every record in one \
 table must use the same dimension keys.

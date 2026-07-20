@@ -439,3 +439,14 @@ async def test_parse_table_region_vlm_honest_failure(monkeypatch):
     assert result.needs_review is True
     assert result.records == []
     assert result.html == "<table></table>"  # salvaged html survives
+
+
+def test_parser_prompt_requires_every_column_in_records():
+    """The VLM dropped the 'Emplois CETIAT' column from its records, so no row
+    was searchable by job title and 'cotation du poste Acheteur(se)' could not
+    match anything (run 6, seen in the context dump)."""
+    from tablerag.models.table_parsing import build_user_prompt
+
+    prompt = build_user_prompt("fr")
+    assert "Cover every column" in prompt
+    assert "multi-line" in prompt and "empty cell" in prompt
