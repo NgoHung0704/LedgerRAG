@@ -448,5 +448,9 @@ def test_parser_prompt_requires_every_column_in_records():
     from tablerag.models.table_parsing import build_user_prompt
 
     prompt = build_user_prompt("fr")
-    assert "Cover every column" in prompt
-    assert "multi-line" in prompt and "empty cell" in prompt
+    assert "row-attribute column" in prompt
+    assert "multi-line" in prompt
+    # it must not fight the long-format rule: "cover every column" phrasing
+    # pushed pivots back to wide format (eval-tables: wide/pivot tables fell
+    # to 17-50% while flat ones stayed at 100%)
+    assert "does NOT relax rules 2 and 3" in prompt
