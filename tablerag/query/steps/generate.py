@@ -29,6 +29,10 @@ them do, say so instead of taking a number from a look-alike table.
 - Read a table by intersection: first find the ROW whose label matches the \
 entity asked about, then take the value from the COLUMN whose header matches \
 what is asked. Never return a value from a neighbouring row or column.
+- If a word in the question is the NAME of a column in one of the tables, the \
+answer is the value in THAT column — not a similar-looking number from \
+another table. Give that value explicitly; identifying the right row is not \
+an answer on its own.
 - Cite every claim with its source marker, e.g. [1] or [2][3].
 - Copy numbers, ranges and units EXACTLY as written in the sources, keeping \
 their digit grouping and spacing (write « 34 900 » and « 52 à 54 » exactly as \

@@ -182,7 +182,22 @@ def test_records_from_grid_keeps_at_least_one_dimension():
 def test_build_text_repr_prefers_raw_strings():
     repr_ = build_text_repr({"pays": "Maroc"}, {"ca": 5240880.0},
                             {"ca": "5 240 880"})
-    assert repr_ == "Maroc | ca: 5 240 880"
+    assert repr_ == "pays: Maroc | ca: 5 240 880"
+
+
+def test_build_text_repr_names_every_dimension():
+    """A row must say which column each value came from: unnamed values sent
+    the model looking for the 'cotation' in a different table (run 6)."""
+    repr_ = build_text_repr(
+        {"Cotations": "37 à 39", "Classes d'emplois": "11",
+         "Groupes d'emplois": "F", "Emplois CETIAT": "Acheteur(se)"}, {}, {})
+    assert repr_.startswith("Cotations: 37 à 39")
+    assert "Groupes d'emplois: F" in repr_
+
+
+def test_build_text_repr_keeps_bare_value_for_unnamed_columns():
+    # blank/positional headers are real (CETIAT's salary column has none)
+    assert build_text_repr({"": "21 700", "2": "x"}, {}, {}) == "21 700 | x"
 
 
 # ---------------------------------------------------------- region dispatch

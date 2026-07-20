@@ -48,14 +48,29 @@ def snake(name: str) -> str:
 
 def build_text_repr(dimensions: dict, metrics: dict, raw_values: dict) -> str:
     """The embedded string, e.g.
-    'Afrique | Algérie | Citadine | 2013 | T1 | janv. | chiffre_affaires: 7 462 639 | volume: 426'
+    'zone: Afrique | pays: Algérie | segment: Citadine | chiffre_affaires: 7 462 639'
+
+    Dimensions carry their column name, not just their value. Dropping the name
+    made a row read as a list of anonymous values ('37 à 39 | 11 | F | …'):
+    the model could guess which one was a class or a group, but the unlabelled
+    first value was unusable, so when asked for a "cotation" it went looking in
+    another table and returned a salary instead. Naming the column also puts
+    the header word into the embedded/lexical text, so a question that uses it
+    matches the row that answers it.
     """
-    dims = [str(v) for v in dimensions.values() if str(v).strip()]
-    mets = []
+    parts = []
+    for key, value in dimensions.items():
+        text = str(value).strip()
+        if not text:
+            continue
+        name = str(key).strip()
+        # unnamed columns exist (blank header cells) — then the bare value is
+        # all we can honestly say about it
+        parts.append(f"{name}: {text}" if name and not name.isdigit() else text)
     for key in metrics:
         shown = raw_values.get(key, metrics.get(key))
-        mets.append(f"{key}: {shown}")
-    return " | ".join(dims + mets)
+        parts.append(f"{key}: {shown}")
+    return " | ".join(parts)
 
 
 def _cell_html(cell) -> str:

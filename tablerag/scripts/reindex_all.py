@@ -22,6 +22,7 @@ from sqlalchemy import select
 
 from tablerag.core.logging import setup_logging
 from tablerag.ingestion.html_tables import html_to_text
+from tablerag.ingestion.table_pipeline import build_text_repr
 from tablerag.models.registry import get_provider
 from tablerag.storage.db import session_scope
 from tablerag.storage.orm import Chunk, Document, Element, Record, TableElement
@@ -57,11 +58,23 @@ def _collect_jobs() -> list[tuple[str, object, str, dict]]:
             if payload:
                 jobs.append((COLLECTION_CHUNKS, chunk.id, chunk.text,
                              {**payload, "chunk_id": str(chunk.id)}))
+        rebuilt = 0
         for record in s.scalars(select(Record)):
+            # recompute from the stored dimensions/metrics so rows indexed by
+            # an older build adopt the current representation without a
+            # re-parse (principle #1: the parsed truth is already in Postgres)
+            text = build_text_repr(record.dimensions or {}, record.metrics or {},
+                                   record.raw_values or {})
+            if text and text != record.text_repr:
+                record.text_repr = text
+                rebuilt += 1
             payload = base(record.table_element_id)
             if payload:
-                jobs.append((COLLECTION_RECORDS, record.id, record.text_repr,
+                jobs.append((COLLECTION_RECORDS, record.id,
+                             record.text_repr or text,
                              {**payload, "record_id": str(record.id)}))
+        if rebuilt:
+            logger.info("reindex: rewrote text_repr of %d records", rebuilt)
         for table in s.scalars(select(TableElement)):
             element = elements.get(table.element_id)
             if element is None or (element.meta or {}).get("unusable"):
