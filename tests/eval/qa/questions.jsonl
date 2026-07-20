@@ -24,7 +24,7 @@
 {"id": "a15", "type": "text", "question": "Quel est le délai de franchise de la garantie « relais » pour les salariés ayant moins de 12 mois d'ancienneté ?", "expected_answer_contains": ["90 jours"], "expected_doc": "Avenant du 11 juillet 2023.pdf"}
 {"id": "g1", "type": "text", "question": "Comment le glossaire de classification définit-il le « diagnostic » ?", "expected_answer_contains": ["dysfonctionnement"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g2", "type": "text", "question": "Qu'est-ce qu'un « contrôle ponctuel » selon le glossaire ?", "expected_answer_contains": ["aléatoire"], "expected_doc": "Glossaire-Classification.pdf"}
-{"id": "g3", "type": "text", "question": "Qu'est-ce qu'une « négociation complexe » selon le glossaire ?", "expected_answer_contains": ["multi-acteurs"], "expected_doc": "Glossaire-Classification.pdf"}
+{"id": "g3", "type": "text", "question": "Qu'est-ce qu'une « négociation complexe » selon le glossaire ?", "expected_answer_contains": ["multi-acteurs|multiples acteurs", "périmètre large"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g4", "type": "text", "question": "Que recouvrent les « connaissances élémentaires » dans le glossaire ?", "expected_answer_contains": ["lire", "compter"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g5", "type": "table", "question": "Quelles activités relèvent de la technique « Chaudronnerie » d'après le tableau illustratif ?", "expected_answer_contains": ["Tuyauterie", "Soudure"], "expected_doc": "Glossaire-Classification.pdf"}
 {"id": "g6", "type": "table", "question": "À quel domaine professionnel appartient la « Transformation des métaux » ?", "expected_answer_contains": ["Fabrication"], "expected_doc": "Glossaire-Classification.pdf"}

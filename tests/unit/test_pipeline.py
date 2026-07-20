@@ -165,3 +165,47 @@ def test_unparsed_table_still_reports_image_only():
     table = _table_source(html=None, summary=None)
     block = AssembleContext._table_block(table, {})
     assert "could not be parsed" in block.content
+
+
+# --- context order must follow Rerank, not raw score (run 5: silent no-op) ---
+
+class _H:
+    def __init__(self, collection, key, score, doc="d"):
+        self.score = score
+        self.payload = {"_collection": collection, "doc_id": doc, **key}
+
+
+async def _assemble(hits, monkeypatch):
+    from tablerag.query.steps.assemble import AssembleContext
+
+    step = AssembleContext()
+    ids = {h.payload.get("chunk_id") or h.payload["element_id"] for h in hits}
+
+    def fake_fetch(chunk_ids, table_ids, matched):
+        from tablerag.storage.repositories import ChunkContext
+
+        chunks = [ChunkContext(chunk_id=c, text=f"text-{c}", element_id=c,
+                               page=1, crop_image_path="k", confidence=None,
+                               needs_review=False, doc_id=uuid.uuid4(),
+                               filename=f"{c}.pdf") for c in chunk_ids]
+        return chunks, [], {}
+
+    monkeypatch.setattr(AssembleContext, "_fetch", staticmethod(fake_fetch))
+    ctx = QueryContext(kb_id=uuid.uuid4(), question="q")
+    ctx.hits = hits
+    assert ids  # sanity
+    return await step.run(ctx)
+
+
+@pytest.mark.asyncio
+async def test_context_keeps_rerank_order_not_score_order(monkeypatch):
+    """The Rerank step may put a LOWER-scoring block first (reranker score, or
+    document diversification). Assemble must not undo that."""
+    from tablerag.storage.qdrant import COLLECTION_CHUNKS
+
+    low, high = uuid.uuid4(), uuid.uuid4()
+    hits = [_H(COLLECTION_CHUNKS, {"chunk_id": str(low)}, 0.1),
+            _H(COLLECTION_CHUNKS, {"chunk_id": str(high)}, 0.9)]
+    ctx = await _assemble(hits, monkeypatch)
+    assert [c.chunk_id for c in ctx.citations] == [low, high]
+    assert ctx.citations[0].index == 1

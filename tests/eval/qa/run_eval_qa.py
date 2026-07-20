@@ -141,8 +141,11 @@ def grade(item: dict, answer: str, citations: list[dict],
     # expected string appears somewhere in a pasted table
     if is_refusal(claim):
         return False, "answer refuses/hedges instead of stating the value"
+    # an expected entry may list acceptable surface forms separated by "|":
+    # prose facts have several faithful wordings ("multi-acteurs" vs "de
+    # multiples acteurs"), and only NUMBERS must be copied character-exact
     missing = [s for s in item.get("expected_answer_contains", [])
-               if _norm(s) not in claim]
+               if not any(_norm(variant) in claim for variant in s.split("|"))]
     if missing:
         return False, f"answer missing: {missing}"
     expected_doc = item.get("expected_doc")

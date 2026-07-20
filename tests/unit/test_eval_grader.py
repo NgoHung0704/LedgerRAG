@@ -123,3 +123,24 @@ def test_hedged_answer_fails_even_with_expected_string_in_prose():
         "Les documents ne contiennent pas cette information, mais il "
         "s'agirait peut-être de 52 à 54.", CITED, None)
     assert not ok and "refuses" in detail
+
+
+# --- surface-form variants for prose facts (run 5 regression) --------------
+
+def test_expected_variants_accept_a_faithful_paraphrase():
+    """g3: the glossary says 'multi-acteurs'; the model wrote 'de multiples
+    acteurs'. Same fact, and only numbers must be character-exact."""
+    item = {"type": "text", "expected_doc": "Glossaire-Classification.pdf",
+            "expected_answer_contains": ["multi-acteurs|multiples acteurs"]}
+    for wording in ("impliquant des acteurs multi-acteurs",
+                    "impliquant de multiples acteurs et facteurs"):
+        ok, detail = grade(item, wording, GLOSSAIRE, None)
+        assert ok, detail
+
+
+def test_expected_variants_still_reject_a_wrong_answer():
+    item = {"type": "text", "expected_doc": "Glossaire-Classification.pdf",
+            "expected_answer_contains": ["multi-acteurs|multiples acteurs"]}
+    ok, _ = grade(item, "une négociation menée par un seul interlocuteur",
+                  GLOSSAIRE, None)
+    assert not ok

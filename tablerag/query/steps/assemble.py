@@ -44,7 +44,13 @@ class AssembleContext:
         # which rows made this table match, in relevance order (see MAX_MATCHED_ROWS)
         matched: dict[uuid.UUID, list[uuid.UUID]] = {}
 
-        for hit in ctx.hits:  # already sorted by score desc
+        # rank = position in ctx.hits, which is the order the Rerank step
+        # decided (reranker scores, or document-diversified fallback). It is
+        # NOT the raw fusion score: re-sorting by score here silently threw
+        # that decision away and made both reranking and diversification no-ops.
+        rank: dict[tuple[str, uuid.UUID], int] = {}
+
+        for position, hit in enumerate(ctx.hits):
             if hit.payload.get("_collection") == COLLECTION_CHUNKS:
                 raw = hit.payload.get("chunk_id")
                 if raw is None:
@@ -53,6 +59,7 @@ class AssembleContext:
                 if chunk_id not in chunk_scores:
                     chunk_ids.append(chunk_id)
                     chunk_scores[chunk_id] = hit.score
+                    rank[("text", chunk_id)] = position
             else:  # records / table_summaries -> parent table element
                 raw = hit.payload.get("element_id")
                 if raw is None:
@@ -61,6 +68,7 @@ class AssembleContext:
                 if element_id not in table_scores:
                     table_ids.append(element_id)
                     table_scores[element_id] = hit.score
+                    rank[("table", element_id)] = position
                 record_raw = hit.payload.get("record_id")
                 if record_raw:
                     rows = matched.setdefault(element_id, [])
@@ -76,7 +84,9 @@ class AssembleContext:
                                      [record_texts[r] for r in matched.get(t.element_id, [])
                                       if r in record_texts][:MAX_MATCHED_ROWS])
                    for t in tables]
-        blocks.sort(key=lambda b: b.score, reverse=True)
+        blocks.sort(key=lambda b: rank.get(
+            (b.kind, b.chunk_id if b.kind == "text" else b.element_id),
+            len(ctx.hits)))
 
         ctx.sources = blocks
         ctx.citations = [

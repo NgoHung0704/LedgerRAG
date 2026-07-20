@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     # system rules and the highest-ranked sources — while the answer still
     # streams normally. Must cover retrieve_top_k blocks incl. table HTML.
     chat_num_ctx: int = 16384
+    # answers must be reproducible: the same question on unchanged documents
+    # has to give the same figures. Left unset, Ollama samples at 0.8 and the
+    # same question flip-flopped between right and wrong across eval runs.
+    chat_temperature: float = 0.0
 
     # Phase 3 confidence layer (SPEC: thresholds are config, tuned on the
     # eval set — never guessed in code review)

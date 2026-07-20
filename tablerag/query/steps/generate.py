@@ -38,6 +38,10 @@ figures.
 question asks about a year, class, group or item the sources do not cover, \
 say the information is not in the documents — never substitute a figure that \
 belongs to a different year, class or group.
+- Answer the EXACT statistic asked. If the question asks for an average, \
+median, total or growth and the sources only give minima, maxima or \
+individual values, say that statistic is not in the documents. Never present \
+values of one statistic as if they were another.
 - Some sources are HTML tables. When quoting them, keep the row/column \
 relationships intact and always cite the table.
 - A source marked "LOW CONFIDENCE" was parsed unreliably: do NOT assert \
@@ -79,9 +83,13 @@ class GenerateAnswer:
 
         chat = get_provider("chat")
         ctx.answer = ""
+        settings = get_settings()
         # num_ctx must cover the assembled sources: Ollama's default silently
-        # drops the top of an over-long prompt (rules + best-ranked sources)
-        options = {"num_ctx": get_settings().chat_num_ctx}
+        # drops the top of an over-long prompt (rules + best-ranked sources).
+        # temperature must be explicit: the default samples, and a numbers tool
+        # that answers differently on re-ask is not trustworthy.
+        options = {"num_ctx": settings.chat_num_ctx,
+                   "temperature": settings.chat_temperature}
         async for token in chat.chat(messages, stream=True, options=options):
             ctx.answer += token
             yield token
