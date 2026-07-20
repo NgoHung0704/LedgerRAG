@@ -120,3 +120,43 @@ def test_detect_tables_returns_empty_on_prose_page():
                         "Ceci est un paragraphe de politique RH sans aucun "
                         "tableau. " * 20, fontsize=11)
     assert detect_tables(page) == []
+
+
+# --- table text must not be indexed twice (run 6: text copy outranked it) ---
+
+from tablerag.ingestion.layout import duplicates_table_text, grid_cell_texts
+
+BAREME_GRID = [["Groupe d'emplois", "Classe d'emploi", ""],
+               ["A", "1", "21 700"], ["A", "2", "21 850"],
+               ["B", "3", "22 450"], ["C", "5", "24 250"],
+               ["H", "16", "52 000"]]
+
+
+def test_grid_cell_texts_normalizes_and_drops_trivia():
+    cells = grid_cell_texts(BAREME_GRID)
+    assert "groupe d'emplois" in cells and "21 700" in cells
+    assert "" not in cells          # blank header cell dropped
+    assert "1" not in cells         # single characters are not evidence
+
+
+def test_block_that_is_the_table_read_as_lines_is_dropped():
+    """The exact shape observed on the box: the barème as loose lines."""
+    block = ("Groupe d'emplois\nClasse d'emploi\nA\n1\n21 700\n2\n21 850\n"
+             "B\n3\n22 450\nC\n5\n24 250\nH\n16\n52 000")
+    assert duplicates_table_text(block, grid_cell_texts(BAREME_GRID))
+
+
+def test_prose_on_the_same_page_survives():
+    """a14's answer lives in prose next to that table — it must be kept."""
+    prose = ("A partir de 2024, le barème unique des salaires minima "
+             "hiérarchiques applicable, pour une durée hebdomadaire de "
+             "travail effectif de 35 heures, sur la base mensualisée de "
+             "151,66 heures, est fixé comme suit :")
+    assert not duplicates_table_text(prose, grid_cell_texts(BAREME_GRID))
+
+
+def test_short_or_unrelated_blocks_are_never_dropped():
+    cells = grid_cell_texts(BAREME_GRID)
+    assert not duplicates_table_text("21 700", cells)          # too few lines
+    assert not duplicates_table_text("a\nb\nc", cells)         # no overlap
+    assert not duplicates_table_text("A\n1\n21 700", set())    # no tables

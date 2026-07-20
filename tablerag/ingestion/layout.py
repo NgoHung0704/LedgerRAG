@@ -76,6 +76,42 @@ def _overlap_ratio(rect: fitz.Rect, other: fitz.Rect) -> float:
     return inter.get_area() / area if area else 0.0
 
 
+def grid_cell_texts(grid) -> set[str]:
+    """Normalized non-trivial cell strings of a detected grid."""
+    cells: set[str] = set()
+    for row in grid or []:
+        for cell in row:
+            text = " ".join(str(cell or "").split()).lower()
+            if len(text) > 1:
+                cells.add(text)
+    return cells
+
+
+def duplicates_table_text(content: str, cell_texts: set[str],
+                          min_lines: int = 3, ratio: float = 0.6) -> bool:
+    """True when a text block is really a table read as loose lines.
+
+    Geometry alone does not catch this: a block that clips a table edge stays
+    under the overlap threshold and drags the whole grid in as unstructured
+    text. Measured on the box — the barème of the avenant was indexed BOTH as
+    a parsed table and as a text chunk of the same page, and the text copy
+    (headerless, 'C 5 24 250') outranked the structured one and produced the
+    wrong answer. Comparing content instead of boxes is independent of how
+    tightly the detector drew the table.
+
+    Prose is unaffected: sentences do not appear as table cells.
+    """
+    if not cell_texts:
+        return False
+    lines = [" ".join(line.split()).lower()
+             for line in (content or "").splitlines()]
+    lines = [line for line in lines if len(line) > 1]
+    if len(lines) < min_lines:
+        return False
+    hits = sum(1 for line in lines if line in cell_texts)
+    return hits / len(lines) >= ratio
+
+
 # detection strategies from strict to lenient: lines_strict misses tables with
 # imperfect borders (common in real HR grids — this is what dropped the second
 # table on the CETIAT page), so we also try `lines`, and finally text-alignment
@@ -231,6 +267,7 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
 
     # --- tables (real pages often have several per page + imperfect borders) ---
     table_rects: list[fitz.Rect] = []
+    table_cells: set[str] = set()
     for table, grid in detect_tables(page):
         clip = (fitz.Rect(table.bbox) + (-6, -6, 6, 6)) & page.rect
         layout.regions.append(Region(
@@ -238,6 +275,7 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
             complex=table_grid_is_complex(grid),
             crop_png=page.get_pixmap(dpi=table_dpi, clip=clip).tobytes("png")))
         table_rects.append(fitz.Rect(table.bbox))
+        table_cells |= grid_cell_texts(grid)
 
     # --- text + figures (blocks not covered by a table) ---
     blocks = page.get_text("blocks")  # (x0, y0, x1, y1, text, no, type)
@@ -255,6 +293,10 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
                 figures.append(Region(type="figure", bbox=tuple(block_rect)))
             continue
         content = block[4].strip()
+        # a table already indexed as a structured element must not be indexed
+        # again as loose text: the text copy has no headers and can outrank it
+        if content and duplicates_table_text(content, table_cells):
+            continue
         if content:
             text_parts.append(content)
             text_bbox = block_rect if text_bbox is None else text_bbox | block_rect
