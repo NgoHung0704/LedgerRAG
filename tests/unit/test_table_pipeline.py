@@ -441,16 +441,16 @@ async def test_parse_table_region_vlm_honest_failure(monkeypatch):
     assert result.html == "<table></table>"  # salvaged html survives
 
 
-def test_parser_prompt_requires_every_column_in_records():
-    """The VLM dropped the 'Emplois CETIAT' column from its records, so no row
-    was searchable by job title and 'cotation du poste Acheteur(se)' could not
-    match anything (run 6, seen in the context dump)."""
+def test_parser_prompt_carries_no_rule_4():
+    """RULE 4 ('cover every column' / 'row-attribute column') was added to fix
+    the dropped 'Emplois CETIAT' column and MEASURED OUT on the box: baseline
+    prompt 79.9%, wide variant 75.1% (wide_en_technical 24/24 -> 4/24), narrow
+    variant 75.7% (twolevel_fr_effectifs 8/12 -> 0/12). Every rewording made a
+    different table collapse to zero — the record-column gap must be solved
+    outside the parser prompt. This test pins the revert."""
     from tablerag.models.table_parsing import build_user_prompt
 
     prompt = build_user_prompt("fr")
-    assert "row-attribute column" in prompt
-    assert "multi-line" in prompt
-    # it must not fight the long-format rule: "cover every column" phrasing
-    # pushed pivots back to wide format (eval-tables: wide/pivot tables fell
-    # to 17-50% while flat ones stayed at 100%)
-    assert "does NOT relax rules 2 and 3" in prompt
+    assert "RULE 4" not in prompt
+    assert "row-attribute" not in prompt
+    assert "Cover every column" not in prompt

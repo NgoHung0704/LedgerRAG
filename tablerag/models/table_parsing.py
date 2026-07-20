@@ -121,15 +121,6 @@ the KEYS inside "metrics". All measures of the same coordinates go in the \
 SAME record — never a "metric_type"-style dimension, never one record per \
 measure.
 
-RULE 4 — Never drop a row-attribute column. A column that DESCRIBES THE ROW \
-(label, name, code, job title, free text) must appear in "dimensions", keyed \
-by its header — including when it is wordy, multi-line, or empty on some rows: \
-join a multi-line cell's lines with " / ", use "" for an empty one. Omitting \
-such a column deletes the only searchable copy of it.
-This rule does NOT relax rules 2 and 3: columns whose HEADER is a period or a \
-category still become long-format dimension VALUES (never one key per column), \
-and measure columns still belong in "metrics".
-
 Key naming: use header names as keys when the table names them; otherwise \
 invent short consistent snake_case keys (e.g. "level_1"). Every record in one \
 table must use the same dimension keys.
