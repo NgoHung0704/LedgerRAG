@@ -454,3 +454,81 @@ def test_parser_prompt_carries_no_rule_4():
     assert "RULE 4" not in prompt
     assert "row-attribute" not in prompt
     assert "Cover every column" not in prompt
+
+
+# --- duplicate-dimension contract (eval-tables diagnostics, 2026-07-20) -----
+
+DUPED_RESPONSE = """\
+```html
+<table><tr><th>Region</th><th>2023</th><th>2024</th></tr>\
+<tr><td>DACH</td><td>24 310 480,5</td><td>26 905 320,75</td></tr></table>
+```
+
+```json
+{"records": [
+  {"dimensions": {"region": "DACH", "land": "Deutschland"},
+   "metrics": {"umsatz_eur": 24310480.5}, "raw_values": {"umsatz_eur": "24 310 480,5"}},
+  {"dimensions": {"region": "DACH", "land": "Deutschland"},
+   "metrics": {"umsatz_eur": 26905320.75}, "raw_values": {"umsatz_eur": "26 905 320,75"}}
+]}
+```
+"""
+
+
+def test_duplicate_dimensions_violate_the_contract():
+    """pivot_de_umsatz's exact failure shape: values perfect, year level
+    dropped, so two records share {region, land} and nothing tells them
+    apart — 0/16 despite correct numbers, presented confidently."""
+    with pytest.raises(TableContractError, match="IDENTICAL dimensions"):
+        parse_response(DUPED_RESPONSE)
+
+
+def test_duplicate_error_names_the_offending_dims():
+    try:
+        parse_response(DUPED_RESPONSE)
+    except TableContractError as e:
+        assert "DACH" in str(e)            # the model is told WHICH rows
+        assert "header level" in str(e)    # and WHAT to add
+    else:
+        pytest.fail("expected TableContractError")
+
+
+def test_distinct_dimensions_still_pass():
+    html, records = parse_response(GOOD_RESPONSE)
+    assert len(records) == 1
+
+
+def test_same_dims_different_order_is_still_a_duplicate():
+    resp = DUPED_RESPONSE.replace(
+        '{"region": "DACH", "land": "Deutschland"},\n   "metrics": {"umsatz_eur": 26905320.75}',
+        '{"land": "Deutschland", "region": "DACH"},\n   "metrics": {"umsatz_eur": 26905320.75}')
+    with pytest.raises(TableContractError, match="IDENTICAL dimensions"):
+        parse_response(resp)
+
+
+async def test_retry_recovers_from_duplicate_dimensions():
+    """The retry must carry the duplicate diagnosis to the model — that is the
+    whole mechanism: enforcement at validation time, not exhortation."""
+    calls = []
+    fixed = DUPED_RESPONSE.replace(
+        '{"dimensions": {"region": "DACH", "land": "Deutschland"},\n   "metrics": {"umsatz_eur": 26905320.75}',
+        '{"dimensions": {"region": "DACH", "land": "Deutschland", "jahr": "2024"},\n   "metrics": {"umsatz_eur": 26905320.75}')
+
+    async def chat(messages, stream=True, temperature=None, options=None):
+        calls.append(messages)
+        yield DUPED_RESPONSE if len(calls) == 1 else fixed
+
+    result = await run_table_parse(chat, b"png", TableCtx(locale_hint="de"))
+    assert result.error is None
+    assert len(calls) == 2
+    assert "IDENTICAL dimensions" in calls[1][-1].content
+
+
+async def test_persistent_duplicates_fail_honestly():
+    async def chat(messages, stream=True, temperature=None, options=None):
+        yield DUPED_RESPONSE
+
+    result = await run_table_parse(chat, b"png", TableCtx())
+    assert result.error is not None and "IDENTICAL" in result.error
+    assert result.records == []
+    assert result.html  # salvage kept for the LOW CONFIDENCE path

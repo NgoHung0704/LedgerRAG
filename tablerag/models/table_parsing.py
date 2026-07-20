@@ -268,6 +268,30 @@ def parse_response(text: str) -> tuple[str, list[dict]]:
             if v is not None and not isinstance(v, (int, float)):
                 raise TableContractError(
                     f"record {i}: metric '{k}' must be a JSON number or null, got {v!r}")
+
+    # dimension tuples must be UNIQUE: dimensions are a record's identity
+    # (principle #2 — dims/metrics split), so two records sharing the same
+    # dimensions means a header level was dropped. Measured on the box:
+    # pivot_de_umsatz read every value perfectly but omitted the year level
+    # -> 8 records in 4 indistinguishable pairs -> 0/16 despite perfect
+    # numbers; twolevel_fr_effectifs relabelled R&D rows as an existing
+    # service; pivot_fr_auto duplicated one modele's rows. All three leave
+    # this exact fingerprint, none can be caught by value checks (the values
+    # are right), and the retry prompt tells the model precisely what to add.
+    seen_dims: dict[tuple, int] = {}
+    for i, rec in enumerate(records):
+        key = tuple(sorted((str(k), str(v)) for k, v in rec["dimensions"].items()))
+        if key in seen_dims:
+            dims = json.dumps(rec["dimensions"], ensure_ascii=False)
+            raise TableContractError(
+                f"records {seen_dims[key]} and {i} have IDENTICAL dimensions "
+                f"{dims} — dimensions must uniquely identify each record. A "
+                "header level that distinguishes them (a year, period, or "
+                "category row above the values) is missing: re-read the "
+                "column headers and include EVERY header level in the "
+                "dimensions of EVERY record, and never emit the same row "
+                "twice while skipping its sibling rows")
+        seen_dims[key] = i
     return html, records
 
 
