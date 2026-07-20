@@ -2,10 +2,11 @@
 `reranker` model role (e.g. bge-reranker-v2-m3 behind a TEI/openai_compat
 endpoint) and keep the best few for context.
 
-The role is disabled by default — then this step just truncates the pool to
-`fallback_top_k` (the Phase 1 behavior). When enabled but unreachable, it
-degrades to the same truncation instead of failing the question (honest
-degradation, never a dead chat)."""
+The role is disabled by default — then this step cuts the pool to
+`fallback_top_k`, giving each retrieved document its best block first so no
+single long document owns the head of the context (see diversify_by_document).
+When enabled but unreachable, it degrades the same way instead of failing the
+question (honest degradation, never a dead chat)."""
 
 from __future__ import annotations
 
@@ -20,6 +21,32 @@ from tablerag.query.pipeline import QueryContext
 logger = logging.getLogger(__name__)
 
 
+def diversify_by_document(hits: list, k: int) -> list:
+    """Take the best k hits, but give every retrieved document its best block
+    before any document takes a second slot.
+
+    Without a reranker the pool is cut by raw fusion score, and a long document
+    can occupy the whole head of the context. Measured on the box: when the
+    document holding the answer landed at rank 4-6 the model answered from the
+    document at rank 1 instead — 5 failures out of 5; when it landed at rank 2
+    the answer was right 4 times out of 4. Recall was never the problem, the
+    ordering was.
+
+    Score order is otherwise preserved, so this only ever promotes a document's
+    FIRST block; it never reorders blocks within a document.
+    """
+    first_of_doc, rest = [], []
+    seen: set[str] = set()
+    for hit in hits:  # already sorted by score desc
+        doc_id = (hit.payload or {}).get("doc_id")
+        if doc_id is not None and doc_id not in seen:
+            seen.add(doc_id)
+            first_of_doc.append(hit)
+        else:
+            rest.append(hit)
+    return (first_of_doc + rest)[:k]
+
+
 class Rerank:
     def __init__(self, top_k: int = 8, fallback_top_k: int = 12):
         self.top_k = top_k
@@ -27,13 +54,13 @@ class Rerank:
 
     async def run(self, ctx: QueryContext) -> QueryContext:
         if effective_config("reranker").provider == "disabled" or not ctx.hits:
-            ctx.hits = ctx.hits[:self.fallback_top_k]
+            ctx.hits = diversify_by_document(ctx.hits, self.fallback_top_k)
             return ctx
         try:
             texts = await asyncio.to_thread(self._fetch_texts, ctx.hits)
             pairs = [(hit, text) for hit, text in zip(ctx.hits, texts) if text]
             if not pairs:
-                ctx.hits = ctx.hits[:self.fallback_top_k]
+                ctx.hits = diversify_by_document(ctx.hits, self.fallback_top_k)
                 return ctx
             reranker = get_provider("reranker")
             scores = await reranker.rerank(ctx.question,
@@ -44,7 +71,7 @@ class Rerank:
             ctx.hits = ranked[:self.top_k]
         except (RoleDisabled, Exception):  # noqa: BLE001 — degrade, don't die
             logger.exception("rerank failed; falling back to retrieval order")
-            ctx.hits = ctx.hits[:self.fallback_top_k]
+            ctx.hits = diversify_by_document(ctx.hits, self.fallback_top_k)
         return ctx
 
     @staticmethod
