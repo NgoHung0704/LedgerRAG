@@ -26,9 +26,8 @@ for p in (str(REPO_ROOT), str(SPIKE_DIR)):
         sys.path.insert(0, p)
 
 import grade  # noqa: E402  (spike grader: matching + report)
-from tablerag.core.config import get_settings  # noqa: E402
 from tablerag.models.base import TableCtx  # noqa: E402
-from tablerag.models.registry import get_provider  # noqa: E402
+from tablerag.models.registry import effective_config, get_provider  # noqa: E402
 
 
 async def evaluate() -> int:
@@ -37,9 +36,17 @@ async def evaluate() -> int:
     if not gt_paths:
         sys.exit("no eval tables — run `python spike/make_test_tables.py` first")
 
-    cfg = get_settings().models.parser
+    # the EFFECTIVE config (env + runtime overrides from the Model Providers
+    # page), not the env-only view: printing the latter hides the endpoint the
+    # run actually calls, which is the first thing to check when it cannot connect
+    cfg = effective_config("parser")
     print(f"eval-tables via PRODUCTION path — parser: {cfg.provider} "
-          f"@ {cfg.base_url} model={cfg.model_name}\n")
+          f"@ {cfg.base_url} model={cfg.model_name}")
+    if "host.docker.internal" in (cfg.base_url or ""):
+        print("  note: that host only resolves INSIDE containers. This script "
+              "runs on the host — map it in /etc/hosts or point the role at "
+              "localhost.")
+    print()
     parser = get_provider("parser")
 
     results = []
