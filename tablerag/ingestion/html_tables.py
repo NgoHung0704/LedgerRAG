@@ -11,25 +11,17 @@ fail-safe (any parse problem returns the original HTML).
 
 from __future__ import annotations
 
-import re
-from html import escape, unescape
-from html.parser import HTMLParser
+from html import escape
 
-_WS = re.compile(r"\s+")
-_TAG = re.compile(r"<[^>]+>")
-
-
-def html_to_text(html: str | None) -> str:
-    """Plain text of a table's HTML, cells space-separated.
-
-    Used as the indexable text for the table_summaries collection when no LLM
-    summary exists (failed/flagged parses): a parsed table must always be
-    retrievable, otherwise the honest-failure path (LOW CONFIDENCE source +
-    original image) can never trigger for it.
-    """
-    if not html:
-        return ""
-    return _WS.sub(" ", unescape(_TAG.sub(" ", html))).strip()
+# shared with the query pipeline via core (principle #1: the two pipelines
+# never import each other — re-exported here so callers keep one import site)
+from tablerag.core.table_text import (  # noqa: F401
+    WS as _WS,
+    TableParser as _TableParser,
+    build_occupancy as _build_occupancy,
+    flatten_table_for_context,
+    html_to_text,
+)
 
 
 def _norm(text: str) -> str:
@@ -41,60 +33,6 @@ def _display(text: str) -> str:
     preserved as <br> (multi-line PDF cells stay multi-line)."""
     lines = [_WS.sub(" ", line).strip() for line in (text or "").split("\n")]
     return "<br>".join(escape(line) for line in lines if line)
-
-
-class _TableParser(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.rows: list[list[dict]] = []
-        self._row: list[dict] | None = None
-        self._cell: dict | None = None
-
-    def handle_starttag(self, tag, attrs):
-        a = dict(attrs)
-        if tag == "tr":
-            self._row = []
-        elif tag in ("td", "th") and self._row is not None:
-            def _span(v):
-                try:
-                    return max(1, int(v))
-                except (TypeError, ValueError):
-                    return 1
-            self._cell = {"tag": tag, "colspan": _span(a.get("colspan")),
-                          "rowspan": _span(a.get("rowspan")), "text": ""}
-        elif tag == "br" and self._cell is not None:
-            self._cell["text"] += "\n"  # keep in-cell line breaks
-
-    def handle_startendtag(self, tag, attrs):
-        if tag == "br" and self._cell is not None:
-            self._cell["text"] += "\n"
-
-    def handle_endtag(self, tag):
-        if tag in ("td", "th") and self._cell is not None and self._row is not None:
-            self._row.append(self._cell)
-            self._cell = None
-        elif tag == "tr" and self._row is not None:
-            self.rows.append(self._row)
-            self._row = None
-
-    def handle_data(self, data):
-        if self._cell is not None:
-            self._cell["text"] += data
-
-
-def _build_occupancy(rows: list[list[dict]]) -> dict[tuple[int, int], dict]:
-    occ: dict[tuple[int, int], dict] = {}
-    for r, row in enumerate(rows):
-        c = 0
-        for cell in row:
-            while (r, c) in occ:
-                c += 1
-            cell["r"], cell["c"] = r, c
-            for dr in range(cell["rowspan"]):
-                for dc in range(cell["colspan"]):
-                    occ[(r + dr, c + dc)] = cell
-            c += cell["colspan"]
-    return occ
 
 
 def _labelish_columns(rows: list[list[dict]], n_cols: int) -> set[int]:

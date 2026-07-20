@@ -145,8 +145,9 @@ def test_table_block_surfaces_matched_rows_before_the_grid():
         ["Cotations: 52 à 54 | Classes: 16 | Groupes: H"])
     assert "Rows matching the question:" in block.content
     # the needle must come before the haystack so a small model reads it first
-    assert block.content.index("52 à 54") < block.content.index("<table>")
+    assert block.content.index("Rows matching") < block.content.index("| 16 |")
     assert "Grille de cotation" in block.content  # summary still leads
+    assert "<table>" not in block.content  # spans expanded, not raw HTML
 
 
 def test_table_block_without_matched_rows_is_unchanged():

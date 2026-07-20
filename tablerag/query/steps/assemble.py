@@ -14,6 +14,7 @@ import asyncio
 import uuid
 
 from tablerag.core.schemas import Citation
+from tablerag.core.table_text import flatten_table_for_context, html_to_text
 from tablerag.query.pipeline import QueryContext, SourceBlock
 from tablerag.storage.db import session_scope
 from tablerag.storage.qdrant import COLLECTION_CHUNKS
@@ -110,9 +111,13 @@ class AssembleContext:
             parts.append("Rows matching the question:\n"
                          + "\n".join(f"- {row}" for row in matched_rows))
         if t.html:
-            parts.append(t.html[:TABLE_HTML_LIMIT])
+            # merged cells expanded: rowspan/colspan are for DISPLAY, and
+            # reading them back positionally is exactly how a small model
+            # lands a value in the wrong column (see flatten_table_for_context)
+            parts.append(flatten_table_for_context(t.html)[:TABLE_HTML_LIMIT])
         content = "\n".join(parts) or "(table could not be parsed — image only)"
-        snippet = (t.summary or t.html or "table")[:SNIPPET_CHARS]
+        # citation snippets are shown to end users: never raw markup
+        snippet = (t.summary or html_to_text(t.html) or "table")[:SNIPPET_CHARS]
         return SourceBlock(
             kind="table", doc_id=t.doc_id, filename=t.filename, page=t.page,
             element_id=t.element_id, content=content, snippet=snippet,
