@@ -364,8 +364,10 @@ def test_build_user_prompt_injects_grid_hint():
 
 
 async def test_grid_hint_flows_to_vlm_on_complex_text_layer_table(monkeypatch):
-    """CETIAT case: complex table WITH a text-layer grid -> the VLM prompt is
-    grounded in the extracted values."""
+    """Glossaire case: multi-level header (blank th) keeps the table on the
+    VLM path, and the VLM prompt is grounded in the extracted values. (A
+    single-header grid no longer reaches the VLM at all — see the
+    deterministic grid path tests.)"""
     seen = {}
 
     class CapturingParser:
@@ -376,7 +378,7 @@ async def test_grid_hint_flows_to_vlm_on_complex_text_layer_table(monkeypatch):
 
     monkeypatch.setattr("tablerag.ingestion.table_pipeline.get_provider",
                         lambda role: CapturingParser())
-    grid = [["Groupe", "Cotation"], ["H", "49"], [None, "52"]]
+    grid = [["Groupe", "Cotation", None], ["H", "49", "52"]]
     await parse_table_region(b"png", grid, is_complex=True, locale="fr")
     assert seen["grid_hint"] is not None
     assert "H | 49" in seen["grid_hint"]
@@ -532,3 +534,60 @@ async def test_persistent_duplicates_fail_honestly():
     assert result.error is not None and "IDENTICAL" in result.error
     assert result.records == []
     assert result.html  # salvage kept for the LOW CONFIDENCE path
+
+
+# ------------------------------ deterministic grid path (run 7 root cause)
+
+CETIAT_GRID = [
+    ["Cotations", "Classes\nd’emplois", "Groupes\nd’emplois", "Emplois CETIAT"],
+    ["19 à 21", "5", "C", "Assistant(e) Commercial(e)\nGestionnaire Magasin"],
+    ["22 à 24", "6", None, "Comptable"],
+    ["37 à 39", "11", "F", "Acheteur(se)\nAdministrateur(trice) informatique"],
+    ["40 à 42", "12", None, "Ingénieur(e) Commercial(e)"],
+]
+
+
+def test_cetiat_shaped_grid_is_derivable():
+    from tablerag.ingestion.table_pipeline import grid_records_are_derivable
+
+    assert grid_records_are_derivable(CETIAT_GRID)
+
+
+def test_underivable_grids_stay_on_the_vlm_path():
+    from tablerag.ingestion.table_pipeline import grid_records_are_derivable
+
+    # blank in the header row = stacked multi-level headers (Glossaire)
+    assert not grid_records_are_derivable(
+        [["Domaines", "Techniques", None, "Activités"], ["a", "b", "c", "d"]])
+    assert not grid_records_are_derivable(None)
+    assert not grid_records_are_derivable([["only header"]])
+    # a data row wider than the header cannot be aligned mechanically
+    assert not grid_records_are_derivable([["A", "B"], ["x", "y", "z"]])
+
+
+async def test_derivable_complex_grid_never_calls_the_vlm(monkeypatch):
+    """Run 7 root cause: VLM records for CETIAT dropped the Emplois column and
+    the unstable second read kept the table LOW CONFIDENCE, which the answer
+    prompt honours by refusing its numbers. A single-header text-layer grid
+    needs no model: records come from the grid, confidence is earned."""
+    monkeypatch.setattr(
+        "tablerag.ingestion.table_pipeline.get_provider",
+        lambda role: pytest.fail("derivable grid must not touch the VLM"))
+
+    result = await parse_table_region(b"png", CETIAT_GRID, True, "fr")
+
+    assert result.parse_strategy == "grid"
+    assert result.error is None and not result.needs_review
+    by_class = {r["raw_values"].get("classes_d_emplois"): r
+                for r in result.records}
+    ach = by_class["11"]
+    assert "Acheteur(se)" in ach["dimensions"]["emplois_cetiat"]
+    assert ach["dimensions"]["cotations"] == "37 à 39"
+    assert ach["dimensions"]["groupes_d_emplois"] == "F"
+    # merged group label forward-filled onto the spanned sibling row
+    assert by_class["12"]["dimensions"]["groupes_d_emplois"] == "F"
+    # multi-line job list is one searchable line
+    assert " / " in ach["dimensions"]["emplois_cetiat"]
+    # searchable by job title AND by column name (both were impossible before)
+    assert "Comptable" in by_class["6"]["text_repr"]
+    assert "cotations: 22 à 24" in by_class["6"]["text_repr"].lower()

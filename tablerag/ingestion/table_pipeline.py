@@ -102,6 +102,20 @@ def grid_display_html(grid: list[list[str | None]]) -> str:
     return collapse_vertical_merges(_grid_to_html(forward_fill_grid(grid)))
 
 
+def grid_records_are_derivable(grid: list[list[str | None]] | None) -> bool:
+    """True when a text-layer grid needs NO model to become records: exactly
+    one header row — row 0 complete; a blank there means stacked multi-level
+    headers, whose interpretation is a modelling decision — and no data row
+    wider than the header. Merged row labels (rowspan blanks in DATA) are
+    fine: forward_fill_grid resolves them deterministically."""
+    if not grid or len(grid) < 2:
+        return False
+    header = grid[0]
+    if not header or any(c is None or not str(c).strip() for c in header):
+        return False
+    return all(len(row) <= len(header) for row in grid[1:])
+
+
 def records_from_grid(grid: list[list[str | None]],
                       locale: str | None) -> list[dict]:
     """Simple path: header row + data rows. Columns whose values mostly parse
@@ -134,7 +148,9 @@ def records_from_grid(grid: list[list[str | None]],
                 metrics[key] = parsed.value if parsed else None
                 raw_values[key] = raw
             else:
-                dimensions[key] = raw
+                # multi-line cells (job lists) stay one searchable line
+                dimensions[key] = " / ".join(
+                    part.strip() for part in raw.splitlines() if part.strip())
         if not any(v is not None for v in metrics.values()) and not any(
                 dimensions.values()):
             continue  # fully empty row
@@ -186,6 +202,27 @@ async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | Non
                     n_rows=len(grid), n_cols=len(grid[0]), records=records)
         except Exception:  # noqa: BLE001 — fall through to the VLM, never crash
             logger.exception("simple table path failed; falling back to VLM")
+
+    # --- deterministic path for complex-but-derivable text-layer grids ---
+    # A single complete header row means each data row maps to one record
+    # mechanically once merged labels are forward-filled: no model opinion is
+    # involved, so the result deserves full confidence. Measured need (run 7):
+    # the VLM dropped the wordy 'Emplois CETIAT' column from its records (job
+    # titles unsearchable) and its unstable second read kept the whole table
+    # LOW CONFIDENCE — which the answer prompt honours by refusing to assert
+    # any number from it. Deterministic records fix both at the root.
+    if grid and is_complex and grid_records_are_derivable(grid):
+        try:
+            from tablerag.models.table_parsing import forward_fill_grid
+
+            records = records_from_grid(forward_fill_grid(grid), locale)
+            if records:
+                return TableResult(
+                    html=grid_display_html(grid),
+                    parse_strategy="grid",
+                    n_rows=len(grid), n_cols=len(grid[0]), records=records)
+        except Exception:  # noqa: BLE001 — fall through to the VLM, never crash
+            logger.exception("grid-derived records failed; falling back to VLM")
 
     # --- VLM path ---
     from tablerag.core.config import get_settings
