@@ -1,6 +1,7 @@
 """Rerank step: disabled -> truncate; enabled -> provider order; failure ->
 honest degradation to retrieval order."""
 
+import json
 import uuid
 
 import pytest
@@ -138,3 +139,53 @@ def test_single_document_pool_is_untouched():
 
     hits = [_Hit("a", 9), _Hit("a", 8), _Hit("a", 7)]
     assert diversify_by_document(hits, 12) == hits
+
+
+# --- openai_compat provider speaks vLLM's /rerank + health (box uses vLLM) ---
+
+def _provider(base_url):
+    from tablerag.core.config import EndpointConfig
+    from tablerag.models.openai_compat import OpenAICompatProvider
+
+    return OpenAICompatProvider(EndpointConfig(
+        provider="openai_compat", base_url=base_url,
+        model_name="bge-reranker-v2-m3", api_key=""))
+
+
+async def test_rerank_speaks_vllm_contract(monkeypatch):
+    """vLLM /v1/rerank returns Jina/Cohere shape {results:[{index,relevance_score}]};
+    our provider must send {model,query,documents} and read it back in order."""
+    import httpx
+
+    seen = {}
+
+    def handler(request):
+        seen["url"] = str(request.url)
+        seen["body"] = json.loads(request.content)
+        # deliberately out of order to prove we re-key by index
+        return httpx.Response(200, json={"results": [
+            {"index": 1, "relevance_score": 0.05},
+            {"index": 0, "relevance_score": 0.98}]})
+
+    transport = httpx.MockTransport(handler)
+    real_client = httpx.AsyncClient
+
+    def patched(*a, **k):
+        k["transport"] = transport
+        return real_client(*a, **k)
+
+    monkeypatch.setattr("tablerag.models.openai_compat.httpx.AsyncClient", patched)
+    scores = await _provider("http://host.docker.internal:8007/v1").rerank(
+        "cotation classe 5", ["cotations 19 a 21 classe 5", "salaire 24 250"])
+    assert seen["url"].endswith("/v1/rerank")          # posts to vLLM's path
+    assert seen["body"]["documents"][0].startswith("cotations")
+    assert scores == [0.98, 0.05]                       # re-keyed by index
+
+
+def test_health_url_not_doubled_when_base_ends_in_v1():
+    p = _provider("http://host.docker.internal:8007/v1")
+    root = p.base_url[:-3] if p.base_url.endswith("/v1") else p.base_url
+    assert f"{root}/v1/models" == "http://host.docker.internal:8007/v1/models"
+    q = _provider("http://host.docker.internal:8007")
+    root2 = q.base_url[:-3] if q.base_url.endswith("/v1") else q.base_url
+    assert f"{root2}/v1/models" == "http://host.docker.internal:8007/v1/models"

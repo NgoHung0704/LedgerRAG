@@ -89,9 +89,13 @@ class OpenAICompatProvider:
         return scores
 
     async def health(self) -> tuple[bool, str]:
+        # base_url may or may not already end in /v1 (a rerank vLLM is commonly
+        # configured as http://host:8007/v1). Normalize so the check hits
+        # /v1/models either way instead of /v1/v1/models -> false "unhealthy".
+        root = self.base_url[:-3] if self.base_url.endswith("/v1") else self.base_url
         try:
             async with httpx.AsyncClient(timeout=5.0, headers=self.headers) as client:
-                r = await client.get(f"{self.base_url}/v1/models")
+                r = await client.get(f"{root}/v1/models")
                 r.raise_for_status()
                 return True, "ok"
         except (httpx.HTTPError, OSError) as e:
