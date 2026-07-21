@@ -164,6 +164,27 @@ async function jsonOrThrow<T>(res: Response): Promise<T> {
 
 // ---------- knowledge bases ----------
 
+// ---------- auth / audit (Phase 5) ----------
+
+export type Me = { username: string; email: string | null; is_admin: boolean };
+
+export const getMe = () =>
+  fetch(`${API_URL}/api/me`, { cache: "no-store" }).then((r) => jsonOrThrow<Me>(r));
+
+export type AuditEvent = {
+  actor: string;
+  action: string;
+  kb_id: string | null;
+  doc_id: string | null;
+  detail: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export const getAudit = () =>
+  fetch(`${API_URL}/api/audit`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow<{ events: AuditEvent[] }>(r),
+  );
+
 export const getKbs = () =>
   fetch(`${API_URL}/api/kbs`, { cache: "no-store" }).then((r) => jsonOrThrow<KB[]>(r));
 

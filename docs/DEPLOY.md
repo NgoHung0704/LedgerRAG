@@ -111,3 +111,29 @@ originals) with a checksum manifest; restore commands are printed at the end.
 
 The eval question sets are assets: grow them from real questions (a 👎 in chat
 is a question worth adding).
+
+## 9. Authentication (multi-user / SSO)
+
+LedgerRAG does not manage passwords. It trusts an **upstream reverse proxy**
+(Authelia, oauth2-proxy, or your corporate SSO) to authenticate the user and
+forward their identity in a header.
+
+```env
+LEDGERRAG_AUTH__MODE=proxy
+LEDGERRAG_AUTH__USER_HEADER=X-Forwarded-User     # what your proxy sets
+LEDGERRAG_AUTH__EMAIL_HEADER=X-Forwarded-Email
+LEDGERRAG_AUTH__ADMINS=alice,boss@company.fr     # admins; everyone else = user
+```
+
+- **Admins** can change model-provider configuration and read the audit log;
+  regular users create KBs, upload, and chat.
+- Every **upload, query and config change is written to the audit log** with
+  the user's identity (GDPR accountability) — visible at **Audit log** in the
+  UI, or `GET /api/audit`.
+
+> ⚠️ **Security**: trusting a header is safe **only** if the API is reachable
+> *exclusively through the proxy*. If port 8000 is exposed directly, anyone can
+> send `X-Forwarded-User: alice` and impersonate her. Put both the frontend and
+> the API behind the same proxy, and do not publish the API port to untrusted
+> networks. Leave `LEDGERRAG_AUTH__MODE=disabled` (the default) only for a
+> single-tenant box on a trusted network — then everyone is one implicit admin.
