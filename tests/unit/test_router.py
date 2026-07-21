@@ -167,3 +167,21 @@ def test_grade_routing_multi_expected():
     recall, exact, _ = grade_routing(
         ["Rémunération", "Formation"], ["Formation", "Rémunération"])
     assert recall and exact               # order-independent set match
+
+
+# --- KB description auto-draft (Phase 5: descriptions feed the router) -------
+
+def test_describe_prompt_names_language_and_carries_sample():
+    from tablerag.api.routes.kb import build_describe_prompt
+
+    p = build_describe_prompt("# reglement.pdf\nCongés payés...", "fr")
+    assert "French" in p
+    assert "reglement.pdf" in p and "Congés payés" in p
+    assert "one" in p.lower() and "router" in p.lower()
+
+
+def test_describe_prompt_unknown_locale_is_neutral():
+    from tablerag.api.routes.kb import build_describe_prompt
+
+    p = build_describe_prompt("x", None)
+    assert "the documents' language" in p

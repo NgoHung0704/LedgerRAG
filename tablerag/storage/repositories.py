@@ -59,6 +59,33 @@ def list_documents(s: Session, kb_id: uuid.UUID) -> list[Document]:
         .order_by(Document.created_at.desc())))
 
 
+def content_sample(s: Session, kb_id: uuid.UUID, *, max_docs: int = 5,
+                   max_chars: int = 4000) -> str:
+    """A short, representative sample of a KB's content for auto-describing it
+    (SPEC Phase 5: a good description is what the router reads). Filenames plus
+    the opening text of the first documents and any table summaries — enough
+    for an LLM to say what subjects the KB covers, cheap to assemble."""
+    docs = list(s.scalars(
+        select(Document).where(Document.kb_id == kb_id)
+        .order_by(Document.created_at.asc()).limit(max_docs)))
+    parts: list[str] = []
+    for doc in docs:
+        parts.append(f"# {doc.filename}")
+        chunk = s.scalars(
+            select(Chunk).join(Element, Chunk.element_id == Element.id)
+            .where(Element.doc_id == doc.id).limit(1)).first()
+        if chunk and chunk.text:
+            parts.append(chunk.text[:600])
+        for summary in s.scalars(
+                select(TableElement.summary).join(
+                    Element, TableElement.element_id == Element.id)
+                .where(Element.doc_id == doc.id,
+                       TableElement.summary.is_not(None)).limit(2)):
+            if summary:
+                parts.append(f"[table] {summary}")
+    return "\n".join(parts)[:max_chars].strip()
+
+
 def delete_document(s: Session, doc_id: uuid.UUID) -> uuid.UUID | None:
     """Delete a document and everything it owns in Postgres (elements, chunks,
     table_element, records cascade). Returns its kb_id so the caller can also
