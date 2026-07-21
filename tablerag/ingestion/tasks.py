@@ -57,6 +57,22 @@ async def _embed_all(embedder: ModelProvider, texts: list[str]) -> list[Vector]:
     return vectors
 
 
+def html_is_trustworthy(html: str | None, from_grid: bool,
+                        error: str | None) -> bool:
+    """Whether a table's HTML is faithful enough to summarize (and thus to
+    index by summary rather than a raw cell dump).
+
+    A text-layer table (`from_grid`) has geometry-derived HTML that is correct
+    even when the VLM failed to structure it into records and the table was
+    flagged — the Glossaire illustrative table (clean HTML, multi-level header,
+    0 records, needs_review). Only a SCAN's salvaged HTML after a parse error
+    would summarize to junk. Measured need: without a summary such a table is
+    indexed by raw cells, which a reranker ranks below clean prose, so it falls
+    out of context and its questions get refused (LOW CONFIDENCE still blocks
+    asserting numbers from it — honest-failure contract intact)."""
+    return bool(html) and (from_grid or not error)
+
+
 def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                   grid, is_complex: bool, locale: str | None,
                   records_out: list, summaries_out: list,
@@ -112,12 +128,8 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                      crop_image_path=image_key, confidence=confidence,
                      needs_review=needs_review, meta=meta,
                      element_id=element_id)
-    # no LLM summary for failed parses: summarizing salvaged HTML produces
-    # junk (observed: language-drift gibberish) — but the table must still be
-    # RETRIEVABLE, otherwise the honest-failure path (LOW CONFIDENCE source +
-    # original image) never triggers: fall back to indexing the raw cell text.
     summary = None
-    if result.html and not result.needs_review:
+    if html_is_trustworthy(result.html, grid is not None, result.error):
         summary = asyncio.run(summarize_table(result.html, locale))
     repo.add_table_element(s, element_id, result.html or None, summary,
                            result.n_rows, result.n_cols, result.parse_strategy)

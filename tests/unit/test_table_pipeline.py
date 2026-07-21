@@ -591,3 +591,21 @@ async def test_derivable_complex_grid_never_calls_the_vlm(monkeypatch):
     # searchable by job title AND by column name (both were impossible before)
     assert "Comptable" in by_class["6"]["text_repr"]
     assert "cotations: 22 à 24" in by_class["6"]["text_repr"].lower()
+
+
+# --- when a flagged table still deserves a summary (run 10 reranker regression)
+
+def test_html_is_trustworthy_covers_flagged_text_layer_tables():
+    from tablerag.ingestion.tasks import html_is_trustworthy
+
+    # Glossaire illustrative table: text-layer grid, VLM made 0 records ->
+    # error set + flagged, but the geometry HTML is clean -> summarize it
+    assert html_is_trustworthy("<table>...</table>", from_grid=True,
+                               error="json block must have >= 1 record")
+    # clean VLM parse of a scan (no grid, no error) -> trustworthy
+    assert html_is_trustworthy("<table>...</table>", from_grid=False, error=None)
+    # a scan that ERRORED with only salvaged HTML -> do NOT summarize (junk)
+    assert not html_is_trustworthy("<garbled/>", from_grid=False, error="bad")
+    # nothing to summarize
+    assert not html_is_trustworthy(None, from_grid=True, error=None)
+    assert not html_is_trustworthy("", from_grid=True, error=None)
