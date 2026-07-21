@@ -311,6 +311,20 @@ export async function* chatMultiStream(
   yield* sseStream<MultiChatEvent>(res);
 }
 
+export type ReviewItem = {
+  element_id: string;
+  doc_id: string;
+  filename: string;
+  page: number;
+  type: string;
+  confidence: number | null;
+};
+
+export const getNeedsReview = (kbId: string) =>
+  fetch(`${API_URL}/api/kbs/${kbId}/needs-review`, { cache: "no-store" }).then(
+    (r) => jsonOrThrow<{ count: number; items: ReviewItem[] }>(r),
+  );
+
 export const suggestDescription = (kbId: string) =>
   fetch(`${API_URL}/api/kbs/${kbId}/suggest-description`, {
     method: "POST",

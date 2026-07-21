@@ -2,23 +2,34 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileText, Globe, MessageSquareText } from "lucide-react";
-import { getKb, getKbs, type KB } from "@/lib/api";
+import {
+  ArrowLeft,
+  FileText,
+  Globe,
+  MessageSquareText,
+  AlertTriangle,
+} from "lucide-react";
+import { getKb, getKbs, getNeedsReview, type KB } from "@/lib/api";
 import ChatPanel from "@/components/ChatPanel";
 import DocumentsPanel from "@/components/DocumentsPanel";
 import KbDescription from "@/components/KbDescription";
+import ReviewPanel from "@/components/ReviewPanel";
 
-type Tab = "documents" | "chat";
+type Tab = "documents" | "chat" | "review";
 
 export default function KBPage({ params }: { params: { id: string } }) {
   const kbId = params.id;
   const [kb, setKb] = useState<KB | null>(null);
   const [allKbs, setAllKbs] = useState<KB[]>([]);
   const [tab, setTab] = useState<Tab>("documents");
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     getKb(kbId).then(setKb).catch(() => {});
     getKbs().then(setAllKbs).catch(() => {});
+    getNeedsReview(kbId)
+      .then((r) => setReviewCount(r.count))
+      .catch(() => {});
   }, [kbId]);
 
   return (
@@ -48,6 +59,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
           [
             { id: "documents", label: "Documents", icon: FileText },
             { id: "chat", label: "Chat", icon: MessageSquareText },
+            { id: "review", label: "Review", icon: AlertTriangle },
           ] as const
         ).map(({ id, label, icon: Icon }) => (
           <button
@@ -60,6 +72,11 @@ export default function KBPage({ params }: { params: { id: string } }) {
             }`}
           >
             <Icon size={15} /> {label}
+            {id === "review" && reviewCount > 0 && (
+              <span className="ml-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                {reviewCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -67,8 +84,10 @@ export default function KBPage({ params }: { params: { id: string } }) {
       <div className="min-h-0 flex-1">
         {tab === "documents" ? (
           <DocumentsPanel kbId={kbId} />
-        ) : (
+        ) : tab === "chat" ? (
           <ChatPanel kbId={kbId} allKbs={allKbs} />
+        ) : (
+          <ReviewPanel kbId={kbId} onCount={setReviewCount} />
         )}
       </div>
     </div>

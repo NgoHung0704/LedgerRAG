@@ -59,6 +59,26 @@ def list_documents(s: Session, kb_id: uuid.UUID) -> list[Document]:
         .order_by(Document.created_at.desc())))
 
 
+def needs_review_elements(s: Session, kb_id: uuid.UUID) -> list[dict]:
+    """Flagged, still-usable elements across a KB, newest doc first — the
+    review queue (SPEC Phase 5: pull needs_review out of per-document admin
+    into a natural flow). Excludes elements already marked unusable."""
+    rows = s.execute(
+        select(Element, Document.filename)
+        .join(Document, Element.doc_id == Document.id)
+        .where(Document.kb_id == kb_id, Element.needs_review.is_(True))
+        .order_by(Document.created_at.desc(), Element.page.asc())
+    ).all()
+    out = []
+    for element, filename in rows:
+        if (element.meta or {}).get("unusable"):
+            continue
+        out.append({"element_id": element.id, "doc_id": element.doc_id,
+                    "filename": filename, "page": element.page,
+                    "type": element.type, "confidence": element.confidence})
+    return out
+
+
 def content_sample(s: Session, kb_id: uuid.UUID, *, max_docs: int = 5,
                    max_chars: int = 4000) -> str:
     """A short, representative sample of a KB's content for auto-describing it

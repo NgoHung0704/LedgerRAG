@@ -96,6 +96,20 @@ async def suggest_description(kb_id: uuid.UUID) -> dict:
     return {"description": "".join(parts).strip()}
 
 
+@router.get("/{kb_id}/needs-review")
+def needs_review(kb_id: uuid.UUID) -> dict:
+    """The KB's review queue: tables/elements the parser flagged as unsure.
+    Surfaced at KB level so a non-engineer is nudged to check them instead of
+    hunting per document (SPEC Phase 5)."""
+    with session_scope() as s:
+        if repo.get_kb(s, kb_id) is None:
+            raise HTTPException(404, "knowledge base not found")
+        items = repo.needs_review_elements(s, kb_id)
+    return {"count": len(items),
+            "items": [{**it, "element_id": str(it["element_id"]),
+                       "doc_id": str(it["doc_id"])} for it in items]}
+
+
 @router.get("/{kb_id}", response_model=KBOut)
 def get_kb(kb_id: uuid.UUID) -> KBOut:
     with session_scope() as s:
