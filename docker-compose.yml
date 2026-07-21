@@ -137,8 +137,14 @@ services:
     # cpu-1.5 ships a broken downloader ("relative URL without a base" on a
     # reachable Hub); newer tags fix it. Overridable so a box can try tags
     # without editing this file:  TEI_TAG=cpu-1.7 docker compose ... up reranker
-    image: ghcr.io/huggingface/text-embeddings-inference:${TEI_TAG:-cpu-1.6}
-    command: ["--model-id", "BAAI/bge-reranker-v2-m3"]
+    image: ghcr.io/huggingface/text-embeddings-inference:${TEI_TAG:-cpu-1.7}
+    # the ONNX conversion of BAAI/bge-reranker-v2-m3 (same weights): the BAAI
+    # repo has no ONNX files, so TEI falls back to its Candle+MKL backend,
+    # which crashes on AMD CPUs (endless "Intel MKL ERROR ... SGEMM", TEI
+    # issue #636). With onnx/model.onnx present TEI loads the ONNX-Runtime
+    # backend instead, which is CPU-vendor-neutral.
+    command: ["--model-id",
+              "${RERANKER_MODEL_ID:-onnx-community/bge-reranker-v2-m3-ONNX}"]
     environment:
       # explicit hub endpoint: without it, TEI + a set HUGGINGFACE_HUB_CACHE
       # builds an empty base URL and dies with "relative URL without a base".
