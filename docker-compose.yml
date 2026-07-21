@@ -122,7 +122,25 @@ services:
     depends_on:
       - api
 
+  # Optional cross-encoder reranker (Phase 4 `reranker` role). Opt-in — it does
+  # not start with a plain `docker compose up`; bring it up explicitly:
+  #     docker compose --profile reranker up -d reranker
+  # then point the role at it (compose-network name, TEI listens on :80):
+  #     LEDGERRAG_MODELS__RERANKER__PROVIDER=openai_compat
+  #     LEDGERRAG_MODELS__RERANKER__BASE_URL=http://reranker:80
+  #     LEDGERRAG_MODELS__RERANKER__MODEL_NAME=BAAI/bge-reranker-v2-m3
+  # CPU image on purpose: reranking a few dozen candidates per query is cheap
+  # and this avoids the ROCm/CUDA image matrix. For a GPU box swap the image
+  # (:1.5 CUDA / :rocm-1.5) and add the matching device reservation.
+  reranker:
+    profiles: ["reranker"]
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    command: ["--model-id", "BAAI/bge-reranker-v2-m3"]
+    volumes:
+      - reranker_cache:/data
+
 volumes:
   pgdata:
   qdrant_data:
   minio_data:
+  reranker_cache:
