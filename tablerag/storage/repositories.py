@@ -16,6 +16,7 @@ from tablerag.storage.orm import (
     Document,
     Element,
     KnowledgeBase,
+    MessageFeedback,
     Record,
     TableElement,
 )
@@ -413,6 +414,24 @@ def get_or_create_session(s: Session, kb_id: uuid.UUID,
     s.add(session)
     s.flush()
     return session
+
+
+def set_feedback(s: Session, message_id: uuid.UUID, value: int) -> int | None:
+    """Upsert 👍/👎 on a message. value 0 clears it; returns the stored value
+    (or None when cleared). One row per message (unique constraint)."""
+    row = s.scalars(
+        select(MessageFeedback).where(MessageFeedback.message_id == message_id)
+    ).first()
+    if value == 0:
+        if row is not None:
+            s.delete(row)
+        return None
+    if row is None:
+        s.add(MessageFeedback(message_id=message_id, value=value))
+    else:
+        row.value = value
+    s.flush()
+    return value
 
 
 def add_message(s: Session, session_id: uuid.UUID, role: str, content: str,

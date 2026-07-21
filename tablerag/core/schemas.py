@@ -65,6 +65,10 @@ class MultiChatRequest(BaseModel):
     verify: bool | None = None
 
 
+class FeedbackRequest(BaseModel):
+    value: int = Field(ge=-1, le=1)  # +1 👍, -1 👎, 0 clears
+
+
 class Citation(BaseModel):
     """Every element traces back to its origin (principle #3)."""
 

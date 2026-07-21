@@ -10,10 +10,13 @@ import {
   Send,
   Sparkles,
   Table2,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import {
   chatStream,
   chatMultiStream,
+  sendFeedback,
   type Citation,
   type KB,
   type RoutingInfo,
@@ -29,6 +32,8 @@ type Message = {
   citations?: Citation[];
   verification?: Verification | null;
   routing?: RoutingInfo | null;
+  messageId?: string;
+  feedback?: -1 | 0 | 1;
   error?: boolean;
 };
 
@@ -55,6 +60,22 @@ export default function ChatPanel({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const rate = async (index: number, next: -1 | 1) => {
+    const msg = messages[index];
+    if (!msg.messageId) return;
+    const value = msg.feedback === next ? 0 : next; // click again to clear
+    setMessages((m) => {
+      const copy = [...m];
+      copy[index] = { ...copy[index], feedback: value };
+      return copy;
+    });
+    try {
+      await sendFeedback(msg.messageId, value);
+    } catch {
+      /* best-effort: feedback is non-critical, keep the optimistic state */
+    }
+  };
 
   const ask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +116,8 @@ export default function ChatPanel({
           sessionRef.current = ev.session_id;
           patchLast({
             verification: ev.verification,
-            routing: "routing" in ev ? ev.routing : null,
+            routing: "routing" in ev ? (ev.routing as RoutingInfo | null) : null,
+            messageId: ev.message_id,
           });
         } else if (ev.type === "error") {
           patchLast({ content: ev.message, error: true });
@@ -185,6 +207,20 @@ export default function ChatPanel({
                     ))}
                   </div>
                 )}
+
+                {m.messageId && !m.error && (
+                  <div className="mt-2 flex items-center gap-1">
+                    <FeedbackButton
+                      active={m.feedback === 1}
+                      onClick={() => rate(i, 1)}
+                      up
+                    />
+                    <FeedbackButton
+                      active={m.feedback === -1}
+                      onClick={() => rate(i, -1)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ),
@@ -226,6 +262,31 @@ export default function ChatPanel({
         <SourceModal citation={openSource} onClose={() => setOpenSource(null)} />
       )}
     </div>
+  );
+}
+
+function FeedbackButton({
+  active,
+  onClick,
+  up = false,
+}: {
+  active: boolean;
+  onClick: () => void;
+  up?: boolean;
+}) {
+  const Icon = up ? ThumbsUp : ThumbsDown;
+  const activeColor = up ? "text-emerald-600" : "text-red-500";
+  return (
+    <button
+      onClick={onClick}
+      title={up ? "Helpful" : "Not helpful"}
+      aria-pressed={active}
+      className={`rounded-md p-1 transition-colors hover:bg-slate-100 ${
+        active ? activeColor : "text-slate-300 hover:text-slate-500"
+      }`}
+    >
+      <Icon size={13} fill={active ? "currentColor" : "none"} />
+    </button>
   );
 }
 

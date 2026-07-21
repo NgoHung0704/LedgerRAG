@@ -178,3 +178,18 @@ class ChatMessage(Base):
     citations: Mapped[list | None] = mapped_column(JSONVariant, nullable=True)
     verification: Mapped[dict | None] = mapped_column(JSONVariant, nullable=True)
     created_at: Mapped[datetime] = _created_at()
+
+
+class MessageFeedback(Base):
+    """Phase 5 👍/👎 on an answer. Its own table (not a chat_message column) so
+    `create_all` picks it up on an existing DB without a migration. One row per
+    message (unique), value +1 / -1; feeds the eval-as-asset dogfood loop."""
+
+    __tablename__ = "message_feedback"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("chat_message.id", ondelete="CASCADE"),
+        unique=True, index=True)
+    value: Mapped[int] = mapped_column(Integer)  # +1 up, -1 down
+    created_at: Mapped[datetime] = _created_at()

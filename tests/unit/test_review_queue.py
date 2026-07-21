@@ -45,3 +45,23 @@ def test_review_queue_scoped_to_its_kb(db_session):
     _table(db_session, doc_b.id, 1, needs_review=True)
     assert len(repo.needs_review_elements(db_session, kb_a.id)) == 1
     assert repo.needs_review_elements(db_session, kb_a.id)[0]["filename"] == "a.pdf"
+
+
+# --- 👍/👎 feedback (Phase 5: feeds the eval-as-asset loop) ------------------
+
+def test_feedback_upsert_and_clear(db_session):
+    from tablerag.storage.orm import MessageFeedback
+
+    kb = repo.create_kb(db_session, "HR", "d")
+    session = repo.get_or_create_session(db_session, kb.id, None)
+    msg = repo.add_message(db_session, session.id, "assistant", "answer")
+
+    assert repo.set_feedback(db_session, msg.id, 1) == 1
+    assert db_session.query(MessageFeedback).count() == 1
+    # upsert: same message flips, does not duplicate
+    assert repo.set_feedback(db_session, msg.id, -1) == -1
+    assert db_session.query(MessageFeedback).count() == 1
+    assert db_session.query(MessageFeedback).one().value == -1
+    # 0 clears
+    assert repo.set_feedback(db_session, msg.id, 0) is None
+    assert db_session.query(MessageFeedback).count() == 0

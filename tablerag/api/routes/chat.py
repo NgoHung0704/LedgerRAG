@@ -11,7 +11,7 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from tablerag.core.schemas import ChatRequest, MultiChatRequest
+from tablerag.core.schemas import ChatRequest, FeedbackRequest, MultiChatRequest
 from tablerag.query.pipeline import QueryContext, default_pipeline
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
@@ -19,6 +19,17 @@ from tablerag.storage.db import session_scope
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["chat"])
+
+
+@router.post("/messages/{message_id}/feedback")
+async def message_feedback(message_id: uuid.UUID, body: FeedbackRequest) -> dict:
+    """👍/👎 on an answer (Phase 5). Feeds the eval-as-asset loop: thumbs-down
+    answers are the dogfood questions worth adding to the eval set."""
+    def save() -> int | None:
+        with session_scope() as s:
+            return repo.set_feedback(s, message_id, body.value)
+
+    return {"value": await asyncio.to_thread(save)}
 
 
 def _sse(payload: dict) -> str:
@@ -120,20 +131,21 @@ async def chat_multi(body: MultiChatRequest) -> StreamingResponse:
                 elif kind == "token":
                     yield _sse({"type": "token", "content": payload})
 
-            def persist() -> uuid.UUID:
+            def persist() -> tuple[uuid.UUID, uuid.UUID]:
                 # a multi-KB session is grouped under the first searched KB
                 rep_kb = ctx.routed_kb_ids[0] if ctx.routed_kb_ids else ctx.kb_id
                 with session_scope() as s:
                     session = repo.get_or_create_session(s, rep_kb, body.session_id)
                     repo.add_message(s, session.id, "user", body.question)
-                    repo.add_message(
+                    msg = repo.add_message(
                         s, session.id, "assistant", ctx.answer,
                         citations=[c.model_dump(mode="json") for c in ctx.citations],
                         verification=ctx.verification)
-                    return session.id
+                    return session.id, msg.id
 
-            session_id = await asyncio.to_thread(persist)
+            session_id, message_id = await asyncio.to_thread(persist)
             yield _sse({"type": "done", "session_id": str(session_id),
+                        "message_id": str(message_id),
                         "routing": ctx.routing,
                         "verification": ctx.verification})
         except Exception:  # noqa: BLE001 — stream errors must reach the client

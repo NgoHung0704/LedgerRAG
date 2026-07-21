@@ -292,6 +292,7 @@ export type MultiChatEvent =
   | {
       type: "done";
       session_id: string;
+      message_id: string;
       routing: RoutingInfo | null;
       verification: Verification | null;
     }
@@ -324,6 +325,13 @@ export const getNeedsReview = (kbId: string) =>
   fetch(`${API_URL}/api/kbs/${kbId}/needs-review`, { cache: "no-store" }).then(
     (r) => jsonOrThrow<{ count: number; items: ReviewItem[] }>(r),
   );
+
+export const sendFeedback = (messageId: string, value: -1 | 0 | 1) =>
+  fetch(`${API_URL}/api/messages/${messageId}/feedback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ value }),
+  }).then((r) => jsonOrThrow<{ value: number | null }>(r));
 
 export const suggestDescription = (kbId: string) =>
   fetch(`${API_URL}/api/kbs/${kbId}/suggest-description`, {
