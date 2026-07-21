@@ -136,6 +136,13 @@ services:
     profiles: ["reranker"]
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
     command: ["--model-id", "BAAI/bge-reranker-v2-m3"]
+    environment:
+      # explicit hub endpoint: without it, TEI + a set HUGGINGFACE_HUB_CACHE
+      # builds an empty base URL and dies with "relative URL without a base".
+      # For a restricted/air-gapped box, point this at a reachable mirror
+      # (e.g. https://hf-mirror.com) or pre-populate reranker_cache and set
+      # HF_HUB_OFFLINE=1.
+      HF_ENDPOINT: ${HF_ENDPOINT:-https://huggingface.co}
     volumes:
       - reranker_cache:/data
 
