@@ -6,6 +6,7 @@ import { ArrowLeft, FileText, Globe, MessageSquareText } from "lucide-react";
 import { getKb, getKbs, type KB } from "@/lib/api";
 import ChatPanel from "@/components/ChatPanel";
 import DocumentsPanel from "@/components/DocumentsPanel";
+import KbDescription from "@/components/KbDescription";
 
 type Tab = "documents" | "chat";
 
@@ -39,9 +40,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
             </span>
           )}
         </div>
-        {kb?.description && (
-          <p className="mt-1 max-w-2xl text-sm text-slate-500">{kb.description}</p>
-        )}
+        {kb && <KbDescription kb={kb} onUpdated={setKb} />}
       </div>
 
       <div className="mb-4 flex gap-1 border-b border-slate-200">
