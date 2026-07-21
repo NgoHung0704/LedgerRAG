@@ -11,7 +11,7 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from tablerag.core.schemas import ChatRequest
+from tablerag.core.schemas import ChatRequest, MultiChatRequest
 from tablerag.query.pipeline import QueryContext, default_pipeline
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
@@ -69,6 +69,75 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest) -> StreamingResponse:
                         "verification": ctx.verification})
         except Exception:  # noqa: BLE001 — stream errors must reach the client readably
             logger.exception("chat pipeline failed (kb=%s)", kb_id)
+            yield _sse({"type": "error",
+                        "message": "The assistant could not answer this question "
+                                   "due to an internal error. Please try again."})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache",
+                                      "X-Accel-Buffering": "no"})
+
+
+@router.post("/chat")
+async def chat_multi(body: MultiChatRequest) -> StreamingResponse:
+    """Phase 5 multi-KB chat: the LLMRouter picks which KB(s) to search from
+    their descriptions, or the caller pins `kb_ids` to override it. Same SSE
+    contract as the scoped endpoint, plus a `routing` field on `done`."""
+    from tablerag.query.steps.router import LLMRouter
+
+    def prepare() -> tuple[list[uuid.UUID], str | None]:
+        with session_scope() as s:
+            kbs = repo.list_kbs(s)
+            if not kbs:
+                raise HTTPException(404, "no knowledge bases exist")
+            by_id = {kb.id: kb for kb in kbs}
+            pinned = body.kb_ids or []
+            unknown = [k for k in pinned if k not in by_id]
+            if unknown:
+                raise HTTPException(404, f"unknown kb_ids: {unknown}")
+            # locale for number verification only when it is unambiguous:
+            # a shared locale across the searched KBs, else conservative None
+            scope = [by_id[k] for k in pinned] if pinned else kbs
+            locales = {(kb.config or {}).get("locale") for kb in scope}
+            locale = locales.pop() if len(locales) == 1 else None
+            return pinned, locale
+
+    pinned, locale = await asyncio.to_thread(prepare)
+
+    async def event_stream():
+        # kb_id is unused when pinned/routed drives retrieval; keep a stable
+        # placeholder (first pinned, else a nil uuid resolved after routing)
+        ctx = QueryContext(kb_id=pinned[0] if pinned else uuid.UUID(int=0),
+                           question=body.question, locale=locale,
+                           pinned_kb_ids=pinned or None)
+        try:
+            pipeline = default_pipeline(verify=body.verify, router=LLMRouter())
+            async for kind, payload in pipeline.stream(ctx):
+                if kind == "citations":
+                    yield _sse({"type": "citations",
+                                "citations": [c.model_dump(mode="json")
+                                              for c in payload]})
+                elif kind == "token":
+                    yield _sse({"type": "token", "content": payload})
+
+            def persist() -> uuid.UUID:
+                # a multi-KB session is grouped under the first searched KB
+                rep_kb = ctx.routed_kb_ids[0] if ctx.routed_kb_ids else ctx.kb_id
+                with session_scope() as s:
+                    session = repo.get_or_create_session(s, rep_kb, body.session_id)
+                    repo.add_message(s, session.id, "user", body.question)
+                    repo.add_message(
+                        s, session.id, "assistant", ctx.answer,
+                        citations=[c.model_dump(mode="json") for c in ctx.citations],
+                        verification=ctx.verification)
+                    return session.id
+
+            session_id = await asyncio.to_thread(persist)
+            yield _sse({"type": "done", "session_id": str(session_id),
+                        "routing": ctx.routing,
+                        "verification": ctx.verification})
+        except Exception:  # noqa: BLE001 — stream errors must reach the client
+            logger.exception("multi-KB chat failed")
             yield _sse({"type": "error",
                         "message": "The assistant could not answer this question "
                                    "due to an internal error. Please try again."})

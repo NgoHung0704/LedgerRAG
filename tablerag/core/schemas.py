@@ -56,6 +56,15 @@ class ChatRequest(BaseModel):
     verify: bool | None = None  # per-request override of number verification
 
 
+class MultiChatRequest(BaseModel):
+    """Phase 5 multi-KB chat. kb_ids pins the search (manual override); when
+    omitted the LLMRouter picks from all KBs by their descriptions."""
+    question: str = Field(min_length=1)
+    kb_ids: list[uuid.UUID] | None = None
+    session_id: uuid.UUID | None = None
+    verify: bool | None = None
+
+
 class Citation(BaseModel):
     """Every element traces back to its origin (principle #3)."""
 

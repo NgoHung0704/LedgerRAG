@@ -42,7 +42,13 @@ class QueryContext:
     kb_id: uuid.UUID
     question: str
     locale: str | None = None  # KB declared locale, for number verification
+    # Phase 5 routing: pinned_kb_ids is the user's manual override (search
+    # exactly these); when None the LLMRouter picks. routed_kb_ids is the
+    # resolved set everything downstream filters by. routing records the
+    # decision (mode + chosen KBs) for the chat_message log and eval-routing.
+    pinned_kb_ids: list[uuid.UUID] | None = None
     routed_kb_ids: list[uuid.UUID] = field(default_factory=list)
+    routing: dict | None = None
     hits: list[SearchHit] = field(default_factory=list)
     sources: list[SourceBlock] = field(default_factory=list)
     citations: list[Citation] = field(default_factory=list)
@@ -78,7 +84,8 @@ class QueryPipeline:
         yield "done", ctx
 
 
-def default_pipeline(verify: bool | None = None) -> QueryPipeline:
+def default_pipeline(verify: bool | None = None, *,
+                     router: object | None = None) -> QueryPipeline:
     from tablerag.query.steps.assemble import AssembleContext
     from tablerag.query.steps.generate import GenerateAnswer
     from tablerag.query.steps.rerank import Rerank
@@ -88,8 +95,10 @@ def default_pipeline(verify: bool | None = None) -> QueryPipeline:
 
     settings = get_settings()
     enabled = settings.verification_enabled if verify is None else verify
+    # Phase 1 scoped chat pins one KB (SingleKBRouter); Phase 5 multi-KB chat
+    # passes an LLMRouter. Same slot, same interface — principle #4.
     return QueryPipeline([
-        SingleKBRouter(),          # Phase 5: LLMRouter plugs in here
+        router or SingleKBRouter(),
         Retrieve(top_k=settings.retrieve_candidates),
         Rerank(top_k=settings.rerank_top_k,
                fallback_top_k=settings.retrieve_top_k),
