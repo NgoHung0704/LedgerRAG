@@ -134,7 +134,10 @@ services:
   # (:1.5 CUDA / :rocm-1.5) and add the matching device reservation.
   reranker:
     profiles: ["reranker"]
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    # cpu-1.5 ships a broken downloader ("relative URL without a base" on a
+    # reachable Hub); newer tags fix it. Overridable so a box can try tags
+    # without editing this file:  TEI_TAG=cpu-1.7 docker compose ... up reranker
+    image: ghcr.io/huggingface/text-embeddings-inference:${TEI_TAG:-cpu-1.6}
     command: ["--model-id", "BAAI/bge-reranker-v2-m3"]
     environment:
       # explicit hub endpoint: without it, TEI + a set HUGGINGFACE_HUB_CACHE
