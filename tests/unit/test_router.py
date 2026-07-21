@@ -129,3 +129,41 @@ async def test_model_failure_degrades_to_all(monkeypatch):
     await LLMRouter(list_kbs_fn=_kbs_fn()).run(ctx)
     assert ctx.routed_kb_ids == [kb.id for kb in KBS]
     assert ctx.routing["mode"] == "fallback_all"
+
+
+# --- routing eval grader (SPEC Phase 5 §4: score routing separately) --------
+
+def test_grade_routing_exact_match():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "eval" / "qa"))
+    from run_eval_routing import grade_routing
+
+    recall, exact, _ = grade_routing(["Rémunération"], ["Rémunération"])
+    assert recall and exact
+
+
+def test_grade_routing_substring_and_over_selection():
+    from run_eval_routing import grade_routing
+
+    # loose name in the question matches the full KB name (recall ok)...
+    recall, exact, detail = grade_routing(
+        ["Règlement"], ["Règlement intérieur", "Formation"])
+    assert recall and not exact           # extra KB -> not exact, still reachable
+    assert "over-selected" in detail
+
+
+def test_grade_routing_miss_is_fatal():
+    from run_eval_routing import grade_routing
+
+    recall, exact, detail = grade_routing(["Rémunération"], ["Formation"])
+    assert not recall and not exact
+    assert "MISSED" in detail
+
+
+def test_grade_routing_multi_expected():
+    from run_eval_routing import grade_routing
+
+    recall, exact, _ = grade_routing(
+        ["Rémunération", "Formation"], ["Formation", "Rémunération"])
+    assert recall and exact               # order-independent set match

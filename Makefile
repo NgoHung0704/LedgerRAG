@@ -47,6 +47,11 @@ eval-flags:
 eval-qa:
 	python tests/eval/qa/run_eval_qa.py --kb $(KB)
 
+# ---- Phase 5: routing gate (needs several KBs; scores router, not answers) --
+# Questions carry `expected_kbs`; auto-routes each via POST /api/chat.
+eval-routing:
+	python tests/eval/qa/run_eval_routing.py
+
 # ---- Phase 4: hybrid migration (run INSIDE the api container) --------
 # docker compose exec api python -m tablerag.scripts.reindex_all
 
