@@ -34,6 +34,12 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(title="LedgerRAG", version="0.1.0", lifespan=lifespan)
+
+    from tablerag.core.auth import auth_middleware
+
+    # resolve the proxy identity and gate non-open paths (SPEC Phase 5).
+    # registered before CORS so CORS still wraps the outermost response.
+    app.middleware("http")(auth_middleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -48,10 +54,12 @@ def create_app() -> FastAPI:
         elements,
         health,
         kb,
+        me,
         models,
     )
 
     app.include_router(health.router)
+    app.include_router(me.router)
     app.include_router(kb.router)
     app.include_router(documents.router)
     app.include_router(chat.router)

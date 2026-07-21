@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from tablerag.storage.orm import (
     AppSetting,
+    AuditEvent,
     ChatMessage,
     ChatSession,
     Chunk,
@@ -414,6 +415,21 @@ def get_or_create_session(s: Session, kb_id: uuid.UUID,
     s.add(session)
     s.flush()
     return session
+
+
+def log_audit(s: Session, actor: str, action: str, *,
+              kb_id: uuid.UUID | None = None, doc_id: uuid.UUID | None = None,
+              detail: dict | None = None) -> None:
+    """Record a GDPR-relevant action. Best-effort: never let audit failure
+    break the operation being audited (callers wrap it)."""
+    s.add(AuditEvent(actor=actor, action=action, kb_id=kb_id, doc_id=doc_id,
+                     detail=detail))
+    s.flush()
+
+
+def recent_audit(s: Session, limit: int = 200) -> list[AuditEvent]:
+    return list(s.scalars(
+        select(AuditEvent).order_by(AuditEvent.created_at.desc()).limit(limit)))
 
 
 def set_feedback(s: Session, message_id: uuid.UUID, value: int) -> int | None:

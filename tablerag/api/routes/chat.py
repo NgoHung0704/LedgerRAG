@@ -8,9 +8,10 @@ import json
 import logging
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
+from tablerag.core.auth import User, current_user
 from tablerag.core.schemas import ChatRequest, FeedbackRequest, MultiChatRequest
 from tablerag.query.pipeline import QueryContext, default_pipeline
 from tablerag.storage import repositories as repo
@@ -37,7 +38,8 @@ def _sse(payload: dict) -> str:
 
 
 @router.post("/kbs/{kb_id}/chat")
-async def chat(kb_id: uuid.UUID, body: ChatRequest) -> StreamingResponse:
+async def chat(kb_id: uuid.UUID, body: ChatRequest,
+               user: User = Depends(current_user)) -> StreamingResponse:
     def prepare() -> tuple[uuid.UUID, str | None, bool]:
         with session_scope() as s:
             kb = repo.get_kb(s, kb_id)
@@ -51,6 +53,8 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest) -> StreamingResponse:
                 verify = kb_config.get("verify")
             session = repo.get_or_create_session(s, kb_id, body.session_id)
             repo.add_message(s, session.id, "user", body.question)
+            repo.log_audit(s, user.username, "query", kb_id=kb_id,
+                           detail={"question": body.question[:200]})
             return session.id, locale, verify
 
     session_id, locale, verify = await asyncio.to_thread(prepare)
@@ -90,7 +94,8 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest) -> StreamingResponse:
 
 
 @router.post("/chat")
-async def chat_multi(body: MultiChatRequest) -> StreamingResponse:
+async def chat_multi(body: MultiChatRequest,
+                     user: User = Depends(current_user)) -> StreamingResponse:
     """Phase 5 multi-KB chat: the LLMRouter picks which KB(s) to search from
     their descriptions, or the caller pins `kb_ids` to override it. Same SSE
     contract as the scoped endpoint, plus a `routing` field on `done`."""
@@ -137,6 +142,10 @@ async def chat_multi(body: MultiChatRequest) -> StreamingResponse:
                 with session_scope() as s:
                     session = repo.get_or_create_session(s, rep_kb, body.session_id)
                     repo.add_message(s, session.id, "user", body.question)
+                    repo.log_audit(
+                        s, user.username, "query", kb_id=rep_kb,
+                        detail={"question": body.question[:200],
+                                "routing": (ctx.routing or {}).get("mode")})
                     msg = repo.add_message(
                         s, session.id, "assistant", ctx.answer,
                         citations=[c.model_dump(mode="json") for c in ctx.citations],

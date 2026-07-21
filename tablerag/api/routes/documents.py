@@ -1,8 +1,9 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import Response
 
+from tablerag.core.auth import User, current_user
 from tablerag.core.queue import TASK_PROCESS_DOCUMENT, celery_app
 from tablerag.core.schemas import BulkDeleteRequest, DocumentOut
 from tablerag.storage import repositories as repo
@@ -21,7 +22,8 @@ MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 
 
 @router.post("/kbs/{kb_id}/documents", response_model=DocumentOut, status_code=202)
-async def upload_document(kb_id: uuid.UUID, file: UploadFile) -> DocumentOut:
+async def upload_document(kb_id: uuid.UUID, file: UploadFile,
+                          user: User = Depends(current_user)) -> DocumentOut:
     filename = file.filename or "document.pdf"
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF files are supported.")
@@ -38,6 +40,8 @@ async def upload_document(kb_id: uuid.UUID, file: UploadFile) -> DocumentOut:
             raise HTTPException(404, "knowledge base not found")
         get_object_store().put(key, data, "application/pdf")
         doc = repo.create_document(s, kb_id, filename, key, doc_id=doc_id)
+        repo.log_audit(s, user.username, "upload", kb_id=kb_id, doc_id=doc_id,
+                       detail={"filename": filename, "bytes": len(data)})
         out = DocumentOut.model_validate(doc, from_attributes=True)
 
     # enqueue by task name — the API never imports the ingestion package

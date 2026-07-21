@@ -14,7 +14,9 @@ import json
 import logging
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from tablerag.core.auth import require_admin
 from fastapi.responses import StreamingResponse
 
 from tablerag.core.schemas import (
@@ -64,12 +66,25 @@ async def list_roles() -> list[ModelRoleInfo]:
 
 
 @router.put("/{role}", response_model=ModelRoleInfo)
-async def update_role(role: str, body: ModelRoleUpdate) -> ModelRoleInfo:
+async def update_role(role: str, body: ModelRoleUpdate,
+                      admin=Depends(require_admin)) -> ModelRoleInfo:
     _require_role(role)
     changes = body.model_dump(exclude_none=True)
     if not changes:
         raise HTTPException(400, "nothing to update")
     await asyncio.to_thread(save_role_override, role, changes)
+
+    def audit() -> None:
+        from tablerag.storage import repositories as repo
+        from tablerag.storage.db import session_scope
+
+        # never store an API key in the audit trail
+        safe = {k: v for k, v in changes.items() if k != "api_key"}
+        with session_scope() as s:
+            repo.log_audit(s, admin.username, "model_config",
+                           detail={"role": role, "changes": safe})
+
+    await asyncio.to_thread(audit)
     cfg = effective_config(role)
     health = await check_role_health(role)
     return ModelRoleInfo(role=role, provider=cfg.provider, base_url=cfg.base_url,
@@ -99,7 +114,8 @@ async def available_models(role: str) -> list[OllamaModel]:
 
 
 @router.post("/{role}/pull")
-async def pull_model(role: str, body: PullRequest) -> StreamingResponse:
+async def pull_model(role: str, body: PullRequest,
+                     _admin=Depends(require_admin)) -> StreamingResponse:
     """Pull a model onto the role's Ollama server, streaming progress as SSE."""
     _require_role(role)
     cfg = effective_config(role)

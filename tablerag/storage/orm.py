@@ -180,6 +180,22 @@ class ChatMessage(Base):
     created_at: Mapped[datetime] = _created_at()
 
 
+class AuditEvent(Base):
+    """GDPR accountability (SPEC Phase 5): who did what, when. Its own table so
+    create_all adds it with no migration. actor is the proxy identity (or
+    'local' in disabled mode)."""
+
+    __tablename__ = "audit_event"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    actor: Mapped[str] = mapped_column(Text, index=True)
+    action: Mapped[str] = mapped_column(Text, index=True)  # upload | query | model_config
+    kb_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    doc_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    detail: Mapped[dict | None] = mapped_column(JSONVariant, nullable=True)
+    created_at: Mapped[datetime] = _created_at()
+
+
 class MessageFeedback(Base):
     """Phase 5 👍/👎 on an answer. Its own table (not a chat_message column) so
     `create_all` picks it up on an existing DB without a migration. One row per

@@ -45,6 +45,21 @@ class ModelsConfig(BaseModel):
         return getattr(self, role)
 
 
+class AuthConfig(BaseModel):
+    """Reverse-proxy / SSO auth (SPEC Phase 5). The app trusts an upstream
+    proxy (Authelia, oauth2-proxy, corporate SSO) that authenticates the user
+    and forwards their identity in a header. SECURITY: this is safe ONLY when
+    the API is reachable exclusively through that proxy — a directly-exposed
+    API lets anyone spoof the header. `disabled` (default) is dev/single-tenant:
+    one implicit admin, no header required."""
+    mode: Literal["disabled", "proxy"] = "disabled"
+    user_header: str = "X-Forwarded-User"   # oauth2-proxy / Authelia default
+    email_header: str = "X-Forwarded-Email"
+    # comma-separated usernames/emails that get the admin role; everyone else
+    # is a regular user. Empty in proxy mode = nobody is admin (lock infra down).
+    admins: str = ""
+
+
 class ObjectStoreConfig(BaseModel):
     backend: Literal["minio", "local"] = "local"
     # local backend
@@ -67,6 +82,7 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     object_store: ObjectStoreConfig = ObjectStoreConfig()
     models: ModelsConfig = ModelsConfig()
+    auth: AuthConfig = AuthConfig()
 
     # must match the configured embedder's output dimension (bge-m3 = 1024)
     embedding_dim: int = 1024

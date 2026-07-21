@@ -65,3 +65,23 @@ def test_feedback_upsert_and_clear(db_session):
     # 0 clears
     assert repo.set_feedback(db_session, msg.id, 0) is None
     assert db_session.query(MessageFeedback).count() == 0
+
+
+# --- audit trail (Phase 5 GDPR accountability) ------------------------------
+
+def test_audit_records_actor_action_and_detail(db_session):
+    kb = repo.create_kb(db_session, "HR", "d")
+    doc = repo.create_document(db_session, kb.id, "a.pdf", "k/a/o.pdf")
+    repo.log_audit(db_session, "alice", "upload", kb_id=kb.id, doc_id=doc.id,
+                   detail={"filename": "a.pdf"})
+    repo.log_audit(db_session, "bob", "query", kb_id=kb.id,
+                   detail={"question": "combien de congés ?"})
+
+    events = repo.recent_audit(db_session)
+    # (real events land in separate request transactions, so created_at — and
+    # thus ordering — differs; within one test transaction it is a set)
+    by_actor = {e.actor: e for e in events}
+    assert by_actor["alice"].action == "upload"
+    assert by_actor["alice"].detail["filename"] == "a.pdf"
+    assert by_actor["bob"].action == "query"
+    assert by_actor["bob"].kb_id == kb.id
