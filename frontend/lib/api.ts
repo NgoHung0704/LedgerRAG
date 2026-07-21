@@ -277,6 +277,60 @@ export async function* chatStream(
   yield* sseStream<ChatEvent>(res);
 }
 
+// ---------- multi-KB chat (Phase 5 router) ----------
+
+export type RoutingInfo = {
+  mode: "single" | "pinned" | "trivial" | "llm" | "fallback_all";
+  kb_ids: string[];
+  names?: string[] | null;
+  candidates?: number;
+};
+
+export type MultiChatEvent =
+  | { type: "citations"; citations: Citation[] }
+  | { type: "token"; content: string }
+  | {
+      type: "done";
+      session_id: string;
+      routing: RoutingInfo | null;
+      verification: Verification | null;
+    }
+  | { type: "error"; message: string };
+
+// kbIds null => let the router pick; a list => pin those KBs (manual override)
+export async function* chatMultiStream(
+  question: string,
+  kbIds: string[] | null,
+  sessionId: string | null,
+): AsyncGenerator<MultiChatEvent> {
+  const res = await fetch(`${API_URL}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, kb_ids: kbIds, session_id: sessionId }),
+  });
+  yield* sseStream<MultiChatEvent>(res);
+}
+
+export const suggestDescription = (kbId: string) =>
+  fetch(`${API_URL}/api/kbs/${kbId}/suggest-description`, {
+    method: "POST",
+  }).then((r) => jsonOrThrow<{ description: string }>(r));
+
+export const updateKb = (
+  kbId: string,
+  changes: Partial<{
+    name: string;
+    description: string;
+    locale: string;
+    verify: boolean;
+  }>,
+) =>
+  fetch(`${API_URL}/api/kbs/${kbId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(changes),
+  }).then((r) => jsonOrThrow<KB>(r));
+
 // ---------- model roles ----------
 
 export const getModelRoles = () =>

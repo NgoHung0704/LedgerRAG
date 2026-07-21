@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, FileText, Globe, MessageSquareText } from "lucide-react";
-import { getKb, type KB } from "@/lib/api";
+import { getKb, getKbs, type KB } from "@/lib/api";
 import ChatPanel from "@/components/ChatPanel";
 import DocumentsPanel from "@/components/DocumentsPanel";
 
@@ -12,10 +12,12 @@ type Tab = "documents" | "chat";
 export default function KBPage({ params }: { params: { id: string } }) {
   const kbId = params.id;
   const [kb, setKb] = useState<KB | null>(null);
+  const [allKbs, setAllKbs] = useState<KB[]>([]);
   const [tab, setTab] = useState<Tab>("documents");
 
   useEffect(() => {
     getKb(kbId).then(setKb).catch(() => {});
+    getKbs().then(setAllKbs).catch(() => {});
   }, [kbId]);
 
   return (
@@ -67,7 +69,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
         {tab === "documents" ? (
           <DocumentsPanel kbId={kbId} />
         ) : (
-          <ChatPanel kbId={kbId} />
+          <ChatPanel kbId={kbId} allKbs={allKbs} />
         )}
       </div>
     </div>

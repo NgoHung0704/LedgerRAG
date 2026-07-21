@@ -11,25 +11,46 @@ import {
   Sparkles,
   Table2,
 } from "lucide-react";
-import { chatStream, type Citation, type Verification } from "@/lib/api";
+import {
+  chatStream,
+  chatMultiStream,
+  type Citation,
+  type KB,
+  type RoutingInfo,
+  type Verification,
+} from "@/lib/api";
 import { Spinner } from "@/components/ui";
 import SourceModal from "@/components/SourceModal";
+import ChatScopeSelector, { type Scope } from "@/components/ChatScopeSelector";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
   citations?: Citation[];
   verification?: Verification | null;
+  routing?: RoutingInfo | null;
   error?: boolean;
 };
 
-export default function ChatPanel({ kbId }: { kbId: string }) {
+export default function ChatPanel({
+  kbId,
+  allKbs = [],
+}: {
+  kbId: string;
+  allKbs?: KB[];
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [openSource, setOpenSource] = useState<Citation | null>(null);
+  const [scope, setScope] = useState<Scope>({ mode: "this" });
   const sessionRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // changing what we search starts a fresh conversation thread
+  useEffect(() => {
+    sessionRef.current = null;
+  }, [scope.mode, kbId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,9 +73,19 @@ export default function ChatPanel({ kbId }: { kbId: string }) {
         copy[copy.length - 1] = { ...copy[copy.length - 1], ...patch };
         return copy;
       });
+
+    // "this KB" uses the scoped endpoint; auto/pinned use the multi-KB router
+    const stream =
+      scope.mode === "this"
+        ? chatStream(kbId, q, sessionRef.current)
+        : chatMultiStream(
+            q,
+            scope.mode === "pinned" ? Array.from(scope.kbIds) : null,
+            sessionRef.current,
+          );
     try {
       let answer = "";
-      for await (const ev of chatStream(kbId, q, sessionRef.current)) {
+      for await (const ev of stream) {
         if (ev.type === "token") {
           answer += ev.content;
           patchLast({ content: answer });
@@ -62,7 +93,10 @@ export default function ChatPanel({ kbId }: { kbId: string }) {
           patchLast({ citations: ev.citations });
         } else if (ev.type === "done") {
           sessionRef.current = ev.session_id;
-          patchLast({ verification: ev.verification });
+          patchLast({
+            verification: ev.verification,
+            routing: "routing" in ev ? ev.routing : null,
+          });
         } else if (ev.type === "error") {
           patchLast({ content: ev.message, error: true });
         }
@@ -121,6 +155,8 @@ export default function ChatPanel({ kbId }: { kbId: string }) {
                   ) : null}
                 </div>
 
+                {m.routing && <RoutedBadge routing={m.routing} />}
+
                 {m.verification && m.verification.enabled && (
                   <VerificationBadge verification={m.verification} />
                 )}
@@ -156,26 +192,64 @@ export default function ChatPanel({ kbId }: { kbId: string }) {
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={ask} className="flex gap-2 border-t border-slate-100 p-3">
-        <input
-          className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-          placeholder="Posez votre question… / Ask your question…"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          disabled={busy}
-        />
-        <button
-          type="submit"
-          disabled={busy || !question.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
-        >
-          <Send size={15} />
-        </button>
-      </form>
+      <div className="border-t border-slate-100 p-3">
+        {allKbs.length > 1 && (
+          <div className="mb-2">
+            <ChatScopeSelector
+              scope={scope}
+              onChange={setScope}
+              kbId={kbId}
+              allKbs={allKbs}
+              disabled={busy}
+            />
+          </div>
+        )}
+        <form onSubmit={ask} className="flex gap-2">
+          <input
+            className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            placeholder="Posez votre question… / Ask your question…"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            disabled={busy}
+          />
+          <button
+            type="submit"
+            disabled={busy || !question.trim()}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
+          >
+            <Send size={15} />
+          </button>
+        </form>
+      </div>
 
       {openSource && (
         <SourceModal citation={openSource} onClose={() => setOpenSource(null)} />
       )}
+    </div>
+  );
+}
+
+function RoutedBadge({ routing }: { routing: RoutingInfo }) {
+  // nothing to show when the search wasn't a routing decision
+  if (routing.mode === "single" || routing.mode === "trivial") return null;
+  const label =
+    routing.mode === "pinned"
+      ? "Searched the knowledge bases you chose"
+      : routing.mode === "fallback_all"
+        ? `Unsure — searched all ${routing.kb_ids.length} knowledge bases`
+        : routing.names && routing.names.length > 0
+          ? `Routed to: ${routing.names.join(", ")}`
+          : `Routed to ${routing.kb_ids.length} knowledge base(s)`;
+  const warn = routing.mode === "fallback_all";
+  return (
+    <div
+      className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${
+        warn
+          ? "bg-amber-50 text-amber-700 ring-amber-200"
+          : "bg-sky-50 text-sky-700 ring-sky-200"
+      }`}
+    >
+      <Sparkles size={11} /> {label}
     </div>
   );
 }
