@@ -159,7 +159,7 @@ export default function ChatPanel({
         {messages.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl rounded-br-md bg-indigo-600 px-4 py-2.5 text-sm text-white">
+              <div className="max-w-[80%] rounded-2xl rounded-br-md bg-indigo-600 px-4 py-2.5 font-serif text-[15px] leading-relaxed text-white">
                 {m.content}
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function ChatPanel({
         )}
         <form onSubmit={ask} className="flex gap-2">
           <input
-            className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 font-serif text-[15px] placeholder:font-sans placeholder:text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
             placeholder="Posez votre question… / Ask your question…"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}

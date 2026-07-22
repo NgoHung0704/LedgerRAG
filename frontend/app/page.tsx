@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Database, FolderPlus, Globe, Plus } from "lucide-react";
 import { createKb, getKbs, type KB } from "@/lib/api";
 import { Button, Card, EmptyState, Modal, Spinner, inputCls } from "@/components/ui";
+import KbCardMenu from "@/components/KbCardMenu";
 
 const LOCALES = [
   { value: "", label: "Not specified" },
@@ -63,29 +64,34 @@ export default function HomePage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {kbs.map((kb) => (
-            <Link key={kb.id} href={`/kb/${kb.id}`}>
-              <Card className="group h-full p-4 transition-shadow hover:shadow-md">
-                <div className="mb-3 flex items-start justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                    <Database size={18} />
+            <div key={kb.id} className="relative">
+              <Link href={`/kb/${kb.id}`}>
+                <Card className="group h-full p-4 transition-shadow hover:shadow-md">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                      <Database size={18} />
+                    </div>
+                    {kb.config?.locale && (
+                      <span className="mr-8 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500">
+                        <Globe size={11} /> {kb.config.locale}
+                      </span>
+                    )}
                   </div>
-                  {kb.config?.locale && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500">
-                      <Globe size={11} /> {kb.config.locale}
-                    </span>
-                  )}
-                </div>
-                <div className="font-medium text-slate-900 group-hover:text-indigo-700">
-                  {kb.name}
-                </div>
-                <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-slate-500">
-                  {kb.description || "No description — add one, the router will use it."}
-                </p>
-                <div className="mt-3 text-[11px] text-slate-400">
-                  {new Date(kb.created_at).toLocaleDateString()}
-                </div>
-              </Card>
-            </Link>
+                  <div className="font-serif text-[15px] font-semibold text-slate-900 group-hover:text-indigo-700">
+                    {kb.name}
+                  </div>
+                  <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-slate-500">
+                    {kb.description || "No description — add one, the router will use it."}
+                  </p>
+                  <div className="mt-3 text-[11px] text-slate-400">
+                    {new Date(kb.created_at).toLocaleDateString()}
+                  </div>
+                </Card>
+              </Link>
+              <div className="absolute right-3 top-3">
+                <KbCardMenu kb={kb} onChanged={refresh} />
+              </div>
+            </div>
           ))}
         </div>
       )}
