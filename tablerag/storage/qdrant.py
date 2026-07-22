@@ -155,6 +155,11 @@ class VectorStore:
         vectors from retrieval; Postgres rows and the crop image stay."""
         self._delete_by(key="element_id", value=str(element_id))
 
+    def delete_kb(self, kb_id: uuid.UUID) -> None:
+        """Drop every vector of a KB in one filtered delete (payloads carry
+        kb_id) — used when deleting a whole knowledge base."""
+        self._delete_by(key="kb_id", value=str(kb_id))
+
     def _delete_by(self, key: str, value: str) -> None:
         flt = qm.Filter(must=[
             qm.FieldCondition(key=key, match=qm.MatchValue(value=value)),

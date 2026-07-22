@@ -5,7 +5,7 @@ export type KB = {
   id: string;
   name: string;
   description: string;
-  config: { locale?: string };
+  config: { locale?: string; verify?: boolean };
   created_at: string;
 };
 
@@ -373,6 +373,11 @@ export const updateKb = (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(changes),
   }).then((r) => jsonOrThrow<KB>(r));
+
+export const deleteKb = (kbId: string) =>
+  fetch(`${API_URL}/api/kbs/${kbId}`, { method: "DELETE" }).then((r) => {
+    if (!r.ok && r.status !== 204) throw new Error(`delete failed: ${r.status}`);
+  });
 
 // ---------- model roles ----------
 

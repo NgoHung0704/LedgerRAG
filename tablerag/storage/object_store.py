@@ -118,6 +118,10 @@ def get_object_store() -> ObjectStore:
 
 
 # canonical key layout
+def kb_prefix(kb_id) -> str:
+    return f"kbs/{kb_id}"
+
+
 def doc_prefix(kb_id, doc_id) -> str:
     return f"kbs/{kb_id}/docs/{doc_id}"
 

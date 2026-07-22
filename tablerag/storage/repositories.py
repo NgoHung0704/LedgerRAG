@@ -108,6 +108,19 @@ def content_sample(s: Session, kb_id: uuid.UUID, *, max_docs: int = 5,
     return "\n".join(parts)[:max_chars].strip()
 
 
+def delete_kb(s: Session, kb_id: uuid.UUID) -> bool:
+    """Delete a KB row. Postgres FK cascade removes its documents (→ elements,
+    chunks, records, tables) and chat sessions (→ messages, feedback). The
+    caller must purge Qdrant vectors and object-store files first (those are
+    not in the DB). Audit events keep their kb_id (no FK) so the trail survives."""
+    kb = get_kb(s, kb_id)
+    if kb is None:
+        return False
+    s.delete(kb)
+    s.flush()
+    return True
+
+
 def delete_document(s: Session, doc_id: uuid.UUID) -> uuid.UUID | None:
     """Delete a document and everything it owns in Postgres (elements, chunks,
     table_element, records cascade). Returns its kb_id so the caller can also

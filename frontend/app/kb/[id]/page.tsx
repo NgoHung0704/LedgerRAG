@@ -13,6 +13,7 @@ import { getKb, getKbs, getNeedsReview, type KB } from "@/lib/api";
 import ChatPanel from "@/components/ChatPanel";
 import DocumentsPanel from "@/components/DocumentsPanel";
 import KbDescription from "@/components/KbDescription";
+import KbSettings from "@/components/KbSettings";
 import ReviewPanel from "@/components/ReviewPanel";
 
 type Tab = "documents" | "chat" | "review";
@@ -49,6 +50,11 @@ export default function KBPage({ params }: { params: { id: string } }) {
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500">
               <Globe size={11} /> {kb.config.locale}
             </span>
+          )}
+          {kb && (
+            <div className="ml-auto">
+              <KbSettings kb={kb} onUpdated={setKb} />
+            </div>
           )}
         </div>
         {kb && <KbDescription kb={kb} onUpdated={setKb} />}

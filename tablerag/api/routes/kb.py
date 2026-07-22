@@ -1,8 +1,10 @@
 import asyncio
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 
+from tablerag.core.auth import User, current_user
 from tablerag.core.schemas import KBCreate, KBOut, KBUpdate
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
@@ -108,6 +110,29 @@ def needs_review(kb_id: uuid.UUID) -> dict:
     return {"count": len(items),
             "items": [{**it, "element_id": str(it["element_id"]),
                        "doc_id": str(it["doc_id"])} for it in items]}
+
+
+@router.delete("/{kb_id}", status_code=204)
+def delete_kb(kb_id: uuid.UUID, user: User = Depends(current_user)) -> Response:
+    """Delete a KB and everything it owns — vectors, files, documents, chat
+    history. External stores are purged BEFORE the Postgres cascade, so a later
+    failure can't leave orphaned vectors serving answers from a deleted KB."""
+    from tablerag.storage.object_store import get_object_store, kb_prefix
+    from tablerag.storage.qdrant import get_vector_store
+
+    with session_scope() as s:
+        kb = repo.get_kb(s, kb_id)
+        if kb is None:
+            raise HTTPException(404, "knowledge base not found")
+        name = kb.name
+
+    get_vector_store().delete_kb(kb_id)
+    get_object_store().delete_prefix(kb_prefix(kb_id))
+    with session_scope() as s:
+        repo.delete_kb(s, kb_id)
+        repo.log_audit(s, user.username, "delete_kb", kb_id=kb_id,
+                       detail={"name": name})
+    return Response(status_code=204)
 
 
 @router.get("/{kb_id}", response_model=KBOut)

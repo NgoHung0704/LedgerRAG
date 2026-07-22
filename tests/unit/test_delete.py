@@ -42,3 +42,32 @@ def test_object_store_delete_prefix(tmp_path):
     assert not store.exists(f"{prefix}/pages/page-0001.png")
     # a sibling document is untouched
     assert store.exists("kbs/kb1/docs/doc2/original.pdf")
+
+
+def test_delete_kb_cascades_documents_and_sessions(db_session):
+    from tablerag.storage.orm import (
+        ChatMessage, ChatSession, Document, Element, KnowledgeBase,
+    )
+
+    kb = repo.create_kb(db_session, "HR", "desc")
+    doc = repo.create_document(db_session, kb.id, "r.pdf", "kbs/x/y/original.pdf")
+    el = repo.add_element(db_session, doc.id, page=1, bbox=[0, 0, 1, 1],
+                          type_="table", crop_image_path="c.png")
+    repo.add_table_element(db_session, el.id, "<table/>", None, 1, 1, "vlm")
+    session = repo.get_or_create_session(db_session, kb.id, None)
+    repo.add_message(db_session, session.id, "user", "hi")
+    # audit events are NOT owned by the KB (no FK) — they must survive
+    repo.log_audit(db_session, "alice", "query", kb_id=kb.id)
+
+    assert repo.delete_kb(db_session, kb.id) is True
+
+    for model in (KnowledgeBase, Document, Element, ChatSession, ChatMessage):
+        assert db_session.query(model).count() == 0
+    # the GDPR trail persists after the KB is gone
+    from tablerag.storage.orm import AuditEvent
+    assert db_session.query(AuditEvent).count() == 1
+
+
+def test_delete_kb_unknown_returns_false(db_session):
+    import uuid
+    assert repo.delete_kb(db_session, uuid.uuid4()) is False
