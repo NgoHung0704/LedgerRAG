@@ -38,13 +38,26 @@
   @apply border border-slate-200 px-3 py-1.5 text-slate-700;
 }
 
+/* Chat answers read like a printed document excerpt — the serif carries the
+   "crafted" feel; figures stay tabular so numbers line up like a ledger. */
+.chat-md {
+  @apply font-serif text-[15px] leading-relaxed;
+  font-variant-numeric: tabular-nums;
+}
+
 /* markdown tables inside chat answers */
 .chat-md table {
-  @apply my-2 w-full border-collapse text-sm;
+  @apply my-2 w-full border-collapse font-sans text-sm;
+  font-variant-numeric: tabular-nums;
 }
 .chat-md th {
   @apply border border-slate-200 bg-slate-50 px-2.5 py-1 text-left font-semibold;
 }
 .chat-md td {
   @apply border border-slate-200 px-2.5 py-1;
+}
+
+/* parsed-document tables: align digits like a ledger */
+.doc-table table {
+  font-variant-numeric: tabular-nums;
 }

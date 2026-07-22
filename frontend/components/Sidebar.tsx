@@ -35,15 +35,19 @@ export default function Sidebar() {
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
       <Link href="/" className="flex items-center gap-2.5 px-5 pb-4 pt-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-          L
-        </div>
+        <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
+          <rect x="2" y="2.5" width="28" height="27" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-indigo-700" />
+          <line x1="2" y1="10" x2="30" y2="10" stroke="currentColor" strokeWidth="1.2" className="text-indigo-700" />
+          <line x1="12" y1="10" x2="12" y2="29.5" stroke="currentColor" strokeWidth="1.2" className="text-indigo-700" />
+          <line x1="15.5" y1="16" x2="27" y2="16" stroke="currentColor" strokeWidth="1.6" className="text-amber-500" />
+          <line x1="15.5" y1="21" x2="24" y2="21" stroke="currentColor" strokeWidth="1" className="text-indigo-700 opacity-50" />
+        </svg>
         <div>
-          <div className="text-[15px] font-semibold leading-tight tracking-tight">
+          <div className="font-serif text-[17px] font-semibold leading-tight tracking-tight">
             LedgerRAG
           </div>
-          <div className="text-[11px] leading-tight text-slate-400">
-            self-hosted document Q&A
+          <div className="text-[11px] italic leading-tight text-slate-400">
+            parse it right, or fail honestly
           </div>
         </div>
       </Link>
