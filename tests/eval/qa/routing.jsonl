@@ -1,0 +1,10 @@
+{"id": "r1", "question": "Quelle est la cotation du poste de Comptable ?", "expected_kbs": ["CETIAT"]}
+{"id": "r2", "question": "Dans quel groupe d'emplois se situe le poste de Directeur(trice) ?", "expected_kbs": ["CETIAT"]}
+{"id": "r3", "question": "Quel est le salaire minimum hiérarchique de la classe d'emploi 11 dans le barème unique ?", "expected_kbs": ["Avenant"]}
+{"id": "r4", "question": "À partir de quelle heure commence la période de travail de nuit ?", "expected_kbs": ["Avenant"]}
+{"id": "r5", "question": "À quelle date la convention collective nationale de la métallurgie entre-t-elle en vigueur ?", "expected_kbs": ["Avenant"]}
+{"id": "r6", "question": "Comment le glossaire définit-il le terme « diagnostic » ?", "expected_kbs": ["Glossaire"]}
+{"id": "r7", "question": "Qu'est-ce qu'une « négociation complexe » selon la méthode de classification ?", "expected_kbs": ["Glossaire"]}
+{"id": "r8", "question": "Quelles activités relèvent du domaine professionnel « Administration et finance » ?", "expected_kbs": ["Glossaire"]}
+{"id": "r9", "question": "Quelle est la cotation du poste d'Acheteur(se), et que signifie l'expression « domaine professionnel » ?", "expected_kbs": ["CETIAT", "Glossaire"]}
+{"id": "r10", "question": "Quelle est la cotation de l'Ingénieur(e) Commercial(e) et le salaire minimum hiérarchique de sa classe d'emploi ?", "expected_kbs": ["CETIAT", "Avenant"]}
