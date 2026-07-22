@@ -41,14 +41,21 @@ export default function ChatPanel({
   kbId,
   allKbs = [],
 }: {
-  kbId: string;
+  // no kbId = the standalone Ask page: not anchored to one KB, so the router
+  // (or a manual pick) always drives the search — there is no "this KB" scope.
+  kbId?: string;
   allKbs?: KB[];
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [openSource, setOpenSource] = useState<Citation | null>(null);
-  const [scope, setScope] = useState<Scope>({ mode: "this" });
+  const [scope, setScope] = useState<Scope>(
+    kbId ? { mode: "this" } : { mode: "auto" },
+  );
+  // the scope picker shows whenever there is a choice: >1 KB when anchored to
+  // one, any KB on the standalone Ask page
+  const showScope = kbId ? allKbs.length > 1 : allKbs.length >= 1;
   const sessionRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -97,7 +104,7 @@ export default function ChatPanel({
 
     // "this KB" uses the scoped endpoint; auto/pinned use the multi-KB router
     const stream =
-      scope.mode === "this"
+      scope.mode === "this" && kbId
         ? chatStream(kbId, q, sessionRef.current)
         : chatMultiStream(
             q,
@@ -137,7 +144,9 @@ export default function ChatPanel({
           <div className="flex h-full flex-col items-center justify-center text-center">
             <Sparkles size={28} className="mb-3 text-slate-300" />
             <div className="text-sm font-medium text-slate-600">
-              Ask anything about the documents in this knowledge base
+              {kbId
+                ? "Ask anything about the documents in this knowledge base"
+                : "Ask across your knowledge bases"}
             </div>
             <div className="mt-1 max-w-md text-xs leading-5 text-slate-400">
               Answers stream with citations. Numbers are quoted exactly as
@@ -229,7 +238,7 @@ export default function ChatPanel({
       </div>
 
       <div className="border-t border-slate-100 p-3">
-        {allKbs.length > 1 && (
+        {showScope && (
           <div className="mb-2">
             <ChatScopeSelector
               scope={scope}

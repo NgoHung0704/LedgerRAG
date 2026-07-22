@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Database,
   FileSearch,
+  MessagesSquare,
   ScrollText,
   ShieldCheck,
   SlidersHorizontal,
@@ -14,6 +15,7 @@ import {
 import { getMe, type Me } from "@/lib/api";
 
 const NAV = [
+  { href: "/ask", label: "Ask", icon: MessagesSquare, match: /^\/ask/, admin: false },
   { href: "/", label: "Knowledge Bases", icon: Database, match: /^\/($|kb|doc)/, admin: false },
   { href: "/models", label: "Model Providers", icon: SlidersHorizontal, match: /^\/models/, admin: true },
   { href: "/audit", label: "Audit log", icon: ScrollText, match: /^\/audit/, admin: true },

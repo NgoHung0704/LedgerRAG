@@ -20,7 +20,7 @@ export default function ChatScopeSelector({
 }: {
   scope: Scope;
   onChange: (s: Scope) => void;
-  kbId: string;
+  kbId?: string;
   allKbs: KB[];
   disabled?: boolean;
 }) {
@@ -66,16 +66,18 @@ export default function ChatScopeSelector({
 
       {open && (
         <div className="absolute bottom-full z-20 mb-1.5 w-80 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
-          <Option
-            icon={<Database size={15} />}
-            title="This knowledge base"
-            subtitle={thisKb?.name}
-            active={scope.mode === "this"}
-            onClick={() => {
-              onChange({ mode: "this" });
-              setOpen(false);
-            }}
-          />
+          {kbId && (
+            <Option
+              icon={<Database size={15} />}
+              title="This knowledge base"
+              subtitle={thisKb?.name}
+              active={scope.mode === "this"}
+              onClick={() => {
+                onChange({ mode: "this" });
+                setOpen(false);
+              }}
+            />
+          )}
           <Option
             icon={<Sparkles size={15} />}
             title="Auto-route"
@@ -95,7 +97,9 @@ export default function ChatScopeSelector({
               onChange({
                 mode: "pinned",
                 kbIds:
-                  scope.mode === "pinned" ? scope.kbIds : new Set([kbId]),
+                  scope.mode === "pinned"
+                    ? scope.kbIds
+                    : new Set(kbId ? [kbId] : []),
               })
             }
           />
