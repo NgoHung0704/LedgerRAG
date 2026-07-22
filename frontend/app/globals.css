@@ -7,7 +7,14 @@
     @apply antialiased;
   }
   body {
-    @apply bg-slate-50 text-slate-900;
+    /* warm ledger paper instead of a cool slate-50 wash */
+    background-color: #f4f3ec;
+    @apply text-slate-900;
+  }
+  /* headings carry the ledger serif, app-wide */
+  h1,
+  h2 {
+    @apply font-serif;
   }
 }
 
