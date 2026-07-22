@@ -175,9 +175,11 @@ export default function ChatPanel({
                 >
                   {m.content ? (
                     <div className="chat-md prose prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {m.content}
-                      </ReactMarkdown>
+                      <AnswerBody
+                        content={m.content}
+                        citations={m.citations}
+                        onOpen={setOpenSource}
+                      />
                     </div>
                   ) : busy && i === messages.length - 1 ? (
                     <span className="inline-flex items-center gap-2 text-slate-400">
@@ -296,6 +298,52 @@ function FeedbackButton({
     >
       <Icon size={13} fill={active ? "currentColor" : "none"} />
     </button>
+  );
+}
+
+// Turn the inline citation markers ([1], [2][3]) into clickable receipts:
+// each opens the exact source it points to. This is provenance made tactile —
+// the answer's numbers trace back to the table they came from.
+function AnswerBody({
+  content,
+  citations,
+  onOpen,
+}: {
+  content: string;
+  citations?: Citation[];
+  onOpen: (c: Citation) => void;
+}) {
+  // [1] -> [[1]](#cite-1) so markdown renders a link we can intercept
+  const linked = content.replace(/\[(\d+)\]/g, "[[$1]](#cite-$1)");
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        a({ href, children }) {
+          const m = /^#cite-(\d+)$/.exec(href ?? "");
+          if (!m) return <a href={href}>{children}</a>;
+          const c = citations?.find((x) => x.index === Number(m[1]));
+          if (!c)
+            return <sup className="text-slate-400">{children}</sup>;
+          return (
+            <button
+              type="button"
+              onClick={() => onOpen(c)}
+              title={`${c.filename} · p.${c.page}${c.needs_review ? " · needs review" : ""}`}
+              className={`mx-0.5 align-super text-[11px] font-semibold no-underline ${
+                c.needs_review
+                  ? "text-amber-700 hover:text-amber-800"
+                  : "text-indigo-700 hover:text-indigo-900"
+              } hover:underline`}
+            >
+              {children}
+            </button>
+          );
+        },
+      }}
+    >
+      {linked}
+    </ReactMarkdown>
   );
 }
 
