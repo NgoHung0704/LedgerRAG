@@ -36,7 +36,7 @@ export default function HomePage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Knowledge Bases</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
             Each knowledge base is an isolated corpus with its own documents.
           </p>
         </div>
@@ -68,22 +68,22 @@ export default function HomePage() {
               <Link href={`/kb/${kb.id}`}>
                 <Card className="group h-full p-4 transition-shadow hover:shadow-md">
                   <div className="mb-3 flex items-start justify-between">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
                       <Database size={18} />
                     </div>
                     {kb.config?.locale && (
-                      <span className="mr-8 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500">
+                      <span className="mr-8 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                         <Globe size={11} /> {kb.config.locale}
                       </span>
                     )}
                   </div>
-                  <div className="font-serif text-[15px] font-semibold text-slate-900 group-hover:text-indigo-700">
+                  <div className="font-serif text-[15px] font-semibold text-slate-900 group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">
                     {kb.name}
                   </div>
-                  <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-slate-500">
+                  <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-slate-500 dark:text-slate-400">
                     {kb.description || "No description — add one, the router will use it."}
                   </p>
-                  <div className="mt-3 text-[11px] text-slate-400">
+                  <div className="mt-3 text-[11px] text-slate-400 dark:text-slate-500">
                     {new Date(kb.created_at).toLocaleDateString()}
                   </div>
                 </Card>

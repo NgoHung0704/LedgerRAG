@@ -13,6 +13,7 @@ import {
   UserCircle2,
 } from "lucide-react";
 import { getMe, type Me } from "@/lib/api";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/ask", label: "Ask", icon: MessagesSquare, match: /^\/ask/, admin: false },
@@ -33,7 +34,7 @@ export default function Sidebar() {
   const nav = NAV.filter((n) => !n.admin || me?.is_admin);
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
+    <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-[#141a20]">
       <Link href="/" className="flex items-center gap-2.5 px-5 pb-4 pt-5">
         <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
           <rect x="2" y="2.5" width="28" height="27" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-indigo-700" />
@@ -61,8 +62,8 @@ export default function Sidebar() {
               href={href}
               className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 active
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               }`}
             >
               <Icon size={17} strokeWidth={2} />
@@ -72,22 +73,27 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {me && (
-        <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3">
-          <UserCircle2 size={20} className="shrink-0 text-slate-400" />
-          <div className="min-w-0">
-            <div className="truncate text-[12px] font-medium text-slate-700">
-              {me.username}
-            </div>
-            <div className="text-[10px] uppercase tracking-wide text-slate-400">
-              {me.is_admin ? "Admin" : "User"}
+      <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+        {me ? (
+          <div className="flex min-w-0 items-center gap-2">
+            <UserCircle2 size={20} className="shrink-0 text-slate-400" />
+            <div className="min-w-0">
+              <div className="truncate text-[12px] font-medium text-slate-700 dark:text-slate-200">
+                {me.username}
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                {me.is_admin ? "Admin" : "User"}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <span />
+        )}
+        <ThemeToggle />
+      </div>
 
-      <div className="border-t border-slate-100 px-5 py-4">
-        <div className="flex items-start gap-2 text-[11px] leading-snug text-slate-400">
+      <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div className="flex items-start gap-2 text-[11px] leading-snug text-slate-400 dark:text-slate-500">
           <ShieldCheck size={14} className="mt-0.5 shrink-0" />
           <span>
             Parse it right, or fail honestly — every table keeps its original

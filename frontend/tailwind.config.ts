@@ -3,6 +3,7 @@ import typography from "@tailwindcss/typography";
 
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
+  darkMode: "class", // toggled via a `dark` class on <html> (see ThemeToggle)
   theme: {
     extend: {
       // "ledger" identity — humanist serif (Sitka on Windows, Iowan on macOS)

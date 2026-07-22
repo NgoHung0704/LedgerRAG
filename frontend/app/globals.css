@@ -7,9 +7,13 @@
     @apply antialiased;
   }
   body {
-    /* warm ledger paper instead of a cool slate-50 wash */
+    /* warm ledger paper by day, deep ink by night */
     background-color: #f4f3ec;
     @apply text-slate-900;
+  }
+  .dark body {
+    background-color: #0f141a;
+    @apply text-slate-100;
   }
   /* headings carry the ledger serif, app-wide */
   h1,
@@ -30,6 +34,9 @@
 *::-webkit-scrollbar-thumb {
   @apply rounded-full bg-slate-300;
 }
+.dark *::-webkit-scrollbar-thumb {
+  @apply bg-slate-700;
+}
 *::-webkit-scrollbar-track {
   background: transparent;
 }
@@ -43,6 +50,18 @@
 }
 .doc-table td {
   @apply border border-slate-200 px-3 py-1.5 text-slate-700;
+}
+.dark .doc-table th {
+  @apply border-slate-700 bg-slate-800 text-slate-200;
+}
+.dark .doc-table td {
+  @apply border-slate-700 text-slate-300;
+}
+.dark .chat-md th {
+  @apply border-slate-700 bg-slate-800;
+}
+.dark .chat-md td {
+  @apply border-slate-700;
 }
 
 /* Chat answers read like a printed document excerpt — the serif carries the
