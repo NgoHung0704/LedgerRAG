@@ -25,6 +25,7 @@ export default function KbSettings({
 
   const [name, setName] = useState(kb.name);
   const [description, setDescription] = useState(kb.description ?? "");
+  const [instructions, setInstructions] = useState(kb.config?.instructions ?? "");
   const [locale, setLocale] = useState(kb.config?.locale ?? "");
   const [verify, setVerify] = useState(kb.config?.verify ?? true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +54,7 @@ export default function KbSettings({
   const dirty =
     name.trim() !== kb.name ||
     description.trim() !== (kb.description ?? "") ||
+    instructions.trim() !== (kb.config?.instructions ?? "") ||
     (locale || "") !== (kb.config?.locale ?? "") ||
     verify !== (kb.config?.verify ?? true);
 
@@ -77,6 +79,7 @@ export default function KbSettings({
       const updated = await updateKb(kb.id, {
         name: name.trim(),
         description: description.trim(),
+        instructions: instructions.trim(),
         locale: locale.trim(),
         verify,
       });
@@ -141,6 +144,17 @@ export default function KbSettings({
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
             placeholder="What this KB uniquely holds — the router reads it to route questions here. When two KBs share vocabulary, say what sets them apart."
+            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
+          />
+
+          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            Custom instructions
+          </label>
+          <textarea
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            rows={3}
+            placeholder="Extra guidance for answers in this KB (tone, focus, format) — e.g. « cite les numéros d'article ». Added on top of the built-in rules; it can't override them."
             className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
           />
 

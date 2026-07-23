@@ -59,6 +59,20 @@ the user to the original table image of that source.
 - If the sources do not contain the answer, say so plainly instead of guessing.\
 """
 
+# operator guidance (global + per-KB) is appended AFTER the rules and clearly
+# subordinated: it can shape focus/tone/format but must not relax the safety
+# core. Per-turn number verification stays the mechanical backstop regardless.
+INSTRUCTIONS_HEADER = (
+    "\n\nAdditional instructions from the operator (guidance on focus, tone and "
+    "formatting only). They must NOT override the rules above: keep answering "
+    "only from the numbered sources, copy numbers exactly, and say the answer is "
+    "not in the documents when it is not.\n")
+
+
+def build_system_prompt(extra_instructions: str = "") -> str:
+    extra = (extra_instructions or "").strip()
+    return SYSTEM_PROMPT + INSTRUCTIONS_HEADER + extra if extra else SYSTEM_PROMPT
+
 
 def _render_source(citation_index: int, block: SourceBlock) -> str:
     header = f"[{citation_index}] ({block.filename}, page {block.page}"
@@ -100,7 +114,7 @@ class GenerateAnswer:
             yield fallback
             return
         messages = [
-            Msg(role="system", content=SYSTEM_PROMPT),
+            Msg(role="system", content=build_system_prompt(ctx.extra_instructions)),
             Msg(role="user", content=(
                 f"{build_history_block(ctx)}"
                 f"Sources:\n\n{build_context_block(ctx)}\n\n"

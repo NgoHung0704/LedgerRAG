@@ -14,8 +14,10 @@ import {
 import {
   formatBytes,
   getAvailableModels,
+  getChatInstructions,
   getModelRoles,
   pullModel,
+  setChatInstructions,
   updateModelRole,
   type ModelRole,
   type OllamaModel,
@@ -79,6 +81,8 @@ export default function ModelsPage() {
         </p>
       </div>
 
+      <GlobalInstructions />
+
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
           {error}
@@ -97,6 +101,102 @@ export default function ModelsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Global operator guidance appended to every chat answer. Additive on top of
+// the built-in answering rules (it can't relax them); a KB can add its own in
+// its Settings. Saving is admin-gated server-side.
+function GlobalInstructions() {
+  const [text, setText] = useState<string | null>(null);
+  const [saved, setSaved] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getChatInstructions()
+      .then((r) => {
+        setText(r.text);
+        setSaved(r.text);
+      })
+      .catch(() => {
+        setText("");
+        setSaved("");
+      });
+  }, []);
+
+  const dirty = text !== null && text !== saved;
+  const save = async () => {
+    if (text === null) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await setChatInstructions(text);
+      setSaved(r.text);
+      setText(r.text);
+      setOk(true);
+      setTimeout(() => setOk(false), 2000);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="mb-4 p-4">
+      <div className="mb-1 flex items-center gap-2.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <MessageSquareText size={17} />
+        </div>
+        <div>
+          <div className="text-sm font-semibold">Chat instructions (global)</div>
+          <div className="text-[11px] uppercase tracking-wide text-slate-400">
+            applies to every answer
+          </div>
+        </div>
+      </div>
+      <p className="mb-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+        Extra guidance added on top of the built-in answering rules, for all
+        knowledge bases. It shapes tone, focus and format — it cannot override
+        the rules that keep numbers exact and answers grounded in the sources. A
+        KB can add its own in its Settings.
+      </p>
+      {text === null ? (
+        <div className="flex justify-center py-6">
+          <Spinner size={18} />
+        </div>
+      ) : (
+        <>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={4}
+            placeholder="e.g. Répondez de façon concise et professionnelle ; citez les numéros d'article quand ils existent."
+            className={`${inputCls} font-sans`}
+          />
+          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+          <div className="mt-2 flex justify-end">
+            <Button
+              onClick={save}
+              disabled={!dirty || saving}
+              variant={dirty ? "primary" : "secondary"}
+            >
+              {ok ? (
+                <>
+                  <Check size={15} /> Saved
+                </>
+              ) : saving ? (
+                "Saving…"
+              ) : (
+                "Save"
+              )}
+            </Button>
+          </div>
+        </>
+      )}
+    </Card>
   );
 }
 

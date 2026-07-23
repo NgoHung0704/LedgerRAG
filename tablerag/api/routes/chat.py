@@ -37,10 +37,19 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+def _instructions(s, kb_instructions: str | None = None) -> str:
+    """Operator guidance appended to the chat system prompt: the global setting
+    plus (optionally) a single KB's own, joined. Empty when nothing is set."""
+    stored = repo.get_setting(s, repo.CHAT_INSTRUCTIONS_SETTING) or {}
+    parts = [stored.get("text", ""), kb_instructions or ""]
+    return "\n\n".join(p.strip() for p in parts if p and p.strip())
+
+
 @router.post("/kbs/{kb_id}/chat")
 async def chat(kb_id: uuid.UUID, body: ChatRequest,
                user: User = Depends(current_user)) -> StreamingResponse:
-    def prepare() -> tuple[uuid.UUID, str | None, bool, list[tuple[str, str]]]:
+    def prepare() -> tuple[uuid.UUID, str | None, bool,
+                           list[tuple[str, str]], str]:
         with session_scope() as s:
             kb = repo.get_kb(s, kb_id)
             if kb is None:
@@ -58,13 +67,16 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest,
             repo.add_message(s, session.id, "user", body.question)
             repo.log_audit(s, user.username, "query", kb_id=kb_id,
                            detail={"question": body.question[:200]})
-            return session.id, locale, verify, history
+            # operator guidance: global + this KB's own, both appended (never
+            # overriding the safety rules — see generate.build_system_prompt)
+            extra = _instructions(s, kb_config.get("instructions"))
+            return session.id, locale, verify, history, extra
 
-    session_id, locale, verify, history = await asyncio.to_thread(prepare)
+    session_id, locale, verify, history, extra = await asyncio.to_thread(prepare)
 
     async def event_stream():
         ctx = QueryContext(kb_id=kb_id, question=body.question, locale=locale,
-                           history=history)
+                           history=history, extra_instructions=extra)
         try:
             async for kind, payload in default_pipeline(verify=verify).stream(ctx):
                 if kind == "citations":
@@ -108,7 +120,8 @@ async def chat_multi(body: MultiChatRequest,
     contract as the scoped endpoint, plus a `routing` field on `done`."""
     from tablerag.query.steps.router import LLMRouter
 
-    def prepare() -> tuple[list[uuid.UUID], str | None, list[tuple[str, str]]]:
+    def prepare() -> tuple[list[uuid.UUID], str | None,
+                           list[tuple[str, str]], str]:
         with session_scope() as s:
             kbs = repo.list_kbs(s)
             if not kbs:
@@ -128,16 +141,22 @@ async def chat_multi(body: MultiChatRequest,
             # excluded. a first turn (no session_id) has no history.
             history = (repo.get_recent_messages(s, body.session_id)
                        if body.session_id else [])
-            return pinned, locale, history
+            # global guidance always applies; a KB's own only when the search is
+            # pinned to exactly that one KB (across several it is ambiguous)
+            kb_instr = (by_id[pinned[0]].config or {}).get("instructions") \
+                if len(pinned) == 1 else None
+            extra = _instructions(s, kb_instr)
+            return pinned, locale, history, extra
 
-    pinned, locale, history = await asyncio.to_thread(prepare)
+    pinned, locale, history, extra = await asyncio.to_thread(prepare)
 
     async def event_stream():
         # kb_id is unused when pinned/routed drives retrieval; keep a stable
         # placeholder (first pinned, else a nil uuid resolved after routing)
         ctx = QueryContext(kb_id=pinned[0] if pinned else uuid.UUID(int=0),
                            question=body.question, locale=locale,
-                           pinned_kb_ids=pinned or None, history=history)
+                           pinned_kb_ids=pinned or None, history=history,
+                           extra_instructions=extra)
         try:
             pipeline = default_pipeline(verify=body.verify, router=LLMRouter())
             async for kind, payload in pipeline.stream(ctx):

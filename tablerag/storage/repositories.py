@@ -402,6 +402,11 @@ def mark_element_unusable(s: Session, element_id: uuid.UUID) -> Element | None:
 
 # ---------------------------------------------------------------- app settings
 
+# global chat guidance appended to every system prompt (admin-set); value is
+# {"text": ...}. Per-KB guidance lives in kb.config["instructions"].
+CHAT_INSTRUCTIONS_SETTING = "chat_instructions"
+
+
 def get_setting(s: Session, key: str) -> dict | None:
     row = s.get(AppSetting, key)
     return row.value if row else None

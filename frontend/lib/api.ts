@@ -5,7 +5,7 @@ export type KB = {
   id: string;
   name: string;
   description: string;
-  config: { locale?: string; verify?: boolean };
+  config: { locale?: string; verify?: boolean; instructions?: string };
   created_at: string;
 };
 
@@ -366,6 +366,7 @@ export const updateKb = (
     description: string;
     locale: string;
     verify: boolean;
+    instructions: string;
   }>,
 ) =>
   fetch(`${API_URL}/api/kbs/${kbId}`, {
@@ -378,6 +379,20 @@ export const deleteKb = (kbId: string) =>
   fetch(`${API_URL}/api/kbs/${kbId}`, { method: "DELETE" }).then((r) => {
     if (!r.ok && r.status !== 204) throw new Error(`delete failed: ${r.status}`);
   });
+
+// ---------- global chat instructions (admin) ----------
+
+export const getChatInstructions = () =>
+  fetch(`${API_URL}/api/settings/chat-instructions`, { cache: "no-store" }).then(
+    (r) => jsonOrThrow<{ text: string }>(r),
+  );
+
+export const setChatInstructions = (text: string) =>
+  fetch(`${API_URL}/api/settings/chat-instructions`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  }).then((r) => jsonOrThrow<{ text: string }>(r));
 
 // ---------- model roles ----------
 

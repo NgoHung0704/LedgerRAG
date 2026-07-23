@@ -60,6 +60,9 @@ class QueryContext:
     # facts only from freshly retrieved sources (history is context, not a source).
     history: list[tuple[str, str]] = field(default_factory=list)
     search_question: str = ""
+    # operator guidance (global + per-KB) appended to the chat system prompt;
+    # additive only — see GenerateAnswer.build_system_prompt
+    extra_instructions: str = ""
 
     @property
     def search_query(self) -> str:

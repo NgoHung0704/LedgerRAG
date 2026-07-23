@@ -33,6 +33,8 @@ def create_kb(body: KBCreate) -> KBOut:
     config: dict = {"verify": body.verify}
     if body.locale:
         config["locale"] = body.locale
+    if body.instructions.strip():
+        config["instructions"] = body.instructions.strip()
     with session_scope() as s:
         kb = repo.create_kb(s, name=body.name, description=body.description,
                             config=config)
@@ -63,6 +65,12 @@ def update_kb(kb_id: uuid.UUID, body: KBUpdate) -> KBOut:
             config["locale"] = body.locale
         if body.verify is not None:
             config["verify"] = body.verify
+        if body.instructions is not None:
+            text = body.instructions.strip()
+            if text:
+                config["instructions"] = text
+            else:
+                config.pop("instructions", None)  # cleared
         kb.config = config
         s.flush()
         return KBOut.model_validate(kb, from_attributes=True)

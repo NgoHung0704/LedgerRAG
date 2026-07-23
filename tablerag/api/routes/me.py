@@ -7,6 +7,7 @@ import asyncio
 from fastapi import APIRouter, Depends
 
 from tablerag.core.auth import User, current_user, require_admin
+from tablerag.core.schemas import ChatInstructions
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 
@@ -17,6 +18,27 @@ router = APIRouter(prefix="/api", tags=["auth"])
 def me(user: User = Depends(current_user)) -> dict:
     return {"username": user.username, "email": user.email,
             "is_admin": user.is_admin}
+
+
+@router.get("/settings/chat-instructions", response_model=ChatInstructions)
+def get_chat_instructions(_user: User = Depends(current_user)) -> ChatInstructions:
+    """Global extra guidance appended to every chat system prompt. Readable by
+    any user (the Settings UI shows it); only admins can change it."""
+    with session_scope() as s:
+        stored = repo.get_setting(s, repo.CHAT_INSTRUCTIONS_SETTING) or {}
+    return ChatInstructions(text=stored.get("text", ""))
+
+
+@router.put("/settings/chat-instructions", response_model=ChatInstructions)
+def put_chat_instructions(body: ChatInstructions,
+                          admin: User = Depends(require_admin)) -> ChatInstructions:
+    text = body.text.strip()
+    with session_scope() as s:
+        repo.set_setting(s, repo.CHAT_INSTRUCTIONS_SETTING, {"text": text})
+        # audit the change, never the full text (may be long / sensitive)
+        repo.log_audit(s, admin.username, "model_config",
+                       detail={"setting": "chat_instructions", "chars": len(text)})
+    return ChatInstructions(text=text)
 
 
 @router.get("/audit")

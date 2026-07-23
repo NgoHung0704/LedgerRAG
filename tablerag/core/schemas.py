@@ -19,6 +19,9 @@ class KBCreate(BaseModel):
     locale: str | None = None
     # answer-number verification (Phase 4); default ON — this is a numbers tool
     verify: bool = True
+    # extra guidance appended to the chat system prompt for this KB (tone,
+    # focus, formatting). Additive only — it never overrides the safety rules.
+    instructions: str = ""
 
 
 class KBUpdate(BaseModel):
@@ -30,6 +33,7 @@ class KBUpdate(BaseModel):
     description: str | None = None
     locale: str | None = None
     verify: bool | None = None
+    instructions: str | None = None
 
 
 class KBOut(BaseModel):
@@ -67,6 +71,12 @@ class MultiChatRequest(BaseModel):
 
 class FeedbackRequest(BaseModel):
     value: int = Field(ge=-1, le=1)  # +1 👍, -1 👎, 0 clears
+
+
+class ChatInstructions(BaseModel):
+    """Global extra guidance appended to every chat system prompt (admin).
+    Additive only — the hardcoded safety rules always take precedence."""
+    text: str = ""
 
 
 class Citation(BaseModel):
