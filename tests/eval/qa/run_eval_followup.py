@@ -202,6 +202,14 @@ def main() -> None:
         print(f"stateless baseline (no memory): {ablate_pass}/{ablate_total} = {base:.0%}")
         print(f"with memory (condense):         {passed}/{total} = {rate:.0%}")
         print(f"lift from remembering the thread: {rate - base:+.0%}")
+        if not args.auto_route:
+            # pinning does part of memory's job: a fragment keeps a specific
+            # token ("classe 16", "Acheteur") that retrieves even without the
+            # thread, so the cold baseline is inflated and the lift is muted /
+            # noise-dominated (one flaky item swings it). Measure real lift here:
+            print("note: KB is pinned — the cold baseline is inflated (the pin "
+                  "pre-resolves ambiguity memory would). For the true user-facing "
+                  "lift, run:  --ablate --auto-route")
     else:
         print(f"follow-ups answered correctly: {passed}/{total} = {rate:.0%}")
     # gate: a condensed follow-up is just an answer-quality question, so hold it
