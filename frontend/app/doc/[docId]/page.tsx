@@ -88,24 +88,24 @@ export default function DocPage({ params }: { params: { docId: string } }) {
           </span>
         )}
       </div>
-      <p className="mb-6 text-sm text-slate-500">
+      <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
         {doc.page_count ?? "—"} pages · {elements.length} elements · {tables}{" "}
         table{tables === 1 ? "" : "s"} — tables are stored as{" "}
-        <span className="font-medium text-slate-600">
+        <span className="font-medium text-slate-600 dark:text-slate-300">
           HTML + records (JSON) + summary
         </span>
         , never flattened to markdown.
       </p>
 
       {doc.status === "failed" && doc.error && (
-        <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           {doc.error}
         </div>
       )}
 
       {elements.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-slate-500">
+        <Card className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
           {doc.status === "done"
             ? "Ingestion produced no elements for this document."
             : "No parsed elements yet — ingestion is still running."}
@@ -114,7 +114,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
         pages.map((page) => (
           <section key={page} className="mb-8">
             <div className="mb-3 flex items-center gap-3">
-              <h2 className="text-sm font-semibold text-slate-700">
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Page {page}
               </h2>
               <a
@@ -184,12 +184,12 @@ function ElementCard({
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2">
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2 dark:border-slate-800 dark:bg-slate-800/40">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200">
           <Icon size={14} /> {label}
         </span>
         {element.table?.parse_strategy && (
-          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-600">
+          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300">
             {element.table.parse_strategy}
           </span>
         )}
@@ -314,7 +314,7 @@ function ElementCard({
               Extracted text · {element.chunk_count} chunk
               {element.chunk_count === 1 ? "" : "s"} indexed
             </SectionLabel>
-            <p className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-[13px] leading-6 text-slate-700">
+            <p className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-[13px] leading-6 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
               {element.text_preview}
               {element.text_preview.length >= 600 && "…"}
             </p>
@@ -335,7 +335,7 @@ function ElementCard({
             {element.table.summary && (
               <div>
                 <SectionLabel>Representation 3 — summary (routing)</SectionLabel>
-                <p className="text-[13px] italic leading-5 text-slate-600">
+                <p className="text-[13px] italic leading-5 text-slate-600 dark:text-slate-300">
                   {element.table.summary}
                 </p>
               </div>
@@ -347,7 +347,7 @@ function ElementCard({
                   {element.table.n_cols ?? "?"}, display)
                 </SectionLabel>
                 <div
-                  className="doc-table max-h-80 overflow-auto rounded-lg border border-slate-200 p-2"
+                  className="doc-table max-h-80 overflow-auto rounded-lg border border-slate-200 p-2 dark:border-slate-700"
                   dangerouslySetInnerHTML={{ __html: element.table.html }}
                 />
               </div>
@@ -379,7 +379,7 @@ function ElementCard({
             <img
               src={`${API_URL}${element.crop_url}`}
               alt="original crop"
-              className="max-h-96 rounded-lg border border-slate-200 object-contain"
+              className="max-h-96 rounded-lg border border-slate-200 bg-white object-contain dark:border-slate-700"
             />
           </div>
         )}
@@ -401,17 +401,17 @@ function RecordsTable({ records }: { records: RecordPreview[] }) {
   const dimKeys = Object.keys(records[0].dimensions);
   const metricKeys = Object.keys(records[0].metrics);
   return (
-    <div className="max-h-72 overflow-auto rounded-lg border border-slate-200">
+    <div className="max-h-72 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">
       <table className="w-full text-[12px]">
-        <thead className="sticky top-0 bg-slate-50">
+        <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
           <tr>
             {dimKeys.map((k) => (
-              <th key={k} className="border-b border-slate-200 px-2.5 py-1.5 text-left font-semibold text-slate-500">
+              <th key={k} className="border-b border-slate-200 px-2.5 py-1.5 text-left font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">
                 {k}
               </th>
             ))}
             {metricKeys.map((k) => (
-              <th key={k} className="border-b border-slate-200 px-2.5 py-1.5 text-right font-semibold text-indigo-600">
+              <th key={k} className="border-b border-slate-200 px-2.5 py-1.5 text-right font-semibold text-indigo-600 dark:border-slate-700 dark:text-indigo-300">
                 {k}
               </th>
             ))}
@@ -419,14 +419,14 @@ function RecordsTable({ records }: { records: RecordPreview[] }) {
         </thead>
         <tbody>
           {records.map((r, i) => (
-            <tr key={i} className="odd:bg-white even:bg-slate-50/50">
+            <tr key={i} className="odd:bg-white even:bg-slate-50/50 dark:odd:bg-transparent dark:even:bg-slate-800/40">
               {dimKeys.map((k) => (
-                <td key={k} className="px-2.5 py-1 text-slate-700">
+                <td key={k} className="px-2.5 py-1 text-slate-700 dark:text-slate-300">
                   {String(r.dimensions[k] ?? "")}
                 </td>
               ))}
               {metricKeys.map((k) => (
-                <td key={k} className="px-2.5 py-1 text-right tabular-nums text-slate-800"
+                <td key={k} className="px-2.5 py-1 text-right tabular-nums text-slate-800 dark:text-slate-200"
                     title={`normalized: ${r.metrics[k] ?? "null"}`}>
                   {r.raw_values[k] ?? String(r.metrics[k] ?? "—")}
                 </td>
