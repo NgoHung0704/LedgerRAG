@@ -61,7 +61,7 @@ export default function KbCardMenu({
             <>
               <button
                 type="button"
-                onClick={() => router.push(`/kb/${kb.id}`)}
+                onClick={() => router.push(`/kb/${kb.id}?settings=1`)}
                 className="flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left text-[13px] text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <Settings2 size={15} className="text-slate-400" />

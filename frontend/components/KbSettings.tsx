@@ -2,29 +2,42 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings2, Trash2, Check, ShieldCheck } from "lucide-react";
-import { updateKb, deleteKb, type KB } from "@/lib/api";
+import { Settings2, Trash2, Check, ShieldCheck, Sparkles } from "lucide-react";
+import { updateKb, deleteKb, suggestDescription, type KB } from "@/lib/api";
 import { Spinner } from "@/components/ui";
 
-// Rename, change number locale, toggle verification, or delete the KB — the
-// settings that were missing after creation.
+// The single place to edit a KB after creation: name, description (what the
+// router reads to pick this KB — SPEC Phase 5), number locale, verification,
+// and delete. `defaultOpen` lets the list's ⋮ menu land here with it already
+// open, so "Settings & rename" doesn't need a second click.
 export default function KbSettings({
   kb,
   onUpdated,
+  defaultOpen = false,
 }: {
   kb: KB;
   onUpdated: (kb: KB) => void;
+  defaultOpen?: boolean;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const ref = useRef<HTMLDivElement>(null);
 
   const [name, setName] = useState(kb.name);
+  const [description, setDescription] = useState(kb.description ?? "");
   const [locale, setLocale] = useState(kb.config?.locale ?? "");
   const [verify, setVerify] = useState(kb.config?.verify ?? true);
   const [saving, setSaving] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // open when asked to (list ⋮ → ?settings=1), whether that arrives at mount
+  // or a tick later once the KB has loaded
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -39,20 +52,38 @@ export default function KbSettings({
 
   const dirty =
     name.trim() !== kb.name ||
+    description.trim() !== (kb.description ?? "") ||
     (locale || "") !== (kb.config?.locale ?? "") ||
     verify !== (kb.config?.verify ?? true);
+
+  const suggest = async () => {
+    setSuggesting(true);
+    setError(null);
+    try {
+      const res = await suggestDescription(kb.id);
+      setDescription(res.description);
+    } catch {
+      setError("Couldn't draft — upload a document and let it finish first.");
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const save = async () => {
     if (!name.trim()) return;
     setSaving(true);
+    setError(null);
     try {
       const updated = await updateKb(kb.id, {
         name: name.trim(),
+        description: description.trim(),
         locale: locale.trim(),
         verify,
       });
       onUpdated(updated);
       setOpen(false);
+    } catch {
+      setError("Could not save. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -80,7 +111,7 @@ export default function KbSettings({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1.5 w-80 rounded-xl border border-slate-200 bg-white p-3.5 shadow-lg dark:border-slate-700 dark:bg-[#1b222a]">
+        <div className="absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] rounded-xl border border-slate-200 bg-white p-3.5 shadow-lg dark:border-slate-700 dark:bg-[#1b222a]">
           <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
             Name
           </label>
@@ -88,6 +119,29 @@ export default function KbSettings({
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-indigo-900/40"
+          />
+
+          <div className="mt-3 flex items-center justify-between">
+            <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+              Description
+            </label>
+            <button
+              type="button"
+              onClick={suggest}
+              disabled={suggesting || saving}
+              title="Draft from this KB's documents"
+              className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-950"
+            >
+              {suggesting ? <Spinner size={11} /> : <Sparkles size={11} />}
+              Suggest
+            </button>
+          </div>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            placeholder="What this KB uniquely holds — the router reads it to route questions here. When two KBs share vocabulary, say what sets them apart."
+            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
           />
 
           <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
@@ -119,6 +173,8 @@ export default function KbSettings({
               Verify numbers against sources
             </span>
           </label>
+
+          {error && <div className="mt-2 text-xs text-red-600">{error}</div>}
 
           <div className="mt-3.5 flex justify-end">
             <button

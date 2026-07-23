@@ -24,6 +24,9 @@ export default function KBPage({ params }: { params: { id: string } }) {
   const [allKbs, setAllKbs] = useState<KB[]>([]);
   const [tab, setTab] = useState<Tab>("documents");
   const [reviewCount, setReviewCount] = useState(0);
+  // the list's ⋮ "Settings & rename" lands here with ?settings=1 so the panel
+  // opens straight away; strip the param so a refresh doesn't reopen it
+  const [openSettings, setOpenSettings] = useState(false);
 
   useEffect(() => {
     getKb(kbId).then(setKb).catch(() => {});
@@ -32,6 +35,15 @@ export default function KBPage({ params }: { params: { id: string } }) {
       .then((r) => setReviewCount(r.count))
       .catch(() => {});
   }, [kbId]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("settings") === "1") {
+      setOpenSettings(true);
+      url.searchParams.delete("settings");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -53,11 +65,11 @@ export default function KBPage({ params }: { params: { id: string } }) {
           )}
           {kb && (
             <div className="ml-auto">
-              <KbSettings kb={kb} onUpdated={setKb} />
+              <KbSettings kb={kb} onUpdated={setKb} defaultOpen={openSettings} />
             </div>
           )}
         </div>
-        {kb && <KbDescription kb={kb} onUpdated={setKb} />}
+        {kb && <KbDescription kb={kb} />}
       </div>
 
       <div className="mb-4 flex gap-1 border-b border-slate-200 dark:border-slate-800">
