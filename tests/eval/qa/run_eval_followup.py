@@ -42,13 +42,19 @@ sys.path.insert(0, str(Path(__file__).parent))
 from run_eval_qa import grade  # noqa: E402
 
 
-def ask(client: httpx.Client, question: str,
-        session_id: str | None) -> dict:
+def ask(client: httpx.Client, question: str, session_id: str | None,
+        kb_ids: list[str] | None = None) -> dict:
     """One turn on the multi-KB endpoint. Returns answer + citations +
-    verification + the session to continue + the condensed search query."""
+    verification + the session to continue + the condensed search query.
+
+    kb_ids pins the search to specific KBs — this eval measures the CONDENSE
+    step, so it holds routing constant (routing has its own gate, eval-routing);
+    otherwise a routing miss would be scored as a memory miss."""
     body: dict = {"question": question}
     if session_id:
         body["session_id"] = session_id
+    if kb_ids:
+        body["kb_ids"] = kb_ids
     answer, citations, verification = "", [], None
     search_question, routed = question, []
     with client.stream("POST", "/api/chat", json=body) as response:
@@ -73,14 +79,27 @@ def ask(client: httpx.Client, question: str,
             "search_question": search_question, "routed": routed}
 
 
+def resolve_pins(convo: dict, id_to_name: dict[str, str],
+                 auto_route: bool) -> list[str] | None:
+    """KB ids to pin for this conversation, from its `kbs` name-substrings
+    (same loose matching as eval-routing). None = let the router decide."""
+    if auto_route:
+        return None
+    wanted = convo.get("kbs") or []
+    ids = [kid for want in wanted for kid, name in id_to_name.items()
+           if want.lower() in name.lower()]
+    return ids or None
+
+
 def run_conversation(client: httpx.Client, convo: dict,
-                     id_to_name: dict[str, str]) -> list[dict]:
+                     id_to_name: dict[str, str],
+                     pins: list[str] | None) -> list[dict]:
     """Play a conversation turn by turn, threading the session. Returns one
     graded result per turn that carries expectations."""
     session_id: str | None = None
     graded: list[dict] = []
     for i, turn in enumerate(convo["turns"]):
-        res = ask(client, turn["question"], session_id)
+        res = ask(client, turn["question"], session_id, kb_ids=pins)
         session_id = res["session_id"]
         if not turn.get("expected_answer_contains"):
             continue  # context-setting turn, not graded
@@ -100,14 +119,16 @@ def run_conversation(client: httpx.Client, convo: dict,
     return graded
 
 
-def ablate(client: httpx.Client, convo: dict) -> list[bool]:
+def ablate(client: httpx.Client, convo: dict,
+           pins: list[str] | None) -> list[bool]:
     """Each graded follow-up asked cold, with NO history — the stateless
-    baseline. The gap to the threaded run is the lift condensing provides."""
+    baseline. Same KB pin as the threaded run, so the ONLY difference is memory:
+    the gap between them is the lift condensing provides."""
     out: list[bool] = []
     for turn in convo["turns"]:
         if not turn.get("expected_answer_contains"):
             continue
-        res = ask(client, turn["question"], None)  # fresh session every time
+        res = ask(client, turn["question"], None, kb_ids=pins)  # fresh session
         ok, _ = grade(turn, res["answer"], res["citations"], res["verification"])
         out.append(ok)
     return out
@@ -120,6 +141,10 @@ def main() -> None:
                     default=Path(__file__).parent / "followups.jsonl")
     ap.add_argument("--ablate", action="store_true",
                     help="also ask each follow-up cold (no history) to measure lift")
+    ap.add_argument("--auto-route", action="store_true",
+                    help="let the router pick the KB instead of pinning per "
+                         "conversation (mixes routing into the score; use "
+                         "eval-routing to test routing on its own)")
     args = ap.parse_args()
 
     if not args.questions.exists():
@@ -133,11 +158,18 @@ def main() -> None:
     with httpx.Client(base_url=args.api, timeout=180) as client:
         id_to_name = {kb["id"]: kb["name"]
                       for kb in client.get("/api/kbs").raise_for_status().json()}
+        mode = "auto-route" if args.auto_route else "KB pinned (routing held constant)"
+        print(f"mode: {mode}")
         print(f"{'id':5s} {'verdict':8s} detail")
         print("-" * 72)
         for convo in convos:
+            pins = resolve_pins(convo, id_to_name, args.auto_route)
+            if not args.auto_route and pins is None:
+                print(f"{convo.get('id', '?'):5s} {'SKIP':8s} "
+                      f"no KB matched {convo.get('kbs')} — check the `kbs` field")
+                continue
             try:
-                results = run_conversation(client, convo, id_to_name)
+                results = run_conversation(client, convo, id_to_name, pins)
             except Exception as e:  # noqa: BLE001
                 print(f"{convo.get('id', '?'):5s} {'ERROR':8s} {e}")
                 total += 1
@@ -155,7 +187,7 @@ def main() -> None:
 
             if args.ablate:
                 try:
-                    for ok in ablate(client, convo):
+                    for ok in ablate(client, convo, pins):
                         ablate_total += 1
                         ablate_pass += ok
                 except Exception:  # noqa: BLE001 — ablation is diagnostic, not the gate

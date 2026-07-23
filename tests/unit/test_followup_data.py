@@ -39,6 +39,10 @@ def test_conversation_shape(convo):
     turns = convo["turns"]
     assert len(turns) >= 2, "a follow-up conversation needs an opener + a follow-up"
 
+    # the runner pins these KBs to hold routing constant (routing has its own
+    # gate); a missing/empty kbs field would silently SKIP the conversation
+    assert convo.get("kbs"), "conversation needs a non-empty `kbs` pin list"
+
     graded = [t for t in turns if t.get("expected_answer_contains")]
     assert graded, "no graded turn — the follow-up must carry expectations"
     # the opener sets context; only later turns are graded
