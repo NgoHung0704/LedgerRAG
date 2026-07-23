@@ -16,8 +16,10 @@ import {
 import {
   chatStream,
   chatMultiStream,
+  getElement,
   sendFeedback,
   type Citation,
+  type ElementDetail,
   type KB,
   type RoutingInfo,
   type Verification,
@@ -174,13 +176,11 @@ export default function ChatPanel({
                   }`}
                 >
                   {m.content ? (
-                    <div className="chat-md prose prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2">
-                      <AnswerBody
-                        content={m.content}
-                        citations={m.citations}
-                        onOpen={setOpenSource}
-                      />
-                    </div>
+                    <AnswerBody
+                      content={m.content}
+                      citations={m.citations}
+                      onOpen={setOpenSource}
+                    />
                   ) : busy && i === messages.length - 1 ? (
                     <span className="inline-flex items-center gap-2 text-slate-400">
                       <Spinner size={14} /> thinking…
@@ -301,10 +301,84 @@ function FeedbackButton({
   );
 }
 
-// Turn the inline citation markers ([1], [2][3]) into clickable receipts:
-// each opens the exact source it points to. This is provenance made tactile —
-// the answer's numbers trace back to the table they came from.
+// Split an answer into prose runs and GFM-table blocks, in order. A markdown
+// table is a run of pipe lines whose first two include a `---` delimiter row.
+function splitAnswerSegments(
+  content: string,
+): { type: "prose" | "table"; text: string }[] {
+  const lines = content.split("\n");
+  const isPipe = (l: string) => /^\s*\|/.test(l);
+  const isDelim = (l: string) => /-/.test(l) && /^\s*\|?[\s:|-]+$/.test(l);
+  const out: { type: "prose" | "table"; text: string }[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (isPipe(lines[i])) {
+      let j = i;
+      while (j < lines.length && isPipe(lines[j])) j++;
+      const block = lines.slice(i, j);
+      const isTable = block.length >= 2 && block.slice(0, 2).some(isDelim);
+      out.push({ type: isTable ? "table" : "prose", text: block.join("\n") });
+      i = j;
+    } else {
+      let j = i;
+      while (j < lines.length && !isPipe(lines[j])) j++;
+      out.push({ type: "prose", text: lines.slice(i, j).join("\n") });
+      i = j;
+    }
+  }
+  return out;
+}
+
+// A table the model typed as markdown is a lossy re-keying of a table we
+// already parsed cleanly (merged cells, in-cell line breaks). So when the
+// answer paints a table AND cites a table source, show the authoritative
+// stored HTML in its place; the prose and its citations stay untouched.
 function AnswerBody({
+  content,
+  citations,
+  onOpen,
+}: {
+  content: string;
+  citations?: Citation[];
+  onOpen: (c: Citation) => void;
+}) {
+  const segments = splitAnswerSegments(content);
+  const tableCitations = (citations ?? []).filter((c) => c.kind === "table");
+  let t = 0;
+  return (
+    <div className="space-y-1">
+      {segments.map((seg, i) => {
+        if (seg.type === "table") {
+          const cite = tableCitations[t++];
+          if (cite)
+            return (
+              <SourceTable
+                key={i}
+                citation={cite}
+                fallback={seg.text}
+                citations={citations}
+                onOpen={onOpen}
+              />
+            );
+        }
+        if (!seg.text.trim()) return null;
+        return (
+          <MarkdownProse
+            key={i}
+            content={seg.text}
+            citations={citations}
+            onOpen={onOpen}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// Prose (or a fallback markdown table). Inline citation markers ([1], [2][3])
+// become clickable receipts that open the exact source — provenance made
+// tactile: the answer's numbers trace back to the table they came from.
+function MarkdownProse({
   content,
   citations,
   onOpen,
@@ -316,34 +390,99 @@ function AnswerBody({
   // [1] -> [[1]](#cite-1) so markdown renders a link we can intercept
   const linked = content.replace(/\[(\d+)\]/g, "[[$1]](#cite-$1)");
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        a({ href, children }) {
-          const m = /^#cite-(\d+)$/.exec(href ?? "");
-          if (!m) return <a href={href}>{children}</a>;
-          const c = citations?.find((x) => x.index === Number(m[1]));
-          if (!c)
-            return <sup className="text-slate-400">{children}</sup>;
-          return (
-            <button
-              type="button"
-              onClick={() => onOpen(c)}
-              title={`${c.filename} · p.${c.page}${c.needs_review ? " · needs review" : ""}`}
-              className={`mx-0.5 align-super text-[11px] font-semibold no-underline ${
-                c.needs_review
-                  ? "text-amber-700 hover:text-amber-800 dark:text-amber-400"
-                  : "text-indigo-700 hover:text-indigo-900 dark:text-indigo-400"
-              } hover:underline`}
-            >
-              {children}
-            </button>
-          );
-        },
-      }}
-    >
-      {linked}
-    </ReactMarkdown>
+    <div className="chat-md prose prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a({ href, children }) {
+            const m = /^#cite-(\d+)$/.exec(href ?? "");
+            if (!m) return <a href={href}>{children}</a>;
+            const c = citations?.find((x) => x.index === Number(m[1]));
+            if (!c) return <sup className="text-slate-400">{children}</sup>;
+            return (
+              <button
+                type="button"
+                onClick={() => onOpen(c)}
+                title={`${c.filename} · p.${c.page}${c.needs_review ? " · needs review" : ""}`}
+                className={`mx-0.5 align-super text-[11px] font-semibold no-underline ${
+                  c.needs_review
+                    ? "text-amber-700 hover:text-amber-800 dark:text-amber-400"
+                    : "text-indigo-700 hover:text-indigo-900 dark:text-indigo-400"
+                } hover:underline`}
+              >
+                {children}
+              </button>
+            );
+          },
+        }}
+      >
+        {linked}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+// The parsed table rendered from its authoritative stored HTML (rowspans and
+// all), as in the document viewer — falls back to the model's markdown if the
+// element can't be fetched.
+function SourceTable({
+  citation,
+  fallback,
+  citations,
+  onOpen,
+}: {
+  citation: Citation;
+  fallback: string;
+  citations?: Citation[];
+  onOpen: (c: Citation) => void;
+}) {
+  const [detail, setDetail] = useState<ElementDetail | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getElement(citation.element_id)
+      .then((d) => alive && setDetail(d))
+      .catch(() => alive && setFailed(true));
+    return () => {
+      alive = false;
+    };
+  }, [citation.element_id]);
+
+  if (!failed && !detail)
+    return (
+      <div className="my-2 flex items-center gap-2 text-xs text-slate-400">
+        <Spinner size={12} /> chargement du tableau d&apos;origine…
+      </div>
+    );
+
+  const html = detail?.table?.html;
+  if (failed || !html)
+    return (
+      <MarkdownProse content={fallback} citations={citations} onOpen={onOpen} />
+    );
+
+  return (
+    <figure className="my-2">
+      <div
+        className="doc-table max-h-[60vh] overflow-auto rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+      <figcaption className="mt-1 flex flex-wrap items-center gap-1.5 font-sans text-[11px] text-slate-400">
+        <button
+          type="button"
+          onClick={() => onOpen(citation)}
+          className="inline-flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-300"
+        >
+          <Table2 size={11} /> {citation.filename} · p.{citation.page} — voir
+          l&apos;original
+        </button>
+        {citation.needs_review && (
+          <span className="text-amber-600 dark:text-amber-400">
+            · parse à vérifier
+          </span>
+        )}
+      </figcaption>
+    </figure>
   );
 }
 
