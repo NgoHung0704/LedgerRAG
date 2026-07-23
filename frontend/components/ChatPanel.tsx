@@ -138,17 +138,17 @@ export default function ChatPanel({
   };
 
   return (
-    <div className="flex h-[calc(100vh-14rem)] flex-col rounded-xl border border-slate-200 bg-white shadow-card">
+    <div className="flex h-[calc(100vh-14rem)] flex-col rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-800 dark:bg-[#171d24]">
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <Sparkles size={28} className="mb-3 text-slate-300" />
-            <div className="text-sm font-medium text-slate-600">
+            <div className="text-sm font-medium text-slate-600 dark:text-slate-300">
               {kbId
                 ? "Ask anything about the documents in this knowledge base"
                 : "Ask across your knowledge bases"}
             </div>
-            <div className="mt-1 max-w-md text-xs leading-5 text-slate-400">
+            <div className="mt-1 max-w-md text-xs leading-5 text-slate-400 dark:text-slate-500">
               Answers stream with citations. Numbers are quoted exactly as
               printed — when a table couldn't be read reliably, you'll see the
               original image instead of a guess.
@@ -169,8 +169,8 @@ export default function ChatPanel({
                 <div
                   className={`rounded-2xl rounded-bl-md border px-4 py-3 text-sm leading-6 ${
                     m.error
-                      ? "border-red-200 bg-red-50 text-red-700"
-                      : "border-slate-200 bg-slate-50 text-slate-800"
+                      ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+                      : "border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
                   }`}
                 >
                   {m.content ? (
@@ -203,8 +203,8 @@ export default function ChatPanel({
                         title={c.snippet}
                         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                           c.needs_review
-                            ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                            ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
                         }`}
                       >
                         {c.kind === "table" ? (
@@ -239,7 +239,7 @@ export default function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-slate-100 p-3">
+      <div className="border-t border-slate-100 p-3 dark:border-slate-800">
         {showScope && (
           <div className="mb-2">
             <ChatScopeSelector
@@ -253,7 +253,7 @@ export default function ChatPanel({
         )}
         <form onSubmit={ask} className="flex gap-2">
           <input
-            className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 font-serif text-[15px] placeholder:font-sans placeholder:text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 font-serif text-[15px] placeholder:font-sans placeholder:text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
             placeholder="Posez votre question… / Ask your question…"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -292,8 +292,8 @@ function FeedbackButton({
       onClick={onClick}
       title={up ? "Helpful" : "Not helpful"}
       aria-pressed={active}
-      className={`rounded-md p-1 transition-colors hover:bg-slate-100 ${
-        active ? activeColor : "text-slate-300 hover:text-slate-500"
+      className={`rounded-md p-1 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${
+        active ? activeColor : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400"
       }`}
     >
       <Icon size={13} fill={active ? "currentColor" : "none"} />
@@ -332,8 +332,8 @@ function AnswerBody({
               title={`${c.filename} · p.${c.page}${c.needs_review ? " · needs review" : ""}`}
               className={`mx-0.5 align-super text-[11px] font-semibold no-underline ${
                 c.needs_review
-                  ? "text-amber-700 hover:text-amber-800"
-                  : "text-indigo-700 hover:text-indigo-900"
+                  ? "text-amber-700 hover:text-amber-800 dark:text-amber-400"
+                  : "text-indigo-700 hover:text-indigo-900 dark:text-indigo-400"
               } hover:underline`}
             >
               {children}
@@ -363,8 +363,8 @@ function RoutedBadge({ routing }: { routing: RoutingInfo }) {
     <div
       className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${
         warn
-          ? "bg-amber-50 text-amber-700 ring-amber-200"
-          : "bg-sky-50 text-sky-700 ring-sky-200"
+          ? "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800/60"
+          : "bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-800/60"
       }`}
     >
       <Sparkles size={11} /> {label}
@@ -381,14 +381,14 @@ function VerificationBadge({ verification }: { verification: Verification }) {
 
   if (verification.status === "ok") {
     return (
-      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60">
         <BadgeCheck size={12} />
         {total} number{total === 1 ? "" : "s"} checked against sources
       </div>
     );
   }
   return (
-    <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+    <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
       <div className="flex items-center gap-1.5 font-medium">
         <AlertTriangle size={13} />
         {verification.unverified.length} number

@@ -38,7 +38,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
       <div className="mb-4">
         <Link
           href="/"
-          className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
+          className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
         >
           <ArrowLeft size={13} /> Knowledge Bases
         </Link>
@@ -47,7 +47,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
             {kb?.name ?? "…"}
           </h1>
           {kb?.config?.locale && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500">
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               <Globe size={11} /> {kb.config.locale}
             </span>
           )}
@@ -60,7 +60,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
         {kb && <KbDescription kb={kb} onUpdated={setKb} />}
       </div>
 
-      <div className="mb-4 flex gap-1 border-b border-slate-200">
+      <div className="mb-4 flex gap-1 border-b border-slate-200 dark:border-slate-800">
         {(
           [
             { id: "documents", label: "Documents", icon: FileText },
@@ -73,8 +73,8 @@ export default function KBPage({ params }: { params: { id: string } }) {
             onClick={() => setTab(id)}
             className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3.5 py-2 text-sm font-medium transition-colors ${
               tab === id
-                ? "border-indigo-600 text-indigo-700"
-                : "border-transparent text-slate-500 hover:text-slate-700"
+                ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
             <Icon size={15} /> {label}

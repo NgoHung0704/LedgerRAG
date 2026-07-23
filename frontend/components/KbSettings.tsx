@@ -74,20 +74,20 @@ export default function KbSettings({
       <button
         onClick={() => setOpen((o) => !o)}
         title="Knowledge base settings"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
       >
         <Settings2 size={14} /> Settings
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1.5 w-80 rounded-xl border border-slate-200 bg-white p-3.5 shadow-lg">
+        <div className="absolute right-0 z-20 mt-1.5 w-80 rounded-xl border border-slate-200 bg-white p-3.5 shadow-lg dark:border-slate-700 dark:bg-[#1b222a]">
           <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
             Name
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-indigo-900/40"
           />
 
           <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
@@ -97,10 +97,10 @@ export default function KbSettings({
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
             placeholder="fr · de · en · es · (blank = auto)"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-600 dark:focus:ring-indigo-900/40"
           />
 
-          <label className="mt-3 flex items-center gap-2.5 text-sm text-slate-700">
+          <label className="mt-3 flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
             <button
               type="button"
               onClick={() => setVerify((v) => !v)}
@@ -130,17 +130,17 @@ export default function KbSettings({
             </button>
           </div>
 
-          <div className="mt-3 border-t border-slate-100 pt-3">
+          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-700">
             {!confirming ? (
               <button
                 onClick={() => setConfirming(true)}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-red-600 hover:text-red-700"
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-red-600 hover:text-red-700 dark:text-red-400"
               >
                 <Trash2 size={13} /> Delete this knowledge base
               </button>
             ) : (
-              <div className="rounded-lg bg-red-50 p-2.5">
-                <div className="text-[12px] text-red-700">
+              <div className="rounded-lg bg-red-50 p-2.5 dark:bg-red-950/40">
+                <div className="text-[12px] text-red-700 dark:text-red-300">
                   Delete <span className="font-semibold">{kb.name}</span> and all
                   its documents, vectors and chat history? This cannot be undone.
                 </div>
