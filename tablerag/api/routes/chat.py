@@ -85,6 +85,9 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest,
             message_id = await asyncio.to_thread(persist)
             yield _sse({"type": "done", "session_id": str(session_id),
                         "message_id": str(message_id),
+                        # the standalone query a follow-up was condensed to
+                        # (== question on a first turn); surfaced for eval-followup
+                        "search_question": ctx.search_question,
                         "verification": ctx.verification})
         except Exception:  # noqa: BLE001 — stream errors must reach the client readably
             logger.exception("chat pipeline failed (kb=%s)", kb_id)
@@ -165,6 +168,9 @@ async def chat_multi(body: MultiChatRequest,
             yield _sse({"type": "done", "session_id": str(session_id),
                         "message_id": str(message_id),
                         "routing": ctx.routing,
+                        # the standalone query a follow-up was condensed to
+                        # (== question on a first turn); surfaced for eval-followup
+                        "search_question": ctx.search_question,
                         "verification": ctx.verification})
         except Exception:  # noqa: BLE001 — stream errors must reach the client
             logger.exception("multi-KB chat failed")

@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables lint
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-qa eval-routing eval-followup lint
 
 up:
 	docker compose up -d --build
@@ -52,6 +52,12 @@ eval-qa:
 # Glossaire, then auto-route each question via POST /api/chat.
 eval-routing:
 	python tests/eval/qa/run_eval_routing.py --questions tests/eval/qa/routing.jsonl
+
+# ---- Phase 5: multi-turn gate (does condensing recover a follow-up?) --------
+# Each line is a conversation; the follow-up is a fragment that only resolves
+# with the thread. Add --ablate to measure the lift over a stateless ask.
+eval-followup:
+	python tests/eval/qa/run_eval_followup.py --questions tests/eval/qa/followups.jsonl
 
 # ---- Phase 4: hybrid migration (run INSIDE the api container) --------
 # docker compose exec api python -m tablerag.scripts.reindex_all
