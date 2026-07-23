@@ -36,7 +36,7 @@ export default function SourceModal({
       wide
     >
       {citation.needs_review && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           <div>
             <div className="font-medium">
@@ -51,7 +51,7 @@ export default function SourceModal({
       )}
 
       {failed ? (
-        <p className="text-sm text-red-600">Could not load source details.</p>
+        <p className="text-sm text-red-600 dark:text-red-400">Could not load source details.</p>
       ) : detail === null ? (
         <div className="flex justify-center py-10">
           <Spinner size={20} />
@@ -59,7 +59,7 @@ export default function SourceModal({
       ) : (
         <div className="space-y-4">
           {detail.table?.summary && (
-            <p className="text-[13px] italic leading-5 text-slate-500">
+            <p className="text-[13px] italic leading-5 text-slate-500 dark:text-slate-400">
               {detail.table.summary}
             </p>
           )}
@@ -70,14 +70,14 @@ export default function SourceModal({
                 Parsed table ({detail.table.parse_strategy})
               </div>
               <div
-                className="doc-table max-h-72 overflow-auto rounded-lg border border-slate-200 p-2"
+                className="doc-table max-h-72 overflow-auto rounded-lg border border-slate-200 p-2 dark:border-slate-700"
                 dangerouslySetInnerHTML={{ __html: detail.table.html }}
               />
             </div>
           )}
 
           {detail.type === "text" && citation.snippet && (
-            <blockquote className="border-l-2 border-slate-200 pl-3 text-sm leading-6 text-slate-600">
+            <blockquote className="border-l-2 border-slate-200 pl-3 text-sm leading-6 text-slate-600 dark:border-slate-700 dark:text-slate-300">
               {citation.snippet}
               {citation.snippet.length >= 240 && "…"}
             </blockquote>
@@ -91,7 +91,7 @@ export default function SourceModal({
             <img
               src={elementImageUrl(detail.id)}
               alt={`Original of ${citation.filename} page ${citation.page}`}
-              className="max-h-[45vh] w-full rounded-lg border border-slate-200 object-contain"
+              className="max-h-[45vh] w-full rounded-lg border border-slate-200 bg-white object-contain dark:border-slate-700"
             />
           </div>
 
@@ -99,7 +99,7 @@ export default function SourceModal({
             href={pageImageUrl(citation.doc_id, citation.page)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-300"
           >
             <ExternalLink size={13} /> Open full page {citation.page}
           </a>

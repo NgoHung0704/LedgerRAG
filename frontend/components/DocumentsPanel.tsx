@@ -113,18 +113,18 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
         onClick={() => fileInput.current?.click()}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
           dragOver
-            ? "border-indigo-400 bg-indigo-50"
-            : "border-slate-200 bg-white hover:border-slate-300"
+            ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40"
+            : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-[#171d24] dark:hover:border-slate-600"
         }`}
       >
         <FileUp
           size={26}
-          className={dragOver ? "text-indigo-500" : "text-slate-300"}
+          className={dragOver ? "text-indigo-500" : "text-slate-300 dark:text-slate-600"}
         />
-        <div className="mt-2 text-sm font-medium text-slate-700">
+        <div className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">
           Drop PDF documents here, or click to browse
         </div>
-        <div className="mt-0.5 text-xs text-slate-400">
+        <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
           Tables keep their original image — parsing is verified, never guessed.
         </div>
         <input
@@ -141,7 +141,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
       </div>
 
       {uploadError && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           {uploadError}
         </div>
@@ -156,14 +156,14 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
       ) : (
         <Card className="overflow-hidden">
           {selected.size > 0 && (
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-indigo-50/50 px-4 py-2">
-              <span className="text-sm text-slate-600">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-indigo-50/50 px-4 py-2 dark:border-slate-800 dark:bg-indigo-950/30">
+              <span className="text-sm text-slate-600 dark:text-slate-300">
                 {selected.size} selected
               </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setSelected(new Set())}
-                  className="text-xs text-slate-500 hover:text-slate-700"
+                  className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   Clear
                 </button>
@@ -181,7 +181,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
           )}
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:border-slate-800">
                 <th className="w-10 px-4 py-2.5">
                   <input
                     type="checkbox"
@@ -202,8 +202,8 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
               {(docs ?? []).map((d) => (
                 <tr
                   key={d.id}
-                  className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/50 ${
-                    selected.has(d.id) ? "bg-indigo-50/40" : ""
+                  className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/50 dark:border-slate-800/60 dark:hover:bg-slate-800/40 ${
+                    selected.has(d.id) ? "bg-indigo-50/40 dark:bg-indigo-950/30" : ""
                   }`}
                 >
                   <td className="px-4 py-2.5">
@@ -217,29 +217,29 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   <td className="max-w-[22rem] px-4 py-2.5">
                     <Link
                       href={`/doc/${d.id}`}
-                      className="block truncate font-medium text-slate-800 hover:text-indigo-700"
+                      className="block truncate font-medium text-slate-800 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-indigo-300"
                       title="Inspect parsed output"
                     >
                       {d.filename}
                     </Link>
                     {d.status === "failed" && d.error && (
-                      <div className="mt-0.5 text-xs text-red-600">{d.error}</div>
+                      <div className="mt-0.5 text-xs text-red-600 dark:text-red-400">{d.error}</div>
                     )}
                   </td>
                   <td className="px-4 py-2.5">
                     <StatusPill status={d.status} />
                   </td>
-                  <td className="px-4 py-2.5 text-slate-500">
+                  <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">
                     {d.page_count ?? "—"}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-500">
+                  <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">
                     {new Date(d.created_at).toLocaleString()}
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-1">
                       <Link
                         href={`/doc/${d.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/50"
                       >
                         <ScanSearch size={13} /> Inspect
                       </Link>
@@ -247,7 +247,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                         onClick={() => remove(d)}
                         disabled={deleting === d.id}
                         title="Delete document"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/40 dark:hover:text-red-400"
                       >
                         {deleting === d.id ? <Spinner size={13} /> : <Trash2 size={13} />}
                       </button>
