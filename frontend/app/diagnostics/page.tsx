@@ -58,7 +58,7 @@ export default function DiagnosticsPage() {
           <FileSearch size={20} className="text-slate-400" />
           Table detection diagnostics
         </h1>
-        <p className="mt-0.5 max-w-2xl text-sm text-slate-500">
+        <p className="mt-0.5 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
           Upload a PDF to see what each detection strategy finds per page.
           Scanned pages (no text layer) can additionally be probed with the
           parser VLM — you&apos;ll see its raw reply and the table regions it
@@ -68,10 +68,10 @@ export default function DiagnosticsPage() {
 
       <div
         onClick={() => fileInput.current?.click()}
-        className="mb-6 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 py-8 text-center hover:border-slate-300"
+        className="mb-6 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 py-8 text-center hover:border-slate-300 dark:border-slate-700 dark:bg-[#171d24] dark:hover:border-slate-600"
       >
-        <Upload size={24} className="text-slate-300" />
-        <div className="mt-2 text-sm font-medium text-slate-700">
+        <Upload size={24} className="text-slate-300 dark:text-slate-600" />
+        <div className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">
           Click to choose a PDF
         </div>
         <input
@@ -157,8 +157,8 @@ function PageCard({
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
               page.kept.length > 0
-                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                : "bg-slate-100 text-slate-500"
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/50"
+                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
             }`}
           >
             {page.kept.length} kept (text-layer)
@@ -182,7 +182,7 @@ function PageCard({
               {STRATEGIES.map((s) => {
                 const info = page.strategies[s];
                 return (
-                  <tr key={s} className="border-t border-slate-100 align-top">
+                  <tr key={s} className="border-t border-slate-100 align-top dark:border-slate-800">
                     <td className="py-1.5 pr-3 font-mono text-slate-600">{s}</td>
                     <td className="py-1.5 pr-3 text-slate-600">
                       {info?.error ? "error" : (info?.count ?? 0)}
@@ -238,7 +238,7 @@ function PageCard({
             <summary className="cursor-pointer text-slate-500">
               raw model reply
             </summary>
-            <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-[11px] text-slate-600">
+            <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {vlm.raw}
             </pre>
           </details>

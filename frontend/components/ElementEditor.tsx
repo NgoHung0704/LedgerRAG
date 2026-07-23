@@ -79,7 +79,7 @@ export default function ElementEditor({
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
             Correct anything below. On save, this element is re-indexed so
             future answers use your corrections.
           </p>
@@ -126,7 +126,7 @@ export default function ElementEditor({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
             <Button variant="secondary" onClick={onClose} disabled={busy}>
               Cancel
             </Button>
@@ -158,4 +158,4 @@ function Field({
 }
 
 const taCls =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40";
