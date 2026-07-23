@@ -100,3 +100,30 @@ def test_chat_session_and_messages(db_session):
     msg = repo.add_message(db_session, session.id, "assistant", "Bonjour",
                            citations=[{"index": 1}])
     assert msg.citations == [{"index": 1}]
+
+
+def test_recent_messages_order_and_limit(db_session):
+    """Multi-turn history must come back oldest→newest so a follow-up condenses
+    against the real order — even when a turn's user+assistant rows share a
+    transaction (created_at set explicitly here to pin the ordering)."""
+    from datetime import datetime, timedelta, timezone
+
+    from tablerag.storage.orm import ChatMessage
+
+    kb, _ = _seed_doc(db_session)
+    session = repo.get_or_create_session(db_session, kb.id, None)
+    t0 = datetime(2026, 7, 23, 12, 0, 0, tzinfo=timezone.utc)
+    turns = [("user", "Q1"), ("assistant", "A1"),
+             ("user", "Q2"), ("assistant", "A2")]
+    for i, (role, content) in enumerate(turns):
+        db_session.add(ChatMessage(session_id=session.id, role=role,
+                                   content=content,
+                                   created_at=t0 + timedelta(seconds=i)))
+    db_session.flush()
+
+    assert repo.get_recent_messages(db_session, session.id) == turns
+    # limit keeps the most recent, still oldest→newest
+    assert repo.get_recent_messages(db_session, session.id, limit=2) == [
+        ("user", "Q2"), ("assistant", "A2")]
+    # an unknown / brand-new session has no history
+    assert repo.get_recent_messages(db_session, uuid.uuid4()) == []

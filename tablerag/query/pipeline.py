@@ -54,6 +54,18 @@ class QueryContext:
     citations: list[Citation] = field(default_factory=list)
     answer: str = ""
     verification: dict | None = None
+    # Multi-turn: prior turns (role, content) oldest→newest, excluding the
+    # current question. CondenseQuestion folds them into search_question — a
+    # standalone query router+retrieval act on — while the answer still draws
+    # facts only from freshly retrieved sources (history is context, not a source).
+    history: list[tuple[str, str]] = field(default_factory=list)
+    search_question: str = ""
+
+    @property
+    def search_query(self) -> str:
+        """The query router and retrieval search on: the condensed standalone
+        question when a follow-up had history to resolve, else the raw one."""
+        return self.search_question or self.question
 
 
 class Step(Protocol):
@@ -87,6 +99,7 @@ class QueryPipeline:
 def default_pipeline(verify: bool | None = None, *,
                      router: object | None = None) -> QueryPipeline:
     from tablerag.query.steps.assemble import AssembleContext
+    from tablerag.query.steps.condense import CondenseQuestion
     from tablerag.query.steps.generate import GenerateAnswer
     from tablerag.query.steps.rerank import Rerank
     from tablerag.query.steps.retrieve import Retrieve
@@ -95,9 +108,12 @@ def default_pipeline(verify: bool | None = None, *,
 
     settings = get_settings()
     enabled = settings.verification_enabled if verify is None else verify
-    # Phase 1 scoped chat pins one KB (SingleKBRouter); Phase 5 multi-KB chat
-    # passes an LLMRouter. Same slot, same interface — principle #4.
+    # CondenseQuestion runs first so router+retrieval see a standalone query on
+    # follow-ups; it is a pure passthrough with no history (single-turn evals
+    # are byte-identical). Phase 1 scoped chat pins one KB (SingleKBRouter);
+    # Phase 5 multi-KB chat passes an LLMRouter. Same slot — principle #4.
     return QueryPipeline([
+        CondenseQuestion(),
         router or SingleKBRouter(),
         Retrieve(top_k=settings.retrieve_candidates),
         Rerank(top_k=settings.rerank_top_k,

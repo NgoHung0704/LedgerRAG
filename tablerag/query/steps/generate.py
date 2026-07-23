@@ -8,6 +8,7 @@ in the user's language, whatever it is (constraint C2: no hardcoded locale).
 
 from __future__ import annotations
 
+import re
 from typing import AsyncIterator
 
 from tablerag.models.base import Msg
@@ -20,6 +21,10 @@ the numbered sources provided. Rules:
 - LANGUAGE: write the ENTIRE answer in the same language as the question. \
 Never switch language part-way through, and never answer in a language the \
 question was not asked in.
+- CONVERSATION: earlier turns may be shown to help you understand a follow-up \
+(what "it", "that year" or "this class" refers to). Use them ONLY to interpret \
+the question — never as a source of facts. Every figure in your answer must \
+come from the numbered sources below, even if an earlier turn stated it.
 - STATE THE ANSWER IN PROSE. Pasting a table is not an answer: name the value \
 in a sentence. Add a table only as extra support, never instead of the answer.
 - Several sources can be similar-looking tables from DIFFERENT documents \
@@ -68,6 +73,23 @@ def build_context_block(ctx: QueryContext) -> str:
         _render_source(c.index, b) for c, b in zip(ctx.citations, ctx.sources))
 
 
+def build_history_block(ctx: QueryContext) -> str:
+    """Recent turns as a compact preamble so the model can resolve a follow-up.
+    Assistant answers are trimmed and stripped of their [n] markers — those
+    referred to a PREVIOUS turn's sources, absent here, so leaving them in would
+    invite stray citations. Returns '' when there is no history."""
+    if not ctx.history:
+        return ""
+    lines = []
+    for role, content in ctx.history:
+        who = "User" if role == "user" else "Assistant"
+        text = re.sub(r"\[\d+\]", "", content).strip()
+        if len(text) > 300:
+            text = text[:300] + "…"
+        lines.append(f"{who}: {text}")
+    return "Conversation so far:\n" + "\n".join(lines) + "\n\n"
+
+
 class GenerateAnswer:
     async def stream(self, ctx: QueryContext) -> AsyncIterator[str]:
         if not ctx.sources:
@@ -80,6 +102,7 @@ class GenerateAnswer:
         messages = [
             Msg(role="system", content=SYSTEM_PROMPT),
             Msg(role="user", content=(
+                f"{build_history_block(ctx)}"
                 f"Sources:\n\n{build_context_block(ctx)}\n\n"
                 f"Question: {ctx.question}")),
         ]

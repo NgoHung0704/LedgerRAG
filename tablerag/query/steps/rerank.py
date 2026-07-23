@@ -63,7 +63,7 @@ class Rerank:
                 ctx.hits = diversify_by_document(ctx.hits, self.fallback_top_k)
                 return ctx
             reranker = get_provider("reranker")
-            scores = await reranker.rerank(ctx.question,
+            scores = await reranker.rerank(ctx.search_query,
                                            [text for _, text in pairs])
             ranked = [hit for _, (hit, _) in
                       sorted(zip(scores, pairs), key=lambda x: x[0],

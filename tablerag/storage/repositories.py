@@ -471,3 +471,19 @@ def add_message(s: Session, session_id: uuid.UUID, role: str, content: str,
     s.add(msg)
     s.flush()
     return msg
+
+
+def get_recent_messages(s: Session, session_id: uuid.UUID,
+                        limit: int = 6) -> list[tuple[str, str]]:
+    """The last `limit` turns of a session, oldest→newest, as (role, content).
+
+    Powers multi-turn: the query pipeline reads the thread to turn a follow-up
+    ("et pour la classe II ?") into a standalone search query and to let the
+    answer resolve what the user meant. Facts still come only from freshly
+    retrieved sources — history is context for understanding, never a source."""
+    rows = list(s.scalars(
+        select(ChatMessage)
+        .where(ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .limit(limit)))
+    return [(m.role, m.content) for m in reversed(rows)]

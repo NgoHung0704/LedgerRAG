@@ -8,7 +8,7 @@ JSONB on Postgres with a plain-JSON fallback so unit tests can run on SQLite.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
@@ -177,7 +177,13 @@ class ChatMessage(Base):
     content: Mapped[str] = mapped_column(Text)
     citations: Mapped[list | None] = mapped_column(JSONVariant, nullable=True)
     verification: Mapped[dict | None] = mapped_column(JSONVariant, nullable=True)
-    created_at: Mapped[datetime] = _created_at()
+    # per-row client timestamp, not func.now(): a multi-KB turn writes the user
+    # AND assistant message in ONE transaction, where func.now() (transaction
+    # time) would tie and scramble history order. microsecond precision keeps a
+    # thread ordered so follow-up condensing sees the turns as they happened.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        server_default=func.now())
 
 
 class AuditEvent(Base):

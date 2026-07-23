@@ -20,13 +20,16 @@ class Retrieve:
 
     async def run(self, ctx: QueryContext) -> QueryContext:
         embedder = get_provider("embedder")
-        [query_vector] = await embedder.embed([ctx.question])
+        # search on the standalone query: on a follow-up this is the condensed
+        # question, so dense + sparse both see the full intent, not a fragment
+        query = ctx.search_query
+        [query_vector] = await embedder.embed([query])
         store = get_vector_store()
         hits = []
         for collection in ALL_COLLECTIONS:
             for hit in store.search(collection, query_vector.dense,
                                     ctx.routed_kb_ids, self.top_k,
-                                    query_text=ctx.question):
+                                    query_text=query):
                 hit.payload["_collection"] = collection
                 hits.append(hit)
         hits.sort(key=lambda h: h.score, reverse=True)

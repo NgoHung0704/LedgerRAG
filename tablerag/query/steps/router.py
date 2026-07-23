@@ -110,7 +110,7 @@ class LLMRouter:
             return ctx
 
         try:
-            chosen = await self._route(ctx.question, kbs)
+            chosen = await self._route(ctx.search_query, kbs)
         except Exception:  # noqa: BLE001 — routing must never kill the query
             logger.exception("LLM routing failed; searching all KBs")
             chosen = []

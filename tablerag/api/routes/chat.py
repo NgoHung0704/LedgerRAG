@@ -40,7 +40,7 @@ def _sse(payload: dict) -> str:
 @router.post("/kbs/{kb_id}/chat")
 async def chat(kb_id: uuid.UUID, body: ChatRequest,
                user: User = Depends(current_user)) -> StreamingResponse:
-    def prepare() -> tuple[uuid.UUID, str | None, bool]:
+    def prepare() -> tuple[uuid.UUID, str | None, bool, list[tuple[str, str]]]:
         with session_scope() as s:
             kb = repo.get_kb(s, kb_id)
             if kb is None:
@@ -52,15 +52,19 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest,
             if verify is None:
                 verify = kb_config.get("verify")
             session = repo.get_or_create_session(s, kb_id, body.session_id)
+            # load the thread BEFORE recording this turn, so history is the
+            # prior turns only (multi-turn: the pipeline condenses follow-ups)
+            history = repo.get_recent_messages(s, session.id)
             repo.add_message(s, session.id, "user", body.question)
             repo.log_audit(s, user.username, "query", kb_id=kb_id,
                            detail={"question": body.question[:200]})
-            return session.id, locale, verify
+            return session.id, locale, verify, history
 
-    session_id, locale, verify = await asyncio.to_thread(prepare)
+    session_id, locale, verify, history = await asyncio.to_thread(prepare)
 
     async def event_stream():
-        ctx = QueryContext(kb_id=kb_id, question=body.question, locale=locale)
+        ctx = QueryContext(kb_id=kb_id, question=body.question, locale=locale,
+                           history=history)
         try:
             async for kind, payload in default_pipeline(verify=verify).stream(ctx):
                 if kind == "citations":
@@ -101,7 +105,7 @@ async def chat_multi(body: MultiChatRequest,
     contract as the scoped endpoint, plus a `routing` field on `done`."""
     from tablerag.query.steps.router import LLMRouter
 
-    def prepare() -> tuple[list[uuid.UUID], str | None]:
+    def prepare() -> tuple[list[uuid.UUID], str | None, list[tuple[str, str]]]:
         with session_scope() as s:
             kbs = repo.list_kbs(s)
             if not kbs:
@@ -116,16 +120,21 @@ async def chat_multi(body: MultiChatRequest,
             scope = [by_id[k] for k in pinned] if pinned else kbs
             locales = {(kb.config or {}).get("locale") for kb in scope}
             locale = locales.pop() if len(locales) == 1 else None
-            return pinned, locale
+            # continuing a thread: load its prior turns for follow-up condensing.
+            # this turn's messages are written later in persist(), so they are
+            # excluded. a first turn (no session_id) has no history.
+            history = (repo.get_recent_messages(s, body.session_id)
+                       if body.session_id else [])
+            return pinned, locale, history
 
-    pinned, locale = await asyncio.to_thread(prepare)
+    pinned, locale, history = await asyncio.to_thread(prepare)
 
     async def event_stream():
         # kb_id is unused when pinned/routed drives retrieval; keep a stable
         # placeholder (first pinned, else a nil uuid resolved after routing)
         ctx = QueryContext(kb_id=pinned[0] if pinned else uuid.UUID(int=0),
                            question=body.question, locale=locale,
-                           pinned_kb_ids=pinned or None)
+                           pinned_kb_ids=pinned or None, history=history)
         try:
             pipeline = default_pipeline(verify=body.verify, router=LLMRouter())
             async for kind, payload in pipeline.stream(ctx):
