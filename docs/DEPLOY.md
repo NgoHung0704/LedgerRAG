@@ -79,7 +79,13 @@ Open `http://localhost:3000`, create a knowledge base (set its **number
 locale**, e.g. `fr`), drag documents in, and wait for `done`. Then:
 
 - **Describe** the KB (one click, "Suggest from documents") — the description
-  is what the router reads to pick this KB in multi-KB chat.
+  is what the router reads to pick this KB in multi-KB chat. When two KBs share
+  vocabulary, spell out what sets them apart, or the router confuses them. A job
+  grid keyed by "classe/groupe d'emploi" and a salary agreement also keyed by
+  "classe d'emploi" look alike; say what each *uniquely* holds — e.g. the grid
+  is "cotation (points), classification des postes, **pas de salaires**" and the
+  agreement is "**salaires/montants en euros**, barèmes (unique + adaptés par
+  groupe et ancienneté)". `make eval-routing` measures this.
 - **Chat** answers with page-level citations; numbers are quoted exactly and a
   table read unreliably shows its original image instead of a guess.
 - The **Review** tab lists any tables the parser flagged — check them against
@@ -108,6 +114,8 @@ originals) with a checksum manifest; restore commands are printed at the end.
 - `make eval-tables` — per-cell table-parse accuracy (needs the parser endpoint).
 - `make eval-qa KB=<id>` — answer quality on your own question set.
 - `make eval-routing` — routing accuracy across several KBs.
+- `make eval-followup` — multi-turn: does a fragment follow-up resolve against
+  the thread? `ARGS="--ablate --auto-route"` shows the lift memory provides.
 
 The eval question sets are assets: grow them from real questions (a 👎 in chat
 is a question worth adding).

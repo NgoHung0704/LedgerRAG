@@ -8,3 +8,4 @@
 {"id": "r8", "question": "Quelles activités relèvent du domaine professionnel « Administration et finance » ?", "expected_kbs": ["Glossaire"]}
 {"id": "r9", "question": "Quelle est la cotation du poste d'Acheteur(se), et que signifie l'expression « domaine professionnel » ?", "expected_kbs": ["CETIAT", "Glossaire"]}
 {"id": "r10", "question": "Quelle est la cotation de l'Ingénieur(e) Commercial(e) et le salaire minimum hiérarchique de sa classe d'emploi ?", "expected_kbs": ["CETIAT", "Avenant"]}
+{"id": "r11", "question": "Dans le barème adapté du groupe F, quel est le montant pour la classe 12 entre 2 et 4 ans d'expérience ?", "expected_kbs": ["Avenant"]}
