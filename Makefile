@@ -44,20 +44,21 @@ eval-flags:
 
 # ---- Phase 4: answer-quality gate (needs the full live stack) --------
 # Usage: make eval-qa KB=<kb_id>   (questions: tests/eval/qa/questions.jsonl)
+# Extra flags via ARGS, e.g. make eval-qa KB=<id> ARGS="--api http://host:8000"
 eval-qa:
-	python tests/eval/qa/run_eval_qa.py --kb $(KB)
+	python tests/eval/qa/run_eval_qa.py --kb $(KB) $(ARGS)
 
 # ---- Phase 5: routing gate (needs several KBs; scores router, not answers) --
 # Split the 3 sample PDFs into 3 KBs whose names contain CETIAT / Avenant /
 # Glossaire, then auto-route each question via POST /api/chat.
 eval-routing:
-	python tests/eval/qa/run_eval_routing.py --questions tests/eval/qa/routing.jsonl
+	python tests/eval/qa/run_eval_routing.py --questions tests/eval/qa/routing.jsonl $(ARGS)
 
 # ---- Phase 5: multi-turn gate (does condensing recover a follow-up?) --------
 # Each line is a conversation; the follow-up is a fragment that only resolves
-# with the thread. Add --ablate to measure the lift over a stateless ask.
+# with the thread. make eval-followup ARGS=--ablate  measures the lift.
 eval-followup:
-	python tests/eval/qa/run_eval_followup.py --questions tests/eval/qa/followups.jsonl
+	python tests/eval/qa/run_eval_followup.py --questions tests/eval/qa/followups.jsonl $(ARGS)
 
 # ---- Phase 4: hybrid migration (run INSIDE the api container) --------
 # docker compose exec api python -m tablerag.scripts.reindex_all
