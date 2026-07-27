@@ -112,6 +112,26 @@ services:
       minio: { condition: service_healthy }
       qdrant: { condition: service_started }
 
+  # consume folder (Paperless-style bulk ingest). Drop PDFs into
+  # ./consume/<KB name>/ on the host and they are auto-ingested into that KB
+  # (created if missing) and archived to ./consume/.processed/. Files must sit
+  # in a subfolder named after the target KB; a PDF in the root is ignored.
+  consumer:
+    build: .
+    command: python -m tablerag.ingestion.consumer
+    environment:
+      <<: *backend-env
+      LEDGERRAG_CONSUME_DIR: /consume
+    volumes:
+      - ./consume:/consume
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+      qdrant: { condition: service_started }
+
   frontend:
     build:
       context: ./frontend

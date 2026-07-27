@@ -40,6 +40,20 @@ def list_kbs(s: Session) -> list[KnowledgeBase]:
     return list(s.scalars(select(KnowledgeBase).order_by(KnowledgeBase.created_at)))
 
 
+def get_or_create_kb_by_name(s: Session, name: str,
+                             config: dict | None = None) -> KnowledgeBase:
+    """Match a KB by name (case-insensitive, oldest wins) or create it. Powers
+    the consume folder, where a subfolder name maps to a KB. Names are not
+    unique in the schema, so an existing match is reused rather than duplicated."""
+    existing = s.scalars(
+        select(KnowledgeBase)
+        .where(func.lower(KnowledgeBase.name) == name.lower())
+        .order_by(KnowledgeBase.created_at)).first()
+    if existing is not None:
+        return existing
+    return create_kb(s, name=name, config=config)
+
+
 def kb_document_status_counts(s: Session) -> dict[uuid.UUID, dict[str, int]]:
     """Per-KB document counts grouped by status, in a single query — powers the
     at-a-glance processing/failed indicator on the KB list without an N+1 scan

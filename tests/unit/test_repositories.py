@@ -15,6 +15,19 @@ def test_kb_crud(db_session):
     assert [k.id for k in repo.list_kbs(db_session)] == [kb.id]
 
 
+def test_get_or_create_kb_by_name(db_session):
+    """Consume folder maps a subfolder name to a KB: reuse an existing one
+    (case-insensitive) rather than duplicating; create when there's no match."""
+    created = repo.get_or_create_kb_by_name(db_session, "ACCORDS")
+    # a different-case name resolves to the same KB, not a second one
+    again = repo.get_or_create_kb_by_name(db_session, "accords")
+    assert again.id == created.id
+    # a genuinely new name creates a new KB
+    other = repo.get_or_create_kb_by_name(db_session, "DHR")
+    assert other.id != created.id
+    assert {k.name for k in repo.list_kbs(db_session)} == {"ACCORDS", "DHR"}
+
+
 def test_document_status_transitions(db_session):
     _, doc = _seed_doc(db_session)
     assert doc.status == "queued"

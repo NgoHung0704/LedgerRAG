@@ -146,6 +146,15 @@ class Settings(BaseSettings):
     # images sent to the VLM are upscaled to at least this width (scans)
     vlm_min_image_width: int = 1400
 
+    # consume folder (Paperless-style bulk ingest). Empty = disabled. Drop PDFs
+    # into consume_dir/<KB name>/*.pdf; the consumer service (tablerag.ingestion
+    # .consumer) polls, ingests into that KB (created if missing), and archives
+    # the file. A file is only taken once unmodified for consume_stability_secs,
+    # so a half-copied upload is never grabbed.
+    consume_dir: str = ""
+    consume_interval: float = 5.0
+    consume_stability_secs: float = 5.0
+
     cors_origins: list[str] = ["*"]
 
 
