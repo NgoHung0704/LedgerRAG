@@ -66,7 +66,7 @@ export default function HomePage() {
           {kbs.map((kb) => (
             <div key={kb.id} className="relative">
               <Link href={`/kb/${kb.id}`}>
-                <Card className="group h-full p-4 transition-shadow hover:shadow-md">
+                <Card className="group h-full p-4 transition-colors hover:border-indigo-300 dark:hover:border-indigo-700">
                   <div className="mb-3 flex items-start justify-between">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
                       <Database size={18} />
