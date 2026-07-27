@@ -30,6 +30,15 @@ dev = [
     "pytest-asyncio>=0.23",
     "ruff>=0.4",
 ]
+# MCP server (tablerag.mcp.server): exposes KBs to Claude Desktop / Cursor /
+# Claude Code. Runs on the machine with the MCP client, wraps the HTTP API —
+# so it is not needed by the API/worker deployment. httpx is already a core dep.
+mcp = [
+    "mcp>=1.2",
+]
+
+[project.scripts]
+ledgerrag-mcp = "tablerag.mcp.server:main"
 
 [tool.setuptools.packages.find]
 include = ["tablerag*"]
