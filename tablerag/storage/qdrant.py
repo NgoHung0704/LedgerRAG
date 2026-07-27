@@ -47,7 +47,11 @@ class SearchHit:
 class VectorStore:
     def __init__(self, url: str | None = None, dim: int | None = None):
         settings = get_settings()
-        self.client = QdrantClient(url=url or settings.qdrant_url)
+        # timeout is explicit: the client defaults to 5s, too tight for a
+        # synchronous upsert(wait=True) against a Qdrant busy with a bulk upload
+        # (see settings.qdrant_timeout).
+        self.client = QdrantClient(url=url or settings.qdrant_url,
+                                   timeout=settings.qdrant_timeout)
         self.dim = dim or settings.embedding_dim
         self._sparse_ready: dict[str, bool] = {}
 
@@ -160,10 +164,24 @@ class VectorStore:
         kb_id) — used when deleting a whole knowledge base."""
         self._delete_by(key="kb_id", value=str(kb_id))
 
+    def delete_docs(self, doc_ids: list[uuid.UUID]) -> None:
+        """Batch delete for the UI's multi-select: every vector of many
+        documents in ONE filtered delete per collection (MatchAny on doc_id),
+        instead of N×3 per-document round-trips. A 40-document delete stays a
+        handful of calls, not hundreds — so the request can't outrun the
+        browser's fetch timeout (the 'NetworkError' the bulk delete hit)."""
+        if not doc_ids:
+            return
+        self._delete_by_match(qm.FieldCondition(
+            key="doc_id",
+            match=qm.MatchAny(any=[str(d) for d in doc_ids])))
+
     def _delete_by(self, key: str, value: str) -> None:
-        flt = qm.Filter(must=[
-            qm.FieldCondition(key=key, match=qm.MatchValue(value=value)),
-        ])
+        self._delete_by_match(
+            qm.FieldCondition(key=key, match=qm.MatchValue(value=value)))
+
+    def _delete_by_match(self, condition: "qm.FieldCondition") -> None:
+        flt = qm.Filter(must=[condition])
         for name in ALL_COLLECTIONS:
             if self.client.collection_exists(name):
                 self.client.delete(collection_name=name,

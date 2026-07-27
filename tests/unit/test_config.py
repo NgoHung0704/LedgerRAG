@@ -30,3 +30,11 @@ def test_no_model_is_hardcoded_as_requirement():
     for role in ("parser", "embedder", "chat", "reranker"):
         endpoint = settings.models.for_role(role)
         assert endpoint.provider in ("ollama", "openai_compat", "disabled")
+
+
+def test_qdrant_timeout_default_and_override(monkeypatch):
+    """The bulk-upload fix: a widened, configurable Qdrant timeout (the library
+    default of 5s is what a concurrent upload trips)."""
+    assert Settings(_env_file=None).qdrant_timeout == 60
+    monkeypatch.setenv("LEDGERRAG_QDRANT_TIMEOUT", "120")
+    assert Settings(_env_file=None).qdrant_timeout == 120

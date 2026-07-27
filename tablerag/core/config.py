@@ -80,6 +80,12 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://ledgerrag:ledgerrag@localhost:5432/ledgerrag"
     redis_url: str = "redis://localhost:6379/0"
     qdrant_url: str = "http://localhost:6333"
+    # Qdrant REST timeout (seconds). The client library defaults to 5s, which a
+    # bulk upload trips: many workers issue synchronous upsert(wait=True) at once
+    # and each request queues past 5s -> ResponseHandlingException: timed out ->
+    # the doc is marked failed (and concurrent chat searches fail the same way).
+    # Widen it so a busy Qdrant is waited on, not abandoned.
+    qdrant_timeout: int = 60
     object_store: ObjectStoreConfig = ObjectStoreConfig()
     models: ModelsConfig = ModelsConfig()
     auth: AuthConfig = AuthConfig()

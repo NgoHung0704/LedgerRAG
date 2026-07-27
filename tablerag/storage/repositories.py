@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from tablerag.storage.orm import (
@@ -38,6 +38,20 @@ def get_kb(s: Session, kb_id: uuid.UUID) -> KnowledgeBase | None:
 
 def list_kbs(s: Session) -> list[KnowledgeBase]:
     return list(s.scalars(select(KnowledgeBase).order_by(KnowledgeBase.created_at)))
+
+
+def kb_document_status_counts(s: Session) -> dict[uuid.UUID, dict[str, int]]:
+    """Per-KB document counts grouped by status, in a single query — powers the
+    at-a-glance processing/failed indicator on the KB list without an N+1 scan
+    (one aggregate for all KBs, not one query per card)."""
+    rows = s.execute(
+        select(Document.kb_id, Document.status, func.count())
+        .group_by(Document.kb_id, Document.status)
+    ).all()
+    counts: dict[uuid.UUID, dict[str, int]] = {}
+    for kb_id, status, count in rows:
+        counts.setdefault(kb_id, {})[status] = count
+    return counts
 
 
 # ---------------------------------------------------------------- documents
@@ -132,6 +146,19 @@ def delete_document(s: Session, doc_id: uuid.UUID) -> uuid.UUID | None:
     s.delete(doc)
     s.flush()
     return kb_id
+
+
+def delete_documents(s: Session, doc_ids: list[uuid.UUID]) -> int:
+    """Bulk-delete document rows in one transaction (elements, chunks,
+    table_element, records cascade). ORM-level delete so cascades apply on
+    SQLite too. Returns how many rows existed and were removed."""
+    if not doc_ids:
+        return 0
+    docs = list(s.scalars(select(Document).where(Document.id.in_(doc_ids))))
+    for doc in docs:
+        s.delete(doc)
+    s.flush()
+    return len(docs)
 
 
 def set_document_status(s: Session, doc_id: uuid.UUID, status: str,

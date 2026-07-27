@@ -15,6 +15,9 @@ import asyncio
 import logging
 import uuid
 
+import httpx
+from qdrant_client.http.exceptions import ResponseHandlingException
+
 from tablerag.core.config import get_settings
 from tablerag.core.queue import TASK_PROCESS_DOCUMENT, celery_app
 from tablerag.ingestion.chunking import chunk_text
@@ -37,6 +40,23 @@ from tablerag.storage.qdrant import (
 logger = logging.getLogger(__name__)
 
 EMBED_BATCH = 32
+
+# ingestion retries transient infrastructure errors (a Qdrant or model call that
+# timed out / dropped under bulk-upload load) with backoff, instead of marking
+# the document permanently failed on the first hiccup. Permanent errors — a
+# broken PDF (PdfError), a value error — are never retried.
+MAX_INGEST_RETRIES = 3
+_TRANSIENT_ERRORS = (ResponseHandlingException, httpx.TransportError)
+
+
+def _is_transient(exc: BaseException) -> bool:
+    return isinstance(exc, _TRANSIENT_ERRORS)
+
+
+def _retry_countdown(retries: int) -> int:
+    """Exponential backoff, capped: 5s, 10s, 20s, 40s, 60s… — a transient
+    overload gets room to clear before the next attempt."""
+    return min(60, 5 * 2 ** retries)
 
 
 def element_image_key(kb_id, doc_id, element_id) -> str:
@@ -319,6 +339,16 @@ def process_document(self, doc_id_str: str) -> None:
                     len(summaries_out))
 
     except Exception as e:  # noqa: BLE001 — always record a human-readable failure
+        # transient infra error (a timeout/connection drop under load): retry
+        # with backoff instead of failing the document on the first hiccup.
+        if _is_transient(e) and self.request.retries < MAX_INGEST_RETRIES:
+            logger.warning("doc %s ingestion hit a transient error (%s: %s); "
+                           "retry %d/%d", doc_id, type(e).__name__, e,
+                           self.request.retries + 1, MAX_INGEST_RETRIES)
+            with session_scope() as s:
+                repo.set_document_status(s, doc_id, "queued")
+            raise self.retry(exc=e, max_retries=MAX_INGEST_RETRIES,
+                             countdown=_retry_countdown(self.request.retries))
         message = str(e) if isinstance(e, PdfError) else \
             f"Processing failed: {type(e).__name__}: {e}"
         logger.exception("doc %s ingestion failed", doc_id)

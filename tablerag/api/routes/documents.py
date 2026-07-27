@@ -95,13 +95,27 @@ def delete_document(doc_id: uuid.UUID) -> Response:
 @router.post("/kbs/{kb_id}/documents/bulk-delete")
 def bulk_delete_documents(kb_id: uuid.UUID, body: BulkDeleteRequest) -> dict:
     """Delete several documents at once (select-many / delete-all in the UI).
-    Only documents that belong to this KB are touched."""
+    Only documents that belong to this KB are touched.
+
+    Batched, not per-document: a single MatchAny vector delete per collection
+    and one Postgres delete, instead of N×(3 Qdrant round-trips) in one request
+    — deleting dozens of documents used to run long enough for the browser to
+    abort the fetch ('NetworkError'). External stores go first so a later
+    Postgres failure can't leave orphaned vectors serving stale answers."""
     with session_scope() as s:
         if repo.get_kb(s, kb_id) is None:
             raise HTTPException(404, "knowledge base not found")
         owned = {d.id for d in repo.list_documents(s, kb_id)}
-    deleted = sum(1 for doc_id in body.doc_ids
-                  if doc_id in owned and _purge_document(doc_id))
+    targets = [doc_id for doc_id in body.doc_ids if doc_id in owned]
+    if not targets:
+        return {"deleted": 0}
+
+    get_vector_store().delete_docs(targets)
+    store = get_object_store()
+    for doc_id in targets:
+        store.delete_prefix(doc_prefix(kb_id, doc_id))
+    with session_scope() as s:
+        deleted = repo.delete_documents(s, targets)
     return {"deleted": deleted}
 
 

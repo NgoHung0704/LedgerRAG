@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
 from tablerag.core.auth import User, current_user
-from tablerag.core.schemas import KBCreate, KBOut, KBUpdate
+from tablerag.core.schemas import KBCreate, KBDocStatus, KBOut, KBUpdate
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 
@@ -41,11 +41,25 @@ def create_kb(body: KBCreate) -> KBOut:
         return KBOut.model_validate(kb, from_attributes=True)
 
 
+_PROCESSING_STATES = ("queued", "parsing", "indexing")
+
+
 @router.get("", response_model=list[KBOut])
 def list_kbs() -> list[KBOut]:
     with session_scope() as s:
-        return [KBOut.model_validate(kb, from_attributes=True)
-                for kb in repo.list_kbs(s)]
+        counts = repo.kb_document_status_counts(s)
+        out: list[KBOut] = []
+        for kb in repo.list_kbs(s):
+            dto = KBOut.model_validate(kb, from_attributes=True)
+            c = counts.get(kb.id, {})
+            dto.doc_status = KBDocStatus(
+                total=sum(c.values()),
+                processing=sum(c.get(st, 0) for st in _PROCESSING_STATES),
+                done=c.get("done", 0),
+                failed=c.get("failed", 0),
+            )
+            out.append(dto)
+        return out
 
 
 @router.patch("/{kb_id}", response_model=KBOut)

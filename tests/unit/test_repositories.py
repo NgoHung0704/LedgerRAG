@@ -29,6 +29,53 @@ def test_document_status_transitions(db_session):
     assert repo.get_document(db_session, doc.id).error == "Broken PDF"
 
 
+def test_kb_document_status_counts(db_session):
+    """The KB list's at-a-glance indicator: one grouped query returns each KB's
+    document counts by status; KBs with no documents are simply absent."""
+    kb_a = repo.create_kb(db_session, "A", "")
+    kb_b = repo.create_kb(db_session, "B", "")
+    repo.create_kb(db_session, "empty", "")  # no documents -> not in the map
+
+    for status in ("done", "done", "parsing", "failed"):
+        doc = repo.create_document(db_session, kb_a.id, "d.pdf", "k/d/o.pdf")
+        repo.set_document_status(db_session, doc.id, status)
+    doc_b = repo.create_document(db_session, kb_b.id, "d.pdf", "k/d/o.pdf")
+    repo.set_document_status(db_session, doc_b.id, "done")
+
+    counts = repo.kb_document_status_counts(db_session)
+    assert counts[kb_a.id] == {"done": 2, "parsing": 1, "failed": 1}
+    assert counts[kb_b.id] == {"done": 1}
+    assert all(kb.name != "empty" or kb.id not in counts
+               for kb in repo.list_kbs(db_session))
+
+
+def test_delete_documents_bulk_and_cascade(db_session):
+    """Bulk delete removes the chosen docs (and their elements/chunks cascade)
+    in one call, leaves the rest, and reports the real count."""
+    from tablerag.storage.orm import Chunk, Element
+
+    kb = repo.create_kb(db_session, "HR", "")
+    docs = []
+    for i in range(3):
+        doc = repo.create_document(db_session, kb.id, f"{i}.pdf", f"k/{i}/o.pdf")
+        el = repo.add_element(db_session, doc.id, page=1, bbox=[0, 0, 1, 1],
+                              type_="text", crop_image_path="c.png")
+        repo.add_chunks(db_session, el.id, [("x", 1)])
+        docs.append(doc)
+
+    deleted = repo.delete_documents(db_session, [docs[0].id, docs[1].id])
+    assert deleted == 2
+    remaining = [d.id for d in repo.list_documents(db_session, kb.id)]
+    assert remaining == [docs[2].id]
+    # cascade reached elements + chunks of the deleted docs
+    assert db_session.query(Element).count() == 1
+    assert db_session.query(Chunk).count() == 1
+
+    # empty input and unknown ids are no-ops, not errors
+    assert repo.delete_documents(db_session, []) == 0
+    assert repo.delete_documents(db_session, [uuid.uuid4()]) == 0
+
+
 def test_reprocess_is_idempotent(db_session):
     """Phase 1 DoD: retry after a mid-job crash must not duplicate elements."""
     _, doc = _seed_doc(db_session)

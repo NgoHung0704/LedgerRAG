@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Database, FolderPlus, Globe, Plus } from "lucide-react";
-import { createKb, getKbs, type KB } from "@/lib/api";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Database,
+  FolderPlus,
+  Globe,
+  Plus,
+} from "lucide-react";
+import { createKb, getKbs, type KB, type KBDocStatus } from "@/lib/api";
 import { Button, Card, EmptyState, Modal, Spinner, inputCls } from "@/components/ui";
 import KbCardMenu from "@/components/KbCardMenu";
 
@@ -22,14 +29,29 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
-  const refresh = () =>
-    getKbs()
-      .then(setKbs)
-      .catch((e) => setError(String(e)));
+  const refresh = useCallback(
+    () =>
+      getKbs()
+        .then(setKbs)
+        .catch((e) => setError(String(e))),
+    [],
+  );
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [refresh]);
+
+  // keep the list's status badges live while any KB is still ingesting, the
+  // same way DocumentsPanel polls inside a KB — so "processing → ready/failed"
+  // updates here without a manual reload
+  const anyProcessing = (kbs ?? []).some(
+    (k) => (k.doc_status?.processing ?? 0) > 0,
+  );
+  useEffect(() => {
+    if (!anyProcessing) return;
+    const t = setInterval(refresh, 3000);
+    return () => clearInterval(t);
+  }, [anyProcessing, refresh]);
 
   return (
     <div>
@@ -83,8 +105,11 @@ export default function HomePage() {
                   <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-slate-500 dark:text-slate-400">
                     {kb.description || "No description — add one, the router will use it."}
                   </p>
-                  <div className="mt-3 text-[11px] text-slate-400 dark:text-slate-500">
-                    {new Date(kb.created_at).toLocaleDateString()}
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <KbStatus s={kb.doc_status} />
+                    <span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-500">
+                      {new Date(kb.created_at).toLocaleDateString()}
+                    </span>
                   </div>
                 </Card>
               </Link>
@@ -104,6 +129,55 @@ export default function HomePage() {
             refresh();
           }}
         />
+      )}
+    </div>
+  );
+}
+
+const plural = (n: number) => (n === 1 ? "" : "s");
+
+// Aggregate ingestion state of a KB, shown on its list card. One pill per
+// non-zero state (processing / failed / ready) so a glance answers "is it done,
+// still parsing, or did something fail?" without opening the KB.
+function KbStatus({ s }: { s?: KBDocStatus | null }) {
+  if (!s || s.total === 0)
+    return (
+      <span className="text-[11px] text-slate-400 dark:text-slate-500">
+        No documents
+      </span>
+    );
+
+  const pill =
+    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {s.processing > 0 && (
+        <span
+          className={`${pill} bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900`}
+          title={`${s.processing} document${plural(s.processing)} still parsing`}
+        >
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+          </span>
+          {s.processing} processing
+        </span>
+      )}
+      {s.failed > 0 && (
+        <span
+          className={`${pill} bg-red-50 text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900`}
+          title={`${s.failed} document${plural(s.failed)} failed to process`}
+        >
+          <AlertTriangle size={11} /> {s.failed} failed
+        </span>
+      )}
+      {s.done > 0 && (
+        <span
+          className={`${pill} bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900`}
+          title={`${s.done} document${plural(s.done)} ready`}
+        >
+          <CheckCircle2 size={11} /> {s.done} ready
+        </span>
       )}
     </div>
   );

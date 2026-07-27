@@ -36,12 +36,23 @@ class KBUpdate(BaseModel):
     instructions: str | None = None
 
 
+class KBDocStatus(BaseModel):
+    """At-a-glance ingestion state of a KB's documents, for the KB list card:
+    is it done, still processing, or does it hold failed files? Populated only
+    by the list endpoint (None elsewhere — single-KB reads don't need it)."""
+    total: int = 0
+    processing: int = 0  # queued + parsing + indexing
+    done: int = 0
+    failed: int = 0
+
+
 class KBOut(BaseModel):
     id: uuid.UUID
     name: str
     description: str
     config: dict = {}
     created_at: datetime
+    doc_status: KBDocStatus | None = None
 
 
 class DocumentOut(BaseModel):

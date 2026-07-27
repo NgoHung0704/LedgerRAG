@@ -1,12 +1,20 @@
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export type KBDocStatus = {
+  total: number;
+  processing: number; // queued + parsing + indexing
+  done: number;
+  failed: number;
+};
+
 export type KB = {
   id: string;
   name: string;
   description: string;
   config: { locale?: string; verify?: boolean; instructions?: string };
   created_at: string;
+  doc_status?: KBDocStatus | null; // set by the list endpoint only
 };
 
 export type Doc = {
