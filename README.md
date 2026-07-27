@@ -110,4 +110,11 @@ RUN_INTEGRATION=1 pytest tests/integration -q   # needs docker compose stack
 
 Rule from the spec: **prompts are code** — any prompt/model change must re-run
 the relevant eval (`make spike-grade` now; `make eval-tables` / `make eval-qa`
-from Phases 2/4) and paste results into the PR.
+from Phases 2/4; `make eval-adversarial` for the guardrail red-team) and paste
+results into the PR.
+
+The guardrail layer is red-teamed as its own gate: `make eval-adversarial`
+attacks the verifier, safety-core prompt and router bounds deterministically
+(no model, CI-safe — currently 24/24), and `make eval-attacks KB=<id>` pushes
+injection / override / leak attacks through the live stack. See
+[tests/eval/adversarial/README.md](tests/eval/adversarial/README.md).

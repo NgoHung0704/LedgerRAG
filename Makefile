@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-qa eval-routing eval-followup lint
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-qa eval-routing eval-followup eval-adversarial eval-attacks lint
 
 up:
 	docker compose up -d --build
@@ -62,6 +62,18 @@ eval-followup:
 
 # ---- Phase 4: hybrid migration (run INSIDE the api container) --------
 # docker compose exec api python -m tablerag.scripts.reindex_all
+
+# ---- Red-team: guardrail invariants (deterministic, no model, CI-safe) ------
+# Attack inputs vs the real guardrail code (verifier, safety-core prompt,
+# router bounds, refusal detector). Target 100%. Re-run on any prompt change.
+eval-adversarial:
+	python tests/eval/adversarial/invariants.py
+
+# ---- Red-team: behavioural attacks (needs the full live stack) --------------
+# Usage: make eval-attacks KB=<kb_id>   (dataset: tests/eval/adversarial/attacks.jsonl)
+# Pushes injection / override / leak attacks through the pipeline, graded as traps.
+eval-attacks:
+	python tests/eval/adversarial/run_attacks.py --kb $(KB) $(ARGS)
 
 lint:
 	ruff check tablerag tests spike

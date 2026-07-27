@@ -643,6 +643,7 @@ router chọn KB theo description, UI kéo-thả thân thiện non-engineer, và
 | Eval bảng (đúng/sai từng ô) | `tests/eval/tables/` + `make eval-tables` | mỗi thay đổi pipeline bảng |
 | Eval Q&A (đáp án + nguồn + câu bẫy) | `tests/eval/qa/` + `make eval-qa` | mỗi thay đổi retrieval/prompt |
 | Eval routing | trong eval-qa, chấm riêng | từ Phase 5 |
+| Red-team guardrail (guardrail bị tấn công) | `tests/eval/adversarial/` — `make eval-adversarial` (bất biến, offline, không cần model) + `make eval-attacks` (hành vi, live) | mỗi thay đổi prompt/verifier/router |
 
 Quy tắc vàng: **mọi thay đổi prompt hoặc model đều phải chạy lại eval liên quan
 và dán kết quả vào PR.** Prompt là code.

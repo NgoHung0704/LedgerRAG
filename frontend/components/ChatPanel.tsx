@@ -60,6 +60,7 @@ export default function ChatPanel({
   const showScope = kbId ? allKbs.length > 1 : allKbs.length >= 1;
   const sessionRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
   // changing what we search starts a fresh conversation thread
   useEffect(() => {
@@ -69,6 +70,14 @@ export default function ChatPanel({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // the composer grows with the question, capped so it never eats the thread
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [question]);
 
   const rate = async (index: number, next: -1 | 1) => {
     const msg = messages[index];
@@ -86,8 +95,8 @@ export default function ChatPanel({
     }
   };
 
-  const ask = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const ask = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const q = question.trim();
     if (!q || busy) return;
     setQuestion("");
@@ -167,26 +176,27 @@ export default function ChatPanel({
             </div>
           ) : (
             <div key={i} className="flex justify-start">
-              <div className="max-w-[88%]">
-                <div
-                  className={`rounded-2xl rounded-bl-md border px-4 py-3 text-sm leading-6 ${
-                    m.error
-                      ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
-                      : "border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
-                  }`}
-                >
-                  {m.content ? (
-                    <AnswerBody
-                      content={m.content}
-                      citations={m.citations}
-                      onOpen={setOpenSource}
-                    />
-                  ) : busy && i === messages.length - 1 ? (
-                    <span className="inline-flex items-center gap-2 text-slate-400">
-                      <Spinner size={14} /> thinking…
-                    </span>
-                  ) : null}
+              <div className="w-full max-w-[92%]">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                  <Sparkles size={12} className="text-indigo-500" /> Assistant
                 </div>
+                {/* the answer reads like a printed document excerpt, straight on
+                    the page — no chat bubble; only errors keep a boxed callout */}
+                {m.error ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+                    {m.content}
+                  </div>
+                ) : m.content ? (
+                  <AnswerBody
+                    content={m.content}
+                    citations={m.citations}
+                    onOpen={setOpenSource}
+                  />
+                ) : busy && i === messages.length - 1 ? (
+                  <span className="inline-flex items-center gap-2 text-slate-400">
+                    <Spinner size={14} /> thinking…
+                  </span>
+                ) : null}
 
                 {m.routing && <RoutedBadge routing={m.routing} />}
 
@@ -251,18 +261,29 @@ export default function ChatPanel({
             />
           </div>
         )}
-        <form onSubmit={ask} className="flex gap-2">
-          <input
-            className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 font-serif text-[15px] placeholder:font-sans placeholder:text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
-            placeholder="Posez votre question… / Ask your question…"
+        <form
+          onSubmit={ask}
+          className="flex items-end gap-2 rounded-xl border border-slate-300 bg-white p-1.5 pl-3 transition-colors focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:ring-indigo-900/40"
+        >
+          <textarea
+            ref={taRef}
+            rows={1}
+            className="flex-1 resize-none border-0 bg-transparent py-1.5 font-serif text-[15px] leading-relaxed text-slate-900 placeholder:font-sans placeholder:text-sm placeholder:text-slate-400 focus:outline-none focus:ring-0 dark:text-slate-100 dark:placeholder:text-slate-500"
+            placeholder="Posez votre question… / Ask your question… (Entrée pour envoyer, Maj+Entrée = nouvelle ligne)"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                ask();
+              }
+            }}
             disabled={busy}
           />
           <button
             type="submit"
             disabled={busy || !question.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
           >
             <Send size={15} />
           </button>

@@ -147,15 +147,25 @@ export default function KbSettings({
             className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
           />
 
-          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Custom instructions
-          </label>
+          <div className="mt-3 flex items-center justify-between">
+            <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+              Operator instructions
+            </label>
+            <span
+              title="These guide tone, focus and format only. The built-in safety rules — answer only from the cited sources, quote numbers exactly, and say when the answer isn't in the documents — always win."
+              className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60"
+            >
+              <ShieldCheck size={11} /> Safety core protected
+            </span>
+          </div>
+          {/* prompts are code — mono reads right, and the chip above makes the
+              immutable-core guarantee legible (they layer on, never override) */}
           <textarea
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
-            rows={3}
-            placeholder="Extra guidance for answers in this KB (tone, focus, format) — e.g. « cite les numéros d'article ». Added on top of the built-in rules; it can't override them."
-            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
+            rows={4}
+            placeholder="Extra guidance for answers in this KB (tone, focus, format) — e.g. « cite les numéros d'article ». Layered on top of the built-in rules; it can never relax them."
+            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 font-mono text-[12px] leading-relaxed placeholder:font-sans placeholder:text-[11px] placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
           />
 
           <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
