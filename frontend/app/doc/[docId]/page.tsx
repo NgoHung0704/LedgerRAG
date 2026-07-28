@@ -14,6 +14,7 @@ import {
   Table2,
 } from "lucide-react";
 import ElementEditor from "@/components/ElementEditor";
+import RecordsTable from "@/components/RecordsTable";
 import {
   API_URL,
   approveElement,
@@ -24,7 +25,6 @@ import {
   type DocumentView,
   type ElementDetail,
   type ElementView,
-  type RecordPreview,
 } from "@/lib/api";
 import { Button, Card, Spinner, StatusPill } from "@/components/ui";
 
@@ -410,7 +410,7 @@ function ElementCard({
                 <RecordsTable
                   records={
                     showAllRecords && detail?.table?.records
-                      ? (detail.table.records as unknown as RecordPreview[])
+                      ? detail.table.records
                       : element.table.records_preview
                   }
                 />
@@ -457,49 +457,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
       {children}
-    </div>
-  );
-}
-
-function RecordsTable({ records }: { records: RecordPreview[] }) {
-  if (records.length === 0) return null;
-  const dimKeys = Object.keys(records[0].dimensions);
-  const metricKeys = Object.keys(records[0].metrics);
-  return (
-    <div className="max-h-72 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">
-      <table className="w-full text-[12px]">
-        <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
-          <tr>
-            {dimKeys.map((k) => (
-              <th key={k} className="border-b border-slate-200 px-2.5 py-1.5 text-left font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                {k}
-              </th>
-            ))}
-            {metricKeys.map((k) => (
-              <th key={k} className="border-b border-slate-200 px-2.5 py-1.5 text-right font-semibold text-indigo-600 dark:border-slate-700 dark:text-indigo-300">
-                {k}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((r, i) => (
-            <tr key={i} className="odd:bg-white even:bg-slate-50/50 dark:odd:bg-transparent dark:even:bg-slate-800/40">
-              {dimKeys.map((k) => (
-                <td key={k} className="px-2.5 py-1 text-slate-700 dark:text-slate-300">
-                  {String(r.dimensions[k] ?? "")}
-                </td>
-              ))}
-              {metricKeys.map((k) => (
-                <td key={k} className="px-2.5 py-1 text-right tabular-nums text-slate-800 dark:text-slate-200"
-                    title={`normalized: ${r.metrics[k] ?? "null"}`}>
-                  {r.raw_values[k] ?? String(r.metrics[k] ?? "—")}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

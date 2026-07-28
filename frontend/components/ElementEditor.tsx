@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { X } from "lucide-react";
 import {
   editElement,
   getElement,
   type ElementDetail,
   type ElementEdit,
 } from "@/lib/api";
-import { Button, Modal, Spinner } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
+import RecordsTable from "@/components/RecordsTable";
 
-/** Manual correction of a parsed element. Loads the full element (text /
- * html / summary / records), lets an admin fix anything, and on save the
- * backend re-indexes so answers use the corrected data. */
+type Tab = "text" | "html" | "records" | "summary";
+
+/** Full-screen split editor: source on the left, live preview on the right, so
+ * you edit the parsed text / table HTML / records and see the result as the app
+ * renders it. On save the element is re-indexed so answers use the correction. */
 export default function ElementEditor({
   elementId,
   onClose,
@@ -26,6 +32,7 @@ export default function ElementEditor({
   const [html, setHtml] = useState("");
   const [summary, setSummary] = useState("");
   const [recordsJson, setRecordsJson] = useState("");
+  const [tab, setTab] = useState<Tab>("text");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,28 +43,49 @@ export default function ElementEditor({
         setText(d.text ?? "");
         setHtml(d.table?.html ?? "");
         setSummary(d.table?.summary ?? "");
-        setRecordsJson(
-          d.table ? JSON.stringify(d.table.records, null, 2) : "",
-        );
+        setRecordsJson(d.table ? JSON.stringify(d.table.records, null, 2) : "");
+        setTab(d.table ? "html" : "text");
       })
       .catch((e) => setError(String(e)));
   }, [elementId]);
+
+  const isTable = !!detail?.table;
+  const tabs: { id: Tab; label: string }[] = isTable
+    ? [
+        { id: "html", label: "HTML" },
+        { id: "records", label: "Records" },
+        { id: "summary", label: "Summary" },
+      ]
+    : [{ id: "text", label: "Text" }];
+
+  // live-parse the records JSON so the preview (and save) can flag errors early
+  const records = useMemo<
+    { ok: true; value: unknown[] } | { ok: false; error: string }
+  >(() => {
+    if (!recordsJson.trim()) return { ok: true, value: [] };
+    try {
+      const parsed = JSON.parse(recordsJson);
+      if (!Array.isArray(parsed))
+        return { ok: false, error: "records must be a JSON array" };
+      return { ok: true, value: parsed };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }, [recordsJson]);
 
   const save = async () => {
     setError(null);
     const edit: ElementEdit = {};
     if (detail?.type === "text") edit.text = text;
     if (detail?.table) {
-      edit.html = html;
-      edit.summary = summary;
-      try {
-        const parsed = JSON.parse(recordsJson);
-        if (!Array.isArray(parsed)) throw new Error("records must be an array");
-        edit.records = parsed;
-      } catch (e) {
-        setError(`Records JSON is invalid: ${e instanceof Error ? e.message : e}`);
+      if (!records.ok) {
+        setError(`Records JSON is invalid: ${records.error}`);
+        setTab("records");
         return;
       }
+      edit.html = html;
+      edit.summary = summary;
+      edit.records = records.value as ElementEdit["records"];
     }
     setBusy(true);
     try {
@@ -72,75 +100,133 @@ export default function ElementEditor({
   };
 
   return (
-    <Modal title="Edit parsed element" onClose={onClose} wide>
-      {detail === null ? (
-        <div className="flex justify-center py-10">
-          <Spinner size={20} />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-            Correct anything below. On save, this element is re-indexed so
-            future answers use your corrections.
-          </p>
-
-          {detail.type === "text" && (
-            <Field label="Extracted text (re-chunked & re-embedded on save)">
-              <textarea
-                className={taCls}
-                rows={12}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
-            </Field>
-          )}
-
-          {detail.table && (
-            <>
-              <Field label="HTML — display, and what answers quote for tables">
-                <textarea
-                  className={`${taCls} font-mono text-[12px]`}
-                  rows={10}
-                  value={html}
-                  onChange={(e) => setHtml(e.target.value)}
-                />
-              </Field>
-              <Field label="Summary — used to route questions to this table">
-                <textarea
-                  className={taCls}
-                  rows={2}
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
-                />
-              </Field>
-              <Field label="Records (JSON) — dimensions/metrics/raw_values answers look up">
-                <textarea
-                  className={`${taCls} font-mono text-[11px]`}
-                  rows={12}
-                  value={recordsJson}
-                  onChange={(e) => setRecordsJson(e.target.value)}
-                />
-              </Field>
-            </>
-          )}
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-            <Button variant="secondary" onClick={onClose} disabled={busy}>
-              Cancel
-            </Button>
-            <Button onClick={save} disabled={busy}>
-              {busy ? "Saving & re-indexing…" : "Save & re-index"}
-            </Button>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-full max-h-[92vh] w-full max-w-6xl flex-col rounded-xl bg-white shadow-2xl dark:bg-[#171d24] dark:text-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* header: title + tabs + close */}
+        <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
+          <h3 className="text-sm font-semibold">Edit parsed element</h3>
+          <div className="flex gap-1">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  tab === t.id
+                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
+                    : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
+          <button
+            onClick={onClose}
+            className="ml-auto rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          >
+            <X size={18} />
+          </button>
         </div>
-      )}
-    </Modal>
+
+        {detail === null ? (
+          <div className="flex flex-1 items-center justify-center">
+            <Spinner size={22} />
+          </div>
+        ) : (
+          <>
+            <div className="min-h-0 flex-1 overflow-hidden p-4">
+              {tab === "summary" ? (
+                // one line of routing text — no preview needed
+                <Pane label="Summary — used to route questions to this table">
+                  <textarea
+                    className={srcCls}
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
+                  />
+                </Pane>
+              ) : (
+                <div className="grid h-full grid-cols-1 gap-3 md:grid-cols-2">
+                  <Pane label={`Source · ${tab}`}>
+                    <textarea
+                      className={`${srcCls} font-mono text-[12px]`}
+                      spellCheck={false}
+                      value={
+                        tab === "text"
+                          ? text
+                          : tab === "html"
+                            ? html
+                            : recordsJson
+                      }
+                      onChange={(e) =>
+                        tab === "text"
+                          ? setText(e.target.value)
+                          : tab === "html"
+                            ? setHtml(e.target.value)
+                            : setRecordsJson(e.target.value)
+                      }
+                    />
+                  </Pane>
+                  <Pane label="Preview">
+                    <div className="h-full overflow-auto rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/40">
+                      {tab === "text" && (
+                        <div className="chat-md prose prose-sm max-w-none dark:prose-invert">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {text || "_empty_"}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                      {tab === "html" && (
+                        <div
+                          className="doc-table"
+                          dangerouslySetInnerHTML={{ __html: html }}
+                        />
+                      )}
+                      {tab === "records" &&
+                        (records.ok ? (
+                          <RecordsTable
+                            records={
+                              records.value as React.ComponentProps<
+                                typeof RecordsTable
+                              >["records"]
+                            }
+                          />
+                        ) : (
+                          <p className="text-xs text-red-600">
+                            Invalid JSON: {records.error}
+                          </p>
+                        ))}
+                    </div>
+                  </Pane>
+                </div>
+              )}
+            </div>
+
+            {/* footer */}
+            <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-2.5 dark:border-slate-800">
+              {error && <p className="text-xs text-red-600">{error}</p>}
+              <div className="ml-auto flex gap-2">
+                <Button variant="secondary" onClick={onClose} disabled={busy}>
+                  Cancel
+                </Button>
+                <Button onClick={save} disabled={busy}>
+                  {busy ? "Saving & re-indexing…" : "Save & re-index"}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
-function Field({
+function Pane({
   label,
   children,
 }: {
@@ -148,14 +234,14 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+    <div className="flex min-h-0 flex-col">
+      <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
         {label}
-      </label>
+      </div>
       {children}
     </div>
   );
 }
 
-const taCls =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40";
+const srcCls =
+  "min-h-0 flex-1 w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40";
