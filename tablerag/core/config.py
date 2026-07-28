@@ -115,6 +115,12 @@ class Settings(BaseSettings):
     # no "verify" key and falls back to this).
     verification_enabled: bool = True
 
+    # answer a greeting as a greeting instead of running it through routing +
+    # retrieval and reporting "no relevant passages". Detection is
+    # deterministic and conservative (query/steps/smalltalk.py); turn it off to
+    # send every message, including "salut", down the retrieval path.
+    smalltalk_enabled: bool = True
+
     # answer generation context — same silent-truncation trap as the parser
     # (see table_parse_num_ctx below): the assembled sources easily exceed
     # Ollama's default num_ctx, which then drops the TOP of the prompt — the

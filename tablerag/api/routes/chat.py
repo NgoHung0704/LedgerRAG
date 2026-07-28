@@ -121,7 +121,7 @@ async def chat_multi(body: MultiChatRequest,
     from tablerag.query.steps.router import LLMRouter
 
     def prepare() -> tuple[list[uuid.UUID], str | None,
-                           list[tuple[str, str]], str]:
+                           list[tuple[str, str]], str, uuid.UUID]:
         with session_scope() as s:
             kbs = repo.list_kbs(s)
             if not kbs:
@@ -146,14 +146,15 @@ async def chat_multi(body: MultiChatRequest,
             kb_instr = (by_id[pinned[0]].config or {}).get("instructions") \
                 if len(pinned) == 1 else None
             extra = _instructions(s, kb_instr)
-            return pinned, locale, history, extra
+            return pinned, locale, history, extra, kbs[0].id
 
-    pinned, locale, history, extra = await asyncio.to_thread(prepare)
+    pinned, locale, history, extra, first_kb = await asyncio.to_thread(prepare)
 
     async def event_stream():
-        # kb_id is unused when pinned/routed drives retrieval; keep a stable
-        # placeholder (first pinned, else a nil uuid resolved after routing)
-        ctx = QueryContext(kb_id=pinned[0] if pinned else uuid.UUID(int=0),
+        # kb_id is unused when routing drives retrieval, but it is the session's
+        # home KB when nothing was routed (a small-talk turn searches nothing),
+        # so it must be a REAL kb — a nil placeholder would break the FK.
+        ctx = QueryContext(kb_id=pinned[0] if pinned else first_kb,
                            question=body.question, locale=locale,
                            pinned_kb_ids=pinned or None, history=history,
                            extra_instructions=extra)

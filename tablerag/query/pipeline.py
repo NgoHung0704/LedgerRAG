@@ -63,6 +63,9 @@ class QueryContext:
     # operator guidance (global + per-KB) appended to the chat system prompt;
     # additive only — see GenerateAnswer.build_system_prompt
     extra_instructions: str = ""
+    # set by SmallTalk on a conversational message ("salut", "merci"): the
+    # answer is already written, so routing/retrieval/rerank/verify are skipped
+    short_circuit: bool = False
 
     @property
     def search_query(self) -> str:
@@ -82,18 +85,29 @@ class QueryPipeline:
     async def run(self, ctx: QueryContext) -> QueryContext:
         for step in self.steps:
             ctx = await step.run(ctx)
+            if ctx.short_circuit:  # conversational: nothing left to do
+                break
         return ctx
 
     async def stream(self, ctx: QueryContext) -> AsyncIterator[tuple[str, object]]:
         """Yields ("citations", list[Citation]) once context is assembled,
         then ("token", str) during generation, finally ("done", ctx)."""
         from tablerag.query.steps.generate import GenerateAnswer
+        from tablerag.query.steps.smalltalk import SmallTalk
 
         for step in self.steps:
             if isinstance(step, GenerateAnswer):
                 yield "citations", ctx.citations
                 async for token in step.stream(ctx):
                     yield "token", token
+            elif isinstance(step, SmallTalk):
+                # answers a greeting directly; on a real question it yields
+                # nothing and the chain continues to routing/retrieval
+                async for token in step.stream(ctx):
+                    yield "token", token
+                if ctx.short_circuit:
+                    yield "done", ctx
+                    return
             else:
                 ctx = await step.run(ctx)
         yield "done", ctx
@@ -107,15 +121,20 @@ def default_pipeline(verify: bool | None = None, *,
     from tablerag.query.steps.rerank import Rerank
     from tablerag.query.steps.retrieve import Retrieve
     from tablerag.query.steps.router import SingleKBRouter
+    from tablerag.query.steps.smalltalk import SmallTalk
     from tablerag.query.steps.verify import Verify
 
     settings = get_settings()
     enabled = settings.verification_enabled if verify is None else verify
-    # CondenseQuestion runs first so router+retrieval see a standalone query on
-    # follow-ups; it is a pure passthrough with no history (single-turn evals
-    # are byte-identical). Phase 1 scoped chat pins one KB (SingleKBRouter);
-    # Phase 5 multi-KB chat passes an LLMRouter. Same slot — principle #4.
+    # SmallTalk answers a greeting directly and short-circuits the rest (no
+    # routing/retrieval/verify); it is a no-op on any real question, so the
+    # measured gates are untouched. CondenseQuestion then runs so
+    # router+retrieval see a standalone query on follow-ups; it too is a pure
+    # passthrough with no history (single-turn evals are byte-identical).
+    # Phase 1 scoped chat pins one KB (SingleKBRouter); Phase 5 multi-KB chat
+    # passes an LLMRouter. Same slot — principle #4.
     return QueryPipeline([
+        SmallTalk(),
         CondenseQuestion(),
         router or SingleKBRouter(),
         Retrieve(top_k=settings.retrieve_candidates),
