@@ -2,8 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, FileUp, Files, ScanSearch, Trash2 } from "lucide-react";
-import { bulkDeleteDocs, deleteDoc, getDocs, uploadDoc, type Doc } from "@/lib/api";
+import {
+  AlertCircle,
+  FileUp,
+  Files,
+  RefreshCw,
+  ScanSearch,
+  Trash2,
+} from "lucide-react";
+import {
+  bulkDeleteDocs,
+  deleteDoc,
+  getDocs,
+  reprocessDoc,
+  uploadDoc,
+  type Doc,
+} from "@/lib/api";
 import { Button, Card, EmptyState, Spinner, StatusPill } from "@/components/ui";
 
 export default function DocumentsPanel({ kbId }: { kbId: string }) {
@@ -11,6 +25,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reprocessing, setReprocessing] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -45,6 +60,19 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
       }
     }
     refresh();
+  };
+
+  const reprocess = async (d: Doc) => {
+    setReprocessing(d.id);
+    setUploadError(null);
+    try {
+      await reprocessDoc(d.id);
+      await refresh(); // status flips to queued; the poll below tracks it
+    } catch (e) {
+      setUploadError(String(e));
+    } finally {
+      setReprocessing(null);
+    }
   };
 
   const remove = async (d: Doc) => {
@@ -237,6 +265,21 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-1">
+                      {d.status === "failed" && (
+                        <button
+                          onClick={() => reprocess(d)}
+                          disabled={reprocessing === d.id}
+                          title="Clear the error and run ingestion again"
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 dark:text-indigo-300 dark:hover:bg-indigo-950/50"
+                        >
+                          {reprocessing === d.id ? (
+                            <Spinner size={13} />
+                          ) : (
+                            <RefreshCw size={13} />
+                          )}
+                          Reprocess
+                        </button>
+                      )}
                       <Link
                         href={`/doc/${d.id}`}
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/50"

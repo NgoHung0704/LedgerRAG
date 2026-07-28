@@ -234,6 +234,11 @@ export const deleteDoc = (docId: string) =>
     if (!r.ok && r.status !== 204) throw new Error(`delete failed: ${r.status}`);
   });
 
+export const reprocessDoc = (docId: string) =>
+  fetch(`${API_URL}/api/documents/${docId}/reprocess`, { method: "POST" }).then(
+    (r) => jsonOrThrow<Doc>(r),
+  );
+
 export const pageImageUrl = (docId: string, page: number) =>
   `${API_URL}/api/documents/${docId}/pages/${page}/image`;
 

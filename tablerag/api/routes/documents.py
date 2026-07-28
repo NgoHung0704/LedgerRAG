@@ -72,6 +72,32 @@ def get_document(doc_id: uuid.UUID) -> DocumentOut:
         return DocumentOut.model_validate(doc, from_attributes=True)
 
 
+@router.post("/documents/{doc_id}/reprocess", response_model=DocumentOut)
+def reprocess_document(doc_id: uuid.UUID,
+                       user: User = Depends(current_user)) -> DocumentOut:
+    """Re-run ingestion for a document (e.g. after a transient timeout failure).
+    The task is idempotent — it wipes the document's previous elements + vectors
+    before re-parsing — so this just clears the error, requeues, and re-enqueues.
+    The original PDF and page renders are kept; stale element crops are dropped."""
+    with session_scope() as s:
+        doc = repo.get_document(s, doc_id)
+        if doc is None:
+            raise HTTPException(404, "document not found")
+        if doc.status in ("queued", "parsing", "indexing"):
+            raise HTTPException(409, "document is already being processed")
+        kb_id = doc.kb_id
+    # drop element crops from the previous partial run (keyed by old element ids,
+    # otherwise orphaned); original.pdf and pages/ are left untouched
+    get_object_store().delete_prefix(f"{doc_prefix(kb_id, doc_id)}/elements")
+    with session_scope() as s:
+        repo.set_document_status(s, doc_id, "queued")  # also clears the error
+        repo.log_audit(s, user.username, "reprocess", kb_id=kb_id, doc_id=doc_id)
+        out = DocumentOut.model_validate(repo.get_document(s, doc_id),
+                                         from_attributes=True)
+    celery_app.send_task(TASK_PROCESS_DOCUMENT, args=[str(doc_id)])
+    return out
+
+
 def _purge_document(doc_id: uuid.UUID) -> bool:
     """Remove one document from all three stores. Returns False if unknown.
     External stores first: if the Postgres delete later fails, the doc is
