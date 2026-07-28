@@ -384,6 +384,23 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
     return view
 
 
+def get_text_elements(s: Session, doc_id: uuid.UUID) -> list[dict]:
+    """Text elements with position + joined text, for boilerplate detection.
+    Type='text' only — running headers/footers are the target; table numbers
+    must never be touched. Already-unusable elements are skipped."""
+    rows = list(s.scalars(
+        select(Element).where(Element.doc_id == doc_id,
+                              Element.type == "text")))
+    out = []
+    for el in rows:
+        if (el.meta or {}).get("unusable"):
+            continue
+        chunks = list(s.scalars(select(Chunk).where(Chunk.element_id == el.id)))
+        out.append({"id": el.id, "page": el.page, "bbox": el.bbox,
+                    "text": " ".join(c.text for c in chunks)})
+    return out
+
+
 def get_element_detail(s: Session, element_id: uuid.UUID) -> dict | None:
     element = s.get(Element, element_id)
     if element is None:

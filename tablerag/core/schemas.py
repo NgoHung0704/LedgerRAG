@@ -128,6 +128,19 @@ class BulkDeleteRequest(BaseModel):
     doc_ids: list[uuid.UUID] = Field(min_length=1)
 
 
+class BoilerplateCandidate(BaseModel):
+    """A text element that looks like a running header/footer/page number —
+    a candidate to exclude from retrieval, pending human review."""
+    element_id: uuid.UUID
+    page: int
+    reason: str
+    text: str
+
+
+class BoilerplateExcludeRequest(BaseModel):
+    element_ids: list[uuid.UUID] = Field(min_length=1)
+
+
 class RoleHealth(BaseModel):
     role: str
     provider: str

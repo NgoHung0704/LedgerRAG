@@ -240,6 +240,25 @@ export const pageImageUrl = (docId: string, page: number) =>
 export const documentOriginalUrl = (docId: string) =>
   `${API_URL}/api/documents/${docId}/original`;
 
+export type BoilerplateCandidate = {
+  element_id: string;
+  page: number;
+  reason: string;
+  text: string;
+};
+
+export const scanBoilerplate = (docId: string) =>
+  fetch(`${API_URL}/api/documents/${docId}/boilerplate-scan`, {
+    method: "POST",
+  }).then((r) => jsonOrThrow<BoilerplateCandidate[]>(r));
+
+export const excludeBoilerplate = (docId: string, elementIds: string[]) =>
+  fetch(`${API_URL}/api/documents/${docId}/boilerplate-exclude`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ element_ids: elementIds }),
+  }).then((r) => jsonOrThrow<{ excluded: number }>(r));
+
 // ---------- elements (citation click-through) ----------
 
 export const getElement = (elementId: string) =>

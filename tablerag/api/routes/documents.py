@@ -5,7 +5,12 @@ from fastapi.responses import Response
 
 from tablerag.core.auth import User, current_user
 from tablerag.core.queue import TASK_PROCESS_DOCUMENT, celery_app
-from tablerag.core.schemas import BulkDeleteRequest, DocumentOut
+from tablerag.core.schemas import (
+    BoilerplateCandidate,
+    BoilerplateExcludeRequest,
+    BulkDeleteRequest,
+    DocumentOut,
+)
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 from tablerag.storage.object_store import (
@@ -148,6 +153,56 @@ def get_page_image(doc_id: uuid.UUID, page: int) -> Response:
     if not store.exists(key):
         raise HTTPException(404, "page image not found")
     return Response(content=store.get(key), media_type="image/png")
+
+
+@router.post("/documents/{doc_id}/boilerplate-scan",
+             response_model=list[BoilerplateCandidate])
+def scan_boilerplate(doc_id: uuid.UUID,
+                     _user: User = Depends(current_user),
+                     ) -> list[BoilerplateCandidate]:
+    """Read-only: find running headers/footers/page numbers among this
+    document's TEXT elements (repetition across pages at a consistent margin).
+    Changes nothing — the caller reviews and confirms before excluding."""
+    from tablerag.ingestion.boilerplate import BoilerElement, detect_boilerplate
+
+    with session_scope() as s:
+        if repo.get_document(s, doc_id) is None:
+            raise HTTPException(404, "document not found")
+        rows = repo.get_text_elements(s, doc_id)
+    elements = [
+        BoilerElement(id=str(r["id"]), page=r["page"],
+                      bbox=tuple((r["bbox"] or [0, 0, 0, 0])[:4]), text=r["text"])
+        for r in rows
+    ]
+    return [BoilerplateCandidate(element_id=uuid.UUID(c.element_id), page=c.page,
+                                 reason=c.reason, text=c.text)
+            for c in detect_boilerplate(elements)]
+
+
+@router.post("/documents/{doc_id}/boilerplate-exclude")
+def exclude_boilerplate(doc_id: uuid.UUID, body: BoilerplateExcludeRequest,
+                        user: User = Depends(current_user)) -> dict:
+    """Exclude the confirmed elements from retrieval — same mechanism as the
+    review flow's 'mark unusable': the element and its image stay, its vectors
+    are removed so it can no longer pollute answers."""
+    from tablerag.storage.orm import Element
+
+    with session_scope() as s:
+        if repo.get_document(s, doc_id) is None:
+            raise HTTPException(404, "document not found")
+        excluded: list[uuid.UUID] = []
+        for eid in body.element_ids:
+            el = s.get(Element, eid)
+            if el is None or el.doc_id != doc_id:
+                continue  # only this document's own elements
+            repo.mark_element_unusable(s, eid)
+            excluded.append(eid)
+        repo.log_audit(s, user.username, "boilerplate_exclude", doc_id=doc_id,
+                       detail={"count": len(excluded)})
+    store = get_vector_store()
+    for eid in excluded:
+        store.delete_element(eid)
+    return {"excluded": len(excluded)}
 
 
 @router.get("/documents/{doc_id}/original")

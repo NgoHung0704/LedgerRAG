@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
+  Eraser,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -13,6 +14,7 @@ import {
   ScanText,
   Table2,
 } from "lucide-react";
+import BoilerplatePanel from "@/components/BoilerplatePanel";
 import ElementEditor from "@/components/ElementEditor";
 import RecordsTable from "@/components/RecordsTable";
 import {
@@ -35,6 +37,7 @@ import { Button, Card, Spinner, StatusPill } from "@/components/ui";
 export default function DocPage({ params }: { params: { docId: string } }) {
   const [view, setView] = useState<DocumentView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   const refresh = useCallback(
     () =>
@@ -91,15 +94,31 @@ export default function DocPage({ params }: { params: { docId: string } }) {
             <RefreshCw size={12} className="animate-spin" /> refreshing…
           </span>
         )}
-        <a
-          href={documentOriginalUrl(doc.id)}
-          target="_blank"
-          rel="noreferrer"
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
-        >
-          <ExternalLink size={13} /> Open original document
-        </a>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setScanning(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+          >
+            <Eraser size={13} /> Detect boilerplate
+          </button>
+          <a
+            href={documentOriginalUrl(doc.id)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+          >
+            <ExternalLink size={13} /> Open original document
+          </a>
+        </div>
       </div>
+
+      {scanning && (
+        <BoilerplatePanel
+          docId={doc.id}
+          onClose={() => setScanning(false)}
+          onExcluded={refresh}
+        />
+      )}
       <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
         {doc.page_count ?? "—"} pages · {elements.length} elements · {tables}{" "}
         table{tables === 1 ? "" : "s"} — tables are stored as{" "}
