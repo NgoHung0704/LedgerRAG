@@ -148,3 +148,24 @@ def get_page_image(doc_id: uuid.UUID, page: int) -> Response:
     if not store.exists(key):
         raise HTTPException(404, "page image not found")
     return Response(content=store.get(key), media_type="image/png")
+
+
+@router.get("/documents/{doc_id}/original")
+def get_original_document(doc_id: uuid.UUID) -> Response:
+    """Serve the original source PDF so the parse can be compared against it at
+    full fidelity (principle #3). It is already stored at upload time."""
+    with session_scope() as s:
+        doc = repo.get_document(s, doc_id)
+        if doc is None:
+            raise HTTPException(404, "document not found")
+        key, filename = doc.file_path, doc.filename
+    store = get_object_store()
+    if not store.exists(key):
+        raise HTTPException(404, "original document not found")
+    # inline so the browser previews it; strip anything that could break the
+    # header, keep an ascii fallback name
+    safe = "".join(c for c in filename if c.isalnum() or c in " ._-").strip()
+    return Response(
+        content=store.get(key), media_type="application/pdf",
+        headers={"Content-Disposition":
+                 f'inline; filename="{safe or "document.pdf"}"'})

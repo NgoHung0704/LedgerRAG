@@ -237,6 +237,9 @@ export const deleteDoc = (docId: string) =>
 export const pageImageUrl = (docId: string, page: number) =>
   `${API_URL}/api/documents/${docId}/pages/${page}/image`;
 
+export const documentOriginalUrl = (docId: string) =>
+  `${API_URL}/api/documents/${docId}/original`;
+
 // ---------- elements (citation click-through) ----------
 
 export const getElement = (elementId: string) =>

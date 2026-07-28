@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
+  ExternalLink,
   FileText,
   Image as ImageIcon,
   Pencil,
@@ -16,9 +17,12 @@ import ElementEditor from "@/components/ElementEditor";
 import {
   API_URL,
   approveElement,
+  documentOriginalUrl,
   getDocumentView,
+  getElement,
   markElementUnusable,
   type DocumentView,
+  type ElementDetail,
   type ElementView,
   type RecordPreview,
 } from "@/lib/api";
@@ -87,6 +91,14 @@ export default function DocPage({ params }: { params: { docId: string } }) {
             <RefreshCw size={12} className="animate-spin" /> refreshing…
           </span>
         )}
+        <a
+          href={documentOriginalUrl(doc.id)}
+          target="_blank"
+          rel="noreferrer"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+        >
+          <ExternalLink size={13} /> Open original document
+        </a>
       </div>
       <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
         {doc.page_count ?? "—"} pages · {elements.length} elements · {tables}{" "}
@@ -165,6 +177,22 @@ function ElementCard({
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  // lazy full content (getElement returns the WHOLE text + all records); the
+  // list view only ships a preview, so we fetch on demand to expand
+  const [detail, setDetail] = useState<ElementDetail | null>(null);
+  const [detailBusy, setDetailBusy] = useState(false);
+  const [showFullText, setShowFullText] = useState(false);
+  const [showAllRecords, setShowAllRecords] = useState(false);
+
+  const ensureDetail = async () => {
+    if (detail || detailBusy) return;
+    setDetailBusy(true);
+    try {
+      setDetail(await getElement(element.id));
+    } finally {
+      setDetailBusy(false);
+    }
+  };
 
   const review = async (action: "approve" | "unusable") => {
     setReviewBusy(true);
@@ -236,7 +264,7 @@ function ElementCard({
             onClick={() => setShowOriginal((v) => !v)}
             className="text-[11px] font-medium text-slate-500 hover:text-slate-700"
           >
-            {showOriginal ? "hide original image" : "show original image"}
+            {showOriginal ? "hide original" : "show original"}
           </button>
         </div>
       </div>
@@ -315,9 +343,30 @@ function ElementCard({
               {element.chunk_count === 1 ? "" : "s"} indexed
             </SectionLabel>
             <p className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-[13px] leading-6 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
-              {element.text_preview}
-              {element.text_preview.length >= 600 && "…"}
+              {showFullText && detail?.text
+                ? detail.text
+                : element.text_preview}
+              {!showFullText &&
+                (element.text_preview.length >= 600 ||
+                  element.chunk_count > 1) &&
+                "…"}
             </p>
+            {(element.text_preview.length >= 600 || element.chunk_count > 1) && (
+              <button
+                onClick={async () => {
+                  if (!showFullText) await ensureDetail();
+                  setShowFullText((v) => !v);
+                }}
+                disabled={detailBusy}
+                className="mt-1.5 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+              >
+                {showFullText
+                  ? "Show less"
+                  : detailBusy
+                    ? "Loading…"
+                    : "Show full text"}
+              </button>
+            )}
           </div>
         )}
 
@@ -358,13 +407,29 @@ function ElementCard({
                   Representation 2 — records ({element.table.records_count}{" "}
                   total, what answers quote numbers from)
                 </SectionLabel>
-                <RecordsTable records={element.table.records_preview} />
+                <RecordsTable
+                  records={
+                    showAllRecords && detail?.table?.records
+                      ? (detail.table.records as unknown as RecordPreview[])
+                      : element.table.records_preview
+                  }
+                />
                 {element.table.records_count >
                   element.table.records_preview.length && (
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    showing first {element.table.records_preview.length} of{" "}
-                    {element.table.records_count}
-                  </p>
+                  <button
+                    onClick={async () => {
+                      if (!showAllRecords) await ensureDetail();
+                      setShowAllRecords((v) => !v);
+                    }}
+                    disabled={detailBusy}
+                    className="mt-1.5 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+                  >
+                    {showAllRecords
+                      ? "Show fewer"
+                      : detailBusy
+                        ? "Loading…"
+                        : `Show all ${element.table.records_count} records`}
+                  </button>
                 )}
               </div>
             )}
