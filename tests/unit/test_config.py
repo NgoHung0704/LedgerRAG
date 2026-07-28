@@ -34,7 +34,8 @@ def test_no_model_is_hardcoded_as_requirement():
 
 def test_qdrant_timeout_default_and_override(monkeypatch):
     """The bulk-upload fix: a widened, configurable Qdrant timeout (the library
-    default of 5s is what a concurrent upload trips)."""
-    assert Settings(_env_file=None).qdrant_timeout == 60
-    monkeypatch.setenv("LEDGERRAG_QDRANT_TIMEOUT", "120")
+    default of 5s is what a concurrent upload trips). Writes also batch + retry
+    per request, so this is the per-attempt ceiling."""
     assert Settings(_env_file=None).qdrant_timeout == 120
+    monkeypatch.setenv("LEDGERRAG_QDRANT_TIMEOUT", "240")
+    assert Settings(_env_file=None).qdrant_timeout == 240

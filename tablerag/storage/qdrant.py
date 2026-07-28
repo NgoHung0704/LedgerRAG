@@ -16,17 +16,43 @@ dense-only until `python -m tablerag.scripts.reindex_all` migrates them
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from dataclasses import dataclass
 from functools import lru_cache
 
+import httpx
 from qdrant_client import QdrantClient
 from qdrant_client import models as qm
+from qdrant_client.http.exceptions import ResponseHandlingException
 
 from tablerag.core.config import get_settings
 from tablerag.core.sparse import sparse_vector
 
 logger = logging.getLogger(__name__)
+
+# upserts are batched so each request stays small under a bulk upload, and each
+# write is retried on a transient timeout so a busy Qdrant is waited out rather
+# than throwing an exception that makes the ingest task re-parse the whole
+# document (expensive for scanned PDFs) — the death spiral behind mass
+# "ResponseHandlingException: timed out" failures on a bulk upload.
+_UPSERT_BATCH = 256
+_QDRANT_ATTEMPTS = 4
+
+
+def _retry_qdrant(op, what: str):
+    delay = 2.0
+    for attempt in range(_QDRANT_ATTEMPTS):
+        try:
+            return op()
+        except (ResponseHandlingException, httpx.TransportError) as e:
+            if attempt == _QDRANT_ATTEMPTS - 1:
+                raise
+            logger.warning("qdrant %s failed (%s: %s); retry %d/%d in %.0fs",
+                           what, type(e).__name__, e, attempt + 1,
+                           _QDRANT_ATTEMPTS, delay)
+            time.sleep(delay)
+            delay = min(30.0, delay * 2)
 
 COLLECTION_CHUNKS = "chunks"
 COLLECTION_RECORDS = "records"
@@ -113,7 +139,12 @@ class VectorStore:
                                                      values=values)
             points.append(qm.PointStruct(id=str(pid), vector=vector,
                                          payload=payload))
-        self.client.upsert(collection_name=collection, points=points, wait=True)
+        for start in range(0, len(points), _UPSERT_BATCH):
+            batch = points[start:start + _UPSERT_BATCH]
+            _retry_qdrant(
+                lambda b=batch: self.client.upsert(
+                    collection_name=collection, points=b, wait=True),
+                what=f"upsert {collection} ({len(batch)} pts)")
 
     def search(self, collection: str, dense: list[float],
                kb_ids: list[uuid.UUID], top_k: int,
@@ -184,9 +215,12 @@ class VectorStore:
         flt = qm.Filter(must=[condition])
         for name in ALL_COLLECTIONS:
             if self.client.collection_exists(name):
-                self.client.delete(collection_name=name,
-                                   points_selector=qm.FilterSelector(filter=flt),
-                                   wait=True)
+                _retry_qdrant(
+                    lambda n=name: self.client.delete(
+                        collection_name=n,
+                        points_selector=qm.FilterSelector(filter=flt),
+                        wait=True),
+                    what=f"delete from {name}")
 
 
 @lru_cache

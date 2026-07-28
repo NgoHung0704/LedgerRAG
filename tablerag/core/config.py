@@ -84,8 +84,9 @@ class Settings(BaseSettings):
     # bulk upload trips: many workers issue synchronous upsert(wait=True) at once
     # and each request queues past 5s -> ResponseHandlingException: timed out ->
     # the doc is marked failed (and concurrent chat searches fail the same way).
-    # Widen it so a busy Qdrant is waited on, not abandoned.
-    qdrant_timeout: int = 60
+    # Widen it so a busy Qdrant is waited on, not abandoned; writes also batch +
+    # retry per request (storage/qdrant.py) so this is the per-attempt ceiling.
+    qdrant_timeout: int = 120
     object_store: ObjectStoreConfig = ObjectStoreConfig()
     models: ModelsConfig = ModelsConfig()
     auth: AuthConfig = AuthConfig()
