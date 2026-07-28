@@ -45,9 +45,15 @@ x-backend-env: &backend-env
   LEDGERRAG_DOUBLE_READ_MODEL_NAME: ${LEDGERRAG_DOUBLE_READ_MODEL_NAME:-}
   LEDGERRAG_DOUBLE_READ_BASE_URL: ${LEDGERRAG_DOUBLE_READ_BASE_URL:-}
 
+# restart policy: a service that OOM-crashes under a bulk load (Qdrant is the
+# usual victim) must come back on its own — otherwise its name stops resolving
+# and every later job fails with "Temporary failure in name resolution".
+x-restart: &restart unless-stopped
+
 services:
   postgres:
     image: postgres:16-alpine
+    restart: *restart
     environment:
       POSTGRES_USER: ledgerrag
       POSTGRES_PASSWORD: ledgerrag
@@ -62,6 +68,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: *restart
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -70,11 +77,13 @@ services:
 
   qdrant:
     image: qdrant/qdrant:v1.12.4
+    restart: *restart
     volumes:
       - qdrant_data:/qdrant/storage
 
   minio:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    restart: *restart
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ledgerrag
@@ -89,6 +98,7 @@ services:
 
   api:
     build: .
+    restart: *restart
     environment: *backend-env
     ports:
       - "8000:8000"
@@ -102,7 +112,12 @@ services:
 
   worker:
     build: .
-    command: celery -A tablerag.ingestion.worker worker --loglevel=info --concurrency=2
+    restart: *restart
+    # concurrency = how many documents ingest at once. 1 is safest on a single
+    # box (scanned-PDF VLM + Qdrant writes + Postgres + MinIO all co-located):
+    # it stops the write contention / memory spikes that time out or OOM-crash
+    # Qdrant under a bulk upload. Raise it (2–4) only on a box with headroom.
+    command: celery -A tablerag.ingestion.worker worker --loglevel=info --concurrency=1
     environment: *backend-env
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -118,6 +133,7 @@ services:
   # in a subfolder named after the target KB; a PDF in the root is ignored.
   consumer:
     build: .
+    restart: *restart
     command: python -m tablerag.ingestion.consumer
     environment:
       <<: *backend-env
@@ -137,6 +153,7 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    restart: *restart
     ports:
       - "3000:3000"
     depends_on:
