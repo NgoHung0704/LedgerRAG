@@ -14,6 +14,7 @@ import {
   ThumbsDown,
 } from "lucide-react";
 import {
+  assistantChatStream,
   chatStream,
   chatMultiStream,
   getElement,
@@ -22,6 +23,7 @@ import {
   type ElementDetail,
   type KB,
   type RoutingInfo,
+  type StoredMessage,
   type Verification,
 } from "@/lib/api";
 import { Spinner } from "@/components/ui";
@@ -42,11 +44,23 @@ type Message = {
 export default function ChatPanel({
   kbId,
   allKbs = [],
+  assistantId,
+  conversationId = null,
+  initialMessages,
+  emptyState,
+  onSessionStarted,
 }: {
   // no kbId = the standalone Ask page: not anchored to one KB, so the router
   // (or a manual pick) always drives the search — there is no "this KB" scope.
   kbId?: string;
   allKbs?: KB[];
+  // assistant mode: the app's own KBs and prompt drive everything, so there is
+  // no scope picker — its context is fixed by definition.
+  assistantId?: string;
+  conversationId?: string | null;
+  initialMessages?: StoredMessage[];
+  emptyState?: React.ReactNode;
+  onSessionStarted?: (sessionId: string) => void;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
@@ -56,16 +70,38 @@ export default function ChatPanel({
     kbId ? { mode: "this" } : { mode: "auto" },
   );
   // the scope picker shows whenever there is a choice: >1 KB when anchored to
-  // one, any KB on the standalone Ask page
-  const showScope = kbId ? allKbs.length > 1 : allKbs.length >= 1;
+  // one, any KB on the standalone Ask page. An assistant has a fixed context.
+  const showScope = assistantId
+    ? false
+    : kbId
+      ? allKbs.length > 1
+      : allKbs.length >= 1;
   const sessionRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   // changing what we search starts a fresh conversation thread
   useEffect(() => {
+    if (assistantId) return; // an assistant's thread is driven by conversationId
     sessionRef.current = null;
-  }, [scope.mode, kbId]);
+  }, [scope.mode, kbId, assistantId]);
+
+  // assistant mode: follow the selected conversation (null = a new one) and
+  // replay its stored messages, so a reopened thread looks exactly as it did
+  useEffect(() => {
+    if (!assistantId) return;
+    sessionRef.current = conversationId;
+    setMessages(
+      (initialMessages ?? []).map((m) => ({
+        role: m.role,
+        content: m.content,
+        citations: m.citations,
+        verification: m.verification,
+        messageId: m.id,
+        feedback: m.feedback,
+      })),
+    );
+  }, [assistantId, conversationId, initialMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -113,9 +149,12 @@ export default function ChatPanel({
         return copy;
       });
 
-    // "this KB" uses the scoped endpoint; auto/pinned use the multi-KB router
-    const stream =
-      scope.mode === "this" && kbId
+    // an assistant has its own endpoint (its KBs + prompt); otherwise "this KB"
+    // uses the scoped endpoint and auto/pinned the multi-KB router
+    const isNewThread = sessionRef.current === null;
+    const stream = assistantId
+      ? assistantChatStream(assistantId, q, sessionRef.current)
+      : scope.mode === "this" && kbId
         ? chatStream(kbId, q, sessionRef.current)
         : chatMultiStream(
             q,
@@ -132,6 +171,8 @@ export default function ChatPanel({
           patchLast({ citations: ev.citations });
         } else if (ev.type === "done") {
           sessionRef.current = ev.session_id;
+          // a brand-new thread just got saved — let the list pick it up
+          if (isNewThread) onSessionStarted?.(ev.session_id);
           patchLast({
             verification: ev.verification,
             routing: "routing" in ev ? (ev.routing as RoutingInfo | null) : null,
@@ -151,21 +192,22 @@ export default function ChatPanel({
   return (
     <div className="flex h-[calc(100vh-14rem)] flex-col rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-800 dark:bg-[#171d24]">
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
-        {messages.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <Sparkles size={28} className="mb-3 text-slate-300" />
-            <div className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              {kbId
-                ? "Ask anything about the documents in this knowledge base"
-                : "Ask across your knowledge bases"}
+        {messages.length === 0 &&
+          (emptyState ?? (
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <Sparkles size={28} className="mb-3 text-slate-300" />
+              <div className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                {kbId
+                  ? "Ask anything about the documents in this knowledge base"
+                  : "Ask across your knowledge bases"}
+              </div>
+              <div className="mt-1 max-w-md text-xs leading-5 text-slate-400 dark:text-slate-500">
+                Answers stream with citations. Numbers are quoted exactly as
+                printed — when a table couldn't be read reliably, you'll see the
+                original image instead of a guess.
+              </div>
             </div>
-            <div className="mt-1 max-w-md text-xs leading-5 text-slate-400 dark:text-slate-500">
-              Answers stream with citations. Numbers are quoted exactly as
-              printed — when a table couldn't be read reliably, you'll see the
-              original image instead of a guess.
-            </div>
-          </div>
-        )}
+          ))}
 
         {messages.map((m, i) =>
           m.role === "user" ? (

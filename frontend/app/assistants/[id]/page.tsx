@@ -1,0 +1,269 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Bot,
+  Database,
+  MessageSquare,
+  Pencil,
+  Plus,
+  Settings2,
+  Trash2,
+} from "lucide-react";
+import {
+  deleteAssistant,
+  deleteConversation,
+  getAssistant,
+  getConversationMessages,
+  getConversations,
+  getKbs,
+  renameConversation,
+  updateAssistant,
+  type Assistant,
+  type Conversation,
+  type KB,
+  type StoredMessage,
+} from "@/lib/api";
+import { Button, Spinner } from "@/components/ui";
+import AssistantForm from "@/components/AssistantForm";
+import ChatPanel from "@/components/ChatPanel";
+
+export default function AssistantPage({ params }: { params: { id: string } }) {
+  const assistantId = params.id;
+  const router = useRouter();
+  const [assistant, setAssistant] = useState<Assistant | null>(null);
+  const [kbs, setKbs] = useState<KB[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [current, setCurrent] = useState<string | null>(null);
+  const [replay, setReplay] = useState<StoredMessage[] | undefined>(undefined);
+  const [loadingThread, setLoadingThread] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshConversations = useCallback(
+    () =>
+      getConversations(assistantId)
+        .then(setConversations)
+        .catch(() => {}),
+    [assistantId],
+  );
+
+  useEffect(() => {
+    getAssistant(assistantId)
+      .then(setAssistant)
+      .catch((e) => setError(String(e)));
+    getKbs()
+      .then(setKbs)
+      .catch(() => setKbs([]));
+    refreshConversations();
+  }, [assistantId, refreshConversations]);
+
+  const openConversation = async (sessionId: string) => {
+    setLoadingThread(true);
+    try {
+      const { messages } = await getConversationMessages(sessionId);
+      setReplay(messages);
+      setCurrent(sessionId);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoadingThread(false);
+    }
+  };
+
+  const newConversation = () => {
+    setReplay(undefined);
+    setCurrent(null);
+  };
+
+  const removeConversation = async (sessionId: string) => {
+    if (!window.confirm("Delete this conversation? This cannot be undone."))
+      return;
+    await deleteConversation(sessionId).catch((e) => setError(String(e)));
+    if (current === sessionId) newConversation();
+    refreshConversations();
+  };
+
+  const rename = async (c: Conversation) => {
+    const title = window.prompt("Rename this conversation", c.title);
+    if (!title?.trim()) return;
+    await renameConversation(c.session_id, title.trim()).catch((e) =>
+      setError(String(e)),
+    );
+    refreshConversations();
+  };
+
+  if (error && !assistant) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+        {error}
+      </div>
+    );
+  }
+  if (!assistant) {
+    return (
+      <div className="flex justify-center py-16">
+        <Spinner size={22} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <Link
+        href="/assistants"
+        className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+      >
+        <ArrowLeft size={13} /> Assistants
+      </Link>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
+          <Bot size={18} />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight">
+            {assistant.name}
+          </h1>
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+            {assistant.kb_names.length === 0 ? (
+              <span className="text-[11px] text-amber-600 dark:text-amber-400">
+                No knowledge base attached — add one in Settings
+              </span>
+            ) : (
+              assistant.kb_names.map((n) => (
+                <span
+                  key={n}
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  <Database size={10} /> {n}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            <Settings2 size={14} /> Settings
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[260px_1fr]">
+        {/* conversations */}
+        <aside className="hidden min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#171d24] lg:flex">
+          <div className="border-b border-slate-100 p-2 dark:border-slate-800">
+            <button
+              onClick={newConversation}
+              className="flex w-full items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-500"
+            >
+              <Plus size={14} /> New conversation
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
+            {conversations.length === 0 ? (
+              <p className="px-2 py-3 text-[11px] leading-4 text-slate-400">
+                No saved conversation yet — ask something and it appears here.
+              </p>
+            ) : (
+              conversations.map((c) => (
+                <div
+                  key={c.session_id}
+                  className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 ${
+                    current === c.session_id
+                      ? "bg-indigo-50 dark:bg-indigo-950/50"
+                      : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  }`}
+                >
+                  <button
+                    onClick={() => openConversation(c.session_id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <span
+                      className={`flex items-center gap-1.5 truncate text-[13px] ${
+                        current === c.session_id
+                          ? "font-medium text-indigo-700 dark:text-indigo-300"
+                          : "text-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      <MessageSquare size={12} className="shrink-0 text-slate-400" />
+                      {c.title || "Untitled"}
+                    </span>
+                    <span className="block pl-[18px] text-[10px] text-slate-400">
+                      {new Date(c.updated_at).toLocaleDateString()}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => rename(c)}
+                    title="Rename"
+                    className="shrink-0 rounded p-1 text-slate-300 opacity-0 hover:text-indigo-600 group-hover:opacity-100"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    onClick={() => removeConversation(c.session_id)}
+                    title="Delete"
+                    className="shrink-0 rounded p-1 text-slate-300 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
+
+        {/* chat */}
+        <div className="min-h-0">
+          {loadingThread ? (
+            <div className="flex h-full items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800">
+              <Spinner size={20} />
+            </div>
+          ) : (
+            <ChatPanel
+              assistantId={assistantId}
+              conversationId={current}
+              initialMessages={replay}
+              onSessionStarted={() => refreshConversations()}
+              emptyState={
+                <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                  <Bot size={28} className="mb-3 text-slate-300" />
+                  <div className="max-w-md font-serif text-[15px] leading-relaxed text-slate-700 dark:text-slate-200">
+                    {assistant.opening_message ||
+                      `Ask ${assistant.name} anything about its documents.`}
+                  </div>
+                  <div className="mt-2 max-w-md text-xs leading-5 text-slate-400 dark:text-slate-500">
+                    Answers are drawn only from{" "}
+                    {assistant.kb_names.join(", ") || "its knowledge bases"}, with
+                    citations you can open.
+                  </div>
+                </div>
+              }
+            />
+          )}
+        </div>
+      </div>
+
+      {editing && (
+        <AssistantForm
+          title="Assistant settings"
+          kbs={kbs}
+          assistant={assistant}
+          onClose={() => setEditing(false)}
+          onSubmit={async (values) => {
+            const updated = await updateAssistant(assistantId, values);
+            setAssistant(updated);
+            setEditing(false);
+          }}
+          onDelete={async () => {
+            await deleteAssistant(assistantId);
+            router.push("/assistants");
+          }}
+        />
+      )}
+    </div>
+  );
+}

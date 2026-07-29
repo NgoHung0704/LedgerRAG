@@ -1,0 +1,235 @@
+"use client";
+
+import { useState } from "react";
+import { Database, ShieldCheck, Trash2 } from "lucide-react";
+import type { Assistant, AssistantInput, KB } from "@/lib/api";
+import { Button, Modal, Spinner, inputCls } from "@/components/ui";
+
+/** Create/edit an assistant: its context (which knowledge bases it may search),
+ * its instructions, and how it greets. Shared by the list page and the
+ * assistant's own Settings so both stay identical. */
+export default function AssistantForm({
+  title,
+  kbs,
+  assistant,
+  onClose,
+  onSubmit,
+  onDelete,
+}: {
+  title: string;
+  kbs: KB[];
+  assistant?: Assistant;
+  onClose: () => void;
+  onSubmit: (values: AssistantInput) => Promise<void>;
+  onDelete?: () => Promise<void>;
+}) {
+  const [name, setName] = useState(assistant?.name ?? "");
+  const [description, setDescription] = useState(assistant?.description ?? "");
+  const [instructions, setInstructions] = useState(
+    assistant?.instructions ?? "",
+  );
+  const [opening, setOpening] = useState(assistant?.opening_message ?? "");
+  const [kbIds, setKbIds] = useState<Set<string>>(
+    new Set(assistant?.kb_ids ?? []),
+  );
+  const [verify, setVerify] = useState<boolean>(assistant?.verify ?? true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const toggle = (id: string) =>
+    setKbIds((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onSubmit({
+        name: name.trim(),
+        description: description.trim(),
+        instructions: instructions.trim(),
+        opening_message: opening.trim(),
+        kb_ids: Array.from(kbIds),
+        verify,
+      });
+    } catch (err) {
+      setError(String(err));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal title={title} onClose={onClose} wide>
+      <form onSubmit={submit} className="space-y-4">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+            Name
+          </label>
+          <input
+            className={inputCls}
+            placeholder="e.g. Assistant RH"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+            Description
+          </label>
+          <input
+            className={inputCls}
+            placeholder="What it helps with — also how it introduces itself."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+            Knowledge bases it can search
+          </label>
+          {kbs.length === 0 ? (
+            <p className="text-xs text-slate-400">
+              No knowledge base exists yet.
+            </p>
+          ) : (
+            <div className="max-h-48 space-y-1 overflow-auto rounded-lg border border-slate-200 p-1.5 dark:border-slate-700">
+              {kbs.map((kb) => (
+                <label
+                  key={kb.id}
+                  className="flex cursor-pointer items-start gap-2.5 rounded px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                >
+                  <input
+                    type="checkbox"
+                    checked={kbIds.has(kb.id)}
+                    onChange={() => toggle(kb.id)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600"
+                  />
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-1.5 text-[13px] font-medium text-slate-700 dark:text-slate-200">
+                      <Database size={12} className="text-slate-400" />
+                      {kb.name}
+                    </span>
+                    <span className="line-clamp-1 text-[11px] text-slate-400">
+                      {kb.description || "No description"}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          <p className="mt-1 text-[11px] leading-4 text-slate-400">
+            With several, the router picks the relevant one(s) per question —
+            among these only, never the rest of your workspace.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+            Instructions
+          </label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={4}
+            placeholder="How it should answer — e.g. « Réponds de façon concise et cite les numéros d'article. »"
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+          />
+          <p className="mt-1 text-[11px] leading-4 text-slate-400">
+            Added on top of the built-in rules: it shapes tone and focus but
+            can&apos;t loosen quoting numbers exactly or citing sources.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+            Opening message
+          </label>
+          <input
+            className={inputCls}
+            placeholder="Shown in an empty conversation, e.g. « Bonjour, que puis-je chercher pour vous ? »"
+            value={opening}
+            onChange={(e) => setOpening(e.target.value)}
+          />
+        </div>
+
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+          <input
+            type="checkbox"
+            checked={verify}
+            onChange={(e) => setVerify(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600"
+          />
+          <span className="text-xs leading-4 text-slate-600 dark:text-slate-300">
+            <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-200">
+              <ShieldCheck size={13} className="text-slate-400" />
+              Verify numbers in answers
+            </span>
+            <br />
+            Cross-check every figure against the cited sources and warn on any
+            that can&apos;t be matched.
+          </span>
+        </label>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+          {onDelete &&
+            (confirmingDelete ? (
+              <div className="flex items-center gap-2 text-xs text-red-700 dark:text-red-300">
+                Delete this assistant and its conversations?
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await onDelete();
+                    } catch (err) {
+                      setError(String(err));
+                      setBusy(false);
+                    }
+                  }}
+                  disabled={busy}
+                  className="rounded-lg bg-red-600 px-2.5 py-1 font-medium text-white hover:bg-red-700 disabled:bg-red-300"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(false)}
+                  className="text-slate-500 hover:text-slate-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+              >
+                <Trash2 size={13} /> Delete assistant
+              </button>
+            ))}
+          <div className="ml-auto flex gap-2">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={busy || !name.trim()}>
+              {busy ? <Spinner size={14} /> : null}
+              {assistant ? "Save changes" : "Create"}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </Modal>
+  );
+}

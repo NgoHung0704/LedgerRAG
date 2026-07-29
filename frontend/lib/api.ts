@@ -368,6 +368,114 @@ export async function* chatMultiStream(
   yield* sseStream<MultiChatEvent>(res);
 }
 
+// ---------- assistants (chat apps with their own KBs + prompt) ----------
+
+export type Assistant = {
+  id: string;
+  name: string;
+  description: string;
+  instructions: string;
+  kb_ids: string[];
+  kb_names: string[];
+  opening_message: string;
+  verify: boolean | null;
+  created_at: string;
+};
+
+export type AssistantInput = Partial<{
+  name: string;
+  description: string;
+  instructions: string;
+  kb_ids: string[];
+  opening_message: string;
+  verify: boolean | null;
+}>;
+
+export type Conversation = {
+  session_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StoredMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  citations: Citation[];
+  verification: Verification | null;
+  feedback: -1 | 0 | 1;
+};
+
+export const getAssistants = () =>
+  fetch(`${API_URL}/api/assistants`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow<Assistant[]>(r),
+  );
+
+export const getAssistant = (id: string) =>
+  fetch(`${API_URL}/api/assistants/${id}`, { cache: "no-store" }).then((r) =>
+    jsonOrThrow<Assistant>(r),
+  );
+
+export const createAssistant = (body: AssistantInput) =>
+  fetch(`${API_URL}/api/assistants`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then((r) => jsonOrThrow<Assistant>(r));
+
+export const updateAssistant = (id: string, body: AssistantInput) =>
+  fetch(`${API_URL}/api/assistants/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then((r) => jsonOrThrow<Assistant>(r));
+
+export const deleteAssistant = (id: string) =>
+  fetch(`${API_URL}/api/assistants/${id}`, { method: "DELETE" }).then((r) => {
+    if (!r.ok && r.status !== 204) throw new Error(`delete failed: ${r.status}`);
+  });
+
+export async function* assistantChatStream(
+  assistantId: string,
+  question: string,
+  sessionId: string | null,
+): AsyncGenerator<MultiChatEvent> {
+  const res = await fetch(`${API_URL}/api/assistants/${assistantId}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, session_id: sessionId }),
+  });
+  yield* sseStream<MultiChatEvent>(res);
+}
+
+export const getConversations = (assistantId: string) =>
+  fetch(`${API_URL}/api/assistants/${assistantId}/conversations`, {
+    cache: "no-store",
+  }).then((r) => jsonOrThrow<Conversation[]>(r));
+
+export const getConversationMessages = (sessionId: string) =>
+  fetch(`${API_URL}/api/conversations/${sessionId}/messages`, {
+    cache: "no-store",
+  }).then((r) =>
+    jsonOrThrow<{ session_id: string; title: string; messages: StoredMessage[] }>(r),
+  );
+
+export const renameConversation = (sessionId: string, title: string) =>
+  fetch(`${API_URL}/api/conversations/${sessionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  }).then((r) => jsonOrThrow<Conversation>(r));
+
+export const deleteConversation = (sessionId: string) =>
+  fetch(`${API_URL}/api/conversations/${sessionId}`, { method: "DELETE" }).then(
+    (r) => {
+      if (!r.ok && r.status !== 204)
+        throw new Error(`delete failed: ${r.status}`);
+    },
+  );
+
 export type ReviewItem = {
   element_id: string;
   doc_id: string;

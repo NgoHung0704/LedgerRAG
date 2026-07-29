@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bot,
   Database,
   FileSearch,
   MessagesSquare,
@@ -16,6 +17,7 @@ import { getMe, type Me } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
+  { href: "/assistants", label: "Assistants", icon: Bot, match: /^\/assistants/, admin: false },
   { href: "/ask", label: "Ask", icon: MessagesSquare, match: /^\/ask/, admin: false },
   { href: "/", label: "Knowledge Bases", icon: Database, match: /^\/($|kb|doc)/, admin: false },
   { href: "/models", label: "Model Providers", icon: SlidersHorizontal, match: /^\/models/, admin: true },
