@@ -22,10 +22,15 @@ export default function ElementEditor({
   elementId,
   onClose,
   onSaved,
+  proposedText,
 }: {
   elementId: string;
   onClose: () => void;
   onSaved: () => void;
+  // a VLM re-reading offered for review: it pre-fills the text pane instead of
+  // the stored text, so it is compared against the original image and only
+  // becomes the element's text when the reviewer saves
+  proposedText?: string;
 }) {
   const [detail, setDetail] = useState<ElementDetail | null>(null);
   const [text, setText] = useState("");
@@ -40,14 +45,14 @@ export default function ElementEditor({
     getElement(elementId)
       .then((d) => {
         setDetail(d);
-        setText(d.text ?? "");
+        setText(proposedText ?? d.text ?? "");
         setHtml(d.table?.html ?? "");
         setSummary(d.table?.summary ?? "");
         setRecordsJson(d.table ? JSON.stringify(d.table.records, null, 2) : "");
-        setTab(d.table ? "html" : "text");
+        setTab(d.table && !proposedText ? "html" : "text");
       })
       .catch((e) => setError(String(e)));
-  }, [elementId]);
+  }, [elementId, proposedText]);
 
   const isTable = !!detail?.table;
   const tabs: { id: Tab; label: string }[] = isTable
@@ -140,6 +145,13 @@ export default function ElementEditor({
           </div>
         ) : (
           <>
+            {proposedText && (
+              <div className="mx-4 mt-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200">
+                This is the model&apos;s re-reading of the page, not the stored
+                text. Check it against the original image (the element card shows
+                it) — it replaces the text only when you save.
+              </div>
+            )}
             <div className="min-h-0 flex-1 overflow-hidden p-4">
               {tab === "summary" ? (
                 // one line of routing text — no preview needed

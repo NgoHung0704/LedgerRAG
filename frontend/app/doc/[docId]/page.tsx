@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
+  Columns3,
   Eraser,
   ExternalLink,
   FileText,
@@ -24,6 +25,7 @@ import {
   getDocumentView,
   getElement,
   markElementUnusable,
+  rereadElement,
   type DocumentView,
   type ElementDetail,
   type ElementView,
@@ -202,6 +204,23 @@ function ElementCard({
   const [detailBusy, setDetailBusy] = useState(false);
   const [showFullText, setShowFullText] = useState(false);
   const [showAllRecords, setShowAllRecords] = useState(false);
+  // VLM re-reading offered for review before it replaces anything
+  const [proposed, setProposed] = useState<string | undefined>();
+  const [rereading, setRereading] = useState(false);
+
+  const reread = async () => {
+    setRereading(true);
+    setReviewError(null);
+    try {
+      const { text } = await rereadElement(element.id);
+      setProposed(text);
+      setEditing(true);
+    } catch (e) {
+      setReviewError(String(e));
+    } finally {
+      setRereading(false);
+    }
+  };
 
   const ensureDetail = async () => {
     if (detail || detailBusy) return;
@@ -255,6 +274,14 @@ function ElementCard({
             <AlertTriangle size={11} /> needs review
           </span>
         )}
+        {element.layout_suspect && (
+          <span
+            title="This page lays its text out in columns (a slide or diagram). The words are right, but their order is not — re-read it to keep each column together."
+            className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-800/60"
+          >
+            <Columns3 size={11} /> column layout
+          </span>
+        )}
         {element.unusable && (
           <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600">
             excluded from retrieval
@@ -271,9 +298,23 @@ function ElementCard({
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
+          {element.type === "text" && (
+            <button
+              onClick={reread}
+              disabled={rereading}
+              title="Have the parser model re-read this page keeping its structure (a diagram becomes a table). You review the result before it replaces anything."
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+            >
+              {rereading ? <Spinner size={11} /> : <ScanText size={12} />}
+              {rereading ? "re-reading…" : "re-read with the VLM"}
+            </button>
+          )}
           {element.type !== "figure" && (
             <button
-              onClick={() => setEditing(true)}
+              onClick={() => {
+                setProposed(undefined);
+                setEditing(true);
+              }}
               className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500"
             >
               <Pencil size={12} /> edit
@@ -291,7 +332,11 @@ function ElementCard({
       {editing && (
         <ElementEditor
           elementId={element.id}
-          onClose={() => setEditing(false)}
+          proposedText={proposed}
+          onClose={() => {
+            setEditing(false);
+            setProposed(undefined);
+          }}
           onSaved={onChanged}
         />
       )}

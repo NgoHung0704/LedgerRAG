@@ -228,10 +228,18 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
             element_id = uuid.uuid4()
             crop_key = element_image_key(kb_id, doc_id, element_id)
             store.put(crop_key, crop, "image/png")
-            element = repo.add_element(s, doc_id, layout.page,
-                                       bbox=list(region.bbox), type_="text",
-                                       crop_image_path=crop_key, confidence=1.0,
-                                       element_id=element_id)
+            # a column/diagram page reads as a grid: the words are right but
+            # their order is not faithful, so flag it for review (still fully
+            # indexed) — the reviewer can have the VLM re-read it structured
+            element = repo.add_element(
+                s, doc_id, layout.page, bbox=list(region.bbox), type_="text",
+                crop_image_path=crop_key, confidence=1.0,
+                needs_review=region.layout_suspect,
+                meta={"layout_suspect": True} if region.layout_suspect else {},
+                element_id=element_id)
+            if region.layout_suspect:
+                logger.info("doc %s page %d: column layout — text flagged for "
+                            "review", doc_id, layout.page)
             chunks = chunk_text(region.text,
                                 target_tokens=settings.chunk_target_tokens,
                                 overlap_ratio=settings.chunk_overlap_ratio)

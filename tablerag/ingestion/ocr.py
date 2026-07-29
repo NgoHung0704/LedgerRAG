@@ -28,9 +28,28 @@ values). Lists and forms are not tables.\
 
 _FLAG_RE = re.compile(r"TABLES_PRESENT:\s*(yes|no)\s*$", re.IGNORECASE)
 
+# Re-reading a layout-heavy page (a slide, a process diagram, a comparison
+# grid). Linear extraction flattens such a page row by row and destroys which
+# heading each item belongs to; only a structured transcription keeps it, so the
+# prompt's whole job is to preserve the 2-D relationships.
+_STRUCTURED_PROMPT = """\
+Transcribe this page faithfully, PRESERVING ITS STRUCTURE.
 
-async def ocr_page(image_png: bytes) -> tuple[str, bool]:
-    """Returns (transcribed_text, tables_present)."""
+- If the content is laid out as a grid, as columns, or as a sequence of steps \
+(a process diagram, a comparison, a matrix), render it as a MARKDOWN TABLE, so \
+that everything belonging to one column or one step stays together with its \
+heading. Use the headings shown on the page as the table's headers.
+- If an arrow or a flow connects items, keep that order in the table's rows or \
+columns, and state the relation in a short line under the table.
+- Otherwise, transcribe as prose, using markdown headings and bullet lists as \
+they appear.
+- Copy every word, number and unit EXACTLY as printed. Never translate, \
+summarize, complete or invent anything. If something is unreadable, write [?].
+- Output only the transcription — no preamble, no commentary.\
+"""
+
+
+async def _transcribe(image_png: bytes, prompt: str) -> str:
     from tablerag.core.config import get_settings
 
     parser = get_provider("parser")
@@ -41,10 +60,22 @@ async def ocr_page(image_png: bytes) -> tuple[str, bool]:
                "num_ctx": s.table_parse_num_ctx, "num_predict": s.table_parse_num_predict}
     parts = []
     async for token in parser.chat(
-            [Msg(role="user", content=_OCR_PROMPT, images=[image_b64])],
+            [Msg(role="user", content=prompt, images=[image_b64])],
             stream=True, temperature=0.0, options=options):
         parts.append(token)
-    text = "".join(parts).strip()
+    return "".join(parts).strip()
+
+
+async def reread_page_structured(image_png: bytes) -> str:
+    """Re-read a layout-heavy page into a structured transcription (a markdown
+    table for a grid/diagram). Proposed to a human for review — never written
+    straight over the extracted text."""
+    return await _transcribe(image_png, _STRUCTURED_PROMPT)
+
+
+async def ocr_page(image_png: bytes) -> tuple[str, bool]:
+    """Returns (transcribed_text, tables_present)."""
+    text = await _transcribe(image_png, _OCR_PROMPT)
 
     tables_present = False
     match = _FLAG_RE.search(text)

@@ -24,6 +24,16 @@ _MIN_FIGURE_AREA_RATIO = 0.005
 _CAPTION_MAX_DISTANCE = 60.0  # points below the figure
 _CAPTION_MAX_CHARS = 300
 
+# --- layout-heavy page detection -------------------------------------------
+# A slide-style page (a process diagram, a comparison grid) reads as a GRID:
+# column = topic, row = aspect. Linear text extraction flattens it row by row
+# and the association is lost — no reading order recovers it, so such pages are
+# flagged for review and can be re-read by the VLM into a structured form.
+_LAYOUT_MIN_BLOCKS = 6        # fewer blocks than this is an ordinary page
+_LAYOUT_MIN_COLUMNS = 3       # 2 columns of prose read acceptably once sorted
+_LAYOUT_MIN_PER_COLUMN = 2    # a column needs stacked content to be a column
+_LAYOUT_GUTTER_RATIO = 0.02   # x-gap counting as a column separator, of width
+
 
 @dataclass
 class Region:
@@ -38,6 +48,9 @@ class Region:
     crop_png: bytes | None = None
     # cross-page tables: additional pages this (merged) table continues onto
     span_pages: list[int] = field(default_factory=list)
+    # text regions: the page lays its text out in columns (a slide or diagram),
+    # so the flattened reading order is not faithful — flagged for review
+    layout_suspect: bool = False
 
 
 @dataclass
@@ -254,6 +267,37 @@ def detect_tables(page: fitz.Page) -> list[tuple]:
     return found
 
 
+def looks_like_column_layout(boxes: list[tuple[float, float, float, float]],
+                             page_width: float) -> bool:
+    """Does this page lay its text out in columns (a slide / diagram grid)?
+
+    Pure geometry, so it is testable without a PDF: cluster the blocks' x-spans
+    into columns separated by empty gutters, and call it a column layout when
+    at least `_LAYOUT_MIN_COLUMNS` of them each stack `_LAYOUT_MIN_PER_COLUMN`
+    blocks. Such a page reads correctly only as a grid, so the caller flags it
+    for review instead of pretending the flattened text is faithful."""
+    if len(boxes) < _LAYOUT_MIN_BLOCKS or page_width <= 0:
+        return False
+    gutter = page_width * _LAYOUT_GUTTER_RATIO
+
+    # sweep the x-axis: a column is a maximal run of horizontally overlapping
+    # blocks; a gap wider than `gutter` starts a new one
+    columns: list[list[tuple[float, float, float, float]]] = []
+    current: list[tuple[float, float, float, float]] = []
+    edge = None
+    for box in sorted(boxes, key=lambda b: b[0]):
+        if edge is not None and box[0] - edge > gutter:
+            columns.append(current)
+            current = []
+        current.append(box)
+        edge = max(edge or box[2], box[2])
+    if current:
+        columns.append(current)
+
+    stacked = [c for c in columns if len(c) >= _LAYOUT_MIN_PER_COLUMN]
+    return len(stacked) >= _LAYOUT_MIN_COLUMNS
+
+
 def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
                  table_dpi: int = 240) -> PageLayout:
     text = page.get_text("text")
@@ -278,11 +322,17 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
         table_cells |= grid_cell_texts(grid)
 
     # --- text + figures (blocks not covered by a table) ---
-    blocks = page.get_text("blocks")  # (x0, y0, x1, y1, text, no, type)
+    # get_text("blocks") yields content-stream order, which for a PowerPoint- or
+    # Word-derived PDF is SHAPE order: a slide title can arrive last. Sort by
+    # position so the text reads down the page. (This restores document order;
+    # it cannot recover a 2-D diagram's column association — that is what the
+    # layout flag + VLM re-read are for.)
+    blocks = sorted(page.get_text("blocks"), key=lambda b: (round(b[1], 1), b[0]))
     text_blocks = [b for b in blocks if b[6] == 0]
     text_parts: list[str] = []
     text_bbox: fitz.Rect | None = None
     figures: list[Region] = []
+    kept_boxes: list[tuple[float, float, float, float]] = []
 
     for block in blocks:
         block_rect = fitz.Rect(block[:4])
@@ -299,6 +349,7 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
             continue
         if content:
             text_parts.append(content)
+            kept_boxes.append(tuple(block_rect))
             text_bbox = block_rect if text_bbox is None else text_bbox | block_rect
 
     # nearest short text block below each figure = its caption (C5: keep
@@ -319,7 +370,8 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
 
     if text_parts:
         layout.regions.append(Region(
-            type="text", bbox=tuple(text_bbox), text="\n\n".join(text_parts)))
+            type="text", bbox=tuple(text_bbox), text="\n\n".join(text_parts),
+            layout_suspect=looks_like_column_layout(kept_boxes, rect.width)))
     layout.regions.extend(figures)
     layout.regions.sort(key=lambda r: (r.bbox[1], r.bbox[0]))
     return layout

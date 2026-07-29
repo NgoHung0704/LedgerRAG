@@ -113,6 +113,7 @@ export type ElementView = {
   parse_error: string | null;
   caption: string | null;
   ocr: boolean;
+  layout_suspect: boolean;
   unusable: boolean;
   edited: boolean;
   confidence_detail: ConfidenceDetail | null;
@@ -269,6 +270,14 @@ export const excludeBoilerplate = (docId: string, elementIds: string[]) =>
 export const getElement = (elementId: string) =>
   fetch(`${API_URL}/api/elements/${elementId}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow<ElementDetail>(r),
+  );
+
+/** Ask the parser VLM to re-read this element's page with its structure kept
+ * (a diagram/grid comes back as a markdown table). Returns a PROPOSAL — nothing
+ * is written until the reviewer saves it through the element editor. */
+export const rereadElement = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/reread`, { method: "POST" }).then(
+    (r) => jsonOrThrow<{ text: string }>(r),
   );
 
 export const elementImageUrl = (elementId: string) =>
