@@ -47,7 +47,9 @@ export default function KBPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-4">
+      {/* name, settings and the tabs stay put while the list scrolls: negative
+          margins cover the container's padding so nothing shows behind it */}
+      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 border-b border-slate-200 bg-[#f4f3ec]/95 px-6 pt-6 backdrop-blur dark:border-slate-800 dark:bg-[#0f141a]/95">
         <Link
           href="/"
           className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -70,33 +72,33 @@ export default function KBPage({ params }: { params: { id: string } }) {
           )}
         </div>
         {kb && <KbDescription kb={kb} />}
-      </div>
 
-      <div className="mb-4 flex gap-1 border-b border-slate-200 dark:border-slate-800">
-        {(
-          [
-            { id: "documents", label: "Documents", icon: FileText },
-            { id: "chat", label: "Chat", icon: MessageSquareText },
-            { id: "review", label: "Review", icon: AlertTriangle },
-          ] as const
-        ).map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3.5 py-2 text-sm font-medium transition-colors ${
-              tab === id
-                ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
-                : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Icon size={15} /> {label}
-            {id === "review" && reviewCount > 0 && (
-              <span className="ml-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-                {reviewCount}
-              </span>
-            )}
-          </button>
-        ))}
+        <div className="-mb-px mt-3 flex gap-1">
+          {(
+            [
+              { id: "documents", label: "Documents", icon: FileText },
+              { id: "chat", label: "Chat", icon: MessageSquareText },
+              { id: "review", label: "Review", icon: AlertTriangle },
+            ] as const
+          ).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`inline-flex items-center gap-1.5 border-b-2 px-3.5 py-2 text-sm font-medium transition-colors ${
+                tab === id
+                  ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
+                  : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              <Icon size={15} /> {label}
+              {id === "review" && reviewCount > 0 && (
+                <span className="ml-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                  {reviewCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="min-h-0 flex-1">

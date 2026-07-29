@@ -81,37 +81,53 @@ export default function DocPage({ params }: { params: { docId: string } }) {
 
   return (
     <div>
-      <Link
-        href={`/kb/${doc.kb_id}`}
-        className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
-      >
-        <ArrowLeft size={13} /> Back to knowledge base
-      </Link>
+      {/* the document's identity and its actions stay put while the pages
+          scroll: negative margins cover the container's padding so nothing
+          slides out from behind it */}
+      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 border-b border-slate-200/70 bg-[#f4f3ec]/95 px-6 pb-3 pt-6 backdrop-blur dark:border-slate-800 dark:bg-[#0f141a]/95">
+        <Link
+          href={`/kb/${doc.kb_id}`}
+          className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
+        >
+          <ArrowLeft size={13} /> Back to knowledge base
+        </Link>
 
-      <div className="mb-1 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">{doc.filename}</h1>
-        <StatusPill status={doc.status} />
-        {processing && (
-          <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-            <RefreshCw size={12} className="animate-spin" /> refreshing…
-          </span>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => setScanning(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
-          >
-            <Eraser size={13} /> Detect boilerplate
-          </button>
-          <a
-            href={documentOriginalUrl(doc.id)}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
-          >
-            <ExternalLink size={13} /> Open original document
-          </a>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">
+            {doc.filename}
+          </h1>
+          <StatusPill status={doc.status} />
+          {processing && (
+            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+              <RefreshCw size={12} className="animate-spin" /> refreshing…
+            </span>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setScanning(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+            >
+              <Eraser size={13} /> Detect boilerplate
+            </button>
+            <a
+              href={documentOriginalUrl(doc.id)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+            >
+              <ExternalLink size={13} /> Open original document
+            </a>
+          </div>
         </div>
+
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          {doc.page_count ?? "—"} pages · {elements.length} elements · {tables}{" "}
+          table{tables === 1 ? "" : "s"} — tables are stored as{" "}
+          <span className="font-medium text-slate-600 dark:text-slate-300">
+            HTML + records (JSON) + summary
+          </span>
+          , never flattened to markdown.
+        </p>
       </div>
 
       {scanning && (
@@ -121,14 +137,6 @@ export default function DocPage({ params }: { params: { docId: string } }) {
           onExcluded={refresh}
         />
       )}
-      <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-        {doc.page_count ?? "—"} pages · {elements.length} elements · {tables}{" "}
-        table{tables === 1 ? "" : "s"} — tables are stored as{" "}
-        <span className="font-medium text-slate-600 dark:text-slate-300">
-          HTML + records (JSON) + summary
-        </span>
-        , never flattened to markdown.
-      </p>
 
       {doc.status === "failed" && doc.error && (
         <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
