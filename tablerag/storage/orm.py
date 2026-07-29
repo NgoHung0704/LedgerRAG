@@ -7,8 +7,9 @@ JSONB on Postgres with a plain-JSON fallback so unit tests can run on SQLite.
 
 from __future__ import annotations
 
+import threading
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import (
     JSON,
@@ -38,6 +39,27 @@ def _uuid_pk() -> Mapped[uuid.UUID]:
 
 def _created_at() -> Mapped[datetime]:
     return mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+_ts_lock = threading.Lock()
+_last_ts: datetime | None = None
+
+
+def message_timestamp() -> datetime:
+    """A strictly increasing timestamp for chat messages.
+
+    A turn writes the user message and the answer microseconds apart, in ONE
+    transaction. Plain wall-clock time can hand both the same value on a coarse
+    system clock, and the primary key is a random uuid — so the tie-break would
+    be random and a replayed thread could come back with the answer before the
+    question. Nudging by a microsecond keeps a process's messages ordered."""
+    global _last_ts
+    with _ts_lock:
+        now = datetime.now(timezone.utc)
+        if _last_ts is not None and now <= _last_ts:
+            now = _last_ts + timedelta(microseconds=1)
+        _last_ts = now
+        return now
 
 
 class KnowledgeBase(Base):
@@ -177,12 +199,12 @@ class ChatMessage(Base):
     content: Mapped[str] = mapped_column(Text)
     citations: Mapped[list | None] = mapped_column(JSONVariant, nullable=True)
     verification: Mapped[dict | None] = mapped_column(JSONVariant, nullable=True)
-    # per-row client timestamp, not func.now(): a multi-KB turn writes the user
-    # AND assistant message in ONE transaction, where func.now() (transaction
-    # time) would tie and scramble history order. microsecond precision keeps a
-    # thread ordered so follow-up condensing sees the turns as they happened.
+    # per-row client timestamp, not func.now(): a turn writes the user AND
+    # assistant message in ONE transaction, where func.now() (transaction time)
+    # would tie and scramble history order. message_timestamp() is strictly
+    # increasing, so a thread replays — and condenses — in the order it happened.
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=message_timestamp,
         server_default=func.now())
 
 
@@ -215,3 +237,57 @@ class MessageFeedback(Base):
         unique=True, index=True)
     value: Mapped[int] = mapped_column(Integer)  # +1 up, -1 down
     created_at: Mapped[datetime] = _created_at()
+
+
+class Assistant(Base):
+    """A chat app: its own knowledge bases (context), its own instructions
+    (system prompt) and its own conversations.
+
+    Knowledge bases stay independent and reusable — an assistant REFERENCES
+    them (assistant_kb), it does not own documents. That keeps KB isolation,
+    the founding idea, intact: the same corpus can back several assistants."""
+
+    __tablename__ = "assistant"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    name: Mapped[str] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(Text, default="")
+    # the assistant's system prompt — appended to the safety core, never
+    # replacing it (see query/steps/generate.build_system_prompt)
+    instructions: Mapped[str] = mapped_column(Text, default="")
+    # {"opening_message": str, "verify": bool | None}
+    config: Mapped[dict] = mapped_column(JSONVariant, default=dict)
+    created_at: Mapped[datetime] = _created_at()
+
+
+class AssistantKB(Base):
+    """Which knowledge bases an assistant searches. Composite PK = a KB can be
+    attached once per assistant; both sides cascade, so deleting a KB simply
+    detaches it and deleting an assistant drops its links."""
+
+    __tablename__ = "assistant_kb"
+
+    assistant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("assistant.id", ondelete="CASCADE"), primary_key=True)
+    kb_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("knowledge_base.id", ondelete="CASCADE"), primary_key=True)
+
+
+class AssistantConversation(Base):
+    """One saved thread of an assistant.
+
+    A separate table rather than columns on chat_session: there is no migration
+    system (create_all adds tables, never columns), and this way messages,
+    feedback and the multi-turn history reader keep working untouched — this
+    row only adds an owner and a title to an existing session."""
+
+    __tablename__ = "assistant_conversation"
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("chat_session.id", ondelete="CASCADE"), primary_key=True)
+    assistant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("assistant.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

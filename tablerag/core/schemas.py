@@ -84,6 +84,56 @@ class FeedbackRequest(BaseModel):
     value: int = Field(ge=-1, le=1)  # +1 👍, -1 👎, 0 clears
 
 
+class AssistantCreate(BaseModel):
+    """A chat app: its own knowledge bases, its own system prompt."""
+    name: str = Field(min_length=1, max_length=200)
+    description: str = ""
+    instructions: str = ""       # appended to the safety core, never replaces it
+    kb_ids: list[uuid.UUID] = []  # the context it searches
+    opening_message: str = ""    # shown in an empty conversation
+    verify: bool | None = None   # override number verification for this app
+
+
+class AssistantUpdate(BaseModel):
+    """Partial update — only what is sent changes. `kb_ids`, when sent, REPLACES
+    the attached set."""
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = None
+    instructions: str | None = None
+    kb_ids: list[uuid.UUID] | None = None
+    opening_message: str | None = None
+    verify: bool | None = None
+
+
+class AssistantOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str
+    instructions: str
+    kb_ids: list[uuid.UUID]
+    kb_names: list[str]
+    opening_message: str = ""
+    verify: bool | None = None
+    created_at: datetime
+
+
+class ConversationOut(BaseModel):
+    session_id: uuid.UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationRename(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+
+
+class AssistantChatRequest(BaseModel):
+    question: str = Field(min_length=1)
+    session_id: uuid.UUID | None = None
+    verify: bool | None = None
+
+
 class ChatInstructions(BaseModel):
     """Global chat persona (admin). `identity` is who the assistant says it is
     (it answers "who are you?" without searching); `text` is extra guidance

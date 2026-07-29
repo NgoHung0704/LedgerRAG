@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 
 from tablerag.storage.orm import (
     AppSetting,
+    Assistant,
+    AssistantConversation,
+    AssistantKB,
     AuditEvent,
     ChatMessage,
     ChatSession,
@@ -550,3 +553,137 @@ def get_recent_messages(s: Session, session_id: uuid.UUID,
         .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
         .limit(limit)))
     return [(m.role, m.content) for m in reversed(rows)]
+
+
+def get_session_messages(s: Session, session_id: uuid.UUID) -> list[dict]:
+    """A whole thread, oldest→newest, with everything the UI needs to re-render
+    it exactly as it streamed: citations, verification and any 👍/👎."""
+    rows = list(s.scalars(
+        select(ChatMessage)
+        .where(ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at, ChatMessage.id)))
+    feedback = {
+        f.message_id: f.value for f in s.scalars(
+            select(MessageFeedback).where(
+                MessageFeedback.message_id.in_([m.id for m in rows] or [None])))
+    }
+    return [{"id": m.id, "role": m.role, "content": m.content,
+             "citations": m.citations or [], "verification": m.verification,
+             "feedback": feedback.get(m.id, 0)} for m in rows]
+
+
+# ---------------------------------------------------------------- assistants
+
+def create_assistant(s: Session, name: str, description: str = "",
+                     instructions: str = "", config: dict | None = None,
+                     kb_ids: list[uuid.UUID] | None = None) -> Assistant:
+    assistant = Assistant(name=name, description=description,
+                          instructions=instructions, config=config or {})
+    s.add(assistant)
+    s.flush()
+    set_assistant_kbs(s, assistant.id, kb_ids or [])
+    return assistant
+
+
+def get_assistant(s: Session, assistant_id: uuid.UUID) -> Assistant | None:
+    return s.get(Assistant, assistant_id)
+
+
+def list_assistants(s: Session) -> list[Assistant]:
+    return list(s.scalars(select(Assistant).order_by(Assistant.created_at)))
+
+
+def assistant_kb_ids(s: Session, assistant_id: uuid.UUID) -> list[uuid.UUID]:
+    """The knowledge bases this assistant searches. Rows whose KB was deleted
+    are gone by cascade, so this is always a live set."""
+    return list(s.scalars(
+        select(AssistantKB.kb_id)
+        .where(AssistantKB.assistant_id == assistant_id)))
+
+
+def set_assistant_kbs(s: Session, assistant_id: uuid.UUID,
+                      kb_ids: list[uuid.UUID]) -> None:
+    """Replace the attached set (the PATCH semantics the UI needs). Unknown KB
+    ids are dropped rather than raising: a KB deleted meanwhile is not an error."""
+    wanted = {k for k in kb_ids
+              if s.get(KnowledgeBase, k) is not None}
+    current = set(assistant_kb_ids(s, assistant_id))
+    for kb_id in current - wanted:
+        row = s.get(AssistantKB, {"assistant_id": assistant_id, "kb_id": kb_id})
+        if row is not None:
+            s.delete(row)
+    for kb_id in wanted - current:
+        s.add(AssistantKB(assistant_id=assistant_id, kb_id=kb_id))
+    s.flush()
+
+
+def delete_assistant(s: Session, assistant_id: uuid.UUID) -> bool:
+    assistant = s.get(Assistant, assistant_id)
+    if assistant is None:
+        return False
+    # the sessions themselves are not cascaded by the link table, so drop them
+    # explicitly — otherwise their messages would outlive the assistant
+    for link in s.scalars(select(AssistantConversation).where(
+            AssistantConversation.assistant_id == assistant_id)):
+        session = s.get(ChatSession, link.session_id)
+        if session is not None:
+            s.delete(session)  # cascades to messages (and to the link row)
+    s.delete(assistant)
+    s.flush()
+    return True
+
+
+# ------------------------------------------------------------- conversations
+
+def link_conversation(s: Session, assistant_id: uuid.UUID,
+                      session_id: uuid.UUID, title: str) -> AssistantConversation:
+    """Give a session an owner and a title on its first turn; later turns just
+    bump updated_at so the list stays ordered by recent activity."""
+    link = s.get(AssistantConversation, session_id)
+    if link is None:
+        link = AssistantConversation(session_id=session_id,
+                                     assistant_id=assistant_id,
+                                     title=title[:120])
+        s.add(link)
+    else:
+        link.updated_at = func.now()
+    s.flush()
+    return link
+
+
+def list_conversations(s: Session, assistant_id: uuid.UUID,
+                       limit: int = 100) -> list[dict]:
+    rows = list(s.scalars(
+        select(AssistantConversation)
+        .where(AssistantConversation.assistant_id == assistant_id)
+        .order_by(AssistantConversation.updated_at.desc())
+        .limit(limit)))
+    return [{"session_id": r.session_id, "title": r.title,
+             "created_at": r.created_at, "updated_at": r.updated_at}
+            for r in rows]
+
+
+def get_conversation(s: Session, session_id: uuid.UUID
+                     ) -> AssistantConversation | None:
+    return s.get(AssistantConversation, session_id)
+
+
+def rename_conversation(s: Session, session_id: uuid.UUID,
+                        title: str) -> AssistantConversation | None:
+    link = s.get(AssistantConversation, session_id)
+    if link is None:
+        return None
+    link.title = title[:120]
+    s.flush()
+    return link
+
+
+def delete_conversation(s: Session, session_id: uuid.UUID) -> bool:
+    """Delete the thread itself — the session cascades to its messages, and to
+    the link row."""
+    session = s.get(ChatSession, session_id)
+    if session is None:
+        return False
+    s.delete(session)
+    s.flush()
+    return True

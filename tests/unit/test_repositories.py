@@ -182,6 +182,12 @@ def test_recent_messages_order_and_limit(db_session):
     db_session.flush()
 
     assert repo.get_recent_messages(db_session, session.id) == turns
+    # and without explicit timestamps: rows written back-to-back in ONE
+    # transaction must still come back in order (message_timestamp())
+    rapid = repo.get_or_create_session(db_session, kb.id, None)
+    for role, content in turns:
+        repo.add_message(db_session, rapid.id, role, content)
+    assert repo.get_recent_messages(db_session, rapid.id) == turns
     # limit keeps the most recent, still oldest→newest
     assert repo.get_recent_messages(db_session, session.id, limit=2) == [
         ("user", "Q2"), ("assistant", "A2")]

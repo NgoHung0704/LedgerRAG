@@ -48,6 +48,7 @@ def create_app() -> FastAPI:
     )
 
     from tablerag.api.routes import (
+        assistants,
         chat,
         diagnostics,
         documents,
@@ -62,6 +63,7 @@ def create_app() -> FastAPI:
     app.include_router(me.router)
     app.include_router(kb.router)
     app.include_router(documents.router)
+    app.include_router(assistants.router)
     app.include_router(chat.router)
     app.include_router(elements.router)
     app.include_router(models.router)
