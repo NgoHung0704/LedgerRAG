@@ -67,6 +67,56 @@ def test_conversational_messages_are_detected(message, kind):
         assert match.kind == kind
 
 
+@pytest.mark.parametrize("message", [
+    # identity — the conjugation and word order people actually type. "qui est
+    # tu ?" is what a real user sent when the first pattern list missed it and
+    # the question went through full retrieval.
+    "qui est tu ?",
+    "Qui es-tu ?",
+    "qui êtes-vous ?",
+    "Tu es qui ?",
+    "vous êtes qui ?",
+    "t'es qui ?",
+    "Qui est-ce ?",
+    "c'est quoi ce chat ?",
+    "Présente-toi",
+    "Bonjour, qui es-tu ?",          # greeting glued in front
+    "qui es-tu, s'il vous plaît ?",  # trailing politeness
+    "who are you?",
+    "Who is this?",
+    "introduce yourself",
+    "bạn là ai",
+    "bạn tên gì",
+    # capability
+    "Que peux-tu faire ?",
+    "tu peux faire quoi ?",
+    "Qu'est-ce que tu sais faire ?",
+    "À quoi sers-tu ?",
+    "comment ça marche ?",
+    "comment tu fonctionnes ?",
+    "Tu peux m'aider ?",
+    "aide",
+    "what can you do?",
+    "how does this work?",
+    "bạn làm được gì",
+])
+def test_identity_and_capability_variants_are_caught(message):
+    match = classify_smalltalk(message)
+    assert match is not None, f"{message!r} should be answered without retrieval"
+    assert match.kind == "capability"
+
+
+@pytest.mark.parametrize("message", [
+    # the same opening followed by a real request must still search
+    "Qui es-tu et quel est le salaire de la classe 11 ?",
+    "Tu peux m'aider à trouver la cotation du poste Comptable ?",
+    "comment ça marche, le barème du groupe F ?",
+    "aide-moi à comprendre la classe d'emploi 16",
+])
+def test_capability_opening_plus_a_real_question_still_retrieves(message):
+    assert classify_smalltalk(message) is None
+
+
 def test_language_is_carried_for_the_fallback_reply():
     assert classify_smalltalk("Bonjour").language == "fr"
     assert classify_smalltalk("hello").language == "en"

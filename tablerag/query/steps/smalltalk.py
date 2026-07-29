@@ -36,9 +36,16 @@ _PUNCT = re.compile(r"[^\w\s]", re.UNICODE)
 _WS = re.compile(r"\s+")
 
 
+# NFKD leaves these alone — they are letters in their own right, not a base
+# plus a combining mark — so fold them by hand or Vietnamese never matches
+# ("được" would normalise to "đuoc", not "duoc").
+_LETTER_FOLD = str.maketrans({"đ": "d", "Đ": "d", "ø": "o", "æ": "ae", "œ": "oe",
+                              "ß": "ss", "ł": "l"})
+
+
 def _norm(text: str) -> str:
     """lowercase, accent-folded, punctuation -> space ("d'accord" -> "d accord")."""
-    folded = unicodedata.normalize("NFKD", text.lower())
+    folded = unicodedata.normalize("NFKD", text.lower().translate(_LETTER_FOLD))
     folded = "".join(c for c in folded if not unicodedata.combining(c))
     return _WS.sub(" ", _PUNCT.sub(" ", folded)).strip()
 
@@ -68,17 +75,53 @@ _CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
     ("ack", "vi", ("ok", "duoc roi", "hieu roi", "tot roi")),
 ]
 
-# whole-message "what are you / what can you do" questions. Matched as regexes
-# so their content words never enter the permissive vocabulary.
+# whole-message "who are you / what can you do" questions. Matched as anchored
+# regexes so their content words never enter the permissive vocabulary, and a
+# question that merely STARTS this way ("qui es-tu et quel est le salaire… ?")
+# still goes to retrieval.
+#
+# Conjugation and word order vary far more than a literal list survives — real
+# users write "qui est tu ?", "t'es qui", "vous êtes qui ?" — so each pattern
+# spells out the variants rather than one canonical form.
 _CAPABILITY: list[tuple[str, str]] = [
-    ("fr", r"^(qui es tu|qui etes vous|tu es qui|c est quoi ce chat)$"),
-    ("fr", r"^(que peux tu faire|que pouvez vous faire|tu peux faire quoi"
-           r"|tu sers a quoi|comment ca marche|comment tu marches|aide)$"),
-    ("en", r"^(who are you|what are you|what is this)$"),
-    ("en", r"^(what can you do|what do you do|how do you work|how does this work"
-           r"|help)$"),
-    ("vi", r"^(ban la ai|ban lam duoc gi|ban giup duoc gi|giup gi|huong dan)$"),
+    # FR — identity
+    ("fr", r"^(qui (es|est|etes|ete|es ce que|est ce que) (tu|vous|ce)"
+           r"|(tu|vous) (es|est|etes) qui"
+           r"|t es qui|c est qui|qui est ce"
+           r"|c est quoi (ce|cet|cette) (chat|bot|assistant|outil|truc)"
+           r"|presente toi|presentez vous)$"),
+    # FR — capability
+    ("fr", r"^((que|qu est ce que|qu est ce qu|quoi que) ?(tu peux|tu sais"
+           r"|vous pouvez|vous savez) faire"
+           r"|(tu peux|tu sais|vous pouvez|vous savez) faire quoi"
+           r"|que (peux|sais) tu faire|que (pouvez|savez) vous faire"
+           r"|(tu sers|vous servez) a quoi|a quoi (tu sers|sers tu"
+           r"|vous servez|servez vous|ca sert|sert ce chat)"
+           r"|comment (ca|cela) (marche|fonctionne)"
+           r"|comment (tu|vous) (marche|marches|marchez|fonctionne|fonctionnes"
+           r"|fonctionnez)"
+           r"|quelles sont tes (capacites|fonctions|competences)"
+           r"|(tu peux|vous pouvez) m aider"
+           r"|aide|aide moi|a l aide)$"),
+    # EN
+    ("en", r"^((who|what) (are|r) (you|u)|who is this|what is this( chat| bot"
+           r"| tool| assistant)?|introduce yourself)$"),
+    ("en", r"^(what can (you|u) do|what do (you|u) do|how (do|does) (you|this"
+           r"|it) work|what are you for|help|help me)$"),
+    # VI
+    ("vi", r"^(ban la ai|ban ten (gi|la gi)|ai day|ban la gi"
+           r"|gioi thieu( ve)?( ban| minh| chinh minh)?)$"),
+    ("vi", r"^(ban lam duoc gi|ban co the lam gi|ban giup duoc gi|giup gi"
+           r"|huong dan|ban dung de lam gi)$"),
 ]
+
+# a greeting glued in front of a capability question ("bonjour, qui es-tu ?")
+# is still small talk — strip the greeting, then match
+_LEADING_GREETING = re.compile(
+    r"^(bonjour|bonsoir|salut|coucou|hello|hi|hey|xin chao|chao|alo|allo)\s+")
+# trailing politeness likewise
+_TRAILING_POLITENESS = re.compile(
+    r"\s+(s il (te|vous) plait|svp|stp|please|merci|nhe|a)$")
 
 # glue words that may appear alongside a greeting without making it a request
 _FILLERS = frozenset((
@@ -115,8 +158,13 @@ def classify_smalltalk(question: str) -> SmallTalkMatch | None:
     if not norm:
         return None
 
+    # "bonjour, qui es-tu, svp ?" is a capability question wearing manners
+    core = norm
+    while (m := _LEADING_GREETING.match(core)):
+        core = core[m.end():]
+    core = _TRAILING_POLITENESS.sub("", core).strip()
     for lang, pattern in _CAPABILITY:
-        if re.match(pattern, norm):
+        if core and re.match(pattern, core):
             return SmallTalkMatch("capability", lang)
 
     words = norm.split()
