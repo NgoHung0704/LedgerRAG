@@ -272,13 +272,16 @@ export const getElement = (elementId: string) =>
     jsonOrThrow<ElementDetail>(r),
   );
 
-/** Ask the parser VLM to re-read this element's page with its structure kept
- * (a diagram/grid comes back as a markdown table). Returns a PROPOSAL — nothing
- * is written until the reviewer saves it through the element editor. */
-export const rereadElement = (elementId: string) =>
-  fetch(`${API_URL}/api/elements/${elementId}/reread`, { method: "POST" }).then(
-    (r) => jsonOrThrow<{ text: string }>(r),
-  );
+/** How the VLM should re-read a page: a faithful transcription that keeps a
+ * grid as a markdown table, an explanation of what the page says, or both. */
+export type RereadMode = "structure" | "summary" | "both";
+
+/** Ask the parser VLM to re-read this element's page. Returns a PROPOSAL —
+ * nothing is written until the reviewer saves it through the element editor. */
+export const rereadElement = (elementId: string, mode: RereadMode = "structure") =>
+  fetch(`${API_URL}/api/elements/${elementId}/reread?mode=${mode}`, {
+    method: "POST",
+  }).then((r) => jsonOrThrow<{ text: string; mode: RereadMode }>(r));
 
 export const elementImageUrl = (elementId: string) =>
   `${API_URL}/api/elements/${elementId}/image`;

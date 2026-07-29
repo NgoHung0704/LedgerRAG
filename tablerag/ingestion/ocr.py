@@ -48,6 +48,40 @@ summarize, complete or invent anything. If something is unreadable, write [?].
 - Output only the transcription — no preamble, no commentary.\
 """
 
+# Some pages carry their meaning in a layout that no transcription conveys (a
+# process diagram, a schema of arrows and boxes). Explaining what the page SAYS
+# is then more useful than a faithful-but-flat copy — as long as it stays a
+# reading of the page, not an inference about the subject.
+_SUMMARY_PROMPT = """\
+Explain what this page says, in the SAME language as the page.
+
+- State what it is about, then walk through its content in order.
+- Make the relationships EXPLICIT: which heading each item belongs to, what \
+leads to what, and what each step produces. This is the whole point — a reader \
+must be able to tell which description and which result belong to which step.
+- Quote every number, amount, date and proper name EXACTLY as printed.
+- Describe only what is on this page. Never add knowledge from elsewhere, never \
+draw conclusions the page does not state, and write [?] for anything unreadable.
+- Output only the explanation — no preamble, no commentary.\
+"""
+
+# Faithful transcription first (the substance), then a short reading of it.
+_BOTH_PROMPT = _STRUCTURED_PROMPT.replace(
+    "- Output only the transcription — no preamble, no commentary.",
+    "- After the transcription, add a line `---` and then, under the heading "
+    "`Ce que dit cette page :` (translated into the page's language), 2 to 4 "
+    "sentences making the relationships explicit: which description and which "
+    "result belong to which heading or step. Quote figures exactly; add nothing "
+    "that is not on the page.\n"
+    "- Output only that — no preamble, no commentary.")
+
+# what the caller may ask for
+REREAD_MODES = {
+    "structure": _STRUCTURED_PROMPT,   # faithful, grid -> markdown table
+    "summary": _SUMMARY_PROMPT,        # what the page conveys, in prose
+    "both": _BOTH_PROMPT,              # transcription + a short reading
+}
+
 
 async def _transcribe(image_png: bytes, prompt: str) -> str:
     from tablerag.core.config import get_settings
@@ -66,11 +100,15 @@ async def _transcribe(image_png: bytes, prompt: str) -> str:
     return "".join(parts).strip()
 
 
-async def reread_page_structured(image_png: bytes) -> str:
-    """Re-read a layout-heavy page into a structured transcription (a markdown
-    table for a grid/diagram). Proposed to a human for review — never written
-    straight over the extracted text."""
-    return await _transcribe(image_png, _STRUCTURED_PROMPT)
+async def reread_page(image_png: bytes, mode: str = "structure") -> str:
+    """Re-read a layout-heavy page: a structured transcription, an explanation
+    of what it says, or both (see REREAD_MODES). Always proposed to a human for
+    review — never written straight over the extracted text.
+
+    Markdown, not HTML, on purpose: a text element's content is embedded for
+    retrieval and rendered as markdown in answers, so tags would pollute the
+    vector and show up as literal `<table>` in the chat."""
+    return await _transcribe(image_png, REREAD_MODES[mode])
 
 
 async def ocr_page(image_png: bytes) -> tuple[str, bool]:

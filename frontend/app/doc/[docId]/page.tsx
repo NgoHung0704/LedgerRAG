@@ -29,6 +29,7 @@ import {
   type DocumentView,
   type ElementDetail,
   type ElementView,
+  type RereadMode,
 } from "@/lib/api";
 import { Button, Card, Spinner, StatusPill } from "@/components/ui";
 
@@ -215,12 +216,14 @@ function ElementCard({
   // VLM re-reading offered for review before it replaces anything
   const [proposed, setProposed] = useState<string | undefined>();
   const [rereading, setRereading] = useState(false);
+  const [rereadMenu, setRereadMenu] = useState(false);
 
-  const reread = async () => {
+  const reread = async (mode: RereadMode) => {
+    setRereadMenu(false);
     setRereading(true);
     setReviewError(null);
     try {
-      const { text } = await rereadElement(element.id);
+      const { text } = await rereadElement(element.id, mode);
       setProposed(text);
       setEditing(true);
     } catch (e) {
@@ -307,15 +310,59 @@ function ElementCard({
         )}
         <div className="ml-auto flex items-center gap-2">
           {element.type === "text" && (
-            <button
-              onClick={reread}
-              disabled={rereading}
-              title="Have the parser model re-read this page keeping its structure (a diagram becomes a table). You review the result before it replaces anything."
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
-            >
-              {rereading ? <Spinner size={11} /> : <ScanText size={12} />}
-              {rereading ? "re-reading…" : "re-read with the VLM"}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setRereadMenu((v) => !v)}
+                disabled={rereading}
+                title="Have the parser model read this page again from its image. You review the result before it replaces anything."
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+              >
+                {rereading ? <Spinner size={11} /> : <ScanText size={12} />}
+                {rereading ? "re-reading…" : "re-read with the VLM"}
+              </button>
+              {rereadMenu && !rereading && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setRereadMenu(false)}
+                  />
+                  <div className="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-slate-200 bg-white p-1.5 shadow-md dark:border-slate-700 dark:bg-[#1b222a]">
+                    {(
+                      [
+                        {
+                          mode: "structure",
+                          label: "Structure",
+                          hint: "Faithful transcription — a grid or diagram becomes a markdown table, so each column keeps its heading.",
+                        },
+                        {
+                          mode: "summary",
+                          label: "What the page says",
+                          hint: "Prose explanation making the relations explicit. Useful when the layout carries the meaning.",
+                        },
+                        {
+                          mode: "both",
+                          label: "Structure + summary",
+                          hint: "The transcription, then a few sentences reading it back.",
+                        },
+                      ] as const
+                    ).map(({ mode, label, hint }) => (
+                      <button
+                        key={mode}
+                        onClick={() => reread(mode)}
+                        className="block w-full rounded px-2.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                      >
+                        <span className="block text-[12px] font-medium text-slate-700 dark:text-slate-200">
+                          {label}
+                        </span>
+                        <span className="block text-[11px] leading-4 text-slate-400">
+                          {hint}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           )}
           {element.type !== "figure" && (
             <button

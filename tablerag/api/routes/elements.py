@@ -48,19 +48,27 @@ async def edit_element(element_id: uuid.UUID, body: ElementEdit) -> dict:
 
 
 @router.post("/{element_id}/reread")
-async def reread_element(element_id: uuid.UUID) -> dict:
-    """Have the parser VLM re-read this element's PAGE and transcribe it with
-    its structure preserved (a grid/diagram becomes a markdown table).
+async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict:
+    """Have the parser VLM re-read this element's PAGE.
 
-    A column layout reads as a 2-D grid, which linear extraction flattens — no
-    reading order recovers it. This returns a PROPOSAL and writes nothing: the
-    reviewer compares it against the original image and saves it through the
-    normal element edit, which re-chunks and re-indexes."""
+    `mode` picks what comes back (see ocr.REREAD_MODES): a faithful transcription
+    that keeps a grid/diagram as a markdown table, an explanation of what the
+    page says, or both. A column layout reads as a 2-D grid that linear
+    extraction flattens, and no reading order recovers it.
+
+    This returns a PROPOSAL and writes nothing: the reviewer compares it against
+    the original image and saves it through the normal element edit, which
+    re-chunks and re-indexes."""
     from tablerag.core.config import get_settings
     from tablerag.ingestion.imaging import ensure_min_width
-    from tablerag.ingestion.ocr import reread_page_structured
+    from tablerag.ingestion.ocr import REREAD_MODES, reread_page
     from tablerag.storage.object_store import page_image_key
     from tablerag.storage.orm import Document, Element
+
+    if mode not in REREAD_MODES:
+        raise HTTPException(
+            400, f"unknown mode {mode!r}; expected one of "
+                 f"{', '.join(sorted(REREAD_MODES))}")
 
     def load() -> bytes:
         with session_scope() as s:
@@ -80,10 +88,10 @@ async def reread_element(element_id: uuid.UUID) -> dict:
     # headings around the text to reconstruct what belongs with what
     page_png = await asyncio.to_thread(load)
     page_png = ensure_min_width(page_png, get_settings().vlm_min_image_width)
-    text = await reread_page_structured(page_png)
+    text = await reread_page(page_png, mode)
     if not text:
         raise HTTPException(502, "the parser model returned nothing")
-    return {"text": text}
+    return {"text": text, "mode": mode}
 
 
 @router.post("/{element_id}/approve")
