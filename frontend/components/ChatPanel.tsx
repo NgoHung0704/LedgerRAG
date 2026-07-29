@@ -7,6 +7,8 @@ import {
   AlertTriangle,
   BadgeCheck,
   FileText,
+  Gauge,
+  Search,
   Send,
   Sparkles,
   Table2,
@@ -27,8 +29,13 @@ import {
   type Verification,
 } from "@/lib/api";
 import { Spinner } from "@/components/ui";
+import CopyButton from "@/components/CopyButton";
 import SourceModal from "@/components/SourceModal";
 import ChatScopeSelector, { type Scope } from "@/components/ChatScopeSelector";
+
+// what the turn cost, measured client-side: the wait the user actually had.
+// searchMs is null for a conversational reply (nothing was retrieved).
+type Timing = { searchMs: number | null; genMs: number; chars: number };
 
 type Message = {
   role: "user" | "assistant";
@@ -39,6 +46,7 @@ type Message = {
   messageId?: string;
   feedback?: -1 | 0 | 1;
   error?: boolean;
+  timing?: Timing;
 };
 
 export default function ChatPanel({
@@ -161,6 +169,10 @@ export default function ChatPanel({
             scope.mode === "pinned" ? Array.from(scope.kbIds) : null,
             sessionRef.current,
           );
+    // the citations event fires once retrieval + reranking + assembly are done
+    // and generation is about to start, so it splits the wait cleanly in two
+    const startedAt = performance.now();
+    let searchedAt: number | null = null;
     try {
       let answer = "";
       for await (const ev of stream) {
@@ -168,15 +180,22 @@ export default function ChatPanel({
           answer += ev.content;
           patchLast({ content: answer });
         } else if (ev.type === "citations") {
+          searchedAt = performance.now();
           patchLast({ citations: ev.citations });
         } else if (ev.type === "done") {
           sessionRef.current = ev.session_id;
           // a brand-new thread just got saved — let the list pick it up
           if (isNewThread) onSessionStarted?.(ev.session_id);
+          const finishedAt = performance.now();
           patchLast({
             verification: ev.verification,
             routing: "routing" in ev ? (ev.routing as RoutingInfo | null) : null,
             messageId: ev.message_id,
+            timing: {
+              searchMs: searchedAt === null ? null : searchedAt - startedAt,
+              genMs: finishedAt - (searchedAt ?? startedAt),
+              chars: answer.length,
+            },
           });
         } else if (ev.type === "error") {
           patchLast({ content: ev.message, error: true });
@@ -211,7 +230,12 @@ export default function ChatPanel({
 
         {messages.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} className="flex justify-end">
+            <div key={i} className="group flex items-start justify-end gap-1">
+              <CopyButton
+                text={m.content}
+                title="Copy the question"
+                className="mt-2 opacity-0 transition-opacity group-hover:opacity-100"
+              />
               <div className="max-w-[80%] rounded-2xl rounded-br-md bg-indigo-600 px-4 py-2.5 font-serif text-[15px] leading-relaxed text-white">
                 {m.content}
               </div>
@@ -271,17 +295,23 @@ export default function ChatPanel({
                   </div>
                 )}
 
-                {m.messageId && !m.error && (
+                {m.content && !m.error && (
                   <div className="mt-2 flex items-center gap-1">
-                    <FeedbackButton
-                      active={m.feedback === 1}
-                      onClick={() => rate(i, 1)}
-                      up
-                    />
-                    <FeedbackButton
-                      active={m.feedback === -1}
-                      onClick={() => rate(i, -1)}
-                    />
+                    <CopyButton text={m.content} title="Copy the answer" />
+                    {m.messageId && (
+                      <>
+                        <FeedbackButton
+                          active={m.feedback === 1}
+                          onClick={() => rate(i, 1)}
+                          up
+                        />
+                        <FeedbackButton
+                          active={m.feedback === -1}
+                          onClick={() => rate(i, -1)}
+                        />
+                      </>
+                    )}
+                    {m.timing && <TimingBadge timing={m.timing} />}
                   </div>
                 )}
               </div>
@@ -336,6 +366,36 @@ export default function ChatPanel({
         <SourceModal citation={openSource} onClose={() => setOpenSource(null)} />
       )}
     </div>
+  );
+}
+
+// What the turn cost: the search half (routing + retrieval + reranking, up to
+// the citations event) and the generation half. tok/s is the number to watch on
+// a self-hosted box — a sudden collapse means the model fell back to the CPU.
+function TimingBadge({ timing }: { timing: Timing }) {
+  const secs = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+  // same chars/4 estimate the ingestion side uses for sizing
+  const tokens = Math.max(1, Math.round(timing.chars / 4));
+  const rate = timing.genMs > 0 ? (tokens / (timing.genMs / 1000)).toFixed(0) : null;
+  return (
+    <span
+      className="ml-1 inline-flex items-center gap-1.5 text-[11px] tabular-nums text-slate-400 dark:text-slate-500"
+      title={
+        `Search (routing, retrieval, reranking): ${
+          timing.searchMs === null ? "not needed" : secs(timing.searchMs)
+        }\nGeneration: ${secs(timing.genMs)}\n~${tokens} tokens (estimated)`
+      }
+    >
+      {timing.searchMs !== null && (
+        <span className="inline-flex items-center gap-1">
+          <Search size={11} /> {secs(timing.searchMs)}
+        </span>
+      )}
+      <span className="inline-flex items-center gap-1">
+        <Gauge size={11} /> {secs(timing.genMs)}
+        {rate && <span className="text-slate-300 dark:text-slate-600">· {rate} tok/s</span>}
+      </span>
+    </span>
   );
 }
 
