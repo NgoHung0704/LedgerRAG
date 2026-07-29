@@ -85,8 +85,11 @@ class FeedbackRequest(BaseModel):
 
 
 class ChatInstructions(BaseModel):
-    """Global extra guidance appended to every chat system prompt (admin).
-    Additive only — the hardcoded safety rules always take precedence."""
+    """Global chat persona (admin). `identity` is who the assistant says it is
+    (it answers "who are you?" without searching); `text` is extra guidance
+    appended to the system prompt. Both additive — the hardcoded safety rules
+    always take precedence."""
+    identity: str = ""
     text: str = ""
 
 

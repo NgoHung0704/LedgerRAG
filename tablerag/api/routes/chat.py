@@ -37,19 +37,20 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
-def _instructions(s, kb_instructions: str | None = None) -> str:
-    """Operator guidance appended to the chat system prompt: the global setting
-    plus (optionally) a single KB's own, joined. Empty when nothing is set."""
+def _persona(s, kb_instructions: str | None = None) -> tuple[str, str]:
+    """(identity, extra_instructions) for the chat prompts: the global persona
+    plus (optionally) a single KB's own guidance. Empty when nothing is set."""
     stored = repo.get_setting(s, repo.CHAT_INSTRUCTIONS_SETTING) or {}
     parts = [stored.get("text", ""), kb_instructions or ""]
-    return "\n\n".join(p.strip() for p in parts if p and p.strip())
+    extra = "\n\n".join(p.strip() for p in parts if p and p.strip())
+    return stored.get("identity", ""), extra
 
 
 @router.post("/kbs/{kb_id}/chat")
 async def chat(kb_id: uuid.UUID, body: ChatRequest,
                user: User = Depends(current_user)) -> StreamingResponse:
     def prepare() -> tuple[uuid.UUID, str | None, bool,
-                           list[tuple[str, str]], str]:
+                           list[tuple[str, str]], str, str]:
         with session_scope() as s:
             kb = repo.get_kb(s, kb_id)
             if kb is None:
@@ -67,16 +68,18 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest,
             repo.add_message(s, session.id, "user", body.question)
             repo.log_audit(s, user.username, "query", kb_id=kb_id,
                            detail={"question": body.question[:200]})
-            # operator guidance: global + this KB's own, both appended (never
-            # overriding the safety rules — see generate.build_system_prompt)
-            extra = _instructions(s, kb_config.get("instructions"))
-            return session.id, locale, verify, history, extra
+            # operator persona: identity + global/KB guidance (never overriding
+            # the safety rules — see generate.build_system_prompt)
+            identity, extra = _persona(s, kb_config.get("instructions"))
+            return session.id, locale, verify, history, extra, identity
 
-    session_id, locale, verify, history, extra = await asyncio.to_thread(prepare)
+    session_id, locale, verify, history, extra, identity = \
+        await asyncio.to_thread(prepare)
 
     async def event_stream():
         ctx = QueryContext(kb_id=kb_id, question=body.question, locale=locale,
-                           history=history, extra_instructions=extra)
+                           history=history, extra_instructions=extra,
+                           identity=identity)
         try:
             async for kind, payload in default_pipeline(verify=verify).stream(ctx):
                 if kind == "citations":
@@ -121,7 +124,7 @@ async def chat_multi(body: MultiChatRequest,
     from tablerag.query.steps.router import LLMRouter
 
     def prepare() -> tuple[list[uuid.UUID], str | None,
-                           list[tuple[str, str]], str, uuid.UUID]:
+                           list[tuple[str, str]], str, uuid.UUID, str]:
         with session_scope() as s:
             kbs = repo.list_kbs(s)
             if not kbs:
@@ -145,10 +148,11 @@ async def chat_multi(body: MultiChatRequest,
             # pinned to exactly that one KB (across several it is ambiguous)
             kb_instr = (by_id[pinned[0]].config or {}).get("instructions") \
                 if len(pinned) == 1 else None
-            extra = _instructions(s, kb_instr)
-            return pinned, locale, history, extra, kbs[0].id
+            identity, extra = _persona(s, kb_instr)
+            return pinned, locale, history, extra, kbs[0].id, identity
 
-    pinned, locale, history, extra, first_kb = await asyncio.to_thread(prepare)
+    pinned, locale, history, extra, first_kb, identity = \
+        await asyncio.to_thread(prepare)
 
     async def event_stream():
         # kb_id is unused when routing drives retrieval, but it is the session's
@@ -157,7 +161,7 @@ async def chat_multi(body: MultiChatRequest,
         ctx = QueryContext(kb_id=pinned[0] if pinned else first_kb,
                            question=body.question, locale=locale,
                            pinned_kb_ids=pinned or None, history=history,
-                           extra_instructions=extra)
+                           extra_instructions=extra, identity=identity)
         try:
             pipeline = default_pipeline(verify=body.verify, router=LLMRouter())
             async for kind, payload in pipeline.stream(ctx):

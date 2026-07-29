@@ -22,23 +22,28 @@ def me(user: User = Depends(current_user)) -> dict:
 
 @router.get("/settings/chat-instructions", response_model=ChatInstructions)
 def get_chat_instructions(_user: User = Depends(current_user)) -> ChatInstructions:
-    """Global extra guidance appended to every chat system prompt. Readable by
-    any user (the Settings UI shows it); only admins can change it."""
+    """Global chat persona: who the assistant is, plus extra guidance appended
+    to every system prompt. Readable by any user (the Settings UI shows it);
+    only admins can change it. Empty identity = the built-in description."""
     with session_scope() as s:
         stored = repo.get_setting(s, repo.CHAT_INSTRUCTIONS_SETTING) or {}
-    return ChatInstructions(text=stored.get("text", ""))
+    return ChatInstructions(identity=stored.get("identity", ""),
+                            text=stored.get("text", ""))
 
 
 @router.put("/settings/chat-instructions", response_model=ChatInstructions)
 def put_chat_instructions(body: ChatInstructions,
                           admin: User = Depends(require_admin)) -> ChatInstructions:
-    text = body.text.strip()
+    identity, text = body.identity.strip(), body.text.strip()
     with session_scope() as s:
-        repo.set_setting(s, repo.CHAT_INSTRUCTIONS_SETTING, {"text": text})
+        repo.set_setting(s, repo.CHAT_INSTRUCTIONS_SETTING,
+                         {"identity": identity, "text": text})
         # audit the change, never the full text (may be long / sensitive)
         repo.log_audit(s, admin.username, "model_config",
-                       detail={"setting": "chat_instructions", "chars": len(text)})
-    return ChatInstructions(text=text)
+                       detail={"setting": "chat_instructions",
+                               "identity_chars": len(identity),
+                               "chars": len(text)})
+    return ChatInstructions(identity=identity, text=text)
 
 
 @router.get("/audit")

@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import re
 from typing import AsyncIterator, Callable
 
 from tablerag.models.base import Msg, RecordParse, TableCtx, TableParse
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """\
 You are a precise document-table parser. You receive one image containing a \
@@ -257,10 +260,24 @@ def parse_response(text: str) -> tuple[str, list[dict]]:
         payload = json.loads(blocks["json"])
     except json.JSONDecodeError as e:
         raise TableContractError(f"json block is not valid JSON: {e}") from e
-    records = payload.get("records")
+    # the contract is {"records": [...]}, but a model sometimes emits the bare
+    # array. That is the same data, so accept it rather than lose the table —
+    # and never let an unexpected shape raise something other than
+    # TableContractError (a raw AttributeError here used to escape the retry
+    # path and fail the WHOLE document, e.g. a top-level JSON list).
+    if isinstance(payload, list):
+        records = payload
+    elif isinstance(payload, dict):
+        records = payload.get("records")
+    else:
+        raise TableContractError('json block must be {"records": [...]}')
     if not isinstance(records, list) or not records:
         raise TableContractError('json block must be {"records": [...]} with >= 1 record')
     for i, rec in enumerate(records):
+        if not isinstance(rec, dict):
+            raise TableContractError(
+                f"record {i} must be an object with 'dimensions', 'metrics' "
+                f"and 'raw_values', got {type(rec).__name__}")
         for key in ("dimensions", "metrics", "raw_values"):
             if not isinstance(rec.get(key), dict):
                 raise TableContractError(f"record {i}: '{key}' must be an object")
@@ -325,6 +342,22 @@ async def _collect(chat: ChatFn, messages: list[Msg], options: dict) -> str:
     return "".join(parts)
 
 
+def _parse_or_contract_error(text: str) -> tuple[str, list[dict]]:
+    """parse_response, with any unexpected exception recast as a contract
+    violation. One malformed reply must cost ONE table (flagged, original image
+    kept — SPEC §0.3 fail honestly), never the whole document: an escaping
+    TypeError/AttributeError used to abort ingestion for every page."""
+    try:
+        return parse_response(text)
+    except TableContractError:
+        raise
+    except Exception as e:  # noqa: BLE001 — defensive: unknown reply shape
+        logger.warning("unexpected shape in table reply (%s: %s)",
+                       type(e).__name__, e)
+        raise TableContractError(
+            f"unexpected {type(e).__name__} while reading the reply: {e}") from e
+
+
 async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TableParse:
     """One parse attempt + one retry with the concrete error (SPEC Phase 2 §3).
     Never raises on contract failure — returns an honest TableParse.error."""
@@ -339,7 +372,7 @@ async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TablePar
     text = await _collect(chat, messages, options)
     raw = text
     try:
-        html, records = parse_response(text)
+        html, records = _parse_or_contract_error(text)
     except TableContractError as first_error:
         retry = messages + [
             Msg(role="assistant", content=text),
@@ -348,7 +381,7 @@ async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TablePar
         text2 = await _collect(chat, retry, options)
         raw = f"{text}\n\n=== RETRY ===\n\n{text2}"
         try:
-            html, records = parse_response(text2)
+            html, records = _parse_or_contract_error(text2)
         except TableContractError as second_error:
             return TableParse(
                 html=salvage_html(text2) or salvage_html(text), records=[],

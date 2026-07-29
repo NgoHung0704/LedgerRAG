@@ -69,9 +69,32 @@ INSTRUCTIONS_HEADER = (
     "not in the documents when it is not.\n")
 
 
-def build_system_prompt(extra_instructions: str = "") -> str:
+# Who the assistant is. Used verbatim for conversational replies ("qui es-tu ?"
+# — see steps/smalltalk.py) and overridable by the operator, e.g. "l'assistant
+# RH du CETIAT". Deliberately states the honesty contract as part of the
+# identity: what this tool IS, is a thing that does not guess.
+DEFAULT_IDENTITY = (
+    "LedgerRAG, an assistant that answers questions about the documents in this "
+    "workspace. You quote figures exactly as printed, always cite the source "
+    "page, and say plainly when something is not in the documents rather than "
+    "guessing.")
+
+IDENTITY_HEADER = "You are {identity}\n\n"
+
+
+def build_system_prompt(extra_instructions: str = "",
+                        identity: str = "") -> str:
+    """The answering prompt: safety core, plus optional operator layers.
+
+    An identity is prepended ONLY when the operator set one — with none, the
+    prompt stays byte-identical to the measured configuration, so the eval
+    gates cannot move on an unrelated change."""
+    prompt = SYSTEM_PROMPT
+    ident = (identity or "").strip()
+    if ident:
+        prompt = IDENTITY_HEADER.format(identity=ident) + prompt
     extra = (extra_instructions or "").strip()
-    return SYSTEM_PROMPT + INSTRUCTIONS_HEADER + extra if extra else SYSTEM_PROMPT
+    return prompt + INSTRUCTIONS_HEADER + extra if extra else prompt
 
 
 def _render_source(citation_index: int, block: SourceBlock) -> str:
@@ -114,7 +137,8 @@ class GenerateAnswer:
             yield fallback
             return
         messages = [
-            Msg(role="system", content=build_system_prompt(ctx.extra_instructions)),
+            Msg(role="system",
+                content=build_system_prompt(ctx.extra_instructions, ctx.identity)),
             Msg(role="user", content=(
                 f"{build_history_block(ctx)}"
                 f"Sources:\n\n{build_context_block(ctx)}\n\n"

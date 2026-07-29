@@ -417,17 +417,19 @@ export const deleteKb = (kbId: string) =>
 
 // ---------- global chat instructions (admin) ----------
 
+export type ChatPersona = { identity: string; text: string };
+
 export const getChatInstructions = () =>
   fetch(`${API_URL}/api/settings/chat-instructions`, { cache: "no-store" }).then(
-    (r) => jsonOrThrow<{ text: string }>(r),
+    (r) => jsonOrThrow<ChatPersona>(r),
   );
 
-export const setChatInstructions = (text: string) =>
+export const setChatInstructions = (persona: ChatPersona) =>
   fetch(`${API_URL}/api/settings/chat-instructions`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  }).then((r) => jsonOrThrow<{ text: string }>(r));
+    body: JSON.stringify(persona),
+  }).then((r) => jsonOrThrow<ChatPersona>(r));
 
 // ---------- model roles ----------
 

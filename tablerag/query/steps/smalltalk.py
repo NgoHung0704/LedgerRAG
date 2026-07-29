@@ -135,15 +135,30 @@ def classify_smalltalk(question: str) -> SmallTalkMatch | None:
 
 
 SMALLTALK_SYSTEM = """\
-You are the assistant of a document question-answering tool. The user's message \
-is conversational — a greeting, thanks, or a question about what you can do — \
-not a question about the documents.
+You are {identity}
+
+The user's message is conversational — a greeting, thanks, or a question about \
+who you are and what you can do — not a question about the documents.
 
 Reply in ONE or TWO short sentences, in the SAME language as the user's \
-message. Be warm and plain, and invite them to ask about their documents. You \
-have not consulted any document, so never state any fact, figure, name or date \
-from one.\
+message. Be warm and plain. If they ask who you are or what you can do, say so \
+from the description above and invite them to ask about their documents. You \
+have not consulted any document for this message, so never state any fact, \
+figure, name or date from one.\
 """
+
+
+def build_smalltalk_prompt(identity: str = "",
+                           extra_instructions: str = "") -> str:
+    """Identity first — this is the path that answers "qui es-tu ?", so the
+    assistant must know what it is. Falls back to the built-in description."""
+    from tablerag.query.steps.generate import DEFAULT_IDENTITY
+
+    prompt = SMALLTALK_SYSTEM.format(
+        identity=(identity or "").strip() or DEFAULT_IDENTITY)
+    extra = (extra_instructions or "").strip()
+    # operator tone guidance still applies to conversational replies
+    return f"{prompt}\n\n{extra}" if extra else prompt
 
 # used only if the model is unreachable — a greeting must never surface an error
 _FALLBACK = {
@@ -191,10 +206,7 @@ class SmallTalk:
         from tablerag.models.base import Msg
         from tablerag.models.registry import get_provider
 
-        system = SMALLTALK_SYSTEM
-        if ctx.extra_instructions.strip():
-            # operator tone guidance still applies to conversational replies
-            system += f"\n\n{ctx.extra_instructions.strip()}"
+        system = build_smalltalk_prompt(ctx.identity, ctx.extra_instructions)
         chat = get_provider("chat")
         messages = [Msg(role="system", content=system),
                     Msg(role="user", content=ctx.question)]

@@ -53,6 +53,52 @@ def test_parse_response_contract_errors(bad, fragment):
         parse_response(bad)
 
 
+def test_bare_records_array_is_accepted():
+    """A model that drops the {"records": ...} wrapper still gave us the same
+    records — take them instead of losing the table. (This shape used to raise
+    a raw AttributeError that escaped the retry path and failed the WHOLE
+    document: "'list' object has no attribute 'get'".)"""
+    text = ('```html\n<table><tr><td>x</td></tr></table>\n```\n'
+            '```json\n[{"dimensions": {"pays": "Maroc"}, '
+            '"metrics": {"ca": 12}, "raw_values": {"ca": "12"}}]\n```')
+    html, records = parse_response(text)
+    assert html.startswith("<table>")
+    assert records[0]["metrics"]["ca"] == 12
+
+
+@pytest.mark.parametrize("payload", [
+    '"just a string"',                       # scalar at top level
+    '[[1, 2], [3, 4]]',                      # array of arrays, not objects
+    '{"records": [["a", "b"]]}',             # records that are not objects
+    '{"records": [null]}',
+])
+def test_malformed_shapes_raise_a_contract_error_not_a_crash(payload):
+    """Every unexpected shape must surface as TableContractError so it drives
+    the retry / honest-failure path, never as an exception that aborts
+    ingestion for the whole document."""
+    text = f"```html\n<t/>\n```\n```json\n{payload}\n```"
+    with pytest.raises(TableContractError):
+        parse_response(text)
+
+
+async def test_unexpected_exception_degrades_to_an_honest_failure(monkeypatch):
+    """Defence in depth: even if reading a reply raises something we did not
+    anticipate, the table is flagged — the document still ingests."""
+    import tablerag.models.table_parsing as tp
+
+    def boom(_text):
+        raise AttributeError("'list' object has no attribute 'get'")
+
+    monkeypatch.setattr(tp, "parse_response", boom)
+
+    async def chat(messages, stream=True, options=None, **kw):
+        yield GOOD_RESPONSE
+
+    result = await run_table_parse(chat, b"img", TableCtx(locale_hint="fr"))
+    assert result.records == []
+    assert "AttributeError" in result.error  # honest, and ingestion continues
+
+
 async def test_run_table_parse_retries_then_succeeds():
     calls = []
 

@@ -63,6 +63,9 @@ class QueryContext:
     # operator guidance (global + per-KB) appended to the chat system prompt;
     # additive only — see GenerateAnswer.build_system_prompt
     extra_instructions: str = ""
+    # who the assistant is (operator-set). Drives conversational replies
+    # ("qui es-tu ?"); prepended to the answering prompt only when set.
+    identity: str = ""
     # set by SmallTalk on a conversational message ("salut", "merci"): the
     # answer is already written, so routing/retrieval/rerank/verify are skipped
     short_circuit: bool = False

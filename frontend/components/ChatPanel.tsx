@@ -411,7 +411,9 @@ function MarkdownProse({
   // [1] -> [[1]](#cite-1) so markdown renders a link we can intercept
   const linked = content.replace(/\[(\d+)\]/g, "[[$1]](#cite-$1)");
   return (
-    <div className="chat-md prose prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2">
+    // dark:prose-invert is load-bearing: without it the typography plugin pins
+    // body text to a dark slate that all but disappears on the dark bubble
+    <div className="chat-md prose prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2 dark:prose-invert">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

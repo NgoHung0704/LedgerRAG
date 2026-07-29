@@ -19,6 +19,7 @@ import {
   pullModel,
   setChatInstructions,
   updateModelRole,
+  type ChatPersona,
   type ModelRole,
   type OllamaModel,
 } from "@/lib/api";
@@ -104,12 +105,13 @@ export default function ModelsPage() {
   );
 }
 
-// Global operator guidance appended to every chat answer. Additive on top of
-// the built-in answering rules (it can't relax them); a KB can add its own in
-// its Settings. Saving is admin-gated server-side.
+// The global chat persona: who the assistant says it is (this is what answers
+// "who are you?", with no retrieval), plus extra guidance added on top of the
+// built-in answering rules. Both additive — they can't relax the rules that
+// keep numbers exact. Saving is admin-gated server-side.
 function GlobalInstructions() {
-  const [text, setText] = useState<string | null>(null);
-  const [saved, setSaved] = useState("");
+  const [persona, setPersona] = useState<ChatPersona | null>(null);
+  const [saved, setSaved] = useState<ChatPersona>({ identity: "", text: "" });
   const [saving, setSaving] = useState(false);
   const [ok, setOk] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,24 +119,26 @@ function GlobalInstructions() {
   useEffect(() => {
     getChatInstructions()
       .then((r) => {
-        setText(r.text);
-        setSaved(r.text);
+        setPersona(r);
+        setSaved(r);
       })
       .catch(() => {
-        setText("");
-        setSaved("");
+        setPersona({ identity: "", text: "" });
       });
   }, []);
 
-  const dirty = text !== null && text !== saved;
+  const dirty =
+    persona !== null &&
+    (persona.identity !== saved.identity || persona.text !== saved.text);
+
   const save = async () => {
-    if (text === null) return;
+    if (persona === null) return;
     setSaving(true);
     setError(null);
     try {
-      const r = await setChatInstructions(text);
-      setSaved(r.text);
-      setText(r.text);
+      const r = await setChatInstructions(persona);
+      setSaved(r);
+      setPersona(r);
       setOk(true);
       setTimeout(() => setOk(false), 2000);
     } catch (e) {
@@ -151,31 +155,52 @@ function GlobalInstructions() {
           <MessageSquareText size={17} />
         </div>
         <div>
-          <div className="text-sm font-semibold">Chat instructions (global)</div>
+          <div className="text-sm font-semibold">Chat persona (global)</div>
           <div className="text-[11px] uppercase tracking-wide text-slate-400">
-            applies to every answer
+            applies to every conversation
           </div>
         </div>
       </div>
-      <p className="mb-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-        Extra guidance added on top of the built-in answering rules, for all
-        knowledge bases. It shapes tone, focus and format — it cannot override
-        the rules that keep numbers exact and answers grounded in the sources. A
-        KB can add its own in its Settings.
-      </p>
-      {text === null ? (
+
+      {persona === null ? (
         <div className="flex justify-center py-6">
           <Spinner size={18} />
         </div>
       ) : (
         <>
+          <label className="mt-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            Identity — who the assistant is
+          </label>
+          <p className="mb-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            Used when someone asks « qui es-tu ? » — answered directly, without
+            searching the documents. Leave empty for the built-in description.
+          </p>
           <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={4}
+            value={persona.identity}
+            onChange={(e) =>
+              setPersona({ ...persona, identity: e.target.value })
+            }
+            rows={3}
+            placeholder="e.g. l'assistant documentaire RH du CETIAT : tu réponds aux questions sur les accords et conventions, en citant toujours tes sources."
+            className={`${inputCls} font-sans`}
+          />
+
+          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            Instructions — how it should answer
+          </label>
+          <p className="mb-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            Shapes tone, focus and format for every knowledge base. It cannot
+            override the rules that keep numbers exact and answers grounded in
+            the sources. A KB can add its own in its Settings.
+          </p>
+          <textarea
+            value={persona.text}
+            onChange={(e) => setPersona({ ...persona, text: e.target.value })}
+            rows={3}
             placeholder="e.g. Répondez de façon concise et professionnelle ; citez les numéros d'article quand ils existent."
             className={`${inputCls} font-sans`}
           />
+
           {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
           <div className="mt-2 flex justify-end">
             <Button
