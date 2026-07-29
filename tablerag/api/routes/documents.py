@@ -13,9 +13,14 @@ from tablerag.core.schemas import (
 )
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
+from tablerag.ingestion.convert import (
+    SUPPORTED_SUFFIXES,
+    content_type_for,
+    is_supported,
+)
 from tablerag.storage.object_store import (
-    doc_pdf_key,
     doc_prefix,
+    doc_source_key,
     get_object_store,
     page_image_key,
 )
@@ -30,8 +35,10 @@ MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 async def upload_document(kb_id: uuid.UUID, file: UploadFile,
                           user: User = Depends(current_user)) -> DocumentOut:
     filename = file.filename or "document.pdf"
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(400, "Only PDF files are supported.")
+    if not is_supported(filename):
+        raise HTTPException(
+            400, "Unsupported file type. Accepted: "
+                 f"{', '.join(sorted(SUPPORTED_SUFFIXES))}.")
     data = await file.read()
     if not data:
         raise HTTPException(400, "The uploaded file is empty.")
@@ -39,11 +46,13 @@ async def upload_document(kb_id: uuid.UUID, file: UploadFile,
         raise HTTPException(413, "File exceeds the 200 MB upload limit.")
 
     doc_id = uuid.uuid4()
-    key = doc_pdf_key(kb_id, doc_id)
+    # stored exactly as uploaded (a .pptx stays a .pptx); an Office document is
+    # converted to PDF by the worker and cached alongside it
+    key = doc_source_key(kb_id, doc_id, filename)
     with session_scope() as s:
         if repo.get_kb(s, kb_id) is None:
             raise HTTPException(404, "knowledge base not found")
-        get_object_store().put(key, data, "application/pdf")
+        get_object_store().put(key, data, content_type_for(filename))
         doc = repo.create_document(s, kb_id, filename, key, doc_id=doc_id)
         repo.log_audit(s, user.username, "upload", kb_id=kb_id, doc_id=doc_id,
                        detail={"filename": filename, "bytes": len(data)})
@@ -243,10 +252,11 @@ def get_original_document(doc_id: uuid.UUID) -> Response:
     store = get_object_store()
     if not store.exists(key):
         raise HTTPException(404, "original document not found")
-    # inline so the browser previews it; strip anything that could break the
-    # header, keep an ascii fallback name
+    # inline so the browser previews a PDF; an Office file keeps its own type so
+    # it downloads as the .pptx/.docx it really is. strip anything that could
+    # break the header, keep an ascii fallback name
     safe = "".join(c for c in filename if c.isalnum() or c in " ._-").strip()
     return Response(
-        content=store.get(key), media_type="application/pdf",
+        content=store.get(key), media_type=content_type_for(filename),
         headers={"Content-Disposition":
                  f'inline; filename="{safe or "document.pdf"}"'})

@@ -150,15 +150,16 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
           className={dragOver ? "text-indigo-500" : "text-slate-300 dark:text-slate-600"}
         />
         <div className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-          Drop PDF documents here, or click to browse
+          Drop documents here, or click to browse
         </div>
         <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-          Tables keep their original image — parsing is verified, never guessed.
+          PDF, Word, PowerPoint or Excel. Tables keep their original image —
+          parsing is verified, never guessed.
         </div>
         <input
           ref={fileInput}
           type="file"
-          accept="application/pdf"
+          accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx,.xls"
           multiple
           className="hidden"
           onChange={(e) => {

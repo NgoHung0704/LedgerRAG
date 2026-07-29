@@ -21,6 +21,7 @@ from qdrant_client.http.exceptions import ResponseHandlingException
 from tablerag.core.config import get_settings
 from tablerag.core.queue import TASK_PROCESS_DOCUMENT, celery_app
 from tablerag.ingestion.chunking import chunk_text
+from tablerag.ingestion.convert import ConversionError, needs_conversion, to_pdf
 from tablerag.ingestion.extract import PdfError
 from tablerag.ingestion.layout import PageLayout, analyze_document, crop_region_png
 from tablerag.ingestion.ocr import ocr_page
@@ -29,7 +30,11 @@ from tablerag.models.base import ModelProvider, TableCtx, Vector
 from tablerag.models.registry import get_provider
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
-from tablerag.storage.object_store import get_object_store, page_image_key
+from tablerag.storage.object_store import (
+    doc_converted_pdf_key,
+    get_object_store,
+    page_image_key,
+)
 from tablerag.storage.qdrant import (
     COLLECTION_CHUNKS,
     COLLECTION_RECORDS,
@@ -254,6 +259,27 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                              element_id=element_id)
 
 
+def _as_pdf(store, settings, kb_id, doc_id, file_path: str,
+            filename: str) -> bytes:
+    """The document as PDF bytes: passed through for a PDF, converted once for
+    an Office file. The rendering is cached next to the original, so a reprocess
+    (or a retry) never pays for LibreOffice twice."""
+    data = store.get(file_path)
+    if not needs_conversion(filename):
+        return data
+    if not settings.office_convert_enabled:
+        raise ConversionError(
+            "Office document support is disabled (LEDGERRAG_OFFICE_CONVERT_"
+            "ENABLED=false); upload a PDF instead.")
+    cached_key = doc_converted_pdf_key(kb_id, doc_id)
+    if store.exists(cached_key):
+        logger.info("doc %s: reusing the cached PDF rendering", doc_id)
+        return store.get(cached_key)
+    pdf = to_pdf(data, filename, timeout=settings.office_convert_timeout)
+    store.put(cached_key, pdf, "application/pdf")
+    return pdf
+
+
 @celery_app.task(name=TASK_PROCESS_DOCUMENT, bind=True)
 def process_document(self, doc_id_str: str) -> None:
     doc_id = uuid.UUID(doc_id_str)
@@ -267,7 +293,7 @@ def process_document(self, doc_id_str: str) -> None:
             logger.warning("process_document: document %s no longer exists", doc_id)
             return
         kb = repo.get_kb(s, doc.kb_id)
-        kb_id, file_path = doc.kb_id, doc.file_path
+        kb_id, file_path, filename = doc.kb_id, doc.file_path, doc.filename
         # locale is declared per-KB (SPEC Phase 2 §5: prefer declared over guessed)
         kb_config = (kb.config or {}) if kb else {}
         locale = kb_config.get("locale")
@@ -277,7 +303,7 @@ def process_document(self, doc_id_str: str) -> None:
         repo.set_document_status(s, doc_id, "parsing")
 
     try:
-        pdf_bytes = store.get(file_path)
+        pdf_bytes = _as_pdf(store, settings, kb_id, doc_id, file_path, filename)
         pages = analyze_document(pdf_bytes, dpi=settings.page_render_dpi,
                                  min_chars=settings.scan_min_chars_per_page,
                                  table_dpi=settings.table_crop_dpi)
@@ -349,7 +375,9 @@ def process_document(self, doc_id_str: str) -> None:
                 repo.set_document_status(s, doc_id, "queued")
             raise self.retry(exc=e, max_retries=MAX_INGEST_RETRIES,
                              countdown=_retry_countdown(self.request.retries))
-        message = str(e) if isinstance(e, PdfError) else \
+        # a broken file or an unconvertible document reads the same way on a
+        # retry — report it plainly instead of dressing it as an internal error
+        message = str(e) if isinstance(e, (PdfError, ConversionError)) else \
             f"Processing failed: {type(e).__name__}: {e}"
         logger.exception("doc %s ingestion failed", doc_id)
         with session_scope() as s:

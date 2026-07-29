@@ -115,6 +115,12 @@ class Settings(BaseSettings):
     # no "verify" key and falls back to this).
     verification_enabled: bool = True
 
+    # Office documents (.pptx/.docx/.xlsx) are converted to PDF with LibreOffice
+    # before ingestion, so the measured PDF pipeline (page renders, table
+    # detection, crops, citations) applies unchanged. Disable to accept PDFs only.
+    office_convert_enabled: bool = True
+    office_convert_timeout: int = 180
+
     # answer a greeting as a greeting instead of running it through routing +
     # retrieval and reporting "no relevant passages". Detection is
     # deterministic and conservative (query/steps/smalltalk.py); turn it off to

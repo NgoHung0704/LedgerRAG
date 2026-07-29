@@ -16,6 +16,10 @@ The Postgres / Qdrant / MinIO / API / worker / frontend containers are all in
 `docker-compose.yml`; the model server is deliberately **not** (you run it where
 the GPUs are and point the app at it — constraint C3).
 
+- **Disk**: the app image bundles LibreOffice (~500 MB) so Office documents can
+  be converted to PDF for ingestion. Set `LEDGERRAG_OFFICE_CONVERT_ENABLED=false`
+  if you only ever ingest PDFs and want to drop that from your own build.
+
 ## 2. Configure
 
 ```bash
@@ -76,7 +80,10 @@ Verify with `ollama ps` (must read 100% GPU) and re-run preflight.
 ## 5. Use
 
 Open `http://localhost:3000`, create a knowledge base (set its **number
-locale**, e.g. `fr`), drag documents in, and wait for `done`. Then:
+locale**, e.g. `fr`), drag documents in, and wait for `done`. **PDF, Word
+(.docx/.doc), PowerPoint (.pptx/.ppt) and Excel (.xlsx/.xls)** are accepted —
+Office files are converted to PDF once, so they go through the same verified
+table parsing and keep the same page-image provenance. Then:
 
 - **Describe** the KB (one click, "Suggest from documents") — the description
   is what the router reads to pick this KB in multi-KB chat. When two KBs share

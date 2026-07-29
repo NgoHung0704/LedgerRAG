@@ -29,6 +29,7 @@ import uuid
 from pathlib import Path
 
 from tablerag.core.queue import TASK_PROCESS_DOCUMENT, celery_app
+from tablerag.ingestion.convert import content_type_for, is_supported
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 
@@ -51,7 +52,7 @@ def discover_pdfs(root: Path) -> list[Path]:
             continue
         if any(part.startswith(".") for part in rel.parts):
             continue
-        if path.suffix.lower() != ".pdf":
+        if not is_supported(path.name):
             continue
         out.append(path)
     return out
@@ -91,10 +92,10 @@ def archive_destination(root: Path, pdf: Path) -> Path:
 # --------------------------------------------------------------- ingest
 
 def ingest_file(path: Path, kb_name: str, filename: str | None = None) -> uuid.UUID:
-    """Store the PDF at `path`, create its document row under KB `kb_name`
-    (created if needed) using `filename` (defaults to path.name) as the display
-    name, and enqueue processing. Mirrors the API's upload_document."""
-    from tablerag.storage.object_store import doc_pdf_key, get_object_store
+    """Store the document at `path`, create its row under KB `kb_name` (created
+    if needed) using `filename` (defaults to path.name) as the display name, and
+    enqueue processing. Mirrors the API's upload_document."""
+    from tablerag.storage.object_store import doc_source_key, get_object_store
 
     data = path.read_bytes()
     if not data:
@@ -103,8 +104,8 @@ def ingest_file(path: Path, kb_name: str, filename: str | None = None) -> uuid.U
     doc_id = uuid.uuid4()
     with session_scope() as s:
         kb = repo.get_or_create_kb_by_name(s, kb_name)
-        key = doc_pdf_key(kb.id, doc_id)
-        get_object_store().put(key, data, "application/pdf")
+        key = doc_source_key(kb.id, doc_id, name)
+        get_object_store().put(key, data, content_type_for(name))
         repo.create_document(s, kb.id, name, key, doc_id=doc_id)
         repo.log_audit(s, "consumer", "upload", kb_id=kb.id, doc_id=doc_id,
                        detail={"filename": name, "source": "consume-folder"})

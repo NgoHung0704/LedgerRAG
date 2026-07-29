@@ -130,5 +130,20 @@ def doc_pdf_key(kb_id, doc_id) -> str:
     return f"kbs/{kb_id}/docs/{doc_id}/original.pdf"
 
 
+def doc_source_key(kb_id, doc_id, filename: str) -> str:
+    """The file exactly as uploaded, keeping its extension — a .pptx stays a
+    .pptx so it can be downloaded and compared against the parse."""
+    from pathlib import Path
+
+    suffix = Path(filename or "").suffix.lower() or ".bin"
+    return f"kbs/{kb_id}/docs/{doc_id}/original{suffix}"
+
+
+def doc_converted_pdf_key(kb_id, doc_id) -> str:
+    """Where an Office document's PDF rendering is cached, so reprocessing a
+    document never pays for the conversion twice."""
+    return f"kbs/{kb_id}/docs/{doc_id}/converted.pdf"
+
+
 def page_image_key(kb_id, doc_id, page: int) -> str:
     return f"kbs/{kb_id}/docs/{doc_id}/pages/page-{page:04d}.png"
