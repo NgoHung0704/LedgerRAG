@@ -249,7 +249,10 @@ function ElementCard({
         html: r.html,
         records: r.records,
         note:
-          `Re-read at ${r.dpi} dpi` +
+          (r.stitched
+            ? "Re-read from the stitched crop (this table spans pages, so it " +
+              "cannot be re-rendered from one)"
+            : `Re-read at ${r.dpi} dpi`) +
           (r.grid_hint ? " with the text-layer grid" : "") +
           (r.second_read
             ? `, twice — the two reads agree ${

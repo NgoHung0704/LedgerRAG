@@ -132,6 +132,37 @@ def test_convert_an_image_only_table_still_succeeds(db_session, monkeypatch):
     assert db_session.get(Element, el.id).type == "text"
 
 
+def test_recheck_uses_the_stitched_crop_for_a_cross_page_table(monkeypatch):
+    """A merged cross-page table's stored crop is the stitched image of its
+    fragments. Re-rendering one page would hand the model HALF the table and
+    call it a more careful read."""
+    import asyncio
+
+    from tablerag.ingestion import table_pipeline
+
+    monkeypatch.setattr(
+        indexing, "_table_region_inputs",
+        lambda eid: {"spans_pages": True, "crop": b"stitched-png",
+                     "locale": "fr", "page": 3, "bbox": [0, 0, 1, 1]})
+    monkeypatch.setattr(
+        indexing, "_render_region",
+        lambda *a, **k: pytest.fail("a spanning table must not be re-rendered"))
+
+    seen: dict = {}
+
+    async def fake_parse(crop, grid, is_complex, locale, read_variant=0,
+                         provider=None):
+        seen["crop"] = crop
+        return table_pipeline.TableResult(html="<table/>", parse_strategy="vlm")
+
+    monkeypatch.setattr(table_pipeline, "parse_table_region", fake_parse)
+    out = asyncio.run(indexing.recheck_table(uuid.uuid4()))
+
+    assert seen["crop"] == b"stitched-png"   # the whole table, not one page
+    assert out["stitched"] is True
+    assert out["dpi"] is None                # nothing was re-rendered
+
+
 def test_recheck_refuses_a_non_table(db_session, monkeypatch):
     """The guard itself, called directly: the DB lookup runs in a worker thread
     under asyncio, which this test's SQLite session cannot cross."""
@@ -181,7 +212,8 @@ def test_recheck_reads_twice_and_reports_the_agreement(db_session, monkeypatch):
 
     monkeypatch.setattr(indexing, "_table_region_inputs",
                         lambda eid: {"pdf": b"%PDF", "page": 1,
-                                     "bbox": [0, 0, 10, 10], "locale": "fr"})
+                                     "bbox": [0, 0, 10, 10], "locale": "fr",
+                                     "spans_pages": False})
     monkeypatch.setattr(indexing, "_render_region",
                         lambda pdf, page, bbox, dpi: (b"png", [["a"]]))
     monkeypatch.setattr(table_pipeline, "parse_table_region", fake_parse)

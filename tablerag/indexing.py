@@ -130,11 +130,21 @@ def _table_region_inputs(element_id: uuid.UUID) -> dict | None:
         if document is None:
             return None
         kb = s.get(KnowledgeBase, document.kb_id)
+        meta = element.meta or {}
         info = {"page": element.page, "bbox": list(element.bbox or []),
                 "locale": (kb.config or {}).get("locale") if kb else None,
                 "kb_id": document.kb_id, "doc_id": document.id,
-                "key": document.file_path, "filename": document.filename}
+                "key": document.file_path, "filename": document.filename,
+                # a cross-page table's stored crop is a STITCHED image of its
+                # fragments; re-rendering one page would hand over half a table
+                "spans_pages": len(meta.get("span_pages") or []) > 1,
+                "crop_key": element.crop_image_path}
     store = get_object_store()
+    if info["spans_pages"]:
+        if not store.exists(info["crop_key"]):
+            return None
+        info["crop"] = store.get(info["crop_key"])
+        return info
     # an Office document was ingested through its cached PDF rendering
     if needs_conversion(info["filename"]):
         info["key"] = doc_converted_pdf_key(info["kb_id"], info["doc_id"])
@@ -190,9 +200,14 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
     if info is None:
         return None
     settings = get_settings()
-    dpi = min(settings.table_crop_dpi * 2, 600)
-    crop, grid = await asyncio.to_thread(
-        _render_region, info["pdf"], info["page"], info["bbox"], dpi)
+    if info["spans_pages"]:
+        # a merged cross-page table: its stored crop is the stitched image of
+        # every fragment, and re-rendering one page would lose the rest of it
+        crop, grid, dpi = info["crop"], None, None
+    else:
+        dpi = min(settings.table_crop_dpi * 2, 600)
+        crop, grid = await asyncio.to_thread(
+            _render_region, info["pdf"], info["page"], info["bbox"], dpi)
 
     # is_complex=True forces the VLM path: the simple grid path is what a
     # doubtful parse already went through, so re-running it proves nothing
@@ -221,7 +236,8 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
         "confidence": report.confidence,
         "signals": (report.detail or {}).get("signals") or {},
         "second_read": second is not None,
-        "dpi": dpi,
+        "dpi": dpi,                      # None when the stitched crop was used
+        "stitched": info["spans_pages"],
         "grid_hint": grid is not None,
         "error": result.error,
     }

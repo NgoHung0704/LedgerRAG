@@ -315,7 +315,8 @@ export type TableRecheck = {
   confidence: number;
   signals: Record<string, number>;
   second_read: boolean;
-  dpi: number;
+  dpi: number | null;
+  stitched: boolean;
   grid_hint: boolean;
   error: string | null;
 };
