@@ -215,15 +215,21 @@ def test_recheck_checks_the_first_read_and_proposes_the_correction(
 
     seen_check: dict = {}
 
-    async def fake_verify(chat, image, ctx, html, records):
+    async def fake_verify(chat, image, ctx, html, records, grid_hint=None):
         seen_check["html"] = html
         seen_check["records"] = records
-        # the check corrects a misread digit
-        return models_base.TableParse(
-            html="<table><tr><td>16</td><td>52 800</td></tr></table>",
-            records=[models_base.RecordParse(
-                dimensions={"classe": "16"}, metrics={"smh": 52800},
-                raw_values={"smh": "52 800"})])
+        seen_check["grid_hint"] = grid_hint
+        # it must fault the reading before correcting it
+        from tablerag.models.table_parsing import TableVerification
+
+        return TableVerification(
+            parse=models_base.TableParse(
+                html="<table><tr><td>16</td><td>52 800</td></tr></table>",
+                records=[models_base.RecordParse(
+                    dimensions={"classe": "16"}, metrics={"smh": 52800},
+                    raw_values={"smh": "52 800"})]),
+            findings='FINDINGS:\n- row 1, column "smh": image shows "52 800"',
+            clean=False)
 
     def fake_render(pdf, page, bbox, dpi):
         renders.append(dpi)
@@ -255,6 +261,9 @@ def test_recheck_checks_the_first_read_and_proposes_the_correction(
     assert "52 800" in out["html"]
     assert out["second_read"] is True
     assert out["signals"]["agreement"] < 1.0     # it changed something
+    # it had to name the fault before correcting, and the reviewer sees it
+    assert "52 800" in out["findings"] and out["clean"] is False
+    assert seen_check["grid_hint"] is not None   # text-layer values to compare
     # nothing was written: the stored table is untouched
     from tablerag.storage.orm import TableElement
     assert db_session.get(TableElement, el.id).html == \
@@ -280,8 +289,10 @@ def test_recheck_keeps_the_first_read_when_the_check_fails(db_session, monkeypat
             html="<table><tr><td>first</td></tr></table>",
             parse_strategy="vlm", records=first)
 
-    async def failing_verify(chat, image, ctx, html, records):
-        return None  # contract violated twice
+    async def failing_verify(chat, image, ctx, html, records, grid_hint=None):
+        from tablerag.models.table_parsing import TableVerification
+
+        return TableVerification(parse=None)  # contract violated twice
 
     monkeypatch.setattr(indexing, "_table_region_inputs",
                         lambda eid: {"pdf": b"%PDF", "page": 1,

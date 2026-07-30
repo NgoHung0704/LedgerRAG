@@ -255,12 +255,19 @@ function ElementCard({
             : `Re-read at ${r.dpi} dpi`) +
           (r.grid_hint ? " with the text-layer grid" : "") +
           (r.second_read
-            ? `, twice — the two reads agree ${
-                agreement === undefined ? "(not scored)" : pct(agreement)
+            ? `, then checked against the image — ${
+                r.clean
+                  ? "the check found no fault"
+                  : `agreement ${
+                      agreement === undefined ? "(not scored)" : pct(agreement)
+                    }`
               }`
-            : ", once (a second read was not possible)") +
+            : ", once (the check produced nothing usable, so the first read stands)") +
           `. Confidence ${pct(r.confidence)}.` +
-          (r.error ? ` Parse reported: ${r.error}.` : ""),
+          (r.error ? ` Parse reported: ${r.error}.` : "") +
+          (r.findings && !r.clean ? `
+
+${r.findings}` : ""),
       });
       setEditing(true);
     } catch (e) {

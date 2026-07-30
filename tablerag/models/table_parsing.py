@@ -13,6 +13,7 @@ import base64
 import json
 import logging
 import re
+from dataclasses import dataclass
 from typing import AsyncIterator, Callable
 
 from tablerag.models.base import Msg, RecordParse, TableCtx, TableParse
@@ -352,46 +353,91 @@ async def _collect(chat: ChatFn, messages: list[Msg], options: dict) -> str:
 # image, cell by cell — and it answers under the SAME contract, so every
 # structural guard still applies to the correction.
 VERIFY_PROMPT = """\
-You are CHECKING a transcription of the table in this image, cell by cell.
+You are CHECKING an existing transcription of the table in this image. Your job \
+is to FIND WHAT IS WRONG WITH IT, and only then correct it.
 
-A proposed reading is given below. Compare it against the image and return a \
-corrected version.
+Work in two steps, in this order.
 
-- Change ONLY what the image contradicts. Every cell you cannot fault must come \
-back EXACTLY as it is, including digit grouping and spacing.
-- Look hardest where this goes wrong: a merged cell whose value must repeat on \
-every row or column it covers; a header level that was dropped; a value shifted \
-into a neighbouring row or column; digits that look alike (0/8, 1/7, 3/5, 6/5).
-- Do not add rows, columns or values that are not visible in the image, and do \
-not translate anything.
-- If the proposed reading is already right, return it unchanged.
+STEP 1 — Fault it. Go cell by cell against the image and list every error you \
+can actually point at. Write, on its own line each:
+FINDINGS:
+- row <n>, column "<header>": image shows "<what is printed>", reading says \
+"<what the proposal has>" — <why it is wrong>
+If, after checking every cell, you find nothing wrong, write exactly:
+FINDINGS: none
 
-Reply with the same two blocks as the proposal and nothing else: one ```html \
-block, then one ```json block containing {"records": [...]}.\
+STEP 2 — Correct ONLY what you listed in step 1. Every other cell must come \
+back byte-for-byte identical, digit grouping and spacing included. If your \
+findings were "none", return the reading completely unchanged.
+
+You may not change anything you did not fault, you may not add a row, a column \
+or a value that is not visible in the image, and you may not translate.
+
+Check hardest where this kind of reading goes wrong:
+- a merged cell whose value must repeat on EVERY row or column it covers;
+- a header level dropped from the dimensions;
+- a value that belongs one row or one column further along;
+- digits that look alike (0/8, 1/7, 3/5, 6/5) and thousands separators.
+
+After the findings, reply with the same two blocks as the proposal and nothing \
+else: one ```html block, then one ```json block containing {"records": [...]}.\
 """
 
 
-def build_verify_prompt(html: str, records: list[dict]) -> str:
-    """The first reading, handed back for faulting."""
+def build_verify_prompt(html: str, records: list[dict],
+                        grid_hint: str | None = None) -> str:
+    """The first reading, handed back for faulting — with the text-layer values
+    alongside it when there are any: catching a misread digit is a comparison,
+    not an act of attention."""
     payload = json.dumps({"records": records}, ensure_ascii=False, indent=1)
-    return (f"{VERIFY_PROMPT}\n\nProposed reading:\n\n```html\n{html}\n```\n\n"
-            f"```json\n{payload}\n```")
+    parts = [VERIFY_PROMPT]
+    if grid_hint:
+        parts.append(_GRID_HINT_TEMPLATE.format(grid=grid_hint))
+    parts.append(f"Reading to check:\n\n```html\n{html}\n```\n\n"
+                 f"```json\n{payload}\n```")
+    return "\n\n".join(parts)
+
+
+_FINDINGS_NONE = re.compile(r"FINDINGS:\s*none\b", re.IGNORECASE)
+
+
+def split_findings(text: str) -> tuple[str, bool]:
+    """(what the check said it found, whether it claims the reading was clean).
+    Everything before the first fenced block is the reasoning."""
+    head = text.split("```", 1)[0].strip()
+    return head, bool(_FINDINGS_NONE.search(head))
+
+
+@dataclass
+class TableVerification:
+    """The outcome of checking a reading: what the model faulted, and the
+    correction that follows from it."""
+
+    parse: TableParse | None   # None when the check produced nothing usable
+    findings: str = ""         # what it says is wrong, verbatim
+    clean: bool = False        # it examined the reading and found no fault
 
 
 async def run_table_verify(chat: ChatFn, image: bytes, ctx: TableCtx,
-                           html: str, records: list[dict]) -> TableParse | None:
-    """Check a first reading against the image and return the corrected one.
+                           html: str, records: list[dict],
+                           grid_hint: str | None = None) -> TableVerification:
+    """Check a reading against the image: fault it first, then correct only what
+    was faulted.
 
-    None when the check could not produce a valid answer — the caller then keeps
-    the first reading, so a failed verification never costs anything."""
+    A correction with no stated fault behind it is the failure mode to avoid —
+    the model "improving" cells that were already right. Making it name the
+    error first is what keeps the rewrite honest, and gives the reviewer the one
+    thing they need: where to look."""
     image_b64 = base64.b64encode(image).decode()
     options = parse_options(0)  # the check itself is deterministic
     messages = [
         Msg(role="system", content=SYSTEM_PROMPT),
-        Msg(role="user", content=build_verify_prompt(html, records),
+        Msg(role="user",
+            content=build_verify_prompt(html, records, grid_hint),
             images=[image_b64]),
     ]
     text = await _collect(chat, messages, options)
+    findings, clean = split_findings(text)
     try:
         new_html, new_records = _parse_or_contract_error(text)
     except TableContractError as first_error:
@@ -400,15 +446,18 @@ async def run_table_verify(chat: ChatFn, image: bytes, ctx: TableCtx,
             Msg(role="user", content=build_retry_prompt(str(first_error))),
         ]
         try:
-            new_html, new_records = _parse_or_contract_error(
-                await _collect(chat, retry, options))
+            retried = await _collect(chat, retry, options)
+            new_html, new_records = _parse_or_contract_error(retried)
+            findings, clean = split_findings(retried) or (findings, clean)
         except TableContractError as second_error:
             logger.warning("verification pass violated the contract twice (%s)",
                            second_error)
-            return None
-    return TableParse(html=new_html,
-                      records=[RecordParse(**r) for r in new_records],
-                      raw_response=text)
+            return TableVerification(parse=None, findings=findings, clean=clean)
+    return TableVerification(
+        parse=TableParse(html=new_html,
+                         records=[RecordParse(**r) for r in new_records],
+                         raw_response=text),
+        findings=findings, clean=clean)
 
 
 def _parse_or_contract_error(text: str) -> tuple[str, list[dict]]:

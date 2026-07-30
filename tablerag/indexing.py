@@ -198,9 +198,12 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
     from tablerag.ingestion.confidence import assess
     from tablerag.ingestion.imaging import ensure_min_width
     from tablerag.ingestion.table_pipeline import parse_table_region
-    from tablerag.models.base import TableCtx, TableParse
+    from tablerag.models.base import TableCtx
     from tablerag.models.registry import get_double_read_provider
-    from tablerag.models.table_parsing import run_table_verify
+    from tablerag.models.table_parsing import (
+        format_grid_hint,
+        run_table_verify,
+    )
 
     info = await asyncio.to_thread(_table_region_inputs, element_id)
     if info is None:
@@ -226,7 +229,8 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
     # guard still applies to it, and a failed check costs nothing: the first
     # reading stands.
     second = None
-    verified: TableParse | None = None
+    corrected = None
+    findings, clean = "", False
     if result.records and not result.error:
         verify_crop = crop
         if not info["spans_pages"] and settings.table_verify_dpi > dpi:
@@ -235,15 +239,19 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
                 settings.table_verify_dpi)
         verifier = get_double_read_provider() or get_provider("parser")
         try:
-            verified = await run_table_verify(
+            check = await run_table_verify(
                 verifier.chat, ensure_min_width(verify_crop,
                                                 settings.vlm_min_image_width),
                 TableCtx(locale_hint=info["locale"] or "unknown"),
-                result.html, result.records)
+                result.html, result.records,
+                # the text layer's own values: catching a misread digit is a
+                # comparison, not an act of attention
+                grid_hint=format_grid_hint(grid))
+            corrected, findings, clean = check.parse, check.findings, check.clean
         except Exception:  # noqa: BLE001 — a failed check must not lose the read
             logger.exception("verification pass failed; keeping the first read")
-        if verified is not None and verified.records:
-            second = [r.model_dump() for r in verified.records]
+        if corrected is not None and corrected.records:
+            second = [r.model_dump() for r in corrected.records]
 
     report = assess(result.html, result.records, second,
                     review_threshold=settings.confidence_review_threshold,
@@ -252,7 +260,7 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
     # the check's output IS the proposal when it produced one: it is the first
     # reading plus whatever the image contradicted. The agreement below says how
     # much it changed, so the reviewer knows where to look.
-    final_html = (verified.html if verified is not None else result.html) or ""
+    final_html = (corrected.html if corrected is not None else result.html) or ""
     final_records: list[dict] = (
         second if second is not None else list(result.records))
     return {
@@ -264,6 +272,10 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
         "confidence": report.confidence,
         "signals": (report.detail or {}).get("signals") or {},
         "second_read": second is not None,
+        # what the check says is wrong, verbatim — the reviewer's map of where
+        # to look. `clean` means it examined the reading and faulted nothing.
+        "findings": findings,
+        "clean": clean,
         "dpi": dpi,                      # None when the stitched crop was used
         "stitched": info["spans_pages"],
         "grid_hint": grid is not None,

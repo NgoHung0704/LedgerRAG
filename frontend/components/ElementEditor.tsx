@@ -201,7 +201,7 @@ export default function ElementEditor({
         ) : (
           <>
             {proposed && (
-              <div className="mx-4 mt-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200">
+              <div className="mx-4 mt-3 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200">
                 {proposed.note ??
                   "This is the model's re-reading of the page, not the stored content."}{" "}
                 Check it against the original image (the element card shows it) —
