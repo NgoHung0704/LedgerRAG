@@ -240,6 +240,15 @@ export const reprocessDoc = (docId: string) =>
     (r) => jsonOrThrow<Doc>(r),
   );
 
+/** Re-run ingestion for several documents. They are queued, not run at once —
+ * the worker takes them one at a time. Documents already in flight are skipped. */
+export const bulkReprocessDocs = (kbId: string, docIds: string[]) =>
+  fetch(`${API_URL}/api/kbs/${kbId}/documents/bulk-reprocess`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ doc_ids: docIds }),
+  }).then((r) => jsonOrThrow<{ queued: number; skipped: number }>(r));
+
 export const pageImageUrl = (docId: string, page: number) =>
   `${API_URL}/api/documents/${docId}/pages/${page}/image`;
 

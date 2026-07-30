@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   bulkDeleteDocs,
+  bulkReprocessDocs,
   deleteDoc,
   getDocs,
   reprocessDoc,
@@ -106,6 +107,37 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(allDocs.map((d) => d.id)));
 
+  const reprocessSelected = async () => {
+    if (selected.size === 0) return;
+    if (
+      !window.confirm(
+        `Re-run ingestion for ${selected.size} document${
+          selected.size === 1 ? "" : "s"
+        }? Their parsed elements are rebuilt from the original files; the ` +
+          `worker takes them one at a time, so a large batch will take a while.`,
+      )
+    )
+      return;
+    setBulkBusy(true);
+    setUploadError(null);
+    try {
+      const { queued, skipped } = await bulkReprocessDocs(
+        kbId,
+        Array.from(selected),
+      );
+      if (skipped > 0)
+        setUploadError(
+          `${queued} queued · ${skipped} skipped (already being processed).`,
+        );
+      setSelected(new Set());
+      await refresh();
+    } catch (e) {
+      setUploadError(String(e));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const removeSelected = async () => {
     if (selected.size === 0) return;
     if (!window.confirm(
@@ -196,6 +228,16 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                 >
                   Clear
                 </button>
+                <Button
+                  variant="secondary"
+                  className="!py-1.5 text-xs"
+                  disabled={bulkBusy}
+                  onClick={reprocessSelected}
+                  title="Re-run ingestion from the original files. Useful after a batch of failures, or to pick up a parsing change."
+                >
+                  {bulkBusy ? <Spinner size={13} /> : <RefreshCw size={13} />}
+                  Reprocess selected
+                </Button>
                 <Button
                   variant="secondary"
                   className="!py-1.5 text-xs !text-red-600"

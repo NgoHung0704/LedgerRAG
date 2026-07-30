@@ -81,29 +81,38 @@ def get_document(doc_id: uuid.UUID) -> DocumentOut:
         return DocumentOut.model_validate(doc, from_attributes=True)
 
 
+IN_FLIGHT = ("queued", "parsing", "indexing")
+
+
+def _requeue_document(doc_id: uuid.UUID, kb_id: uuid.UUID, actor: str) -> None:
+    """Clear the error, drop stale element crops and re-enqueue. The task is
+    idempotent — it wipes the document's previous elements and vectors before
+    re-parsing — so the original file and page renders are kept."""
+    # element crops are keyed by the OLD element ids, so they would be orphaned;
+    # original.pdf, converted.pdf and pages/ are left untouched
+    get_object_store().delete_prefix(f"{doc_prefix(kb_id, doc_id)}/elements")
+    with session_scope() as s:
+        repo.set_document_status(s, doc_id, "queued")  # also clears the error
+        repo.log_audit(s, actor, "reprocess", kb_id=kb_id, doc_id=doc_id)
+    celery_app.send_task(TASK_PROCESS_DOCUMENT, args=[str(doc_id)])
+
+
 @router.post("/documents/{doc_id}/reprocess", response_model=DocumentOut)
 def reprocess_document(doc_id: uuid.UUID,
                        user: User = Depends(current_user)) -> DocumentOut:
-    """Re-run ingestion for a document (e.g. after a transient timeout failure).
-    The task is idempotent — it wipes the document's previous elements + vectors
-    before re-parsing — so this just clears the error, requeues, and re-enqueues.
-    The original PDF and page renders are kept; stale element crops are dropped."""
+    """Re-run ingestion for one document (after a transient failure, or to pick
+    up a parsing change that only applies to newly ingested pages)."""
     with session_scope() as s:
         doc = repo.get_document(s, doc_id)
         if doc is None:
             raise HTTPException(404, "document not found")
-        if doc.status in ("queued", "parsing", "indexing"):
+        if doc.status in IN_FLIGHT:
             raise HTTPException(409, "document is already being processed")
         kb_id = doc.kb_id
-    # drop element crops from the previous partial run (keyed by old element ids,
-    # otherwise orphaned); original.pdf and pages/ are left untouched
-    get_object_store().delete_prefix(f"{doc_prefix(kb_id, doc_id)}/elements")
+    _requeue_document(doc_id, kb_id, user.username)
     with session_scope() as s:
-        repo.set_document_status(s, doc_id, "queued")  # also clears the error
-        repo.log_audit(s, user.username, "reprocess", kb_id=kb_id, doc_id=doc_id)
         out = DocumentOut.model_validate(repo.get_document(s, doc_id),
                                          from_attributes=True)
-    celery_app.send_task(TASK_PROCESS_DOCUMENT, args=[str(doc_id)])
     return out
 
 
@@ -157,6 +166,28 @@ def bulk_delete_documents(kb_id: uuid.UUID, body: BulkDeleteRequest) -> dict:
     with session_scope() as s:
         deleted = repo.delete_documents(s, targets)
     return {"deleted": deleted}
+
+
+@router.post("/kbs/{kb_id}/documents/bulk-reprocess")
+def bulk_reprocess_documents(kb_id: uuid.UUID, body: BulkDeleteRequest,
+                             user: User = Depends(current_user)) -> dict:
+    """Re-run ingestion for several documents at once (select-many / select-all
+    in the UI) — after a batch of transient failures, or to pick up a parsing
+    change that only applies to newly ingested pages.
+
+    Only documents belonging to this KB are touched, and one already in flight
+    is skipped rather than enqueued twice. They are queued, not run here: the
+    worker takes them one at a time, which is what keeps a large batch from
+    overwhelming the box the way a mass upload once did."""
+    with session_scope() as s:
+        if repo.get_kb(s, kb_id) is None:
+            raise HTTPException(404, "knowledge base not found")
+        owned = {d.id: d.status for d in repo.list_documents(s, kb_id)}
+    wanted = [doc_id for doc_id in body.doc_ids if doc_id in owned]
+    targets = [doc_id for doc_id in wanted if owned[doc_id] not in IN_FLIGHT]
+    for doc_id in targets:
+        _requeue_document(doc_id, kb_id, user.username)
+    return {"queued": len(targets), "skipped": len(wanted) - len(targets)}
 
 
 @router.get("/documents/{doc_id}/elements")
