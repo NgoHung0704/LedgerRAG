@@ -218,6 +218,20 @@ function ElementCard({
   const [rereading, setRereading] = useState(false);
   const [rereadMenu, setRereadMenu] = useState(false);
 
+  // The lazily fetched full content must not outlive the element it came from.
+  // After an edit the card gets fresh props, but a cached `detail` would keep
+  // displaying the very text that was just replaced — the card said "edited"
+  // while still showing the old parse. Drop it whenever the content changes,
+  // and collapse the expanders so the new preview is what's on screen.
+  const contentVersion = `${element.edited}|${element.chunk_count}|${
+    element.text_preview ?? ""
+  }|${element.table?.records_count ?? 0}`;
+  useEffect(() => {
+    setDetail(null);
+    setShowFullText(false);
+    setShowAllRecords(false);
+  }, [contentVersion]);
+
   const reread = async (mode: RereadMode) => {
     setRereadMenu(false);
     setRereading(true);
