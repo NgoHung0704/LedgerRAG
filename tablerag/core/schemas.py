@@ -177,6 +177,20 @@ class ElementEdit(BaseModel):
     records: list[RecordEdit] | None = None  # table records (re-embedded)
 
 
+class AssistTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ElementAssistRequest(BaseModel):
+    """Ask the chat model to help edit the content open in the editor. The
+    content travels with the request because it is UNSAVED."""
+    instruction: str = Field(min_length=1, max_length=2000)
+    format: Literal["html", "text", "records", "summary"] = "text"
+    content: str = ""
+    history: list[AssistTurn] = []
+
+
 class DeriveFromHtmlRequest(BaseModel):
     """Rebuild a table's records and summary from HTML being edited (unsaved)."""
     html: str = Field(min_length=1)

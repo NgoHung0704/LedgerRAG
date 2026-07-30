@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Wand2, X } from "lucide-react";
+import { Sparkles, Wand2, X } from "lucide-react";
 import {
   deriveFromHtml,
   editElement,
@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { Button, Spinner } from "@/components/ui";
 import RecordsTable from "@/components/RecordsTable";
+import EditAssistant from "@/components/EditAssistant";
 
 type Tab = "text" | "html" | "records" | "summary";
 
@@ -49,6 +50,7 @@ export default function ElementEditor({
   const [recordsJson, setRecordsJson] = useState("");
   const [tab, setTab] = useState<Tab>("text");
   const [busy, setBusy] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [deriving, setDeriving] = useState(false);
   const [derived, setDerived] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -174,8 +176,19 @@ export default function ElementEditor({
             ))}
           </div>
           <button
+            onClick={() => setAssistantOpen((v) => !v)}
+            title="Ask the model to change the content you are editing. It rearranges what is there — it never adds figures — and you apply the result yourself."
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              assistantOpen
+                ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
+                : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            }`}
+          >
+            <Sparkles size={13} /> Assistant
+          </button>
+          <button
             onClick={onClose}
-            className="ml-auto rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
             <X size={18} />
           </button>
@@ -206,7 +219,13 @@ export default function ElementEditor({
                   />
                 </Pane>
               ) : (
-                <div className="grid h-full grid-cols-1 gap-3 md:grid-cols-2">
+                <div
+                  className={`grid h-full grid-cols-1 gap-3 ${
+                    assistantOpen
+                      ? "md:grid-cols-2 xl:grid-cols-3"
+                      : "md:grid-cols-2"
+                  }`}
+                >
                   <Pane
                     label={`Source · ${tab}`}
                     action={
@@ -274,6 +293,26 @@ export default function ElementEditor({
                         ))}
                     </div>
                   </Pane>
+                  {assistantOpen && (
+                    <EditAssistant
+                      elementId={elementId}
+                      format={tab}
+                      content={
+                        tab === "text"
+                          ? text
+                          : tab === "html"
+                            ? html
+                            : recordsJson
+                      }
+                      onApply={(next) =>
+                        tab === "text"
+                          ? setText(next)
+                          : tab === "html"
+                            ? setHtml(next)
+                            : setRecordsJson(next)
+                      }
+                    />
+                  )}
                 </div>
               )}
             </div>

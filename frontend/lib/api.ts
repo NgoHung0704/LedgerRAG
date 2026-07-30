@@ -272,6 +272,26 @@ export const getElement = (elementId: string) =>
     jsonOrThrow<ElementDetail>(r),
   );
 
+export type AssistTurn = { role: "user" | "assistant"; content: string };
+
+/** Editing assistant for the content open in the editor. It may rearrange what
+ * you give it but never add facts; when it changes something it returns the
+ * complete new version as a proposal you apply by hand. */
+export const assistElementEdit = (
+  elementId: string,
+  body: {
+    instruction: string;
+    format: "html" | "text" | "records" | "summary";
+    content: string;
+    history: AssistTurn[];
+  },
+) =>
+  fetch(`${API_URL}/api/elements/${elementId}/assist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then((r) => jsonOrThrow<{ reply: string; proposal: string | null }>(r));
+
 /** Rebuild a table's records and summary from HTML being edited (unsaved).
  * Records come out deterministically from the HTML; the summary is regenerated
  * because it describes a table that just changed. A proposal, not a write. */

@@ -9,7 +9,11 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
-from tablerag.core.schemas import DeriveFromHtmlRequest, ElementEdit
+from tablerag.core.schemas import (
+    DeriveFromHtmlRequest,
+    ElementAssistRequest,
+    ElementEdit,
+)
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 from tablerag.storage.object_store import get_object_store
@@ -92,6 +96,27 @@ async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict
     if not text:
         raise HTTPException(502, "the parser model returned nothing")
     return {"text": text, "mode": mode}
+
+
+@router.post("/{element_id}/assist")
+async def assist_element_edit(element_id: uuid.UUID,
+                              body: ElementAssistRequest) -> dict:
+    """An editing assistant for the content open in the editor.
+
+    It works on what the reviewer is looking at (unsaved, so it travels with the
+    request) and may rearrange it but never add facts — see models/edit_assist.
+    Returns its reply plus, when it changed something, the complete new content
+    as a PROPOSAL the reviewer applies by hand. Nothing is written."""
+    from tablerag.models.edit_assist import assist
+
+    # a long thread is not useful here and only eats context
+    history = [(t.role, t.content) for t in body.history[-6:]]
+    try:
+        reply, proposal = await assist(body.format, body.content,
+                                       body.instruction, history)
+    except Exception as e:  # noqa: BLE001 — surface model failures readably
+        raise HTTPException(502, f"the assistant could not answer: {e}") from e
+    return {"reply": reply, "proposal": proposal}
 
 
 @router.post("/{element_id}/derive")
