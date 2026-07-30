@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ScanText,
   Table2,
+  TableCellsMerge,
 } from "lucide-react";
 import BoilerplatePanel from "@/components/BoilerplatePanel";
 import ElementEditor from "@/components/ElementEditor";
@@ -21,6 +22,7 @@ import RecordsTable from "@/components/RecordsTable";
 import {
   API_URL,
   approveElement,
+  convertElementToText,
   documentOriginalUrl,
   getDocumentView,
   getElement,
@@ -217,6 +219,7 @@ function ElementCard({
   const [proposed, setProposed] = useState<string | undefined>();
   const [rereading, setRereading] = useState(false);
   const [rereadMenu, setRereadMenu] = useState(false);
+  const [converting, setConverting] = useState(false);
 
   // The lazily fetched full content must not outlive the element it came from.
   // After an edit the card gets fresh props, but a cached `detail` would keep
@@ -231,6 +234,27 @@ function ElementCard({
     setShowFullText(false);
     setShowAllRecords(false);
   }, [contentVersion]);
+
+  const convertToText = async () => {
+    if (
+      !window.confirm(
+        "Treat this as plain text? Its cells' words become the text and the " +
+          "grid and records are dropped. Reprocessing the document brings the " +
+          "table back if detection was right.",
+      )
+    )
+      return;
+    setConverting(true);
+    setReviewError(null);
+    try {
+      await convertElementToText(element.id);
+      onChanged();
+    } catch (e) {
+      setReviewError(String(e));
+    } finally {
+      setConverting(false);
+    }
+  };
 
   const reread = async (mode: RereadMode) => {
     setRereadMenu(false);
@@ -377,6 +401,17 @@ function ElementCard({
                 </>
               )}
             </div>
+          )}
+          {element.type === "table" && (
+            <button
+              onClick={convertToText}
+              disabled={converting}
+              title="Detection sometimes fires on prose laid out in columns. This drops the grid and records and keeps the cells' words as text."
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 disabled:opacity-50 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              {converting ? <Spinner size={11} /> : <TableCellsMerge size={12} />}
+              {converting ? "converting…" : "not a table"}
+            </button>
           )}
           {element.type !== "figure" && (
             <button

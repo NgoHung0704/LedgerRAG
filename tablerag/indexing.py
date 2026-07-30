@@ -14,6 +14,7 @@ import uuid
 from collections import defaultdict
 
 from tablerag.core.config import get_settings
+from tablerag.core.table_text import html_to_text
 from tablerag.ingestion.chunking import chunk_text
 from tablerag.ingestion.table_pipeline import build_text_repr
 from tablerag.models.registry import get_provider
@@ -75,6 +76,38 @@ def apply_element_edit(element_id: uuid.UUID, *, text: str | None = None,
                 _replace_records(s, element_id, records)
         element.needs_review = False
         element.meta = {**(element.meta or {}), "edited": True}
+    return True
+
+
+def convert_table_to_text(element_id: uuid.UUID) -> bool:
+    """Demote a wrongly detected table to a plain text element.
+
+    Table detection sometimes fires on prose laid out in columns. Kept as a
+    table, that content is indexed as records and a grid it never had; as text
+    it is chunked and retrieved normally. The cells' own words become the text
+    (they ARE the page's words), so nothing is invented — and the crop image
+    stays, so provenance is untouched. Reversible by reprocessing the document,
+    which re-runs detection from scratch.
+
+    Returns False if the element does not exist or is not a table."""
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None or element.type != "table":
+            return False
+        table = s.get(TableElement, element_id)
+        text = ""
+        if table is not None:
+            text = html_to_text(table.html) or (table.summary or "")
+            # its records go with it (relationship cascades delete-orphan)
+            s.delete(table)
+            s.flush()
+        element.type = "text"
+        element.needs_review = False
+        element.meta = {**(element.meta or {}), "edited": True,
+                        "converted_from": "table"}
+        # empty is allowed: an image-only table leaves a text element with no
+        # content, which the reviewer can fill via "re-read with the VLM"
+        _rechunk(s, element, text)
     return True
 
 

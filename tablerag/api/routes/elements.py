@@ -94,6 +94,27 @@ async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict
     return {"text": text, "mode": mode}
 
 
+@router.post("/{element_id}/convert-to-text")
+async def convert_element_to_text(element_id: uuid.UUID) -> dict:
+    """"This is not a table": demote a wrongly detected table to plain text.
+
+    Detection sometimes fires on prose laid out in columns. The cells' own words
+    become the element's text (nothing invented), the records and the grid go
+    away, and it is re-indexed as text. The crop image stays, so provenance is
+    intact, and reprocessing the document restores the table if detection was
+    right after all."""
+    from tablerag import indexing
+
+    ok = await asyncio.to_thread(indexing.convert_table_to_text, element_id)
+    if not ok:
+        raise HTTPException(404, "element not found, or it is not a table")
+    await indexing.reindex_element(element_id)
+    with session_scope() as s:
+        detail = repo.get_element_detail(s, element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    return detail
+
+
 @router.post("/{element_id}/approve")
 def approve_element(element_id: uuid.UUID) -> dict:
     """Review flow: admin confirmed the parse — clear the needs_review flag;

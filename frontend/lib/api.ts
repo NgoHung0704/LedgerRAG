@@ -272,6 +272,14 @@ export const getElement = (elementId: string) =>
     jsonOrThrow<ElementDetail>(r),
   );
 
+/** "This is not a table": demote a wrongly detected table to a text element.
+ * Its cells' own words become the text and it is re-indexed; reprocessing the
+ * document restores the table if detection was right after all. */
+export const convertElementToText = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/convert-to-text`, {
+    method: "POST",
+  }).then((r) => jsonOrThrow<ElementDetail>(r));
+
 /** How the VLM should re-read a page: a faithful transcription that keeps a
  * grid as a markdown table, an explanation of what the page says, or both. */
 export type RereadMode = "structure" | "summary" | "both";

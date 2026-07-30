@@ -73,6 +73,63 @@ def test_edit_table_updates_html_summary_records(db_session, monkeypatch):
     assert db_session.get(Element, el.id).meta["edited"] is True
 
 
+def test_convert_a_wrongly_detected_table_to_text(db_session, monkeypatch):
+    """Detection sometimes fires on prose in columns. Demoting it must keep the
+    page's own words, drop the grid and records, and leave provenance intact."""
+    from tablerag.storage.orm import Element, TableElement
+
+    monkeypatch.setattr(indexing, "session_scope",
+                        lambda: _fake_scope(db_session))
+    _, el = _seed_table(db_session)
+
+    assert indexing.convert_table_to_text(el.id) is True
+
+    element = db_session.get(Element, el.id)
+    assert element.type == "text"
+    assert element.needs_review is False
+    assert element.meta["converted_from"] == "table"
+    # the crop image is untouched: every element still traces to its origin
+    assert element.crop_image_path == "c.png"
+
+    # the table is gone, records with it
+    assert db_session.get(TableElement, el.id) is None
+    assert db_session.query(Record).filter(
+        Record.table_element_id == el.id).count() == 0
+
+    # and the cells' own words are now the indexed text — nothing invented
+    chunks = db_session.query(Chunk).filter(Chunk.element_id == el.id).all()
+    assert chunks and "old" in chunks[0].text
+
+
+def test_convert_refuses_anything_that_is_not_a_table(db_session, monkeypatch):
+    monkeypatch.setattr(indexing, "session_scope",
+                        lambda: _fake_scope(db_session))
+    _, text_el = _seed_text(db_session)
+    assert indexing.convert_table_to_text(text_el.id) is False
+    assert indexing.convert_table_to_text(uuid.uuid4()) is False
+    # the text element is left exactly as it was
+    chunks = db_session.query(Chunk).filter(Chunk.element_id == text_el.id).all()
+    assert len(chunks) == 2
+
+
+def test_convert_an_image_only_table_still_succeeds(db_session, monkeypatch):
+    """A table whose parse failed has no HTML: it becomes an empty text element
+    the reviewer can fill with 're-read with the VLM' — better than staying a
+    table that never had a grid."""
+    from tablerag.storage.orm import Element
+
+    monkeypatch.setattr(indexing, "session_scope",
+                        lambda: _fake_scope(db_session))
+    kb = repo.create_kb(db_session, "HR", "d")
+    doc = repo.create_document(db_session, kb.id, "r.pdf", "k")
+    el = repo.add_element(db_session, doc.id, page=1, bbox=[0, 0, 1, 1],
+                          type_="table", crop_image_path="c.png")
+    repo.add_table_element(db_session, el.id, None, None, None, None, "vlm")
+
+    assert indexing.convert_table_to_text(el.id) is True
+    assert db_session.get(Element, el.id).type == "text"
+
+
 def test_edit_missing_element_returns_false(db_session, monkeypatch):
     monkeypatch.setattr(indexing, "session_scope",
                         lambda: _fake_scope(db_session))
