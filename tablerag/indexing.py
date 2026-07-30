@@ -227,6 +227,57 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
     }
 
 
+def _element_locale(element_id: uuid.UUID) -> tuple[bool, str | None]:
+    """(element exists, its KB's declared number locale)."""
+    from tablerag.storage.orm import KnowledgeBase
+
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None:
+            return False, None
+        document = s.get(Document, element.doc_id)
+        kb = s.get(KnowledgeBase, document.kb_id) if document else None
+        return True, (kb.config or {}).get("locale") if kb else None
+
+
+async def derive_from_html(element_id: uuid.UUID, html: str) -> dict | None:
+    """Rebuild records and summary from hand-corrected table HTML.
+
+    Correcting the HTML alone leaves the element inconsistent in the worst
+    possible way: a right-looking grid on screen while answers keep quoting
+    numbers from the records built off the OLD parse. Records are re-derived
+    deterministically (no model): the HTML is read into a grid with merged cells
+    expanded — the same reading the answering context uses — and the existing
+    simple-path builder splits dimensions from metrics, locale-aware.
+
+    A PROPOSAL: returned for review, written only when the reviewer saves."""
+    from tablerag.core.table_text import html_to_grid
+    from tablerag.ingestion.table_pipeline import records_from_grid, summarize_table
+
+    exists, locale = await asyncio.to_thread(_element_locale, element_id)
+    if not exists:
+        return None
+
+    grid = html_to_grid(html)
+    records: list[dict] = []
+    if grid and len(grid) >= 2:
+        try:
+            records = records_from_grid(grid, locale)
+        except Exception:  # noqa: BLE001 — a hand-edited grid can be anything
+            records = []
+    # the routing summary describes the table, so it goes stale with it
+    summary = await summarize_table(html, locale)
+    return {
+        "records": [{"dimensions": r.get("dimensions", {}),
+                     "metrics": r.get("metrics", {}),
+                     "raw_values": r.get("raw_values", {})}
+                    for r in records],
+        "summary": summary or "",
+        "rows": len(grid) if grid else 0,
+        "cols": len(grid[0]) if grid else 0,
+    }
+
+
 async def reindex_element(element_id: uuid.UUID) -> None:
     """Wipe and rebuild all vectors for one element from its current Postgres
     state (chunks for text, records + summary for tables)."""

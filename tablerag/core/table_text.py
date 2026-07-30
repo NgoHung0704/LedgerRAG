@@ -110,16 +110,33 @@ def flatten_table_for_context(html: str | None) -> str:
     cover: each line is then self-contained and needs no cross-row reasoning.
     Falls back to plain text (never raises) — context must always be produced.
     """
+    grid = html_to_grid(html)
+    if not grid:
+        return html_to_text(html)
+    n_cols = len(grid[0])
+    lines = ["| " + " | ".join(grid[0]) + " |",
+             "|" + "|".join(["---"] * n_cols) + "|"]
+    lines += ["| " + " | ".join(row) + " |" for row in grid[1:]]
+    return "\n".join(lines)
+
+
+def html_to_grid(html: str | None) -> list[list[str]] | None:
+    """A table's HTML as a rectangular grid of cell texts, every merged cell
+    EXPANDED to each position it covers (see flatten_table_for_context for why
+    that matters). None when the HTML holds no readable table.
+
+    Shared so that rebuilding records from hand-corrected HTML reads the table
+    exactly the way the answering context does."""
     if not html:
-        return ""
+        return None
     try:
         parser = TableParser()
         parser.feed(html)
         if not parser.rows:
-            return html_to_text(html)
+            return None
         occ = build_occupancy(parser.rows)
         if not occ:
-            return html_to_text(html)
+            return None
         n_rows = max(r for r, _ in occ) + 1
         n_cols = max(c for _, c in occ) + 1
 
@@ -129,10 +146,6 @@ def flatten_table_for_context(html: str | None) -> str:
             parts = [WS.sub(" ", line).strip() for line in raw.split("\n")]
             return " / ".join(p for p in parts if p)
 
-        grid = [[cell_text(r, c) for c in range(n_cols)] for r in range(n_rows)]
-        lines = ["| " + " | ".join(grid[0]) + " |",
-                 "|" + "|".join(["---"] * n_cols) + "|"]
-        lines += ["| " + " | ".join(row) + " |" for row in grid[1:]]
-        return "\n".join(lines)
-    except Exception:  # noqa: BLE001 — degrade to text, never lose the table
-        return html_to_text(html)
+        return [[cell_text(r, c) for c in range(n_cols)] for r in range(n_rows)]
+    except Exception:  # noqa: BLE001 — degrade, never lose the table
+        return None

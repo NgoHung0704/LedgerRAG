@@ -206,6 +206,65 @@ def test_recheck_reads_twice_and_reports_the_agreement(db_session, monkeypatch):
         "<table><tr><td>old</td></tr></table>"
 
 
+def test_derive_rebuilds_records_from_corrected_html(db_session, monkeypatch):
+    """Fixing the HTML alone leaves answers quoting the OLD records. Deriving
+    reads them back out of the corrected grid, merged cells expanded."""
+    import asyncio
+
+    from tablerag.ingestion import table_pipeline
+
+    monkeypatch.setattr(indexing, "_element_locale", lambda eid: (True, "fr"))
+
+    async def fake_summary(html, locale=None):
+        return "Barème des salaires par classe"
+
+    monkeypatch.setattr(table_pipeline, "summarize_table", fake_summary)
+
+    # a rowspan: "F" covers both rows, so row 2 has one cell fewer
+    html = (
+        "<table>"
+        "<tr><th>Groupe</th><th>Classe</th><th>SMH</th></tr>"
+        "<tr><td rowspan='2'>F</td><td>11</td><td>34 900</td></tr>"
+        "<tr><td>12</td><td>36 700</td></tr>"
+        "</table>"
+    )
+    out = asyncio.run(indexing.derive_from_html(uuid.uuid4(), html))
+
+    assert out is not None
+    assert out["rows"] == 3 and out["cols"] == 3
+    assert out["summary"] == "Barème des salaires par classe"
+    assert len(out["records"]) == 2
+    # the spanned group is repeated on the row it covers — the whole point
+    assert [r["dimensions"]["groupe"] for r in out["records"]] == ["F", "F"]
+    # and the French number is read with its locale, raw string preserved
+    assert out["records"][0]["raw_values"]["smh"] == "34 900"
+    assert out["records"][0]["metrics"]["smh"] == 34900
+
+
+def test_derive_keeps_the_old_records_when_it_cannot_read_a_grid(monkeypatch):
+    """Better to say nothing than to wipe the records with an empty list."""
+    import asyncio
+
+    from tablerag.ingestion import table_pipeline
+
+    monkeypatch.setattr(indexing, "_element_locale", lambda eid: (True, None))
+
+    async def fake_summary(html, locale=None):
+        return None
+
+    monkeypatch.setattr(table_pipeline, "summarize_table", fake_summary)
+    out = asyncio.run(indexing.derive_from_html(uuid.uuid4(), "<p>not a table</p>"))
+    assert out is not None
+    assert out["records"] == [] and out["rows"] == 0
+
+
+def test_derive_on_a_missing_element(monkeypatch):
+    import asyncio
+
+    monkeypatch.setattr(indexing, "_element_locale", lambda eid: (False, None))
+    assert asyncio.run(indexing.derive_from_html(uuid.uuid4(), "<table/>")) is None
+
+
 def test_edit_missing_element_returns_false(db_session, monkeypatch):
     monkeypatch.setattr(indexing, "session_scope",
                         lambda: _fake_scope(db_session))

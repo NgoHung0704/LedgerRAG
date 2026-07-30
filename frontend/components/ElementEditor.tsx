@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { X } from "lucide-react";
+import { Wand2, X } from "lucide-react";
 import {
+  deriveFromHtml,
   editElement,
   getElement,
   type ElementDetail,
@@ -48,6 +49,8 @@ export default function ElementEditor({
   const [recordsJson, setRecordsJson] = useState("");
   const [tab, setTab] = useState<Tab>("text");
   const [busy, setBusy] = useState(false);
+  const [deriving, setDeriving] = useState(false);
+  const [derived, setDerived] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,6 +92,33 @@ export default function ElementEditor({
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
   }, [recordsJson]);
+
+  // Correcting the HTML alone leaves the element inconsistent: a right-looking
+  // grid on screen while answers keep quoting the records built off the OLD
+  // parse. This reads the records back out of the edited HTML and refreshes the
+  // routing summary — still only a proposal, saved with everything else.
+  const derive = async () => {
+    setDeriving(true);
+    setError(null);
+    setDerived(null);
+    try {
+      const r = await deriveFromHtml(elementId, html);
+      if (r.records.length > 0) {
+        setRecordsJson(JSON.stringify(r.records, null, 2));
+      }
+      if (r.summary) setSummary(r.summary);
+      setDerived(
+        r.records.length > 0
+          ? `Rebuilt ${r.records.length} records from a ${r.rows}×${r.cols} grid` +
+              (r.summary ? " and refreshed the summary." : ".")
+          : "No records could be read out of this HTML — the existing ones were kept. Check the header row.",
+      );
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setDeriving(false);
+    }
+  };
 
   const save = async () => {
     setError(null);
@@ -177,7 +207,23 @@ export default function ElementEditor({
                 </Pane>
               ) : (
                 <div className="grid h-full grid-cols-1 gap-3 md:grid-cols-2">
-                  <Pane label={`Source · ${tab}`}>
+                  <Pane
+                    label={`Source · ${tab}`}
+                    action={
+                      tab === "html" && isTable ? (
+                        <button
+                          type="button"
+                          onClick={derive}
+                          disabled={deriving || !html.trim()}
+                          title="Read the records back out of this HTML and regenerate the routing summary. Correcting the HTML alone leaves answers quoting the old records."
+                          className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300"
+                        >
+                          {deriving ? <Spinner size={11} /> : <Wand2 size={11} />}
+                          rebuild records + summary
+                        </button>
+                      ) : undefined
+                    }
+                  >
                     <textarea
                       className={`${srcCls} font-mono text-[12px]`}
                       spellCheck={false}
@@ -234,7 +280,15 @@ export default function ElementEditor({
 
             {/* footer */}
             <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-2.5 dark:border-slate-800">
-              {error && <p className="text-xs text-red-600">{error}</p>}
+              {error ? (
+                <p className="text-xs text-red-600">{error}</p>
+              ) : (
+                derived && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {derived}
+                  </p>
+                )
+              )}
               <div className="ml-auto flex gap-2">
                 <Button variant="secondary" onClick={onClose} disabled={busy}>
                   Cancel
@@ -254,14 +308,17 @@ export default function ElementEditor({
 function Pane({
   label,
   children,
+  action,
 }: {
   label: string;
   children: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-1 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
         {label}
+        {action && <span className="ml-auto normal-case">{action}</span>}
       </div>
       {children}
     </div>

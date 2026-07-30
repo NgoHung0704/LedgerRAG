@@ -9,7 +9,7 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
-from tablerag.core.schemas import ElementEdit
+from tablerag.core.schemas import DeriveFromHtmlRequest, ElementEdit
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 from tablerag.storage.object_store import get_object_store
@@ -92,6 +92,24 @@ async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict
     if not text:
         raise HTTPException(502, "the parser model returned nothing")
     return {"text": text, "mode": mode}
+
+
+@router.post("/{element_id}/derive")
+async def derive_element_records(element_id: uuid.UUID,
+                                 body: DeriveFromHtmlRequest) -> dict:
+    """Rebuild this table's records and summary from the HTML being edited.
+
+    Fixing the HTML by hand otherwise leaves the element inconsistent: a correct
+    grid on screen while answers still quote numbers from records built off the
+    old parse. Records are re-derived deterministically from the HTML; the
+    summary is regenerated because it describes a table that just changed.
+    Nothing is written — the reviewer saves."""
+    from tablerag import indexing
+
+    result = await indexing.derive_from_html(element_id, body.html)
+    if result is None:
+        raise HTTPException(404, "element not found")
+    return result
 
 
 @router.post("/{element_id}/recheck")

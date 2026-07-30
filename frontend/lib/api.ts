@@ -272,6 +272,23 @@ export const getElement = (elementId: string) =>
     jsonOrThrow<ElementDetail>(r),
   );
 
+/** Rebuild a table's records and summary from HTML being edited (unsaved).
+ * Records come out deterministically from the HTML; the summary is regenerated
+ * because it describes a table that just changed. A proposal, not a write. */
+export const deriveFromHtml = (elementId: string, html: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/derive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ html }),
+  }).then((r) =>
+    jsonOrThrow<{
+      records: RecordEdit[];
+      summary: string;
+      rows: number;
+      cols: number;
+    }>(r),
+  );
+
 export type TableRecheck = {
   html: string;
   records: RecordEdit[];

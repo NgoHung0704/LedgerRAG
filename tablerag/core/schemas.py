@@ -177,6 +177,11 @@ class ElementEdit(BaseModel):
     records: list[RecordEdit] | None = None  # table records (re-embedded)
 
 
+class DeriveFromHtmlRequest(BaseModel):
+    """Rebuild a table's records and summary from HTML being edited (unsaved)."""
+    html: str = Field(min_length=1)
+
+
 class BulkDeleteRequest(BaseModel):
     doc_ids: list[uuid.UUID] = Field(min_length=1)
 
