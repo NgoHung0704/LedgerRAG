@@ -11,6 +11,7 @@ use it without importing either pipeline — ingestion↔query isolation
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 from collections import defaultdict
 
@@ -28,6 +29,8 @@ from tablerag.storage.qdrant import (
     COLLECTION_TABLE_SUMMARIES,
     get_vector_store,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _rechunk(s, element: Element, text: str) -> None:
@@ -193,8 +196,11 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
 
     Returns None if the element is not a table or its source is unavailable."""
     from tablerag.ingestion.confidence import assess
+    from tablerag.ingestion.imaging import ensure_min_width
     from tablerag.ingestion.table_pipeline import parse_table_region
+    from tablerag.models.base import TableCtx, TableParse
     from tablerag.models.registry import get_double_read_provider
+    from tablerag.models.table_parsing import run_table_verify
 
     info = await asyncio.to_thread(_table_region_inputs, element_id)
     if info is None:
@@ -213,26 +219,48 @@ async def recheck_table(element_id: uuid.UUID) -> dict | None:
     # doubtful parse already went through, so re-running it proves nothing
     result = await parse_table_region(crop, grid, True, info["locale"])
 
+    # --- the second look: a CHECK of the first, not a blind re-read ---
+    # Given evidence (its own reading, faulted against the image) instead of
+    # encouragement — encouragement is the one thing measured to make this model
+    # worse. The correction answers under the same contract, so every structural
+    # guard still applies to it, and a failed check costs nothing: the first
+    # reading stands.
     second = None
+    verified: TableParse | None = None
     if result.records and not result.error:
-        verifier = get_double_read_provider()
-        other = await (
-            parse_table_region(crop, grid, True, info["locale"],
-                               provider=verifier)
-            if verifier is not None else
-            parse_table_region(crop, grid, True, info["locale"], read_variant=1))
-        if not other.error and other.records:
-            second = other.records
+        verify_crop = crop
+        if not info["spans_pages"] and settings.table_verify_dpi > dpi:
+            verify_crop, _ = await asyncio.to_thread(
+                _render_region, info["pdf"], info["page"], info["bbox"],
+                settings.table_verify_dpi)
+        verifier = get_double_read_provider() or get_provider("parser")
+        try:
+            verified = await run_table_verify(
+                verifier.chat, ensure_min_width(verify_crop,
+                                                settings.vlm_min_image_width),
+                TableCtx(locale_hint=info["locale"] or "unknown"),
+                result.html, result.records)
+        except Exception:  # noqa: BLE001 — a failed check must not lose the read
+            logger.exception("verification pass failed; keeping the first read")
+        if verified is not None and verified.records:
+            second = [r.model_dump() for r in verified.records]
 
     report = assess(result.html, result.records, second,
                     review_threshold=settings.confidence_review_threshold,
                     agreement_threshold=settings.double_read_agreement_threshold)
+
+    # the check's output IS the proposal when it produced one: it is the first
+    # reading plus whatever the image contradicted. The agreement below says how
+    # much it changed, so the reviewer knows where to look.
+    final_html = (verified.html if verified is not None else result.html) or ""
+    final_records: list[dict] = (
+        second if second is not None else list(result.records))
     return {
-        "html": result.html or "",
+        "html": final_html,
         "records": [{"dimensions": r.get("dimensions", {}),
                      "metrics": r.get("metrics", {}),
                      "raw_values": r.get("raw_values", {})}
-                    for r in result.records],
+                    for r in final_records],
         "confidence": report.confidence,
         "signals": (report.detail or {}).get("signals") or {},
         "second_read": second is not None,

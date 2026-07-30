@@ -186,9 +186,83 @@ def test_recheck_gives_up_when_the_source_is_gone(monkeypatch):
     assert asyncio.run(indexing.recheck_table(uuid.uuid4())) is None
 
 
-def test_recheck_reads_twice_and_reports_the_agreement(db_session, monkeypatch):
-    """The point of a double-check: a second, independent read, scored against
-    the first, so the reviewer knows how much to trust the proposal."""
+def test_recheck_checks_the_first_read_and_proposes_the_correction(
+        db_session, monkeypatch):
+    """The second look is a CHECK, not a blind re-read: it is handed the first
+    reading to fault against the image, and its correction is what gets
+    proposed — with the agreement saying how much it changed."""
+    import asyncio
+
+    from tablerag.ingestion import table_pipeline
+    from tablerag.models import base as models_base
+    from tablerag.models import registry
+
+    monkeypatch.setattr(indexing, "session_scope",
+                        lambda: _fake_scope(db_session))
+    _, el = _seed_table(db_session)
+
+    first = [{"dimensions": {"classe": "16"}, "metrics": {"smh": 52000},
+              "raw_values": {"smh": "52 000"}}]
+    parses: list[dict] = []
+    renders: list[int] = []
+
+    async def fake_parse(crop, grid, is_complex, locale, read_variant=0,
+                         provider=None):
+        parses.append({"is_complex": is_complex, "grid": grid})
+        return table_pipeline.TableResult(
+            html="<table><tr><td>16</td><td>52 000</td></tr></table>",
+            parse_strategy="vlm", records=first)
+
+    seen_check: dict = {}
+
+    async def fake_verify(chat, image, ctx, html, records):
+        seen_check["html"] = html
+        seen_check["records"] = records
+        # the check corrects a misread digit
+        return models_base.TableParse(
+            html="<table><tr><td>16</td><td>52 800</td></tr></table>",
+            records=[models_base.RecordParse(
+                dimensions={"classe": "16"}, metrics={"smh": 52800},
+                raw_values={"smh": "52 800"})])
+
+    def fake_render(pdf, page, bbox, dpi):
+        renders.append(dpi)
+        return b"png", [["a"]]
+
+    monkeypatch.setattr(indexing, "_table_region_inputs",
+                        lambda eid: {"pdf": b"%PDF", "page": 1,
+                                     "bbox": [0, 0, 10, 10], "locale": "fr",
+                                     "spans_pages": False})
+    monkeypatch.setattr(indexing, "_render_region", fake_render)
+    monkeypatch.setattr(table_pipeline, "parse_table_region", fake_parse)
+    monkeypatch.setattr(registry, "get_double_read_provider", lambda: None)
+    monkeypatch.setattr(indexing, "get_provider",
+                        lambda role: type("P", (), {"chat": None})())
+    monkeypatch.setattr("tablerag.models.table_parsing.run_table_verify", fake_verify)
+
+    out = asyncio.run(indexing.recheck_table(el.id))
+
+    assert out is not None
+    # ONE parse (forced down the VLM path), then a check of it
+    assert len(parses) == 1 and parses[0]["is_complex"] is True
+    assert seen_check["records"] == first        # the check saw the first read
+    assert "52 000" in seen_check["html"]
+    # the check gets the sharper render
+    assert renders == [480, 600]
+    assert out["dpi"] == 480 and out["grid_hint"] is True
+    # and its correction is what is proposed
+    assert out["records"][0]["raw_values"]["smh"] == "52 800"
+    assert "52 800" in out["html"]
+    assert out["second_read"] is True
+    assert out["signals"]["agreement"] < 1.0     # it changed something
+    # nothing was written: the stored table is untouched
+    from tablerag.storage.orm import TableElement
+    assert db_session.get(TableElement, el.id).html == \
+        "<table><tr><td>old</td></tr></table>"
+
+
+def test_recheck_keeps_the_first_read_when_the_check_fails(db_session, monkeypatch):
+    """A failed verification must cost nothing."""
     import asyncio
 
     from tablerag.ingestion import table_pipeline
@@ -197,45 +271,35 @@ def test_recheck_reads_twice_and_reports_the_agreement(db_session, monkeypatch):
     monkeypatch.setattr(indexing, "session_scope",
                         lambda: _fake_scope(db_session))
     _, el = _seed_table(db_session)
-
-    records = [{"dimensions": {"classe": "16"}, "metrics": {"smh": 52000},
-                "raw_values": {"smh": "52 000"}, "text_repr": "classe 16"}]
-    calls: list[dict] = []
+    first = [{"dimensions": {"classe": "16"}, "metrics": {"smh": 52000},
+              "raw_values": {"smh": "52 000"}}]
 
     async def fake_parse(crop, grid, is_complex, locale, read_variant=0,
                          provider=None):
-        calls.append({"grid": grid, "is_complex": is_complex,
-                      "read_variant": read_variant})
         return table_pipeline.TableResult(
-            html="<table><tr><td>16</td><td>52 000</td></tr></table>",
-            parse_strategy="vlm", records=records)
+            html="<table><tr><td>first</td></tr></table>",
+            parse_strategy="vlm", records=first)
+
+    async def failing_verify(chat, image, ctx, html, records):
+        return None  # contract violated twice
 
     monkeypatch.setattr(indexing, "_table_region_inputs",
                         lambda eid: {"pdf": b"%PDF", "page": 1,
                                      "bbox": [0, 0, 10, 10], "locale": "fr",
                                      "spans_pages": False})
     monkeypatch.setattr(indexing, "_render_region",
-                        lambda pdf, page, bbox, dpi: (b"png", [["a"]]))
+                        lambda *a, **k: (b"png", None))
     monkeypatch.setattr(table_pipeline, "parse_table_region", fake_parse)
     monkeypatch.setattr(registry, "get_double_read_provider", lambda: None)
+    monkeypatch.setattr(indexing, "get_provider",
+                        lambda role: type("P", (), {"chat": None})())
+    monkeypatch.setattr("tablerag.models.table_parsing.run_table_verify",
+                        failing_verify)
 
     out = asyncio.run(indexing.recheck_table(el.id))
-
-    assert out is not None
-    # read twice, both forced down the VLM path, the second at a shifted seed
-    assert len(calls) == 2
-    assert all(c["is_complex"] for c in calls)
-    assert [c["read_variant"] for c in calls] == [0, 1]
-    assert out["second_read"] is True
-    assert out["grid_hint"] is True
-    assert out["dpi"] > 240  # rendered above the ingest resolution
-    # identical reads agree, and the proposal carries the parsed records
-    assert out["signals"]["agreement"] == 1.0
+    assert "first" in out["html"]                     # the first read stands
     assert out["records"][0]["raw_values"]["smh"] == "52 000"
-    # and nothing was written: the stored table is untouched
-    from tablerag.storage.orm import TableElement
-    assert db_session.get(TableElement, el.id).html == \
-        "<table><tr><td>old</td></tr></table>"
+    assert out["second_read"] is False                # and it says so
 
 
 def test_derive_rebuilds_records_from_corrected_html(db_session, monkeypatch):

@@ -342,6 +342,75 @@ async def _collect(chat: ChatFn, messages: list[Msg], options: dict) -> str:
     return "".join(parts)
 
 
+# A second look that is given EVIDENCE rather than encouragement.
+#
+# Telling this model to "read more carefully" is the one thing measured to make
+# it worse (RULE 4: 79.9% -> 75.1%, reverted). What measured BETTER was handing
+# it something concrete to react to: the contract's duplicate-dims rejection,
+# with the specific error, moved production 79.9% -> 88.4%. So the verification
+# pass shows the model its own first reading and asks it to fault it against the
+# image, cell by cell — and it answers under the SAME contract, so every
+# structural guard still applies to the correction.
+VERIFY_PROMPT = """\
+You are CHECKING a transcription of the table in this image, cell by cell.
+
+A proposed reading is given below. Compare it against the image and return a \
+corrected version.
+
+- Change ONLY what the image contradicts. Every cell you cannot fault must come \
+back EXACTLY as it is, including digit grouping and spacing.
+- Look hardest where this goes wrong: a merged cell whose value must repeat on \
+every row or column it covers; a header level that was dropped; a value shifted \
+into a neighbouring row or column; digits that look alike (0/8, 1/7, 3/5, 6/5).
+- Do not add rows, columns or values that are not visible in the image, and do \
+not translate anything.
+- If the proposed reading is already right, return it unchanged.
+
+Reply with the same two blocks as the proposal and nothing else: one ```html \
+block, then one ```json block containing {"records": [...]}.\
+"""
+
+
+def build_verify_prompt(html: str, records: list[dict]) -> str:
+    """The first reading, handed back for faulting."""
+    payload = json.dumps({"records": records}, ensure_ascii=False, indent=1)
+    return (f"{VERIFY_PROMPT}\n\nProposed reading:\n\n```html\n{html}\n```\n\n"
+            f"```json\n{payload}\n```")
+
+
+async def run_table_verify(chat: ChatFn, image: bytes, ctx: TableCtx,
+                           html: str, records: list[dict]) -> TableParse | None:
+    """Check a first reading against the image and return the corrected one.
+
+    None when the check could not produce a valid answer — the caller then keeps
+    the first reading, so a failed verification never costs anything."""
+    image_b64 = base64.b64encode(image).decode()
+    options = parse_options(0)  # the check itself is deterministic
+    messages = [
+        Msg(role="system", content=SYSTEM_PROMPT),
+        Msg(role="user", content=build_verify_prompt(html, records),
+            images=[image_b64]),
+    ]
+    text = await _collect(chat, messages, options)
+    try:
+        new_html, new_records = _parse_or_contract_error(text)
+    except TableContractError as first_error:
+        retry = messages + [
+            Msg(role="assistant", content=text),
+            Msg(role="user", content=build_retry_prompt(str(first_error))),
+        ]
+        try:
+            new_html, new_records = _parse_or_contract_error(
+                await _collect(chat, retry, options))
+        except TableContractError as second_error:
+            logger.warning("verification pass violated the contract twice (%s)",
+                           second_error)
+            return None
+    return TableParse(html=new_html,
+                      records=[RecordParse(**r) for r in new_records],
+                      raw_response=text)
+
+
 def _parse_or_contract_error(text: str) -> tuple[str, list[dict]]:
     """parse_response, with any unexpected exception recast as a contract
     violation. One malformed reply must cost ONE table (flagged, original image

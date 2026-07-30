@@ -115,6 +115,12 @@ class Settings(BaseSettings):
     # no "verify" key and falls back to this).
     verification_enabled: bool = True
 
+    # "double-check" on a table: the region is re-rendered at this resolution
+    # for the verification pass, which faults the first reading against the
+    # image. Higher than the re-parse DPI on purpose — the check is the careful
+    # look. Set it at or below the re-parse DPI to reuse the same render.
+    table_verify_dpi: int = 600
+
     # Office documents (.pptx/.docx/.xlsx) are converted to PDF with LibreOffice
     # before ingestion, so the measured PDF pipeline (page renders, table
     # detection, crops, citations) applies unchanged. Disable to accept PDFs only.
