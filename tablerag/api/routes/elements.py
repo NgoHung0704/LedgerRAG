@@ -109,11 +109,23 @@ async def assist_element_edit(element_id: uuid.UUID,
     as a PROPOSAL the reviewer applies by hand. Nothing is written."""
     from tablerag.models.edit_assist import assist
 
+    def describe() -> str:
+        """What the assistant is looking at — resolved here, not trusted from
+        the client, so it cannot be told it is editing something else."""
+        with session_scope() as s:
+            detail = repo.get_element_detail(s, element_id)
+        if detail is None:
+            raise HTTPException(404, "element not found")
+        kind = "a table" if detail.get("table") else f"a {detail['type']} block"
+        return (f"{kind} from page {detail['page']} of "
+                f"\"{detail['filename']}\"")
+
+    where = await asyncio.to_thread(describe)
     # a long thread is not useful here and only eats context
     history = [(t.role, t.content) for t in body.history[-6:]]
     try:
         reply, proposal = await assist(body.format, body.content,
-                                       body.instruction, history)
+                                       body.instruction, history, where)
     except Exception as e:  # noqa: BLE001 — surface model failures readably
         raise HTTPException(502, f"the assistant could not answer: {e}") from e
     return {"reply": reply, "proposal": proposal}

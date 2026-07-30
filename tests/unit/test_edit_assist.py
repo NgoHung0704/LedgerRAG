@@ -32,6 +32,38 @@ def test_every_editable_pane_has_a_description():
     assert set(FORMATS) == {"html", "text", "records", "summary"}
 
 
+def test_it_knows_what_job_it_is_doing():
+    """Without this it is a generic rewriter: it has to know the content is a
+    PARSE of a printed page, and that fixing reading errors is the point."""
+    assert "editing assistant of a document question-answering tool" in SYSTEM_PROMPT
+    assert "came from PARSING a printed page" in SYSTEM_PROMPT
+    assert "index that answers are drawn from" in SYSTEM_PROMPT
+
+
+def test_it_knows_it_cannot_see_the_page():
+    """It is the chat model, not the parser — it has no image. Left unsaid, it
+    would confidently answer "is this right?" while blind."""
+    assert "CANNOT see the page image" in SYSTEM_PROMPT
+    assert 'according to the original' in SYSTEM_PROMPT
+    # and it must hand those questions to the tools that DO see the image
+    assert "double-check" in SYSTEM_PROMPT
+    assert "re-read with the VLM" in SYSTEM_PROMPT
+
+
+def test_the_content_wins_over_its_own_history():
+    """A proposal it made may never have been applied, so its own reply is not
+    evidence of the current state."""
+    assert "trust the content" in SYSTEM_PROMPT
+
+
+def test_the_message_says_which_element_is_being_edited():
+    msg = build_user_message("html", "<table/>", "enlève la colonne",
+                             where='a table from page 19 of "Avenant.pdf"')
+    assert 'You are editing a table from page 19 of "Avenant.pdf".' in msg
+    # and stays coherent without it
+    assert "You are editing" not in build_user_message("text", "x", "y")
+
+
 def test_user_message_carries_the_content_and_the_instruction():
     msg = build_user_message("html", "<table><tr><td>16</td></tr></table>",
                              "supprime la colonne vide")
