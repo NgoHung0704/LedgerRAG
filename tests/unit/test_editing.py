@@ -6,6 +6,8 @@ deterministic Postgres mutations and their guardrails."""
 
 import uuid
 
+import pytest
+
 from tablerag import indexing
 from tablerag.storage import repositories as repo
 from tablerag.storage.orm import Chunk, Record
@@ -128,6 +130,80 @@ def test_convert_an_image_only_table_still_succeeds(db_session, monkeypatch):
 
     assert indexing.convert_table_to_text(el.id) is True
     assert db_session.get(Element, el.id).type == "text"
+
+
+def test_recheck_refuses_a_non_table(db_session, monkeypatch):
+    """The guard itself, called directly: the DB lookup runs in a worker thread
+    under asyncio, which this test's SQLite session cannot cross."""
+    monkeypatch.setattr(indexing, "session_scope",
+                        lambda: _fake_scope(db_session))
+    _, text_el = _seed_text(db_session)
+    assert indexing._table_region_inputs(text_el.id) is None
+    assert indexing._table_region_inputs(uuid.uuid4()) is None
+
+
+def test_recheck_gives_up_when_the_source_is_gone(monkeypatch):
+    """No PDF (deleted, or never stored) -> no proposal, and no model call."""
+    import asyncio
+
+    from tablerag.ingestion import table_pipeline
+
+    monkeypatch.setattr(indexing, "_table_region_inputs", lambda eid: None)
+    monkeypatch.setattr(
+        table_pipeline, "parse_table_region",
+        lambda *a, **k: pytest.fail("must not parse without a source"))
+    assert asyncio.run(indexing.recheck_table(uuid.uuid4())) is None
+
+
+def test_recheck_reads_twice_and_reports_the_agreement(db_session, monkeypatch):
+    """The point of a double-check: a second, independent read, scored against
+    the first, so the reviewer knows how much to trust the proposal."""
+    import asyncio
+
+    from tablerag.ingestion import table_pipeline
+    from tablerag.models import registry
+
+    monkeypatch.setattr(indexing, "session_scope",
+                        lambda: _fake_scope(db_session))
+    _, el = _seed_table(db_session)
+
+    records = [{"dimensions": {"classe": "16"}, "metrics": {"smh": 52000},
+                "raw_values": {"smh": "52 000"}, "text_repr": "classe 16"}]
+    calls: list[dict] = []
+
+    async def fake_parse(crop, grid, is_complex, locale, read_variant=0,
+                         provider=None):
+        calls.append({"grid": grid, "is_complex": is_complex,
+                      "read_variant": read_variant})
+        return table_pipeline.TableResult(
+            html="<table><tr><td>16</td><td>52 000</td></tr></table>",
+            parse_strategy="vlm", records=records)
+
+    monkeypatch.setattr(indexing, "_table_region_inputs",
+                        lambda eid: {"pdf": b"%PDF", "page": 1,
+                                     "bbox": [0, 0, 10, 10], "locale": "fr"})
+    monkeypatch.setattr(indexing, "_render_region",
+                        lambda pdf, page, bbox, dpi: (b"png", [["a"]]))
+    monkeypatch.setattr(table_pipeline, "parse_table_region", fake_parse)
+    monkeypatch.setattr(registry, "get_double_read_provider", lambda: None)
+
+    out = asyncio.run(indexing.recheck_table(el.id))
+
+    assert out is not None
+    # read twice, both forced down the VLM path, the second at a shifted seed
+    assert len(calls) == 2
+    assert all(c["is_complex"] for c in calls)
+    assert [c["read_variant"] for c in calls] == [0, 1]
+    assert out["second_read"] is True
+    assert out["grid_hint"] is True
+    assert out["dpi"] > 240  # rendered above the ingest resolution
+    # identical reads agree, and the proposal carries the parsed records
+    assert out["signals"]["agreement"] == 1.0
+    assert out["records"][0]["raw_values"]["smh"] == "52 000"
+    # and nothing was written: the stored table is untouched
+    from tablerag.storage.orm import TableElement
+    assert db_session.get(TableElement, el.id).html == \
+        "<table><tr><td>old</td></tr></table>"
 
 
 def test_edit_missing_element_returns_false(db_session, monkeypatch):

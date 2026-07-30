@@ -9,6 +9,7 @@ import {
   getElement,
   type ElementDetail,
   type ElementEdit,
+  type RecordEdit,
 } from "@/lib/api";
 import { Button, Spinner } from "@/components/ui";
 import RecordsTable from "@/components/RecordsTable";
@@ -18,19 +19,27 @@ type Tab = "text" | "html" | "records" | "summary";
 /** Full-screen split editor: source on the left, live preview on the right, so
  * you edit the parsed text / table HTML / records and see the result as the app
  * renders it. On save the element is re-indexed so answers use the correction. */
+/** A model's proposal offered for review: it pre-fills the panes instead of the
+ * stored values, so it is compared against the original image and only becomes
+ * the element's content when the reviewer saves. */
+export type ElementProposal = {
+  text?: string;
+  html?: string;
+  summary?: string;
+  records?: RecordEdit[];
+  note?: string; // e.g. how the two reads of a re-check agreed
+};
+
 export default function ElementEditor({
   elementId,
   onClose,
   onSaved,
-  proposedText,
+  proposed,
 }: {
   elementId: string;
   onClose: () => void;
   onSaved: () => void;
-  // a VLM re-reading offered for review: it pre-fills the text pane instead of
-  // the stored text, so it is compared against the original image and only
-  // becomes the element's text when the reviewer saves
-  proposedText?: string;
+  proposed?: ElementProposal;
 }) {
   const [detail, setDetail] = useState<ElementDetail | null>(null);
   const [text, setText] = useState("");
@@ -45,14 +54,17 @@ export default function ElementEditor({
     getElement(elementId)
       .then((d) => {
         setDetail(d);
-        setText(proposedText ?? d.text ?? "");
-        setHtml(d.table?.html ?? "");
-        setSummary(d.table?.summary ?? "");
-        setRecordsJson(d.table ? JSON.stringify(d.table.records, null, 2) : "");
-        setTab(d.table && !proposedText ? "html" : "text");
+        setText(proposed?.text ?? d.text ?? "");
+        setHtml(proposed?.html ?? d.table?.html ?? "");
+        setSummary(proposed?.summary ?? d.table?.summary ?? "");
+        setRecordsJson(
+          JSON.stringify(proposed?.records ?? d.table?.records ?? [], null, 2),
+        );
+        // land on the pane the proposal is about
+        setTab(proposed?.text ? "text" : d.table ? "html" : "text");
       })
       .catch((e) => setError(String(e)));
-  }, [elementId, proposedText]);
+  }, [elementId, proposed]);
 
   const isTable = !!detail?.table;
   const tabs: { id: Tab; label: string }[] = isTable
@@ -145,11 +157,12 @@ export default function ElementEditor({
           </div>
         ) : (
           <>
-            {proposedText && (
+            {proposed && (
               <div className="mx-4 mt-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200">
-                This is the model&apos;s re-reading of the page, not the stored
-                text. Check it against the original image (the element card shows
-                it) — it replaces the text only when you save.
+                {proposed.note ??
+                  "This is the model's re-reading of the page, not the stored content."}{" "}
+                Check it against the original image (the element card shows it) —
+                it replaces what is stored only when you save.
               </div>
             )}
             <div className="min-h-0 flex-1 overflow-hidden p-4">

@@ -272,6 +272,25 @@ export const getElement = (elementId: string) =>
     jsonOrThrow<ElementDetail>(r),
   );
 
+export type TableRecheck = {
+  html: string;
+  records: RecordEdit[];
+  confidence: number;
+  signals: Record<string, number>;
+  second_read: boolean;
+  dpi: number;
+  grid_hint: boolean;
+  error: string | null;
+};
+
+/** Parse a table again, harder: double the ingest DPI, the text-layer grid as a
+ * hint, and two independent reads scored against each other. A PROPOSAL —
+ * nothing is written until the reviewer saves it. */
+export const recheckElement = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/recheck`, { method: "POST" }).then(
+    (r) => jsonOrThrow<TableRecheck>(r),
+  );
+
 /** "This is not a table": demote a wrongly detected table to a text element.
  * Its cells' own words become the text and it is re-indexed; reprocessing the
  * document restores the table if detection was right after all. */

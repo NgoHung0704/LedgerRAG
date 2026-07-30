@@ -10,6 +10,7 @@ use it without importing either pipeline — ingestion↔query isolation
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections import defaultdict
 
@@ -109,6 +110,121 @@ def convert_table_to_text(element_id: uuid.UUID) -> bool:
         # content, which the reviewer can fill via "re-read with the VLM"
         _rechunk(s, element, text)
     return True
+
+
+def _table_region_inputs(element_id: uuid.UUID) -> dict | None:
+    """Everything needed to re-render and re-read one table region: the source
+    PDF, the page, the element's bbox and the KB's declared locale."""
+    from tablerag.ingestion.convert import needs_conversion
+    from tablerag.storage.object_store import (
+        doc_converted_pdf_key,
+        get_object_store,
+    )
+    from tablerag.storage.orm import KnowledgeBase
+
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None or element.type != "table":
+            return None
+        document = s.get(Document, element.doc_id)
+        if document is None:
+            return None
+        kb = s.get(KnowledgeBase, document.kb_id)
+        info = {"page": element.page, "bbox": list(element.bbox or []),
+                "locale": (kb.config or {}).get("locale") if kb else None,
+                "kb_id": document.kb_id, "doc_id": document.id,
+                "key": document.file_path, "filename": document.filename}
+    store = get_object_store()
+    # an Office document was ingested through its cached PDF rendering
+    if needs_conversion(info["filename"]):
+        info["key"] = doc_converted_pdf_key(info["kb_id"], info["doc_id"])
+    if not store.exists(info["key"]):
+        return None
+    info["pdf"] = store.get(info["key"])
+    return info
+
+
+def _render_region(pdf_bytes: bytes, page_no: int, bbox: list[float],
+                   dpi: int) -> tuple[bytes, list[list[str | None]] | None]:
+    """Re-render a table's region straight from the PDF at `dpi`, and recover
+    the text-layer grid under it when there is one.
+
+    Both matter: more pixels give the VLM a better look than the crop stored at
+    ingest, and the grid is the hint that made merged-cell reading work (values
+    from the text layer, structure from the image)."""
+    import fitz
+
+    from tablerag.ingestion.layout import detect_tables
+
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        page = doc[page_no - 1]
+        clip = fitz.Rect(*bbox) if len(bbox) == 4 else page.rect
+        png = page.get_pixmap(dpi=dpi, clip=clip).tobytes("png")
+        grid = None
+        best = 0.0
+        for table, candidate in detect_tables(page):
+            rect = fitz.Rect(table.bbox) & clip
+            if not rect.is_empty:
+                area = rect.get_area()
+                if area > best:
+                    best, grid = area, candidate
+    return png, grid
+
+
+async def recheck_table(element_id: uuid.UUID) -> dict | None:
+    """Parse one table again, harder — a PROPOSAL, nothing is written.
+
+    Three things the ingest pass did not necessarily do: the region is
+    re-rendered from the PDF at double the configured DPI, the text-layer grid
+    is recovered as a hint, and the table is read TWICE (by a different model
+    when one is configured, else the same model at a shifted seed) so the two
+    reads can be scored against each other. The agreement is reported with the
+    result, so the reviewer knows how much to trust it before saving.
+
+    Returns None if the element is not a table or its source is unavailable."""
+    from tablerag.ingestion.confidence import assess
+    from tablerag.ingestion.table_pipeline import parse_table_region
+    from tablerag.models.registry import get_double_read_provider
+
+    info = await asyncio.to_thread(_table_region_inputs, element_id)
+    if info is None:
+        return None
+    settings = get_settings()
+    dpi = min(settings.table_crop_dpi * 2, 600)
+    crop, grid = await asyncio.to_thread(
+        _render_region, info["pdf"], info["page"], info["bbox"], dpi)
+
+    # is_complex=True forces the VLM path: the simple grid path is what a
+    # doubtful parse already went through, so re-running it proves nothing
+    result = await parse_table_region(crop, grid, True, info["locale"])
+
+    second = None
+    if result.records and not result.error:
+        verifier = get_double_read_provider()
+        other = await (
+            parse_table_region(crop, grid, True, info["locale"],
+                               provider=verifier)
+            if verifier is not None else
+            parse_table_region(crop, grid, True, info["locale"], read_variant=1))
+        if not other.error and other.records:
+            second = other.records
+
+    report = assess(result.html, result.records, second,
+                    review_threshold=settings.confidence_review_threshold,
+                    agreement_threshold=settings.double_read_agreement_threshold)
+    return {
+        "html": result.html or "",
+        "records": [{"dimensions": r.get("dimensions", {}),
+                     "metrics": r.get("metrics", {}),
+                     "raw_values": r.get("raw_values", {})}
+                    for r in result.records],
+        "confidence": report.confidence,
+        "signals": (report.detail or {}).get("signals") or {},
+        "second_read": second is not None,
+        "dpi": dpi,
+        "grid_hint": grid is not None,
+        "error": result.error,
+    }
 
 
 async def reindex_element(element_id: uuid.UUID) -> None:

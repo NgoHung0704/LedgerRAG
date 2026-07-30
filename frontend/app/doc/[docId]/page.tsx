@@ -12,12 +12,13 @@ import {
   Image as ImageIcon,
   Pencil,
   RefreshCw,
+  ScanSearch,
   ScanText,
   Table2,
   TableCellsMerge,
 } from "lucide-react";
 import BoilerplatePanel from "@/components/BoilerplatePanel";
-import ElementEditor from "@/components/ElementEditor";
+import ElementEditor, { type ElementProposal } from "@/components/ElementEditor";
 import RecordsTable from "@/components/RecordsTable";
 import {
   API_URL,
@@ -27,6 +28,7 @@ import {
   getDocumentView,
   getElement,
   markElementUnusable,
+  recheckElement,
   rereadElement,
   type DocumentView,
   type ElementDetail,
@@ -215,8 +217,9 @@ function ElementCard({
   const [detailBusy, setDetailBusy] = useState(false);
   const [showFullText, setShowFullText] = useState(false);
   const [showAllRecords, setShowAllRecords] = useState(false);
-  // VLM re-reading offered for review before it replaces anything
-  const [proposed, setProposed] = useState<string | undefined>();
+  // a model proposal offered for review before it replaces anything
+  const [proposed, setProposed] = useState<ElementProposal | undefined>();
+  const [rechecking, setRechecking] = useState(false);
   const [rereading, setRereading] = useState(false);
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
@@ -234,6 +237,35 @@ function ElementCard({
     setShowFullText(false);
     setShowAllRecords(false);
   }, [contentVersion]);
+
+  const recheck = async () => {
+    setRechecking(true);
+    setReviewError(null);
+    try {
+      const r = await recheckElement(element.id);
+      const pct = (v: number) => `${Math.round(v * 100)}%`;
+      const agreement = r.signals?.agreement;
+      setProposed({
+        html: r.html,
+        records: r.records,
+        note:
+          `Re-read at ${r.dpi} dpi` +
+          (r.grid_hint ? " with the text-layer grid" : "") +
+          (r.second_read
+            ? `, twice — the two reads agree ${
+                agreement === undefined ? "(not scored)" : pct(agreement)
+              }`
+            : ", once (a second read was not possible)") +
+          `. Confidence ${pct(r.confidence)}.` +
+          (r.error ? ` Parse reported: ${r.error}.` : ""),
+      });
+      setEditing(true);
+    } catch (e) {
+      setReviewError(String(e));
+    } finally {
+      setRechecking(false);
+    }
+  };
 
   const convertToText = async () => {
     if (
@@ -262,7 +294,7 @@ function ElementCard({
     setReviewError(null);
     try {
       const { text } = await rereadElement(element.id, mode);
-      setProposed(text);
+      setProposed({ text });
       setEditing(true);
     } catch (e) {
       setReviewError(String(e));
@@ -404,6 +436,17 @@ function ElementCard({
           )}
           {element.type === "table" && (
             <button
+              onClick={recheck}
+              disabled={rechecking}
+              title="Parse this table again at double the resolution, with the text-layer grid as a hint, and read it twice so the two reads can be compared. You review the result before it replaces anything."
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+            >
+              {rechecking ? <Spinner size={11} /> : <ScanSearch size={12} />}
+              {rechecking ? "re-parsing…" : "double-check"}
+            </button>
+          )}
+          {element.type === "table" && (
+            <button
               onClick={convertToText}
               disabled={converting}
               title="Detection sometimes fires on prose laid out in columns. This drops the grid and records and keeps the cells' words as text."
@@ -436,7 +479,7 @@ function ElementCard({
       {editing && (
         <ElementEditor
           elementId={element.id}
-          proposedText={proposed}
+          proposed={proposed}
           onClose={() => {
             setEditing(false);
             setProposed(undefined);

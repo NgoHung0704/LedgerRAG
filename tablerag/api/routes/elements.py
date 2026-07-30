@@ -94,6 +94,24 @@ async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict
     return {"text": text, "mode": mode}
 
 
+@router.post("/{element_id}/recheck")
+async def recheck_element(element_id: uuid.UUID) -> dict:
+    """Parse this table again, harder — a proposal, nothing is written.
+
+    The region is re-rendered from the PDF at double the ingest DPI, the
+    text-layer grid is recovered as a hint, and the table is read twice so the
+    reads can be scored against each other. The reviewer sees the agreement
+    before deciding to save."""
+    from tablerag import indexing
+
+    proposal = await indexing.recheck_table(element_id)
+    if proposal is None:
+        raise HTTPException(
+            404, "element not found, is not a table, or its source file is "
+                 "no longer available")
+    return proposal
+
+
 @router.post("/{element_id}/convert-to-text")
 async def convert_element_to_text(element_id: uuid.UUID) -> dict:
     """"This is not a table": demote a wrongly detected table to plain text.
