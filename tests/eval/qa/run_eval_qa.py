@@ -197,7 +197,10 @@ def main() -> None:
             if item.get("expected_doc"):
                 print(f"       cited : {[c.get('filename') for c in citations]}")
 
-    out_path = Path(__file__).parent / "results" / "last_run.jsonl"
+    # named after the dataset: two question sets against two KBs must not
+    # overwrite each other's transcript, which is the only record of WHY an
+    # item failed
+    out_path = Path(__file__).parent / "results" / f"{args.questions.stem}.jsonl"
     out_path.parent.mkdir(exist_ok=True)
     out_path.write_text(
         "\n".join(json.dumps(t, ensure_ascii=False) for t in transcript),
