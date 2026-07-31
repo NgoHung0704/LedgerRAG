@@ -32,12 +32,16 @@ export function Button({
 export function Card({
   children,
   className = "",
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** so a card can be an anchor target — Review links straight to one */
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={`rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-800 dark:bg-[#171d24] ${className}`}
     >
       {children}

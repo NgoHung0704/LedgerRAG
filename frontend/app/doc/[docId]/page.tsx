@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -49,6 +49,11 @@ export default function DocPage({ params }: { params: { docId: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [deletingPage, setDeletingPage] = useState<number | null>(null);
+  // the element Review sent us to: scrolled to, then ringed so it is obvious
+  // WHICH one on a page holding a dozen
+  const [target, setTarget] = useState<string | null>(null);
+  const [stale, setStale] = useState(false);
+  const jumped = useRef(false);
 
   const removePage = async (page: number) => {
     if (
@@ -90,6 +95,35 @@ export default function DocPage({ params }: { params: { docId: string } }) {
     const t = setInterval(refresh, 3000);
     return () => clearInterval(t);
   }, [processing, refresh]);
+
+  // Review links here with #el-<id>, and the browser resolves that fragment
+  // while this page is still empty — the elements only arrive with the fetch
+  // above. So the native jump did nothing and the reviewer landed at the top
+  // of the document to hunt for the page themselves. Do the jump ourselves,
+  // once, when the content it names actually exists.
+  useEffect(() => {
+    if (!view || jumped.current) return;
+    const anchor = window.location.hash.slice(1);
+    if (!anchor) return;
+    jumped.current = true;
+    const node = window.document.getElementById(anchor);
+    if (!node) {
+      // the queue outlived what it points at: the element was deleted, or the
+      // document was reprocessed and its elements have new ids
+      setStale(anchor.startsWith("el-"));
+      return;
+    }
+    node.scrollIntoView({ block: "start", behavior: "smooth" });
+    if (anchor.startsWith("el-")) setTarget(anchor.slice(3));
+  }, [view]);
+
+  // let the ring go once it has been seen, so it never reads as a lasting
+  // property of the element
+  useEffect(() => {
+    if (!target) return;
+    const t = setTimeout(() => setTarget(null), 3000);
+    return () => clearTimeout(t);
+  }, [target]);
 
   if (error) {
     return <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>;
@@ -174,6 +208,15 @@ export default function DocPage({ params }: { params: { docId: string } }) {
         </div>
       )}
 
+      {stale && (
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          That element is no longer in this document — it was deleted, or the
+          document was reprocessed and its elements were parsed afresh. The
+          pages below are what is stored now.
+        </div>
+      )}
+
       {elements.length === 0 ? (
         <Card className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
           {doc.status === "done"
@@ -182,7 +225,9 @@ export default function DocPage({ params }: { params: { docId: string } }) {
         </Card>
       ) : (
         pages.map((page) => (
-          <section key={page} className="mb-8">
+          // scroll-mt clears the sticky header: without it an anchor jump puts
+          // the target UNDER the bar it just scrolled past
+          <section key={page} id={`page-${page}`} className="mb-8 scroll-mt-36">
             <div className="group mb-3 flex items-center gap-3">
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Page {page}
@@ -217,6 +262,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
                   <ElementCard
                     key={element.id}
                     element={element}
+                    highlighted={target === element.id}
                     onChanged={refresh}
                   />
                 ))}
@@ -237,9 +283,12 @@ const TYPE_META = {
 function ElementCard({
   element,
   onChanged,
+  highlighted = false,
 }: {
   element: ElementView;
   onChanged: () => void;
+  /** this is the element a Review link pointed at */
+  highlighted?: boolean;
 }) {
   const { icon: Icon, label } = TYPE_META[element.type];
   const [showOriginal, setShowOriginal] = useState(
@@ -401,7 +450,16 @@ ${r.findings}` : ""),
     // short element it is taller than the card. It also has to paint over the
     // cards below it, which come later in the DOM — hence the raised z while
     // it is open. The header rounds its own top corners instead.
-    <Card className={`relative ${rereadMenu ? "z-30" : ""}`}>
+    <Card
+      id={`el-${element.id}`}
+      className={`relative scroll-mt-36 transition-shadow duration-500 ${
+        rereadMenu ? "z-30" : ""
+      } ${
+        highlighted
+          ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-[#f4f3ec] dark:ring-amber-500 dark:ring-offset-[#0f141a]"
+          : ""
+      }`}
+    >
       <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-slate-100 bg-slate-50/60 px-4 py-2 dark:border-slate-800 dark:bg-slate-800/40">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200">
           <Icon size={14} /> {label}
