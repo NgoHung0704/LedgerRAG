@@ -81,8 +81,21 @@ REFUSAL_PATTERNS = [
 ]
 
 
+def refusal_marker(normalized: str) -> str | None:
+    """The words that made this look like a refusal, or None.
+
+    A refusal veto that only says "refuses/hedges" is not diagnosable: the
+    printed answer is truncated, and the trigger is usually in the part that
+    was cut. Reporting the match turns a calibration guess into a reading."""
+    for p in REFUSAL_PATTERNS:
+        m = p.search(normalized)
+        if m:
+            return m.group(0)
+    return None
+
+
 def is_refusal(normalized: str) -> bool:
-    return any(p.search(normalized) for p in REFUSAL_PATTERNS)
+    return refusal_marker(normalized) is not None
 
 
 # Markdown/HTML table rows dumped into an answer are NOT a claim: run 2 had
@@ -165,8 +178,10 @@ def grade(item: dict, answer: str, citations: list[dict],
 
     # a hedged/refusing answer cannot also be a correct one, even if the
     # expected string appears somewhere in a pasted table
-    if is_refusal(claim):
-        return False, "answer refuses/hedges instead of stating the value"
+    marker = refusal_marker(claim)
+    if marker:
+        return False, f"answer refuses/hedges instead of stating the value " \
+                      f"(on «{marker}»)"
     # an expected entry may list acceptable surface forms separated by "|":
     # prose facts have several faithful wordings ("multi-acteurs" vs "de
     # multiples acteurs"), and only NUMBERS must be copied character-exact
@@ -222,7 +237,11 @@ def main() -> None:
             snippet = " ".join(answer.split())[:220]
             print(f"       answer: {snippet}{'…' if len(answer) > 220 else ''}")
             if item.get("expected_doc"):
-                print(f"       cited : {[c.get('filename') for c in citations]}")
+                # how many blocks the answer was built from tells you which
+                # retrieval path ran: rerank_top_k (8) when the reranker is
+                # working, retrieve_top_k (12) when it is off or unreachable
+                print(f"       cited : {len(citations)} blocks "
+                      f"{[c.get('filename') for c in citations]}")
 
     # named after the dataset: two question sets against two KBs must not
     # overwrite each other's transcript, which is the only record of WHY an
