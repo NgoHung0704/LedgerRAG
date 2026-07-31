@@ -51,6 +51,26 @@ async def edit_element(element_id: uuid.UUID, body: ElementEdit) -> dict:
     return detail
 
 
+@router.delete("/{element_id}", status_code=204)
+def delete_element(element_id: uuid.UUID) -> Response:
+    """Drop one parsed element — a running header, a stray fragment, a block
+    that only dilutes retrieval. Its chunks, records and vectors go with it.
+
+    The original file is untouched, so reprocessing the document brings it back
+    exactly as ingestion produced it; that is what makes this safe."""
+    from tablerag.storage.qdrant import get_vector_store
+
+    get_vector_store().delete_element(element_id)
+    with session_scope() as s:
+        crops = repo.delete_elements(s, [element_id])
+    if not crops:
+        raise HTTPException(404, "element not found")
+    store = get_object_store()
+    for key in crops:
+        store.delete(key)
+    return Response(status_code=204)
+
+
 @router.post("/{element_id}/reread")
 async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict:
     """Have the parser VLM re-read this element's PAGE.

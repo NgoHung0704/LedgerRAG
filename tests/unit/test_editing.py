@@ -132,6 +132,55 @@ def test_convert_an_image_only_table_still_succeeds(db_session, monkeypatch):
     assert db_session.get(Element, el.id).type == "text"
 
 
+def test_delete_elements_takes_everything_they_own(db_session):
+    """Dropping a page's elements must not leave orphan chunks or records
+    behind — those are what retrieval actually searches."""
+    from tablerag.storage.orm import Element, TableElement
+
+    _, table_el = _seed_table(db_session)
+    doc = db_session.get(Element, table_el.id).doc_id
+    text_el = repo.add_element(db_session, doc, page=1, bbox=[0, 0, 1, 1],
+                               type_="text", crop_image_path="t.png")
+    repo.add_chunks(db_session, text_el.id, [("some text", 2)])
+    # a second page must survive untouched
+    other = repo.add_element(db_session, doc, page=2, bbox=[0, 0, 1, 1],
+                             type_="text", crop_image_path="p2.png")
+    repo.add_chunks(db_session, other.id, [("page two", 2)])
+
+    ids = repo.page_element_ids(db_session, doc, 1)
+    assert set(ids) == {table_el.id, text_el.id}
+
+    crops = repo.delete_elements(db_session, ids)
+    db_session.flush()
+
+    assert sorted(crops) == ["c.png", "t.png"]      # so the caller can bin them
+    assert db_session.get(Element, table_el.id) is None
+    assert db_session.get(TableElement, table_el.id) is None
+    assert db_session.query(Record).count() == 0
+    assert db_session.query(Chunk).count() == 1     # page two's chunk
+    assert db_session.get(Element, other.id) is not None
+
+
+def test_delete_elements_on_nothing_is_a_no_op(db_session):
+    assert repo.delete_elements(db_session, []) == []
+    assert repo.delete_elements(db_session, [uuid.uuid4()]) == []
+
+
+def test_local_store_deletes_one_object(tmp_path):
+    """delete_prefix must not be used for a single key: the MinIO one appends a
+    '/', so a full key matches nothing and the delete silently does nothing."""
+    from tablerag.storage.object_store import LocalFSStore
+
+    store = LocalFSStore(str(tmp_path))
+    store.put("kbs/k/docs/d/elements/one.png", b"x")
+    store.put("kbs/k/docs/d/elements/two.png", b"y")
+    store.delete("kbs/k/docs/d/elements/one.png")
+
+    assert store.exists("kbs/k/docs/d/elements/one.png") is False
+    assert store.exists("kbs/k/docs/d/elements/two.png") is True
+    store.delete("kbs/k/docs/d/elements/gone.png")  # missing is not an error
+
+
 def test_recheck_uses_the_stitched_crop_for_a_cross_page_table(monkeypatch):
     """A merged cross-page table's stored crop is the stitched image of its
     fragments. Re-rendering one page would hand the model HALF the table and

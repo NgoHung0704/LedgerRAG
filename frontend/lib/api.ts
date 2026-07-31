@@ -262,6 +262,21 @@ export type BoilerplateCandidate = {
   text: string;
 };
 
+/** Drop everything parsed from one page (a cover, a signature page, a list of
+ * repealed agreements). The original file stays, so Reprocess brings it back. */
+export const deletePage = (docId: string, page: number) =>
+  fetch(`${API_URL}/api/documents/${docId}/pages/${page}`, {
+    method: "DELETE",
+  }).then((r) => jsonOrThrow<{ deleted: number; page: number }>(r));
+
+/** Drop one parsed element. Reversible by reprocessing the document. */
+export const deleteElement = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}`, { method: "DELETE" }).then(
+    (r) => {
+      if (!r.ok && r.status !== 204) throw new Error(`delete failed: ${r.status}`);
+    },
+  );
+
 export const scanBoilerplate = (docId: string) =>
   fetch(`${API_URL}/api/documents/${docId}/boilerplate-scan`, {
     method: "POST",

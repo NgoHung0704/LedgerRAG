@@ -190,6 +190,38 @@ def bulk_reprocess_documents(kb_id: uuid.UUID, body: BulkDeleteRequest,
     return {"queued": len(targets), "skipped": len(wanted) - len(targets)}
 
 
+@router.delete("/documents/{doc_id}/pages/{page}")
+def delete_page(doc_id: uuid.UUID, page: int,
+                user: User = Depends(current_user)) -> dict:
+    """Drop everything parsed from one page — a cover, a signature page, a list
+    of repealed agreements: pages whose content only dilutes retrieval.
+
+    The page's elements, their chunks, records and vectors go; the ORIGINAL file
+    and the page render stay, so reprocessing the document brings the page back
+    exactly as ingestion produced it. That is what makes this safe to use."""
+    with session_scope() as s:
+        doc = repo.get_document(s, doc_id)
+        if doc is None:
+            raise HTTPException(404, "document not found")
+        kb_id = doc.kb_id
+        element_ids = repo.page_element_ids(s, doc_id, page)
+    if not element_ids:
+        raise HTTPException(404, "no parsed elements on that page")
+
+    store = get_vector_store()
+    for element_id in element_ids:
+        store.delete_element(element_id)
+    with session_scope() as s:
+        crops = repo.delete_elements(s, element_ids)
+        repo.log_audit(s, user.username, "delete_page", kb_id=kb_id,
+                       doc_id=doc_id,
+                       detail={"page": page, "elements": len(element_ids)})
+    objects = get_object_store()
+    for key in crops:
+        objects.delete(key)
+    return {"deleted": len(element_ids), "page": page}
+
+
 @router.get("/documents/{doc_id}/elements")
 def get_document_elements(doc_id: uuid.UUID) -> dict:
     """Inspector: everything ingestion produced for this document — per

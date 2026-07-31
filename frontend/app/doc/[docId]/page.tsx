@@ -16,6 +16,7 @@ import {
   ScanText,
   Table2,
   TableCellsMerge,
+  Trash2,
 } from "lucide-react";
 import BoilerplatePanel from "@/components/BoilerplatePanel";
 import ElementEditor, { type ElementProposal } from "@/components/ElementEditor";
@@ -24,6 +25,8 @@ import {
   API_URL,
   approveElement,
   convertElementToText,
+  deleteElement,
+  deletePage,
   documentOriginalUrl,
   getDocumentView,
   getElement,
@@ -45,6 +48,27 @@ export default function DocPage({ params }: { params: { docId: string } }) {
   const [view, setView] = useState<DocumentView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [deletingPage, setDeletingPage] = useState<number | null>(null);
+
+  const removePage = async (page: number) => {
+    if (
+      !window.confirm(
+        `Delete everything parsed from page ${page}? Its text, tables and ` +
+          `vectors go. The original file is untouched — Reprocess brings the ` +
+          `page back.`,
+      )
+    )
+      return;
+    setDeletingPage(page);
+    try {
+      await deletePage(params.docId, page);
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setDeletingPage(null);
+    }
+  };
 
   const refresh = useCallback(
     () =>
@@ -159,7 +183,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
       ) : (
         pages.map((page) => (
           <section key={page} className="mb-8">
-            <div className="mb-3 flex items-center gap-3">
+            <div className="group mb-3 flex items-center gap-3">
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Page {page}
               </h2>
@@ -171,6 +195,19 @@ export default function DocPage({ params }: { params: { docId: string } }) {
               >
                 view page image
               </a>
+              <button
+                onClick={() => removePage(page)}
+                disabled={deletingPage === page}
+                title="Drop everything parsed from this page. The original file is untouched, so Reprocess brings it back."
+                className="inline-flex items-center gap-1 text-xs text-slate-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 disabled:opacity-50 group-hover:opacity-100"
+              >
+                {deletingPage === page ? (
+                  <Spinner size={11} />
+                ) : (
+                  <Trash2 size={12} />
+                )}
+                delete page
+              </button>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="space-y-4">
@@ -223,6 +260,7 @@ function ElementCard({
   const [rereading, setRereading] = useState(false);
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   // The lazily fetched full content must not outlive the element it came from.
   // After an edit the card gets fresh props, but a cached `detail` would keep
@@ -274,6 +312,25 @@ ${r.findings}` : ""),
       setReviewError(String(e));
     } finally {
       setRechecking(false);
+    }
+  };
+
+  const remove = async () => {
+    if (
+      !window.confirm(
+        "Delete this element? Its chunks, records and vectors go with it. " +
+          "The original file is untouched — Reprocess brings it back.",
+      )
+    )
+      return;
+    setRemoving(true);
+    setReviewError(null);
+    try {
+      await deleteElement(element.id);
+      onChanged();
+    } catch (e) {
+      setReviewError(String(e));
+      setRemoving(false);
     }
   };
 
@@ -481,6 +538,14 @@ ${r.findings}` : ""),
               <Pencil size={12} /> edit
             </button>
           )}
+          <button
+            onClick={remove}
+            disabled={removing}
+            title="Drop this element, its chunks, records and vectors. Reprocessing the document brings it back."
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-red-600 disabled:opacity-50"
+          >
+            {removing ? <Spinner size={11} /> : <Trash2 size={12} />} delete
+          </button>
           <button
             onClick={() => setShowOriginal((v) => !v)}
             className="text-[11px] font-medium text-slate-500 hover:text-slate-700"

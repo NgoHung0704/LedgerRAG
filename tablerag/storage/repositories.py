@@ -388,6 +388,29 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
     return view
 
 
+def delete_elements(s: Session, element_ids: list[uuid.UUID]) -> list[str]:
+    """Drop parsed elements and everything they own (chunks, table, records
+    cascade). Returns their crop-image keys so the caller can clear those too.
+
+    Destructive but not final: the original file is untouched, so reprocessing
+    the document brings the page back exactly as ingestion produced it."""
+    if not element_ids:
+        return []
+    rows = list(s.scalars(select(Element).where(Element.id.in_(element_ids))))
+    crops = [e.crop_image_path for e in rows if e.crop_image_path]
+    for element in rows:
+        s.delete(element)
+    s.flush()
+    return crops
+
+
+def page_element_ids(s: Session, doc_id: uuid.UUID,
+                     page: int) -> list[uuid.UUID]:
+    return list(s.scalars(
+        select(Element.id).where(Element.doc_id == doc_id,
+                                 Element.page == page)))
+
+
 def get_text_elements(s: Session, doc_id: uuid.UUID) -> list[dict]:
     """Text elements with position + joined text, for boilerplate detection.
     Type='text' only — running headers/footers are the target; table numbers

@@ -22,6 +22,8 @@ class ObjectStore(Protocol):
 
     def exists(self, key: str) -> bool: ...
 
+    def delete(self, key: str) -> None: ...
+
     def delete_prefix(self, prefix: str) -> None: ...
 
 
@@ -50,6 +52,9 @@ class LocalFSStore:
 
     def exists(self, key: str) -> bool:
         return self._path(key).is_file()
+
+    def delete(self, key: str) -> None:
+        self._path(key).unlink(missing_ok=True)
 
     def delete_prefix(self, prefix: str) -> None:
         import shutil
@@ -93,6 +98,12 @@ class MinIOStore:
             return True
         except S3Error:
             return False
+
+    def delete(self, key: str) -> None:
+        """One object, exactly. delete_prefix must not be used for this: it
+        appends a "/" to the prefix, so a full key matches nothing there and the
+        delete would silently do nothing."""
+        self.client.remove_object(self.bucket, str(_safe_key(key)))
 
     def delete_prefix(self, prefix: str) -> None:
         from minio.deleteobjects import DeleteObject
