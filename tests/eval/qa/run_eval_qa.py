@@ -39,8 +39,14 @@ import httpx
 # a negator plus any verb/noun of "containing / mentioning / stating" —
 # instead of enumerating surface forms. Applied to the normalized answer
 # (accent- and apostrophe-folded, see _norm).
+#
+# "exist" is deliberately NOT in this list. Run 3 scored a fully correct answer
+# as a refusal because it wrote "la condition de ressources n'existe pas" —
+# an assertion about the WORLD (there is no such condition), not about the
+# documents. It gets its own patterns below, which require an
+# information-noun and so keep "il n'existe pas d'information".
 _VERBS = (r"contien\w*|mentionn\w*|figur\w*|precis\w*|indiqu\w*|fourni\w*"
-          r"|comport\w*|permet\w*|dispos\w*|present\w*|apparai\w*|exist\w*"
+          r"|comport\w*|permet\w*|dispos\w*|present\w*|apparai\w*"
           r"|trouv\w*|donn\w*|abord\w*|evoqu\w*|specifi\w*")
 _NOUNS = (r"information\w*|mention\w*|reference\w*|donnee\w*|indication\w*"
           r"|precision\w*|element\w*|detail\w*")
@@ -50,6 +56,11 @@ REFUSAL_PATTERNS = [
     # "aucune reference", "aucun element", "sans mention"
     re.compile(rf"\baucun\w*\s+(?:autre\s+)?(?:{_NOUNS})"),
     re.compile(rf"\bsans\s+(?:{_NOUNS})"),
+    # "il n'existe pas d'information", "aucune donnée n'existe" — the noun is
+    # what makes it a statement about the sources rather than about the subject
+    re.compile(rf"\bexist\w*\s+(?:pas\s+)?(?:aucun\w*\s+|d\s+|de\s+|dans\s+)*"
+               rf"(?:{_NOUNS})"),
+    re.compile(rf"\b(?:{_NOUNS})\s+n\s+exist\w*"),
     # "pas de donnees", "pas d information", "n est pas disponible"
     re.compile(rf"\bpas\s+d\s*(?:{_NOUNS})"),
     re.compile(r"\bpas\s+(?:disponible|mentionne\w*|precise\w*|indique\w*"
@@ -80,11 +91,23 @@ def is_refusal(normalized: str) -> bool:
 # string. Grading must read what the answer SAYS, not what it pastes.
 _MD_ROW = re.compile(r"^\s*\|.*$", re.MULTILINE)
 _HTML_TAG = re.compile(r"<[^>]+>")
+_PARENS = re.compile(r"\([^)]*\)")
 
 
 def prose_only(answer: str) -> str:
     """The answer minus dumped table rows — the part that actually asserts."""
     return _HTML_TAG.sub(" ", _MD_ROW.sub(" ", answer))
+
+
+def without_asides(answer: str) -> str:
+    """The answer with parenthetical asides removed.
+
+    This chat model likes to restate a number it just spelled out: "deux (2)
+    mois", "d'un (1) an". Run 3 failed both on a correct answer, because the
+    interruption means the text contains neither "deux mois" nor "2 mois". The
+    aside is not a different claim, so grading looks at this form too rather
+    than making every expectation enumerate the habit."""
+    return _PARENS.sub(" ", answer)
 
 
 _WS = re.compile(r"\s+")
@@ -128,6 +151,9 @@ def grade(item: dict, answer: str, citations: list[dict],
     # pasted, not a claim it made (run 2 had answers stating the wrong cell in
     # prose while pasting a grid containing the right string)
     claim = _norm(prose_only(answer))
+    # the same claim with parenthetical asides dropped; an expectation may
+    # match either form
+    bare = _norm(without_asides(prose_only(answer)))
     if item.get("type") == "trap":
         if verification and verification.get("status") == "warnings":
             return True, "verification warned"
@@ -145,7 +171,8 @@ def grade(item: dict, answer: str, citations: list[dict],
     # prose facts have several faithful wordings ("multi-acteurs" vs "de
     # multiples acteurs"), and only NUMBERS must be copied character-exact
     missing = [s for s in item.get("expected_answer_contains", [])
-               if not any(_norm(variant) in claim for variant in s.split("|"))]
+               if not any(_norm(variant) in claim or _norm(variant) in bare
+                          for variant in s.split("|"))]
     if missing:
         return False, f"answer missing: {missing}"
     expected_doc = item.get("expected_doc")

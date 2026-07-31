@@ -144,3 +144,50 @@ def test_expected_variants_still_reject_a_wrong_answer():
     ok, _ = grade(item, "une négociation menée par un seul interlocuteur",
                   GLOSSAIRE, None)
     assert not ok
+
+
+# --- run 3 on the ACCORDS set (2026-07-31): two ways the gate lied ----------
+
+NOTE = [{"filename": "Note d'information - Départ à la retraite.pdf"}]
+LIVRET = [{"filename": "Livret du salarié_1.pdf"}]
+
+
+@pytest.mark.parametrize("answer,expected", [
+    # note_info_2 — the model spells the number then repeats it in digits, so
+    # the text contains neither "deux mois" nor "2 mois"
+    ("Le délai minimum pour adresser un courrier de demande de départ à la "
+     "retraite à l'employeur est de deux (2) mois avant la date effective de "
+     "départ.", "deux mois|2 mois"),
+    # note_info_4 — same habit
+    ("La durée maximale du maintien des garanties de mutuelle après le départ "
+     "à la retraite est d'un (1) an [1].", "un an|1 an|12 mois"),
+])
+def test_a_parenthetical_restatement_is_not_a_different_claim(answer, expected):
+    item = {"type": "factual", "expected_doc": "Note d'information",
+            "expected_answer_contains": [expected]}
+    ok, detail = grade(item, answer, NOTE, None)
+    assert ok, detail
+
+
+def test_n_existe_pas_can_be_a_claim_rather_than_a_refusal():
+    """livret_salarie_2 — the answer states the value exactly, and says so by
+    denying the thing exists in the WORLD. Run 3 read "n'existe pas" as
+    "the documents do not say" and scored a correct answer as a refusal."""
+    answer = ("La condition de ressources pour l'attribution de la pension de "
+              "réversion Agirc-Arrco n'existe pas. Contrairement au régime de "
+              "base, la pension de réversion Agirc-Arrco est attribuée sans "
+              "condition de ressources [5].")
+    assert not is_refusal(_norm(answer))
+    item = {"type": "factual", "expected_doc": "Livret du salarié",
+            "expected_answer_contains": ["sans condition de ressources"]}
+    ok, detail = grade(item, answer, LIVRET, None)
+    assert ok, detail
+
+
+@pytest.mark.parametrize("answer", [
+    "Il n'existe pas d'information sur ce point dans les sources fournies.",
+    "Aucune donnée n'existe dans les documents à ce sujet.",
+    "Cette information n'existe pas dans les documents fournis.",
+])
+def test_n_existe_pas_is_still_a_refusal_when_it_is_about_the_sources(answer):
+    assert is_refusal(_norm(answer))
