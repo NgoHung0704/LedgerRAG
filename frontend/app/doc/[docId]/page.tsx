@@ -340,8 +340,12 @@ ${r.findings}` : ""),
   const signals = element.confidence_detail?.signals;
 
   return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2 dark:border-slate-800 dark:bg-slate-800/40">
+    // NOT overflow-hidden: the re-read menu drops out of the header, and on a
+    // short element it is taller than the card. It also has to paint over the
+    // cards below it, which come later in the DOM — hence the raised z while
+    // it is open. The header rounds its own top corners instead.
+    <Card className={`relative ${rereadMenu ? "z-30" : ""}`}>
+      <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-slate-100 bg-slate-50/60 px-4 py-2 dark:border-slate-800 dark:bg-slate-800/40">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200">
           <Icon size={14} /> {label}
         </span>
