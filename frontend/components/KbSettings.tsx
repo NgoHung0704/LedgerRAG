@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Settings2, Trash2, Check, ShieldCheck, Sparkles } from "lucide-react";
 import { updateKb, deleteKb, suggestDescription, type KB } from "@/lib/api";
+import CopyButton from "@/components/CopyButton";
 import { Spinner } from "@/components/ui";
 
 // The single place to edit a KB after creation: name, description (what the
@@ -208,6 +209,24 @@ export default function KbSettings({
             >
               {saving ? <Spinner size={13} /> : <Check size={13} />} Save changes
             </button>
+          </div>
+
+          {/* the id is what the API and the eval gates are addressed by, and
+              reading it out of the address bar to retype it is a chore */}
+          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-700">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+              Knowledge base id
+            </div>
+            <div className="mt-1 flex items-center gap-1">
+              <code className="min-w-0 flex-1 truncate rounded-md bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                {kb.id}
+              </code>
+              <CopyButton text={kb.id} title="Copy the knowledge base id" />
+            </div>
+            <div className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+              For the API and the eval gates —{" "}
+              <span className="font-mono">make eval-qa KB=…</span>
+            </div>
           </div>
 
           <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-700">

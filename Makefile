@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-qa eval-accords eval-routing eval-followup eval-adversarial eval-attacks lint
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint
 
 up:
 	docker compose up -d --build
@@ -53,6 +53,13 @@ eval-qa:
 eval-accords:
 	python tests/eval/qa/run_eval_qa.py --kb $(KB) \
 		--questions tests/eval/qa/accords.jsonl $(ARGS)
+
+# Same gate, Convention Collective question set (CCN métallurgie, cotation,
+# épargne salariale, accords d'entreprise CETIAT).
+# Usage: make eval-convention KB=<convention kb id>
+eval-convention:
+	python tests/eval/qa/run_eval_qa.py --kb $(KB) \
+		--questions tests/eval/qa/convention.jsonl $(ARGS)
 
 # ---- Phase 5: routing gate (needs several KBs; scores router, not answers) --
 # Split the 3 sample PDFs into 3 KBs whose names contain CETIAT / Avenant /
