@@ -19,7 +19,17 @@ import {
   uploadDoc,
   type Doc,
 } from "@/lib/api";
-import { Button, Card, EmptyState, Spinner, StatusPill } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  IconButton,
+  Spinner,
+  StatusPill,
+} from "@/components/ui";
+import { confirm } from "@/components/confirm";
+
+const plural = (n: number) => (n === 1 ? "" : "s");
 
 export default function DocumentsPanel({ kbId }: { kbId: string }) {
   const [docs, setDocs] = useState<Doc[] | null>(null);
@@ -77,7 +87,15 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
   };
 
   const remove = async (d: Doc) => {
-    if (!window.confirm(`Delete "${d.filename}" and all its parsed data? This cannot be undone.`))
+    if (
+      !(await confirm({
+        title: `Delete ${d.filename}?`,
+        message:
+          "Its parsed text, tables and vectors are removed, and answers stop " +
+          "citing it. The original file goes too — this cannot be undone.",
+        confirmLabel: "Delete",
+      }))
+    )
       return;
     setDeleting(d.id);
     try {
@@ -110,12 +128,15 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
   const reprocessSelected = async () => {
     if (selected.size === 0) return;
     if (
-      !window.confirm(
-        `Re-run ingestion for ${selected.size} document${
-          selected.size === 1 ? "" : "s"
-        }? Their parsed elements are rebuilt from the original files; the ` +
-          `worker takes them one at a time, so a large batch will take a while.`,
-      )
+      !(await confirm({
+        title: `Reprocess ${selected.size} document${plural(selected.size)}?`,
+        message:
+          `Parsed elements are rebuilt from the original files, so any manual ` +
+          `corrections on them are replaced. The worker takes documents one at ` +
+          `a time — a large batch will take a while.`,
+        confirmLabel: "Reprocess",
+        danger: false,
+      }))
     )
       return;
     setBulkBusy(true);
@@ -140,9 +161,15 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
 
   const removeSelected = async () => {
     if (selected.size === 0) return;
-    if (!window.confirm(
-      `Delete ${selected.size} document${selected.size === 1 ? "" : "s"} and all their parsed data? This cannot be undone.`,
-    ))
+    if (
+      !(await confirm({
+        title: `Delete ${selected.size} document${plural(selected.size)}?`,
+        message:
+          "Their parsed text, tables and vectors are removed, and answers stop " +
+          "citing them. The original files go too — this cannot be undone.",
+        confirmLabel: `Delete ${selected.size} document${plural(selected.size)}`,
+      }))
+    )
       return;
     setBulkBusy(true);
     setUploadError(null);
@@ -174,17 +201,17 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
           dragOver
             ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40"
-            : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-[#171d24] dark:hover:border-slate-600"
+            : "border-line bg-surface hover:border-line-strong"
         }`}
       >
         <FileUp
           size={26}
-          className={dragOver ? "text-indigo-500" : "text-slate-300 dark:text-slate-600"}
+          className={dragOver ? "text-indigo-500" : "text-ink-faint"}
         />
-        <div className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+        <div className="mt-2 text-sm font-medium text-ink">
           Drop documents here, or click to browse
         </div>
-        <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+        <div className="mt-0.5 text-xs text-ink-subtle">
           PDF, Word, PowerPoint or Excel. Tables keep their original image —
           parsing is verified, never guessed.
         </div>
@@ -217,63 +244,66 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
       ) : (
         <Card className="overflow-hidden">
           {selected.size > 0 && (
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-indigo-50/50 px-4 py-2 dark:border-slate-800 dark:bg-indigo-950/30">
-              <span className="text-sm text-slate-600 dark:text-slate-300">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line bg-indigo-50/50 px-4 py-2 dark:bg-indigo-950/30">
+              <span className="text-sm text-ink-muted">
                 {selected.size} selected
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setSelected(new Set())}
-                  className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                >
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
                   Clear
-                </button>
+                </Button>
                 <Button
                   variant="secondary"
-                  className="!py-1.5 text-xs"
+                  size="sm"
                   disabled={bulkBusy}
                   onClick={reprocessSelected}
                   title="Re-run ingestion from the original files. Useful after a batch of failures, or to pick up a parsing change."
                 >
                   {bulkBusy ? <Spinner size={13} /> : <RefreshCw size={13} />}
-                  Reprocess selected
+                  Reprocess
                 </Button>
                 <Button
-                  variant="secondary"
-                  className="!py-1.5 text-xs !text-red-600"
+                  variant="danger"
+                  size="sm"
                   disabled={bulkBusy}
                   onClick={removeSelected}
                 >
                   {bulkBusy ? <Spinner size={13} /> : <Trash2 size={13} />}
-                  Delete selected
+                  Delete
                 </Button>
               </div>
             </div>
           )}
+          {/* the table scrolls inside its own card rather than pushing the
+              whole page sideways; Pages and Added drop out first on narrow
+              screens, since neither is why you came to this list */}
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:border-slate-800">
+              <tr className="border-b border-line text-left text-xs font-medium uppercase tracking-wide text-ink-subtle">
                 <th className="w-10 px-4 py-2.5">
                   <input
                     type="checkbox"
                     checked={allSelected}
                     onChange={toggleAll}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600"
-                    title="Select all"
+                    className="h-4 w-4 rounded border-line-strong text-indigo-600"
+                    aria-label={allSelected ? "Clear selection" : "Select all documents"}
                   />
                 </th>
                 <th className="px-4 py-2.5">Document</th>
                 <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5">Pages</th>
-                <th className="px-4 py-2.5">Added</th>
-                <th className="px-4 py-2.5" />
+                <th className="hidden px-4 py-2.5 sm:table-cell">Pages</th>
+                <th className="hidden px-4 py-2.5 md:table-cell">Added</th>
+                <th className="px-4 py-2.5">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {(docs ?? []).map((d) => (
                 <tr
                   key={d.id}
-                  className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/50 dark:border-slate-800/60 dark:hover:bg-slate-800/40 ${
+                  className={`border-b border-line last:border-0 hover:bg-surface-sunken ${
                     selected.has(d.id) ? "bg-indigo-50/40 dark:bg-indigo-950/30" : ""
                   }`}
                 >
@@ -282,13 +312,14 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                       type="checkbox"
                       checked={selected.has(d.id)}
                       onChange={() => toggle(d.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                      aria-label={`Select ${d.filename}`}
+                      className="h-4 w-4 rounded border-line-strong text-indigo-600"
                     />
                   </td>
                   <td className="max-w-[22rem] px-4 py-2.5">
                     <Link
                       href={`/doc/${d.id}`}
-                      className="block truncate font-medium text-slate-800 hover:text-indigo-700 dark:text-slate-200 dark:hover:text-indigo-300"
+                      className="block truncate font-medium text-ink hover:text-indigo-700 dark:hover:text-indigo-300"
                       title="Inspect parsed output"
                     >
                       {d.filename}
@@ -300,10 +331,10 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   <td className="px-4 py-2.5">
                     <StatusPill status={d.status} />
                   </td>
-                  <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">
+                  <td className="hidden px-4 py-2.5 text-ink-muted sm:table-cell">
                     {d.page_count ?? "—"}
                   </td>
-                  <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">
+                  <td className="hidden px-4 py-2.5 text-ink-muted md:table-cell">
                     {new Date(d.created_at).toLocaleString()}
                   </td>
                   <td className="px-4 py-2.5">
@@ -329,20 +360,21 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                       >
                         <ScanSearch size={13} /> Inspect
                       </Link>
-                      <button
+                      <IconButton
+                        label={`Delete ${d.filename}`}
                         onClick={() => remove(d)}
                         disabled={deleting === d.id}
-                        title="Delete document"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                        className="hover:!bg-red-50 hover:!text-red-600 dark:hover:!bg-red-950/40 dark:hover:!text-red-400"
                       >
                         {deleting === d.id ? <Spinner size={13} /> : <Trash2 size={13} />}
-                      </button>
+                      </IconButton>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
       )}
     </div>

@@ -63,13 +63,13 @@ export default function EditAssistant({
 
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
         <Sparkles size={11} /> Assistant · {format}
       </div>
-      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40">
+      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-line bg-surface dark:bg-slate-900/40">
         <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-2.5">
           {turns.length === 0 && (
-            <p className="px-1 text-[11px] leading-4 text-slate-400">
+            <p className="px-1 text-[11px] leading-4 text-ink-subtle">
               Ask for a change to the {format} on the left — &ldquo;drop the
               empty column&rdquo;, &ldquo;make the first row the header&rdquo;,
               &ldquo;turn these lines into a table&rdquo;. It rearranges what is
@@ -85,7 +85,7 @@ export default function EditAssistant({
               </div>
             ) : (
               <div key={i}>
-                <div className="whitespace-pre-wrap rounded-lg rounded-bl-sm bg-slate-100 px-2.5 py-1.5 text-[12px] leading-5 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                <div className="whitespace-pre-wrap rounded-lg rounded-bl-sm bg-surface-sunken px-2.5 py-1.5 text-[12px] leading-5 text-ink">
                   {t.content}
                 </div>
                 {t.proposal && (
@@ -101,7 +101,7 @@ export default function EditAssistant({
             ),
           )}
           {busy && (
-            <div className="inline-flex items-center gap-2 text-[11px] text-slate-400">
+            <div className="inline-flex items-center gap-2 text-[11px] text-ink-subtle">
               <Spinner size={12} /> thinking…
             </div>
           )}
@@ -110,7 +110,7 @@ export default function EditAssistant({
         </div>
         <form
           onSubmit={ask}
-          className="flex items-end gap-1.5 border-t border-slate-100 p-2 dark:border-slate-800"
+          className="flex items-end gap-1.5 border-t border-line p-2"
         >
           <textarea
             rows={2}
@@ -121,7 +121,7 @@ export default function EditAssistant({
             }}
             placeholder="What should change?"
             disabled={busy}
-            className="min-h-0 flex-1 resize-none rounded-md border border-slate-300 px-2 py-1.5 text-[12px] placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-indigo-900/40"
+            className="min-h-0 flex-1 resize-none rounded-md border border-line-strong px-2 py-1.5 text-[12px] placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
           <button
             type="submit"

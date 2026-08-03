@@ -209,18 +209,21 @@ export default function ChatPanel({
   };
 
   return (
-    <div className="flex h-[calc(100vh-14rem)] flex-col rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-800 dark:bg-[#171d24]">
+    // dvh, not vh: on a phone `vh` counts the space behind the browser's own
+    // toolbars, which pushed the composer off the bottom of the screen. min-h
+    // keeps the thread usable when a long KB description eats the header.
+    <div className="flex h-[calc(100dvh-17rem)] min-h-[22rem] flex-col rounded-xl border border-line bg-surface shadow-card lg:h-[calc(100dvh-14rem)]">
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
         {messages.length === 0 &&
           (emptyState ?? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <Sparkles size={28} className="mb-3 text-slate-300" />
-              <div className="text-sm font-medium text-slate-600 dark:text-slate-300">
+              <Sparkles size={28} className="mb-3 text-ink-faint" />
+              <div className="text-sm font-medium text-ink-muted">
                 {kbId
                   ? "Ask anything about the documents in this knowledge base"
                   : "Ask across your knowledge bases"}
               </div>
-              <div className="mt-1 max-w-md text-xs leading-5 text-slate-400 dark:text-slate-500">
+              <div className="mt-1 max-w-md text-xs leading-5 text-ink-subtle">
                 Answers stream with citations. Numbers are quoted exactly as
                 printed — when a table couldn't be read reliably, you'll see the
                 original image instead of a guess.
@@ -243,7 +246,7 @@ export default function ChatPanel({
           ) : (
             <div key={i} className="flex justify-start">
               <div className="w-full max-w-[92%]">
-                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">
                   <Sparkles size={12} className="text-indigo-500" /> Assistant
                 </div>
                 {/* the answer reads like a printed document excerpt, straight on
@@ -259,7 +262,7 @@ export default function ChatPanel({
                     onOpen={setOpenSource}
                   />
                 ) : busy && i === messages.length - 1 ? (
-                  <span className="inline-flex items-center gap-2 text-slate-400">
+                  <span className="inline-flex items-center gap-2 text-ink-subtle">
                     <Spinner size={14} /> thinking…
                   </span>
                 ) : null}
@@ -280,7 +283,7 @@ export default function ChatPanel({
                         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                           c.needs_review
                             ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
+                            : "border-line bg-surface text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
                         }`}
                       >
                         {c.kind === "table" ? (
@@ -321,7 +324,7 @@ export default function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+      <div className="border-t border-line p-3">
         {showScope && (
           <div className="mb-2">
             <ChatScopeSelector
@@ -335,13 +338,14 @@ export default function ChatPanel({
         )}
         <form
           onSubmit={ask}
-          className="flex items-end gap-2 rounded-xl border border-slate-300 bg-white p-1.5 pl-3 transition-colors focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:ring-indigo-900/40"
+          className="flex items-end gap-2 rounded-xl border border-line-strong bg-surface p-1.5 pl-3 transition-colors focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900/40"
         >
           <textarea
             ref={taRef}
             rows={1}
-            className="flex-1 resize-none border-0 bg-transparent py-1.5 font-serif text-[15px] leading-relaxed text-slate-900 placeholder:font-sans placeholder:text-sm placeholder:text-slate-400 focus:outline-none focus:ring-0 dark:text-slate-100 dark:placeholder:text-slate-500"
-            placeholder="Posez votre question… / Ask your question… (Entrée pour envoyer, Maj+Entrée = nouvelle ligne)"
+            className="flex-1 resize-none border-0 bg-transparent py-1.5 font-serif text-[15px] leading-relaxed text-ink placeholder:font-sans placeholder:text-sm placeholder:text-ink-subtle focus:outline-none focus:ring-0"
+            aria-label="Your question"
+            placeholder="Ask your question… (Enter to send, Shift+Enter for a new line)"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => {
@@ -355,9 +359,10 @@ export default function ChatPanel({
           <button
             type="submit"
             disabled={busy || !question.trim()}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
+            aria-label="Send question"
+            className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-600/40"
           >
-            <Send size={15} />
+            <Send size={15} aria-hidden="true" />
           </button>
         </form>
       </div>
@@ -379,7 +384,7 @@ function TimingBadge({ timing }: { timing: Timing }) {
   const rate = timing.genMs > 0 ? (tokens / (timing.genMs / 1000)).toFixed(0) : null;
   return (
     <span
-      className="ml-1 inline-flex items-center gap-1.5 text-[11px] tabular-nums text-slate-400 dark:text-slate-500"
+      className="ml-1 inline-flex items-center gap-1.5 text-[11px] tabular-nums text-ink-subtle"
       title={
         `Search (routing, retrieval, reranking): ${
           timing.searchMs === null ? "not needed" : secs(timing.searchMs)
@@ -393,7 +398,7 @@ function TimingBadge({ timing }: { timing: Timing }) {
       )}
       <span className="inline-flex items-center gap-1">
         <Gauge size={11} /> {secs(timing.genMs)}
-        {rate && <span className="text-slate-300 dark:text-slate-600">· {rate} tok/s</span>}
+        {rate && <span className="text-ink-faint">· {rate} tok/s</span>}
       </span>
     </span>
   );
@@ -414,12 +419,13 @@ function FeedbackButton({
     <button
       onClick={onClick}
       title={up ? "Helpful" : "Not helpful"}
+      aria-label={up ? "Mark this answer helpful" : "Mark this answer unhelpful"}
       aria-pressed={active}
-      className={`rounded-md p-1 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${
-        active ? activeColor : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400"
+      className={`relative rounded-md p-1.5 transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-surface-sunken ${
+        active ? activeColor : "text-ink-subtle hover:text-ink-muted"
       }`}
     >
-      <Icon size={13} fill={active ? "currentColor" : "none"} />
+      <Icon size={13} fill={active ? "currentColor" : "none"} aria-hidden="true" />
     </button>
   );
 }
@@ -523,7 +529,7 @@ function MarkdownProse({
             const m = /^#cite-(\d+)$/.exec(href ?? "");
             if (!m) return <a href={href}>{children}</a>;
             const c = citations?.find((x) => x.index === Number(m[1]));
-            if (!c) return <sup className="text-slate-400">{children}</sup>;
+            if (!c) return <sup className="text-ink-subtle">{children}</sup>;
             return (
               <button
                 type="button"
@@ -575,8 +581,9 @@ function SourceTable({
 
   if (!failed && !detail)
     return (
-      <div className="my-2 flex items-center gap-2 text-xs text-slate-400">
-        <Spinner size={12} /> chargement du tableau d&apos;origine…
+      <div className="my-2 flex items-center gap-2 text-xs text-ink-subtle">
+        <Spinner size={12} label="Loading the original table" /> loading the
+        original table…
       </div>
     );
 
@@ -589,21 +596,21 @@ function SourceTable({
   return (
     <figure className="my-2">
       <div
-        className="doc-table max-h-[60vh] overflow-auto rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+        className="doc-table max-h-[60vh] overflow-auto rounded-lg border border-line p-2"
         dangerouslySetInnerHTML={{ __html: html }}
       />
-      <figcaption className="mt-1 flex flex-wrap items-center gap-1.5 font-sans text-[11px] text-slate-400">
+      <figcaption className="mt-1 flex flex-wrap items-center gap-1.5 font-sans text-[11px] text-ink-subtle">
         <button
           type="button"
           onClick={() => onOpen(citation)}
           className="inline-flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-300"
         >
-          <Table2 size={11} /> {citation.filename} · p.{citation.page} — voir
-          l&apos;original
+          <Table2 size={11} aria-hidden="true" /> {citation.filename} · p.
+          {citation.page} — see the original
         </button>
         {citation.needs_review && (
-          <span className="text-amber-600 dark:text-amber-400">
-            · parse à vérifier
+          <span className="text-amber-700 dark:text-amber-400">
+            · parse needs review
           </span>
         )}
       </figcaption>

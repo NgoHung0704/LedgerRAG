@@ -69,7 +69,7 @@ export default function AssistantForm({
     <Modal title={title} onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
             Name
           </label>
           <input
@@ -82,7 +82,7 @@ export default function AssistantForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
             Description
           </label>
           <input
@@ -94,32 +94,32 @@ export default function AssistantForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
             Knowledge bases it can search
           </label>
           {kbs.length === 0 ? (
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-ink-subtle">
               No knowledge base exists yet.
             </p>
           ) : (
-            <div className="max-h-48 space-y-1 overflow-auto rounded-lg border border-slate-200 p-1.5 dark:border-slate-700">
+            <div className="max-h-48 space-y-1 overflow-auto rounded-lg border border-line p-1.5">
               {kbs.map((kb) => (
                 <label
                   key={kb.id}
-                  className="flex cursor-pointer items-start gap-2.5 rounded px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  className="flex cursor-pointer items-start gap-2.5 rounded px-2 py-1.5 hover:bg-surface-sunken dark:hover:bg-slate-800/60"
                 >
                   <input
                     type="checkbox"
                     checked={kbIds.has(kb.id)}
                     onChange={() => toggle(kb.id)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600"
+                    className="mt-0.5 h-4 w-4 rounded border-line-strong text-indigo-600"
                   />
                   <span className="min-w-0">
-                    <span className="flex items-center gap-1.5 text-[13px] font-medium text-slate-700 dark:text-slate-200">
-                      <Database size={12} className="text-slate-400" />
+                    <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
+                      <Database size={12} className="text-ink-subtle" />
                       {kb.name}
                     </span>
-                    <span className="line-clamp-1 text-[11px] text-slate-400">
+                    <span className="line-clamp-1 text-[11px] text-ink-subtle">
                       {kb.description || "No description"}
                     </span>
                   </span>
@@ -127,14 +127,14 @@ export default function AssistantForm({
               ))}
             </div>
           )}
-          <p className="mt-1 text-[11px] leading-4 text-slate-400">
+          <p className="mt-1 text-[11px] leading-4 text-ink-subtle">
             With several, the router picks the relevant one(s) per question —
             among these only, never the rest of your workspace.
           </p>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
             Instructions
           </label>
           <textarea
@@ -144,14 +144,14 @@ export default function AssistantForm({
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
           />
-          <p className="mt-1 text-[11px] leading-4 text-slate-400">
+          <p className="mt-1 text-[11px] leading-4 text-ink-subtle">
             Added on top of the built-in rules: it shapes tone and focus but
             can&apos;t loosen quoting numbers exactly or citing sources.
           </p>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
             Opening message
           </label>
           <input
@@ -162,16 +162,16 @@ export default function AssistantForm({
           />
         </div>
 
-        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line p-3">
           <input
             type="checkbox"
             checked={verify}
             onChange={(e) => setVerify(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600"
+            className="mt-0.5 h-4 w-4 rounded border-line-strong text-indigo-600"
           />
-          <span className="text-xs leading-4 text-slate-600 dark:text-slate-300">
-            <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-200">
-              <ShieldCheck size={13} className="text-slate-400" />
+          <span className="text-xs leading-4 text-ink-muted">
+            <span className="inline-flex items-center gap-1 font-medium text-ink">
+              <ShieldCheck size={13} className="text-ink-subtle" />
               Verify numbers in answers
             </span>
             <br />
@@ -181,7 +181,7 @@ export default function AssistantForm({
         </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <div className="flex items-center gap-2 border-t border-line pt-3">
           {onDelete &&
             (confirmingDelete ? (
               <div className="flex items-center gap-2 text-xs text-red-700 dark:text-red-300">
@@ -205,7 +205,7 @@ export default function AssistantForm({
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
-                  className="text-slate-500 hover:text-slate-700"
+                  className="text-ink-muted hover:text-ink"
                 >
                   Cancel
                 </button>

@@ -49,10 +49,10 @@ export default function KBPage({ params }: { params: { id: string } }) {
     <div className="flex h-full flex-col">
       {/* name, settings and the tabs stay put while the list scrolls: negative
           margins cover the container's padding so nothing shows behind it */}
-      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 border-b border-slate-200 bg-[#f4f3ec]/95 px-6 pt-6 backdrop-blur dark:border-slate-800 dark:bg-[#0f141a]/95">
+      <div className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 border-b border-line bg-canvas/95 px-4 pt-5 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
         <Link
           href="/"
-          className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          className="mb-2 inline-flex items-center gap-1 text-xs text-ink-subtle hover:text-ink-muted"
         >
           <ArrowLeft size={13} /> Knowledge Bases
         </Link>
@@ -61,7 +61,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
             {kb?.name ?? "…"}
           </h1>
           {kb?.config?.locale && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium uppercase text-ink-muted">
               <Globe size={11} /> {kb.config.locale}
             </span>
           )}
@@ -87,7 +87,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
               className={`inline-flex items-center gap-1.5 border-b-2 px-3.5 py-2 text-sm font-medium transition-colors ${
                 tab === id
                   ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
-                  : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               <Icon size={15} /> {label}

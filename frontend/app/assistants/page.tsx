@@ -39,24 +39,29 @@ export default function AssistantsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Assistants</h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-sm text-ink-muted">
             A chat of its own: pick the knowledge bases it may search, tell it
             how to answer.
           </p>
         </div>
-        <Button onClick={() => setCreating(true)} disabled={kbs.length === 0}>
-          <Plus size={16} /> New assistant
+        <Button
+          onClick={() => setCreating(true)}
+          disabled={kbs.length === 0}
+          // a dead control should say why it is dead
+          title={
+            kbs.length === 0
+              ? "Create a knowledge base first — an assistant answers from one."
+              : undefined
+          }
+        >
+          <Plus size={16} aria-hidden="true" /> New assistant
         </Button>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <div className="callout callout-danger mb-4">{error}</div>}
 
       {assistants === null ? (
         <div className="flex justify-center py-16">
@@ -82,10 +87,10 @@ export default function AssistantsPage() {
                 <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
                   <Bot size={18} />
                 </div>
-                <div className="font-serif text-[15px] font-semibold text-slate-900 group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">
+                <div className="font-serif text-[15px] font-semibold text-ink group-hover:text-indigo-700 dark:group-hover:text-indigo-300">
                   {a.name}
                 </div>
-                <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-slate-500 dark:text-slate-400">
+                <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-ink-muted">
                   {a.description || "No description yet."}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -97,7 +102,7 @@ export default function AssistantsPage() {
                     a.kb_names.map((n) => (
                       <span
                         key={n}
-                        className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                        className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted"
                       >
                         <Database size={10} /> {n}
                       </span>

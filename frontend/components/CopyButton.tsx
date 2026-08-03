@@ -30,7 +30,7 @@ export default function CopyButton({
   const colour =
     tone === "light"
       ? "text-white/60 hover:text-white hover:bg-white/15"
-      : "text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200";
+      : "text-ink-subtle hover:bg-surface-sunken hover:text-ink";
 
   return (
     <button

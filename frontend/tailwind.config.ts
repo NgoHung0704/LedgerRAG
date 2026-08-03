@@ -24,6 +24,25 @@ const config: Config = {
           400: "#688094", 500: "#486174", 600: "#2f4858", 700: "#273b48",
           800: "#1f2f3a", 900: "#17242d", 950: "#0f181f",
         },
+        // Semantic tokens — defined once per theme in globals.css, so a single
+        // class (`text-ink-muted`) is correct on paper AND on ink. Written as
+        // channel triples so Tailwind's opacity modifiers still work
+        // (`bg-canvas/95`).
+        canvas: "rgb(var(--canvas) / <alpha-value>)",
+        surface: {
+          DEFAULT: "rgb(var(--surface) / <alpha-value>)",
+          sunken: "rgb(var(--surface-sunken) / <alpha-value>)",
+        },
+        ink: {
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          muted: "rgb(var(--ink-muted) / <alpha-value>)",
+          subtle: "rgb(var(--ink-subtle) / <alpha-value>)",
+          faint: "rgb(var(--ink-faint) / <alpha-value>)",
+        },
+        line: {
+          DEFAULT: "rgb(var(--line) / <alpha-value>)",
+          strong: "rgb(var(--line-strong) / <alpha-value>)",
+        },
       },
       // documents and ledgers are ruled and near-square, not pill-soft; sharpen
       // the radius scale globally (pills keep `full`).

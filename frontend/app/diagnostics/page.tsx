@@ -55,10 +55,10 @@ export default function DiagnosticsPage() {
     <div>
       <div className="mb-6">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          <FileSearch size={20} className="text-slate-400" />
+          <FileSearch size={20} className="text-ink-subtle" />
           Table detection diagnostics
         </h1>
-        <p className="mt-0.5 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-0.5 max-w-2xl text-sm text-ink-muted">
           Upload a PDF to see what each detection strategy finds per page.
           Scanned pages (no text layer) can additionally be probed with the
           parser VLM — you&apos;ll see its raw reply and the table regions it
@@ -68,10 +68,10 @@ export default function DiagnosticsPage() {
 
       <div
         onClick={() => fileInput.current?.click()}
-        className="mb-6 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 py-8 text-center hover:border-slate-300 dark:border-slate-700 dark:bg-[#171d24] dark:hover:border-slate-600"
+        className="mb-6 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-line bg-surface px-6 py-8 text-center hover:border-line-strong"
       >
-        <Upload size={24} className="text-slate-300 dark:text-slate-600" />
-        <div className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+        <Upload size={24} className="text-ink-faint" />
+        <div className="mt-2 text-sm font-medium text-ink">
           Click to choose a PDF
         </div>
         <input
@@ -88,19 +88,19 @@ export default function DiagnosticsPage() {
       </div>
 
       {busy && (
-        <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-ink-muted">
           <Spinner size={18} /> analyzing…
         </div>
       )}
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+        <div className="callout callout-danger mb-4">
           {error}
         </div>
       )}
 
       {result && (
         <div className="space-y-4">
-          <div className="text-sm text-slate-600">
+          <div className="text-sm text-ink-muted">
             <span className="font-medium">{result.filename}</span> ·{" "}
             {result.page_count} page{result.page_count === 1 ? "" : "s"}
           </div>
@@ -138,7 +138,7 @@ function PageCard({
     <Card className="p-4">
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <h2 className="text-sm font-semibold">Page {index + 1}</h2>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-ink-subtle">
           {page.width}×{page.height} pt · {page.text_chars} text chars
           {isScan && " · scan (VLM path)"}
         </span>
@@ -158,7 +158,7 @@ function PageCard({
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
               page.kept.length > 0
                 ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/50"
-                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                : "bg-surface-sunken text-ink-muted"
             }`}
           >
             {page.kept.length} kept (text-layer)
@@ -170,7 +170,7 @@ function PageCard({
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-slate-400">
+              <tr className="text-left text-ink-subtle">
                 <th className="py-1.5 pr-3 font-medium">strategy</th>
                 <th className="py-1.5 pr-3 font-medium">found</th>
                 <th className="py-1.5 font-medium">
@@ -182,9 +182,9 @@ function PageCard({
               {STRATEGIES.map((s) => {
                 const info = page.strategies[s];
                 return (
-                  <tr key={s} className="border-t border-slate-100 align-top dark:border-slate-800">
-                    <td className="py-1.5 pr-3 font-mono text-slate-600">{s}</td>
-                    <td className="py-1.5 pr-3 text-slate-600">
+                  <tr key={s} className="border-t border-line align-top">
+                    <td className="py-1.5 pr-3 font-mono text-ink-muted">{s}</td>
+                    <td className="py-1.5 pr-3 text-ink-muted">
                       {info?.error ? "error" : (info?.count ?? 0)}
                     </td>
                     <td className="py-1.5">
@@ -193,7 +193,7 @@ function PageCard({
                       ) : info?.tables && info.tables.length > 0 ? (
                         <div className="space-y-0.5">
                           {info.tables.map((t, j) => (
-                            <div key={j} className="font-mono text-slate-600">
+                            <div key={j} className="font-mono text-ink-muted">
                               [{t.bbox.map((n) => Math.round(n)).join(",")}] ·{" "}
                               {t.rows}×{t.cols} · fill {t.fill} ·{" "}
                               <span
@@ -207,7 +207,7 @@ function PageCard({
                           ))}
                         </div>
                       ) : (
-                        <span className="text-slate-300">—</span>
+                        <span className="text-ink-faint">—</span>
                       )}
                     </td>
                   </tr>
@@ -225,7 +225,7 @@ function PageCard({
             {vlm.count === 1 ? "" : "s"}
           </div>
           {vlm.boxes.length > 0 && (
-            <div className="mb-2 space-y-0.5 font-mono text-slate-600">
+            <div className="mb-2 space-y-0.5 font-mono text-ink-muted">
               {vlm.boxes.map((b, j) => (
                 <div key={j}>
                   box {j + 1}: x {Math.round(b[0] * 100)}–{Math.round(b[2] * 100)}
@@ -235,10 +235,10 @@ function PageCard({
             </div>
           )}
           <details>
-            <summary className="cursor-pointer text-slate-500">
+            <summary className="cursor-pointer text-ink-muted">
               raw model reply
             </summary>
-            <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-surface p-2 text-[11px] text-ink-muted">
               {vlm.raw}
             </pre>
           </details>

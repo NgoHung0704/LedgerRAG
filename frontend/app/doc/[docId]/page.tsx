@@ -39,6 +39,7 @@ import {
   type RereadMode,
 } from "@/lib/api";
 import { Button, Card, Spinner, StatusPill } from "@/components/ui";
+import { confirm } from "@/components/confirm";
 
 /** Document Inspector: everything ingestion produced, element by element.
  * Tables show all three stored representations — HTML (display), records
@@ -57,11 +58,13 @@ export default function DocPage({ params }: { params: { docId: string } }) {
 
   const removePage = async (page: number) => {
     if (
-      !window.confirm(
-        `Delete everything parsed from page ${page}? Its text, tables and ` +
-          `vectors go. The original file is untouched — Reprocess brings the ` +
-          `page back.`,
-      )
+      !(await confirm({
+        title: `Delete everything parsed from page ${page}?`,
+        message:
+          "Its text, tables and vectors go, and answers stop citing them. The " +
+          "original file is untouched — Reprocess brings the page back.",
+        confirmLabel: `Delete page ${page}`,
+      }))
     )
       return;
     setDeletingPage(page);
@@ -126,7 +129,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
   }, [target]);
 
   if (error) {
-    return <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>;
+    return <div className="callout callout-danger">{error}</div>;
   }
   if (view === null) {
     return (
@@ -147,10 +150,10 @@ export default function DocPage({ params }: { params: { docId: string } }) {
       {/* the document's identity and its actions stay put while the pages
           scroll: negative margins cover the container's padding so nothing
           slides out from behind it */}
-      <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 border-b border-slate-200/70 bg-[#f4f3ec]/95 px-6 pb-3 pt-6 backdrop-blur dark:border-slate-800 dark:bg-[#0f141a]/95">
+      <div className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 border-b border-line bg-canvas/95 px-4 pb-3 pt-5 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
         <Link
           href={`/kb/${doc.kb_id}`}
-          className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
+          className="mb-2 inline-flex items-center gap-1 text-xs text-ink-subtle hover:text-ink-muted"
         >
           <ArrowLeft size={13} /> Back to knowledge base
         </Link>
@@ -161,14 +164,14 @@ export default function DocPage({ params }: { params: { docId: string } }) {
           </h1>
           <StatusPill status={doc.status} />
           {processing && (
-            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+            <span className="inline-flex items-center gap-1 text-xs text-ink-subtle">
               <RefreshCw size={12} className="animate-spin" /> refreshing…
             </span>
           )}
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setScanning(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
             >
               <Eraser size={13} /> Detect boilerplate
             </button>
@@ -176,17 +179,17 @@ export default function DocPage({ params }: { params: { docId: string } }) {
               href={documentOriginalUrl(doc.id)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
             >
               <ExternalLink size={13} /> Open original document
             </a>
           </div>
         </div>
 
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-0.5 text-sm text-ink-muted">
           {doc.page_count ?? "—"} pages · {elements.length} elements · {tables}{" "}
           table{tables === 1 ? "" : "s"} — tables are stored as{" "}
-          <span className="font-medium text-slate-600 dark:text-slate-300">
+          <span className="font-medium text-ink-muted">
             HTML + records (JSON) + summary
           </span>
           , never flattened to markdown.
@@ -218,7 +221,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
       )}
 
       {elements.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+        <Card className="p-8 text-center text-sm text-ink-muted">
           {doc.status === "done"
             ? "Ingestion produced no elements for this document."
             : "No parsed elements yet — ingestion is still running."}
@@ -229,7 +232,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
           // the target UNDER the bar it just scrolled past
           <section key={page} id={`page-${page}`} className="mb-8 scroll-mt-36">
             <div className="group mb-3 flex items-center gap-3">
-              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <h2 className="text-sm font-semibold text-ink">
                 Page {page}
               </h2>
               <a
@@ -244,7 +247,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
                 onClick={() => removePage(page)}
                 disabled={deletingPage === page}
                 title="Drop everything parsed from this page. The original file is untouched, so Reprocess brings it back."
-                className="inline-flex items-center gap-1 text-xs text-slate-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 disabled:opacity-50 group-hover:opacity-100"
+                className="inline-flex items-center gap-1 text-xs text-ink-subtle opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 disabled:opacity-50 group-hover:opacity-100"
               >
                 {deletingPage === page ? (
                   <Spinner size={11} />
@@ -366,10 +369,13 @@ ${r.findings}` : ""),
 
   const remove = async () => {
     if (
-      !window.confirm(
-        "Delete this element? Its chunks, records and vectors go with it. " +
-          "The original file is untouched — Reprocess brings it back.",
-      )
+      !(await confirm({
+        title: "Delete this element?",
+        message:
+          "Its chunks, records and vectors go with it, so answers stop citing " +
+          "it. The original file is untouched — Reprocess brings it back.",
+        confirmLabel: "Delete",
+      }))
     )
       return;
     setRemoving(true);
@@ -385,11 +391,15 @@ ${r.findings}` : ""),
 
   const convertToText = async () => {
     if (
-      !window.confirm(
-        "Treat this as plain text? Its cells' words become the text and the " +
-          "grid and records are dropped. Reprocessing the document brings the " +
-          "table back if detection was right.",
-      )
+      !(await confirm({
+        title: "Treat this as plain text?",
+        message:
+          "The cells' words become the text; the grid and its records are " +
+          "dropped. Reprocessing the document brings the table back if " +
+          "detection was right after all.",
+        confirmLabel: "Convert to text",
+        danger: false,
+      }))
     )
       return;
     setConverting(true);
@@ -460,8 +470,8 @@ ${r.findings}` : ""),
           : ""
       }`}
     >
-      <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-slate-100 bg-slate-50/60 px-4 py-2 dark:border-slate-800 dark:bg-slate-800/40">
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200">
+      <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-line bg-slate-50/60 px-4 py-2 dark:bg-slate-800/40">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink">
           <Icon size={14} /> {label}
         </span>
         {element.table?.parse_strategy && (
@@ -470,17 +480,17 @@ ${r.findings}` : ""),
           </span>
         )}
         {element.ocr && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+          <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted">
             <ScanText size={11} /> OCR
           </span>
         )}
         {element.confidence !== null && (
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-ink-subtle">
             confidence {Math.round(element.confidence * 100)}%
           </span>
         )}
         {element.needs_review && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-200">
+          <span className="pill pill-warn">
             <AlertTriangle size={11} /> needs review
           </span>
         )}
@@ -493,17 +503,17 @@ ${r.findings}` : ""),
           </span>
         )}
         {element.unusable && (
-          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-ink-muted">
             excluded from retrieval
           </span>
         )}
         {element.span_pages && element.span_pages.length > 1 && (
-          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 ring-1 ring-blue-200">
+          <span className="pill pill-info">
             spans pages {element.span_pages.join("–")}
           </span>
         )}
         {element.edited && (
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+          <span className="pill pill-ok">
             edited
           </span>
         )}
@@ -525,7 +535,7 @@ ${r.findings}` : ""),
                     className="fixed inset-0 z-10"
                     onClick={() => setRereadMenu(false)}
                   />
-                  <div className="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-slate-200 bg-white p-1.5 shadow-md dark:border-slate-700 dark:bg-[#1b222a]">
+                  <div className="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-line bg-surface p-1.5 shadow-md">
                     {(
                       [
                         {
@@ -548,12 +558,12 @@ ${r.findings}` : ""),
                       <button
                         key={mode}
                         onClick={() => reread(mode)}
-                        className="block w-full rounded px-2.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="block w-full rounded px-2.5 py-2 text-left hover:bg-surface-sunken"
                       >
-                        <span className="block text-[12px] font-medium text-slate-700 dark:text-slate-200">
+                        <span className="block text-[12px] font-medium text-ink">
                           {label}
                         </span>
-                        <span className="block text-[11px] leading-4 text-slate-400">
+                        <span className="block text-[11px] leading-4 text-ink-subtle">
                           {hint}
                         </span>
                       </button>
@@ -579,7 +589,7 @@ ${r.findings}` : ""),
               onClick={convertToText}
               disabled={converting}
               title="Detection sometimes fires on prose laid out in columns. This drops the grid and records and keeps the cells' words as text."
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 disabled:opacity-50 dark:text-slate-400 dark:hover:text-slate-200"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
             >
               {converting ? <Spinner size={11} /> : <TableCellsMerge size={12} />}
               {converting ? "converting…" : "not a table"}
@@ -600,13 +610,13 @@ ${r.findings}` : ""),
             onClick={remove}
             disabled={removing}
             title="Drop this element, its chunks, records and vectors. Reprocessing the document brings it back."
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-red-600 disabled:opacity-50"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-subtle hover:text-red-600 disabled:opacity-50"
           >
             {removing ? <Spinner size={11} /> : <Trash2 size={12} />} delete
           </button>
           <button
             onClick={() => setShowOriginal((v) => !v)}
-            className="text-[11px] font-medium text-slate-500 hover:text-slate-700"
+            className="text-[11px] font-medium text-ink-muted hover:text-ink"
           >
             {showOriginal ? "hide original" : "show original"}
           </button>
@@ -627,7 +637,7 @@ ${r.findings}` : ""),
 
       <div className="space-y-4 p-4">
         {element.parse_error && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <div className="callout callout-warn !px-3 !py-2 text-xs">
             Parse failed honestly: {element.parse_error} — the original image
             below is the authoritative source.
           </div>
@@ -635,8 +645,8 @@ ${r.findings}` : ""),
 
         {/* Phase 3: confidence signals + review actions */}
         {signals && (
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-            <span className="font-medium uppercase tracking-wide text-slate-400">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-muted">
+            <span className="font-medium uppercase tracking-wide text-ink-subtle">
               confidence signals:
             </span>
             {Object.entries(signals).map(([name, score]) => (
@@ -690,7 +700,7 @@ ${r.findings}` : ""),
               Extracted text · {element.chunk_count} chunk
               {element.chunk_count === 1 ? "" : "s"} indexed
             </SectionLabel>
-            <p className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-[13px] leading-6 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
+            <p className="whitespace-pre-wrap rounded-lg bg-surface-sunken p-3 text-[13px] leading-6 text-ink dark:bg-slate-800/50">
               {showFullText && detail?.text
                 ? detail.text
                 : element.text_preview}
@@ -722,7 +732,7 @@ ${r.findings}` : ""),
         {element.type === "figure" && element.caption && (
           <div>
             <SectionLabel>Caption</SectionLabel>
-            <p className="text-[13px] italic text-slate-600">{element.caption}</p>
+            <p className="text-[13px] italic text-ink-muted">{element.caption}</p>
           </div>
         )}
 
@@ -732,7 +742,7 @@ ${r.findings}` : ""),
             {element.table.summary && (
               <div>
                 <SectionLabel>Representation 3 — summary (routing)</SectionLabel>
-                <p className="text-[13px] italic leading-5 text-slate-600 dark:text-slate-300">
+                <p className="text-[13px] italic leading-5 text-ink-muted">
                   {element.table.summary}
                 </p>
               </div>
@@ -744,7 +754,7 @@ ${r.findings}` : ""),
                   {element.table.n_cols ?? "?"}, display)
                 </SectionLabel>
                 <div
-                  className="doc-table max-h-80 overflow-auto rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+                  className="doc-table max-h-80 overflow-auto rounded-lg border border-line p-2"
                   dangerouslySetInnerHTML={{ __html: element.table.html }}
                 />
               </div>
@@ -792,7 +802,7 @@ ${r.findings}` : ""),
             <img
               src={`${API_URL}${element.crop_url}`}
               alt="original crop"
-              className="max-h-96 rounded-lg border border-slate-200 bg-white object-contain dark:border-slate-700"
+              className="max-h-96 rounded-lg border border-line bg-surface object-contain"
             />
           </div>
         )}
@@ -803,7 +813,7 @@ ${r.findings}` : ""),
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+    <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
       {children}
     </div>
   );

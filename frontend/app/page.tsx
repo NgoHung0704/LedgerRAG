@@ -11,7 +11,15 @@ import {
   Plus,
 } from "lucide-react";
 import { createKb, getKbs, type KB, type KBDocStatus } from "@/lib/api";
-import { Button, Card, EmptyState, Modal, Spinner, inputCls } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Modal,
+  Spinner,
+  inputCls,
+} from "@/components/ui";
 import KbCardMenu from "@/components/KbCardMenu";
 
 const LOCALES = [
@@ -55,20 +63,23 @@ export default function HomePage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
+      {/* wraps rather than overflowing: at 390px the heading and the button
+          cannot share a row, and a page that scrolls sideways to reach its
+          primary action is worse than one that stacks */}
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight">Knowledge Bases</h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-sm text-ink-muted">
             Each knowledge base is an isolated corpus with its own documents.
           </p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
-          <Plus size={16} /> New knowledge base
+          <Plus size={16} aria-hidden="true" /> New knowledge base
         </Button>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+        <div className="callout callout-danger mb-4">
           {error}
         </div>
       )}
@@ -81,7 +92,12 @@ export default function HomePage() {
         <EmptyState
           icon={<FolderPlus size={36} />}
           title="No knowledge bases yet"
-          hint="Create one, then drop your PDF documents on it — policies, reports, anything with tables."
+          hint="Create one, then drop your documents on it — policies, reports, anything with tables."
+          action={
+            <Button onClick={() => setShowCreate(true)}>
+              <Plus size={16} aria-hidden="true" /> New knowledge base
+            </Button>
+          }
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -94,20 +110,20 @@ export default function HomePage() {
                       <Database size={18} />
                     </div>
                     {kb.config?.locale && (
-                      <span className="mr-8 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <span className="mr-8 inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium uppercase text-ink-muted">
                         <Globe size={11} /> {kb.config.locale}
                       </span>
                     )}
                   </div>
-                  <div className="font-serif text-[15px] font-semibold text-slate-900 group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">
+                  <div className="font-serif text-[15px] font-semibold text-ink group-hover:text-indigo-700 dark:group-hover:text-indigo-300">
                     {kb.name}
                   </div>
-                  <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-ink-muted">
                     {kb.description || "No description — add one, the router will use it."}
                   </p>
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <KbStatus s={kb.doc_status} />
-                    <span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-500">
+                    <span className="shrink-0 text-[11px] text-ink-subtle">
                       {new Date(kb.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -142,21 +158,19 @@ const plural = (n: number) => (n === 1 ? "" : "s");
 function KbStatus({ s }: { s?: KBDocStatus | null }) {
   if (!s || s.total === 0)
     return (
-      <span className="text-[11px] text-slate-400 dark:text-slate-500">
+      <span className="text-[11px] text-ink-subtle">
         No documents
       </span>
     );
 
-  const pill =
-    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {s.processing > 0 && (
         <span
-          className={`${pill} bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900`}
+          className="pill pill-info"
           title={`${s.processing} document${plural(s.processing)} still parsing`}
         >
-          <span className="relative flex h-1.5 w-1.5">
+          <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-60" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
           </span>
@@ -165,18 +179,18 @@ function KbStatus({ s }: { s?: KBDocStatus | null }) {
       )}
       {s.failed > 0 && (
         <span
-          className={`${pill} bg-red-50 text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900`}
+          className="pill pill-danger"
           title={`${s.failed} document${plural(s.failed)} failed to process`}
         >
-          <AlertTriangle size={11} /> {s.failed} failed
+          <AlertTriangle size={11} aria-hidden="true" /> {s.failed} failed
         </span>
       )}
       {s.done > 0 && (
         <span
-          className={`${pill} bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900`}
+          className="pill pill-ok"
           title={`${s.done} document${plural(s.done)} ready`}
         >
-          <CheckCircle2 size={11} /> {s.done} ready
+          <CheckCircle2 size={11} aria-hidden="true" /> {s.done} ready
         </span>
       )}
     </div>
@@ -214,10 +228,7 @@ function CreateModal({
   return (
     <Modal title="New knowledge base" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Name
-          </label>
+        <Field label="Name">
           <input
             className={inputCls}
             placeholder="e.g. HR policies"
@@ -225,23 +236,23 @@ function CreateModal({
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Description
-          </label>
+        </Field>
+        <Field
+          label="Description"
+          hint="Used later to route a question to the right knowledge base, so describe what it holds rather than what it is called."
+        >
           <textarea
             className={`${inputCls} resize-none`}
             rows={3}
-            placeholder="What documents live here? Used later to route questions to the right knowledge base."
+            placeholder="e.g. Collective agreements and pay scales, 2019 onwards."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Number locale of the documents
-          </label>
+        </Field>
+        <Field
+          label="Number locale of the documents"
+          hint="How numbers are printed in your documents. Declaring it avoids guessing when normalizing table values."
+        >
           <select
             className={inputCls}
             value={locale}
@@ -253,20 +264,16 @@ function CreateModal({
               </option>
             ))}
           </select>
-          <p className="mt-1 text-[11px] leading-4 text-slate-400">
-            How numbers are printed in your documents. Declaring it avoids
-            guessing when normalizing table values.
-          </p>
-        </div>
-        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 p-3">
+        </Field>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line p-3">
           <input
             type="checkbox"
             checked={verify}
             onChange={(e) => setVerify(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600"
+            className="mt-0.5 h-4 w-4 rounded border-line-strong text-indigo-600"
           />
-          <span className="text-xs leading-4 text-slate-600">
-            <span className="font-medium text-slate-700">
+          <span className="text-xs leading-4 text-ink-muted">
+            <span className="font-medium text-ink">
               Verify numbers in answers
             </span>
             <br />
