@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -16,7 +16,7 @@ import {
   type Citation,
   type ElementDetail,
 } from "@/lib/api";
-import { Spinner } from "@/components/ui";
+import { IconButton, Spinner, useDialog } from "@/components/ui";
 
 /** Citation click-through as a right-side drawer: a confidence read-out, the
  * parsed table HTML, and the ORIGINAL crop image (principle #3 — the trace back
@@ -38,30 +38,21 @@ export default function SourceModal({
       .catch(() => setFailed(true));
   }, [citation.element_id]);
 
-  // slide in on mount; lock the page behind the drawer while it is open
+  // slide in on mount
   useEffect(() => {
     const id = requestAnimationFrame(() => setShown(true));
-    document.body.style.overflow = "hidden";
-    return () => {
-      cancelAnimationFrame(id);
-      document.body.style.overflow = "";
-    };
+    return () => cancelAnimationFrame(id);
   }, []);
 
   // animate out, THEN let the parent unmount us
-  const close = () => {
+  const close = useCallback(() => {
     setShown(false);
     setTimeout(onClose, 300);
-  };
+  }, [onClose]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Escape, the scroll lock, the focus trap and handing focus back to the
+  // citation that opened the drawer all come from the shared dialog hook
+  const ref = useDialog(close);
 
   const rev = citation.needs_review;
   const conf = detail?.confidence;
@@ -75,14 +66,16 @@ export default function SourceModal({
         }`}
       />
       <aside
+        ref={ref}
         role="dialog"
+        aria-modal="true"
         aria-label={`Source ${citation.index}`}
-        className={`absolute right-0 top-0 flex h-full w-[440px] max-w-[92vw] flex-col border-l border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-out dark:border-slate-800 dark:bg-[#171d24] ${
+        className={`absolute right-0 top-0 flex h-full w-[440px] max-w-[92vw] flex-col border-l border-line bg-surface shadow-xl transition-transform duration-300 ease-out ${
           shown ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* header */}
-        <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div className="flex items-start gap-3 border-b border-line px-5 py-4">
           <span
             className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
               rev
@@ -93,24 +86,20 @@ export default function SourceModal({
             {citation.kind === "table" ? <Table2 size={17} /> : <FileText size={17} />}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">
               Source [{citation.index}]
             </div>
-            <div className="truncate font-serif text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+            <div className="truncate font-serif text-[15px] font-semibold text-ink">
               {citation.filename}
             </div>
-            <div className="font-mono text-xs text-slate-500 dark:text-slate-400">
+            <div className="font-mono text-xs text-ink-muted">
               page {citation.page}
-              {citation.kind === "table" ? " · tableau" : ""}
+              {citation.kind === "table" ? " · table" : ""}
             </div>
           </div>
-          <button
-            onClick={close}
-            aria-label="Fermer"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-          >
+          <IconButton label="Close source" onClick={close}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
 
         {/* body */}
@@ -121,18 +110,21 @@ export default function SourceModal({
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
               <div>
-                <div className="font-medium">Parse peu fiable — aucun chiffre affirmé.</div>
+                <div className="font-medium">
+                  This parse is unreliable, so no figure is asserted from it.
+                </div>
                 <div className="mt-0.5 text-[13px]">
-                  L’image ci-dessous fait foi ; l’assistant n’affirme jamais un
-                  nombre depuis ce tableau.
+                  The image below is the record. Read the numbers there — the
+                  assistant will not quote them for you.
                 </div>
               </div>
             </div>
           )}
 
           {failed ? (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              Impossible de charger la source.
+            <p className="text-sm text-red-700 dark:text-red-400">
+              This source could not be loaded. It may have been deleted, or the
+              document reprocessed since the answer was written.
             </p>
           ) : detail === null ? (
             <div className="flex justify-center py-10">
@@ -141,7 +133,7 @@ export default function SourceModal({
           ) : (
             <>
               {detail.table?.summary && (
-                <p className="text-[13px] italic leading-5 text-slate-500 dark:text-slate-400">
+                <p className="text-[13px] italic leading-5 text-ink-muted">
                   {detail.table.summary}
                 </p>
               )}
@@ -149,32 +141,32 @@ export default function SourceModal({
               {detail.table?.html && !rev && (
                 <div>
                   <SectionLabel>
-                    Tableau analysé
+                    Parsed table
                     {detail.table.parse_strategy
                       ? ` (${detail.table.parse_strategy})`
                       : ""}
                   </SectionLabel>
                   <div
-                    className="doc-table max-h-72 overflow-auto rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+                    className="doc-table max-h-72 overflow-auto rounded-lg border border-line p-2"
                     dangerouslySetInnerHTML={{ __html: detail.table.html }}
                   />
                 </div>
               )}
 
               {detail.type === "text" && citation.snippet && (
-                <blockquote className="border-l-2 border-slate-200 pl-3 text-sm leading-6 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                <blockquote className="border-l-2 border-line pl-3 text-sm leading-6 text-ink-muted">
                   {citation.snippet}
                   {citation.snippet.length >= 240 && "…"}
                 </blockquote>
               )}
 
               <div>
-                <SectionLabel>Original du document</SectionLabel>
+                <SectionLabel>As printed in the document</SectionLabel>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={elementImageUrl(detail.id)}
-                  alt={`Original de ${citation.filename} page ${citation.page}`}
-                  className="w-full rounded-lg border border-slate-200 bg-white object-contain dark:border-slate-700"
+                  alt={`The original crop from ${citation.filename}, page ${citation.page}`}
+                  className="w-full rounded-lg border border-line bg-surface object-contain"
                 />
               </div>
             </>
@@ -182,14 +174,15 @@ export default function SourceModal({
         </div>
 
         {/* footer */}
-        <div className="border-t border-slate-100 px-5 py-3.5 dark:border-slate-800">
+        <div className="border-t border-line px-5 py-3.5">
           <a
             href={pageImageUrl(citation.doc_id, citation.page)}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-300"
           >
-            <ExternalLink size={13} /> Ouvrir la page {citation.page} en entier
+            <ExternalLink size={13} aria-hidden="true" /> Open page{" "}
+            {citation.page} in full
           </a>
         </div>
       </aside>
@@ -199,7 +192,7 @@ export default function SourceModal({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+    <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
       {children}
     </div>
   );
@@ -222,7 +215,7 @@ function ConfidenceBar({ value, rev }: { value: number; rev: boolean }) {
       ) : (
         <BadgeCheck size={14} className="shrink-0" />
       )}
-      <span className="shrink-0">Confiance du parse</span>
+      <span className="shrink-0">Parse confidence</span>
       <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/15">
         <span
           className="absolute inset-y-0 left-0 rounded-full bg-current"

@@ -1,10 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "LedgerRAG",
   description: "Self-hosted multilingual document Q&A with honest table parsing",
+};
+
+// `maximumScale` is deliberately left alone: pinch-zoom is how a lot of people
+// read a dense table on a phone, and locking it out is an accessibility failure.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f3ec" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f141a" },
+  ],
 };
 
 export default function RootLayout({
@@ -24,12 +35,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-6xl px-6 py-6">{children}</div>
-          </main>
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

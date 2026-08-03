@@ -8,9 +8,9 @@ import { type KB } from "@/lib/api";
 export default function KbDescription({ kb }: { kb: KB }) {
   return (
     <div className="mt-1 max-w-2xl">
-      <p className="text-sm text-slate-500 dark:text-slate-400">
+      <p className="text-sm text-ink-muted">
         {kb.description || (
-          <span className="italic text-slate-400">
+          <span className="italic text-ink-subtle">
             No description yet — add one in Settings so it can be auto-routed.
           </span>
         )}

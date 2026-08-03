@@ -29,19 +29,19 @@ export default function ReviewPanel({
 
   if (items === null)
     return (
-      <div className="flex items-center gap-2 p-6 text-sm text-slate-400">
+      <div className="flex items-center gap-2 p-6 text-sm text-ink-subtle">
         <Spinner size={15} /> Loading…
       </div>
     );
 
   if (items.length === 0)
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-10 text-center shadow-card dark:border-slate-800 dark:bg-[#171d24]">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-line bg-surface p-10 text-center shadow-card">
         <CheckCircle2 size={26} className="mb-2 text-emerald-500" />
-        <div className="text-sm font-medium text-slate-600 dark:text-slate-300">
+        <div className="text-sm font-medium text-ink-muted">
           Nothing to review
         </div>
-        <div className="mt-1 max-w-sm text-xs text-slate-400 dark:text-slate-500">
+        <div className="mt-1 max-w-sm text-xs text-ink-subtle">
           Every table was read with confidence. Flagged tables show up here so
           you can check them against the original before trusting a number.
         </div>
@@ -49,7 +49,7 @@ export default function ReviewPanel({
     );
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-800 dark:bg-[#171d24]">
+    <div className="rounded-xl border border-line bg-surface shadow-card">
       <div className="flex items-center gap-2 border-b border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
         <AlertTriangle size={15} />
         <span className="font-medium">
@@ -65,22 +65,22 @@ export default function ReviewPanel({
           <li key={it.element_id}>
             <Link
               href={`/doc/${it.doc_id}#el-${it.element_id}`}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-surface-sunken dark:hover:bg-slate-800/60"
             >
               <span className="text-amber-500">
                 {it.type === "table" ? <Table2 size={16} /> : <FileText size={16} />}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-slate-700 dark:text-slate-200">
+                <span className="block truncate text-sm font-medium text-ink">
                   {it.filename}
                 </span>
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-ink-subtle">
                   page {it.page}
                   {it.confidence != null &&
                     ` · confidence ${Math.round(it.confidence * 100)}%`}
                 </span>
               </span>
-              <ChevronRight size={16} className="text-slate-300" />
+              <ChevronRight size={16} className="text-ink-faint" />
             </Link>
           </li>
         ))}

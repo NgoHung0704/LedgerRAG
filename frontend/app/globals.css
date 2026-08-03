@@ -2,66 +2,160 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   Semantic colour tokens.
+
+   Every surface and every shade of text in the app resolves to one of these,
+   so a colour decision is made once here instead of being re-typed as a raw
+   hex or a slate step at each call site. Two things this buys us:
+
+   1. Light and dark each get their own value for the SAME token, which is what
+      muted text needs — a grey that reads correctly on paper is too dark on
+      ink, and the pairing that was in use (`text-slate-400 dark:text-slate-500`)
+      had it backwards in both directions.
+   2. Contrast is verified once, here. Every `ink-*` token below clears WCAG AA
+      (4.5:1) against both `canvas` and `surface` in its own theme; the ratios
+      are noted so a future edit can't quietly regress one.
+   --------------------------------------------------------------------------- */
 @layer base {
+  :root {
+    --canvas: 244 243 236; /* #f4f3ec — warm ledger paper */
+    --surface: 255 255 255;
+    --surface-sunken: 248 250 252;
+
+    --ink: 15 23 42; /*      #0f172a — 16.5:1 on canvas */
+    --ink-muted: 71 85 105; /*  #475569 —  5.9:1 on canvas */
+    --ink-subtle: 91 107 124; /* #5b6b7c —  4.8:1 on canvas */
+    --ink-faint: 148 163 184; /* #94a3b8 — DECORATIVE ONLY (2.3:1). Icons and
+                                 rules, never text a user has to read. */
+
+    --line: 226 232 240;
+    --line-strong: 203 213 225;
+
+    --ring: 47 72 88; /* indigo-600, the ink-blue accent */
+  }
+
+  .dark {
+    --canvas: 15 20 26; /*  #0f141a */
+    --surface: 23 29 36; /* #171d24 */
+    --surface-sunken: 19 25 32;
+
+    --ink: 226 232 240; /*      #e2e8f0 — 13.9:1 on surface */
+    --ink-muted: 148 163 184; /* #94a3b8 —  6.7:1 on surface */
+    --ink-subtle: 139 152 169; /* #8b98a9 —  5.9:1 on surface */
+    --ink-faint: 100 116 139; /*  #64748b — DECORATIVE ONLY */
+
+    --line: 38 48 59;
+    --line-strong: 53 65 79;
+
+    --ring: 148 168 182; /* indigo-300 — the accent is too dark to read on ink */
+  }
+
   html {
     @apply antialiased;
   }
   body {
-    /* warm ledger paper by day, deep ink by night */
-    background-color: #f4f3ec;
-    @apply text-slate-900;
-  }
-  .dark body {
-    background-color: #0f141a;
-    @apply text-slate-100;
+    @apply bg-canvas text-ink;
   }
   /* headings carry the ledger serif, app-wide */
   h1,
   h2 {
     @apply font-serif;
   }
+
+  /* One focus style for the whole app. `:where()` keeps specificity at 0, so a
+     component can still opt into its own ring without an `!important` fight.
+     Applied on :focus-visible only — pointer users never see it, keyboard
+     users always do. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid rgb(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+/* Respect the OS "reduce motion" setting. Spinners are exempt: they are the
+   only signal that work is in flight, and a small steady rotation is not a
+   vestibular trigger — it just slows down. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-spinner] {
+    animation-duration: 1.4s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* Coloured callouts and status pills.
+   These were written out class-by-class at each call site, and most of them
+   only ever had light-mode values — so an error banner stayed a bright white
+   card on the dark theme. Defining each state once means a state looks the
+   same everywhere it appears, in both themes. */
+@layer components {
+  .callout {
+    @apply flex items-start gap-2 rounded-lg border px-4 py-2.5 text-sm;
+  }
+  .callout-danger {
+    @apply border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300;
+  }
+  .callout-warn {
+    @apply border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1;
+  }
+  .pill-ok {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900;
+  }
+  .pill-warn {
+    @apply bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900;
+  }
+  .pill-info {
+    @apply bg-blue-50 text-blue-800 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900;
+  }
+  .pill-danger {
+    @apply bg-red-50 text-red-800 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900;
+  }
 }
 
 /* slim, unobtrusive scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: theme("colors.slate.300") transparent;
+  scrollbar-color: rgb(var(--line-strong)) transparent;
 }
 *::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 *::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-slate-300;
-}
-.dark *::-webkit-scrollbar-thumb {
-  @apply bg-slate-700;
+  @apply rounded-full bg-line-strong;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 
+/* Skip link: keyboard users land on it first and can jump the 6-item sidebar
+   instead of tabbing through it on every page. */
+.skip-link {
+  @apply absolute left-4 top-4 z-50 -translate-y-20 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-transform focus:translate-y-0;
+}
+
 /* HTML tables coming from parsed documents (rendered via dangerouslySetInnerHTML) */
 .doc-table table {
   @apply w-full border-collapse text-sm;
+  font-variant-numeric: tabular-nums; /* align digits like a ledger */
 }
 .doc-table th {
-  @apply border border-slate-200 bg-slate-50 px-3 py-1.5 text-left font-semibold text-slate-700;
+  @apply border border-line bg-surface-sunken px-3 py-1.5 text-left font-semibold text-ink;
 }
 .doc-table td {
-  @apply border border-slate-200 px-3 py-1.5 text-slate-700;
-}
-.dark .doc-table th {
-  @apply border-slate-700 bg-slate-800 text-slate-200;
-}
-.dark .doc-table td {
-  @apply border-slate-700 text-slate-300;
-}
-.dark .chat-md th {
-  @apply border-slate-700 bg-slate-800;
-}
-.dark .chat-md td {
-  @apply border-slate-700;
+  @apply border border-line px-3 py-1.5 text-ink-muted;
 }
 
 /* Chat answers read like a printed document excerpt — the serif carries the
@@ -77,13 +171,8 @@
   font-variant-numeric: tabular-nums;
 }
 .chat-md th {
-  @apply border border-slate-200 bg-slate-50 px-2.5 py-1 text-left font-semibold;
+  @apply border border-line bg-surface-sunken px-2.5 py-1 text-left font-semibold;
 }
 .chat-md td {
-  @apply border border-slate-200 px-2.5 py-1;
-}
-
-/* parsed-document tables: align digits like a ledger */
-.doc-table table {
-  font-variant-numeric: tabular-nums;
+  @apply border border-line px-2.5 py-1;
 }

@@ -154,11 +154,11 @@ export default function ElementEditor({
       onClick={onClose}
     >
       <div
-        className="flex h-full max-h-[92vh] w-full max-w-6xl flex-col rounded-xl bg-white shadow-2xl dark:bg-[#171d24] dark:text-slate-200"
+        className="flex h-full max-h-[92vh] w-full max-w-6xl flex-col rounded-xl bg-surface text-ink shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* header: title + tabs + close */}
-        <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
+        <div className="flex items-center gap-3 border-b border-line px-4 py-2.5">
           <h3 className="text-sm font-semibold">Edit parsed element</h3>
           <div className="flex gap-1">
             {tabs.map((t) => (
@@ -168,7 +168,7 @@ export default function ElementEditor({
                 className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                   tab === t.id
                     ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
-                    : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                    : "text-ink-muted hover:bg-surface-sunken"
                 }`}
               >
                 {t.label}
@@ -181,14 +181,14 @@ export default function ElementEditor({
             className={`ml-auto inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               assistantOpen
                 ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
-                : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                : "text-ink-muted hover:bg-surface-sunken"
             }`}
           >
             <Sparkles size={13} /> Assistant
           </button>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-lg p-1 text-ink-subtle hover:bg-surface-sunken hover:text-ink-muted"
           >
             <X size={18} />
           </button>
@@ -263,7 +263,7 @@ export default function ElementEditor({
                     />
                   </Pane>
                   <Pane label="Preview">
-                    <div className="h-full overflow-auto rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/40">
+                    <div className="h-full overflow-auto rounded-lg border border-line bg-surface p-3 dark:bg-slate-900/40">
                       {tab === "text" && (
                         <div className="chat-md prose prose-sm max-w-none dark:prose-invert">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -318,12 +318,12 @@ export default function ElementEditor({
             </div>
 
             {/* footer */}
-            <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-2.5 dark:border-slate-800">
+            <div className="flex items-center gap-3 border-t border-line px-4 py-2.5">
               {error ? (
                 <p className="text-xs text-red-600">{error}</p>
               ) : (
                 derived && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-ink-muted">
                     {derived}
                   </p>
                 )
@@ -355,7 +355,7 @@ function Pane({
 }) {
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="mb-1 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <div className="mb-1 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
         {label}
         {action && <span className="ml-auto normal-case">{action}</span>}
       </div>
@@ -365,4 +365,4 @@ function Pane({
 }
 
 const srcCls =
-  "min-h-0 flex-1 w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40";
+  "min-h-0 flex-1 w-full resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30";

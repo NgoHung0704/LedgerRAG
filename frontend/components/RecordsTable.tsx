@@ -15,14 +15,14 @@ export default function RecordsTable({ records }: { records: LooseRecord[] }) {
   const dimKeys = Object.keys(records[0].dimensions);
   const metricKeys = Object.keys(records[0].metrics);
   return (
-    <div className="max-h-72 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">
+    <div className="max-h-72 overflow-auto rounded-lg border border-line">
       <table className="w-full text-[12px]">
-        <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
+        <thead className="sticky top-0 bg-surface-sunken">
           <tr>
             {dimKeys.map((k) => (
               <th
                 key={k}
-                className="border-b border-slate-200 px-2.5 py-1.5 text-left font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400"
+                className="border-b border-line px-2.5 py-1.5 text-left font-semibold text-ink-muted"
               >
                 {k}
               </th>
@@ -30,7 +30,7 @@ export default function RecordsTable({ records }: { records: LooseRecord[] }) {
             {metricKeys.map((k) => (
               <th
                 key={k}
-                className="border-b border-slate-200 px-2.5 py-1.5 text-right font-semibold text-indigo-600 dark:border-slate-700 dark:text-indigo-300"
+                className="border-b border-line px-2.5 py-1.5 text-right font-semibold text-indigo-600 dark:text-indigo-300"
               >
                 {k}
               </th>
@@ -41,12 +41,12 @@ export default function RecordsTable({ records }: { records: LooseRecord[] }) {
           {records.map((r, i) => (
             <tr
               key={i}
-              className="odd:bg-white even:bg-slate-50/50 dark:odd:bg-transparent dark:even:bg-slate-800/40"
+              className="odd:bg-surface even:bg-slate-50/50 dark:odd:bg-transparent dark:even:bg-slate-800/40"
             >
               {dimKeys.map((k) => (
                 <td
                   key={k}
-                  className="px-2.5 py-1 text-slate-700 dark:text-slate-300"
+                  className="px-2.5 py-1 text-ink"
                 >
                   {String(r.dimensions[k] ?? "")}
                 </td>
@@ -54,7 +54,7 @@ export default function RecordsTable({ records }: { records: LooseRecord[] }) {
               {metricKeys.map((k) => (
                 <td
                   key={k}
-                  className="px-2.5 py-1 text-right tabular-nums text-slate-800 dark:text-slate-200"
+                  className="px-2.5 py-1 text-right tabular-nums text-ink"
                   title={`normalized: ${String(r.metrics[k] ?? "null")}`}
                 >
                   {String(r.raw_values[k] ?? r.metrics[k] ?? "—")}

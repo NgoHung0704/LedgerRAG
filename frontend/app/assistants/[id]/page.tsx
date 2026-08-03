@@ -28,6 +28,7 @@ import {
   type StoredMessage,
 } from "@/lib/api";
 import { Button, Spinner } from "@/components/ui";
+import { confirm } from "@/components/confirm";
 import AssistantForm from "@/components/AssistantForm";
 import ChatPanel from "@/components/ChatPanel";
 
@@ -80,7 +81,15 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
   };
 
   const removeConversation = async (sessionId: string) => {
-    if (!window.confirm("Delete this conversation? This cannot be undone."))
+    if (
+      !(await confirm({
+        title: "Delete this conversation?",
+        message:
+          "Its questions and answers are removed for everyone who can see this " +
+          "assistant. This cannot be undone.",
+        confirmLabel: "Delete",
+      }))
+    )
       return;
     await deleteConversation(sessionId).catch((e) => setError(String(e)));
     if (current === sessionId) newConversation();
@@ -115,7 +124,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
     <div className="flex h-full flex-col">
       <Link
         href="/assistants"
-        className="mb-2 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+        className="mb-2 inline-flex items-center gap-1 text-xs text-ink-subtle hover:text-ink-muted"
       >
         <ArrowLeft size={13} /> Assistants
       </Link>
@@ -137,7 +146,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
               assistant.kb_names.map((n) => (
                 <span
                   key={n}
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted"
                 >
                   <Database size={10} /> {n}
                 </span>
@@ -154,8 +163,8 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
 
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[260px_1fr]">
         {/* conversations */}
-        <aside className="hidden min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#171d24] lg:flex">
-          <div className="border-b border-slate-100 p-2 dark:border-slate-800">
+        <aside className="hidden min-h-0 flex-col rounded-xl border border-line bg-surface lg:flex">
+          <div className="border-b border-line p-2">
             <button
               onClick={newConversation}
               className="flex w-full items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-500"
@@ -165,7 +174,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
             {conversations.length === 0 ? (
-              <p className="px-2 py-3 text-[11px] leading-4 text-slate-400">
+              <p className="px-2 py-3 text-[11px] leading-4 text-ink-subtle">
                 No saved conversation yet — ask something and it appears here.
               </p>
             ) : (
@@ -175,7 +184,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
                   className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 ${
                     current === c.session_id
                       ? "bg-indigo-50 dark:bg-indigo-950/50"
-                      : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                      : "hover:bg-surface-sunken dark:hover:bg-slate-800/60"
                   }`}
                 >
                   <button
@@ -186,27 +195,27 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
                       className={`flex items-center gap-1.5 truncate text-[13px] ${
                         current === c.session_id
                           ? "font-medium text-indigo-700 dark:text-indigo-300"
-                          : "text-slate-700 dark:text-slate-300"
+                          : "text-ink"
                       }`}
                     >
-                      <MessageSquare size={12} className="shrink-0 text-slate-400" />
+                      <MessageSquare size={12} className="shrink-0 text-ink-subtle" />
                       {c.title || "Untitled"}
                     </span>
-                    <span className="block pl-[18px] text-[10px] text-slate-400">
+                    <span className="block pl-[18px] text-[10px] text-ink-subtle">
                       {new Date(c.updated_at).toLocaleDateString()}
                     </span>
                   </button>
                   <button
                     onClick={() => rename(c)}
                     title="Rename"
-                    className="shrink-0 rounded p-1 text-slate-300 opacity-0 hover:text-indigo-600 group-hover:opacity-100"
+                    className="shrink-0 rounded p-1 text-ink-faint opacity-0 hover:text-indigo-600 group-hover:opacity-100"
                   >
                     <Pencil size={12} />
                   </button>
                   <button
                     onClick={() => removeConversation(c.session_id)}
                     title="Delete"
-                    className="shrink-0 rounded p-1 text-slate-300 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                    className="shrink-0 rounded p-1 text-ink-faint opacity-0 hover:text-red-600 group-hover:opacity-100"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -219,7 +228,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
         {/* chat */}
         <div className="min-h-0">
           {loadingThread ? (
-            <div className="flex h-full items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="flex h-full items-center justify-center rounded-xl border border-line">
               <Spinner size={20} />
             </div>
           ) : (
@@ -230,12 +239,12 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
               onSessionStarted={() => refreshConversations()}
               emptyState={
                 <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-                  <Bot size={28} className="mb-3 text-slate-300" />
-                  <div className="max-w-md font-serif text-[15px] leading-relaxed text-slate-700 dark:text-slate-200">
+                  <Bot size={28} className="mb-3 text-ink-faint" />
+                  <div className="max-w-md font-serif text-[15px] leading-relaxed text-ink">
                     {assistant.opening_message ||
                       `Ask ${assistant.name} anything about its documents.`}
                   </div>
-                  <div className="mt-2 max-w-md text-xs leading-5 text-slate-400 dark:text-slate-500">
+                  <div className="mt-2 max-w-md text-xs leading-5 text-ink-subtle">
                     Answers are drawn only from{" "}
                     {assistant.kb_names.join(", ") || "its knowledge bases"}, with
                     citations you can open.

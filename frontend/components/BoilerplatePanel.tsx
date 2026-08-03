@@ -72,13 +72,13 @@ export default function BoilerplatePanel({
       ) : error ? (
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       ) : cands.length === 0 ? (
-        <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+        <p className="py-6 text-center text-sm text-ink-muted">
           No running headers, footers or page numbers detected — nothing repeats
           across pages at a margin.
         </p>
       ) : (
         <div className="space-y-3">
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+          <p className="rounded-lg bg-surface-sunken px-3 py-2 text-xs leading-5 text-ink-muted dark:bg-slate-800/60">
             These text blocks repeat across pages at the top/bottom, or look like
             page numbers. Excluding them removes them from retrieval so they
             don&apos;t pollute answers — the elements and their images stay in the
@@ -86,23 +86,23 @@ export default function BoilerplatePanel({
             keep.
           </p>
 
-          <div className="max-h-[50vh] divide-y divide-slate-100 overflow-auto rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+          <div className="max-h-[50vh] divide-y divide-slate-100 overflow-auto rounded-lg border border-line dark:divide-slate-800">
             {cands.map((c) => (
               <label
                 key={c.element_id}
-                className="flex cursor-pointer items-start gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                className="flex cursor-pointer items-start gap-2.5 px-3 py-2 hover:bg-surface-sunken dark:hover:bg-slate-800/50"
               >
                 <input
                   type="checkbox"
                   checked={selected.has(c.element_id)}
                   onChange={() => toggle(c.element_id)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600"
+                  className="mt-0.5 h-4 w-4 rounded border-line-strong text-indigo-600"
                 />
                 <div className="min-w-0">
-                  <div className="truncate text-[13px] text-slate-700 dark:text-slate-200">
-                    {c.text || <span className="italic text-slate-400">(empty)</span>}
+                  <div className="truncate text-[13px] text-ink">
+                    {c.text || <span className="italic text-ink-subtle">(empty)</span>}
                   </div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-[11px] text-ink-subtle">
                     page {c.page} · {c.reason}
                   </div>
                 </div>
@@ -112,8 +112,8 @@ export default function BoilerplatePanel({
 
           {error && <p className="text-xs text-red-600">{error}</p>}
 
-          <div className="flex items-center gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-            <span className="text-xs text-slate-400">
+          <div className="flex items-center gap-3 border-t border-line pt-3">
+            <span className="text-xs text-ink-subtle">
               {selected.size} of {cands.length} selected
             </span>
             <div className="ml-auto flex gap-2">

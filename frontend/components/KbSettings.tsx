@@ -109,24 +109,24 @@ export default function KbSettings({
       <button
         onClick={() => setOpen((o) => !o)}
         title="Knowledge base settings"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[12px] font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
       >
         <Settings2 size={14} /> Settings
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] rounded-xl border border-slate-200 bg-white p-3.5 shadow-lg dark:border-slate-700 dark:bg-[#1b222a]">
-          <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+        <div className="absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] rounded-xl border border-line bg-surface p-3.5 shadow-lg">
+          <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
             Name
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-indigo-900/40"
+            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
           <div className="mt-3 flex items-center justify-between">
-            <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
               Description
             </label>
             <button
@@ -145,11 +145,11 @@ export default function KbSettings({
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
             placeholder="What this KB uniquely holds — the router reads it to route questions here. When two KBs share vocabulary, say what sets them apart."
-            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
+            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
           <div className="mt-3 flex items-center justify-between">
-            <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
               Operator instructions
             </label>
             <span
@@ -166,20 +166,20 @@ export default function KbSettings({
             onChange={(e) => setInstructions(e.target.value)}
             rows={4}
             placeholder="Extra guidance for answers in this KB (tone, focus, format) — e.g. « cite les numéros d'article ». Layered on top of the built-in rules; it can never relax them."
-            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 font-mono text-[12px] leading-relaxed placeholder:font-sans placeholder:text-[11px] placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-900/40"
+            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 font-mono text-[12px] leading-relaxed placeholder:font-sans placeholder:text-[11px] placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
-          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
             Number locale
           </label>
           <input
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
             placeholder="fr · de · en · es · (blank = auto)"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm placeholder:text-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-600 dark:focus:ring-indigo-900/40"
+            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-faint bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
-          <label className="mt-3 flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+          <label className="mt-3 flex items-center gap-2.5 text-sm text-ink">
             <button
               type="button"
               onClick={() => setVerify((v) => !v)}
@@ -194,7 +194,7 @@ export default function KbSettings({
               />
             </button>
             <span className="inline-flex items-center gap-1">
-              <ShieldCheck size={14} className="text-slate-400" />
+              <ShieldCheck size={14} className="text-ink-subtle" />
               Verify numbers against sources
             </span>
           </label>
@@ -213,23 +213,23 @@ export default function KbSettings({
 
           {/* the id is what the API and the eval gates are addressed by, and
               reading it out of the address bar to retype it is a chore */}
-          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-700">
-            <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+          <div className="mt-3 border-t border-line pt-3">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
               Knowledge base id
             </div>
             <div className="mt-1 flex items-center gap-1">
-              <code className="min-w-0 flex-1 truncate rounded-md bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <code className="min-w-0 flex-1 truncate rounded-md bg-surface-sunken px-2 py-1 font-mono text-[11px] text-ink-muted">
                 {kb.id}
               </code>
               <CopyButton text={kb.id} title="Copy the knowledge base id" />
             </div>
-            <div className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+            <div className="mt-1 text-[11px] text-ink-subtle">
               For the API and the eval gates —{" "}
               <span className="font-mono">make eval-qa KB=…</span>
             </div>
           </div>
 
-          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-700">
+          <div className="mt-3 border-t border-line pt-3">
             {!confirming ? (
               <button
                 onClick={() => setConfirming(true)}
@@ -247,7 +247,7 @@ export default function KbSettings({
                   <button
                     onClick={() => setConfirming(false)}
                     disabled={deleting}
-                    className="rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-slate-500 hover:bg-white"
+                    className="rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-ink-muted hover:bg-surface"
                   >
                     Cancel
                   </button>
