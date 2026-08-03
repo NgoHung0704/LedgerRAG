@@ -164,6 +164,12 @@ class Settings(BaseSettings):
     table_crop_dpi: int = 240
     # images sent to the VLM are upscaled to at least this width (scans)
     vlm_min_image_width: int = 1400
+    # A figure carries no text layer, so without this it is stored for
+    # provenance and is invisible to search. The parser VLM describes it and
+    # the description is indexed — marked as a description, never as text read
+    # off the page. The cap bounds what one pathological document can cost.
+    figure_describe_enabled: bool = True
+    figure_describe_max_per_doc: int = 30
 
     # consume folder (Paperless-style bulk ingest). Empty = disabled. Drop PDFs
     # into consume_dir/<KB name>/*.pdf; the consumer service (tablerag.ingestion

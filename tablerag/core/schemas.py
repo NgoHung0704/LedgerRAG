@@ -158,6 +158,10 @@ class Citation(BaseModel):
     crop_image_path: str | None = None
     confidence: float | None = None
     needs_review: bool = False
+    # this source's text is a MODEL'S DESCRIPTION of a picture, not text read
+    # off the page — `kind` stays "text" because that is the collection it was
+    # retrieved from, and the ranking is keyed by it
+    from_figure: bool = False
 
 
 class RecordEdit(BaseModel):

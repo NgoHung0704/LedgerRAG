@@ -35,6 +35,9 @@ class SourceBlock:
     crop_image_path: str | None = None
     confidence: float | None = None
     needs_review: bool = False
+    # content is a description of a figure produced by the parser VLM, not
+    # text extracted from the page (see _render_source)
+    from_figure: bool = False
 
 
 @dataclass

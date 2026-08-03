@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   ExternalLink,
   FileText,
+  Image as ImageIcon,
   Table2,
   X,
 } from "lucide-react";
@@ -105,6 +106,22 @@ export default function SourceModal({
         {/* body */}
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
           {conf != null && <ConfidenceBar value={conf} rev={rev} />}
+
+          {citation.from_figure && (
+            <div className="flex items-start gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-3 text-sm text-indigo-800 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
+              <ImageIcon size={16} className="mt-0.5 shrink-0" />
+              <div>
+                <div className="font-medium">
+                  This source is a description of an image.
+                </div>
+                <div className="mt-0.5 text-[13px]">
+                  The parser model read the figure below and wrote what it
+                  shows. That description is not text printed in the document —
+                  the image is what the document actually says.
+                </div>
+              </div>
+            </div>
+          )}
 
           {rev && (
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
