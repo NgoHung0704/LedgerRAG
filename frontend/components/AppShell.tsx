@@ -27,24 +27,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center gap-2 border-b border-line bg-surface px-3 py-2 lg:hidden">
+          {/* the phone's top bar is chrome, so it belongs to the rail */}
+          <header className="flex items-center gap-2 border-b border-rail-line bg-rail px-3 py-2 text-rail-ink lg:hidden">
             <button
               type="button"
               onClick={() => setNavOpen(true)}
               aria-label="Open navigation"
               aria-expanded={navOpen}
               aria-controls="app-nav"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink"
+              className="inline-flex h-10 w-10 items-center justify-center rounded text-rail-ink transition-colors hover:bg-white/10 hover:text-rail-hi"
             >
               <Menu size={20} />
             </button>
-            <span className="font-serif text-[15px] font-semibold tracking-tight">
+            <span className="font-serif text-[15px] font-semibold tracking-tight text-rail-hi">
               LedgerRAG
             </span>
           </header>
 
           <main id="main" className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-6">
+            {/* keyed on the route so arriving somewhere new reads as arriving —
+                the page rises into place instead of snapping. `rise` is a no-op
+                under prefers-reduced-motion. */}
+            <div
+              key={pathname}
+              className="rise mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-6"
+            >
               {children}
             </div>
           </main>

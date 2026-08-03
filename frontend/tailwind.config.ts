@@ -16,13 +16,25 @@ const config: Config = {
         mono: ['"Cascadia Code"', "Consolas", '"SF Mono"', "ui-monospace", '"Liberation Mono"', "Menlo", "monospace"],
       },
       // The accent ships as Tailwind's `indigo` scale everywhere in the app, so
-      // re-pointing that scale to a desaturated ink-blue (fountain-pen ink, not
-      // the vivid AI indigo) re-themes the whole app with no component edits.
+      // re-pointing that scale re-themes every accent in one edit. It is now
+      // verdigris — the patina on aged bronze: archival, institutional, and
+      // nowhere near the indigo/violet every AI-built tool reaches for.
+      //
+      // It carries meaning, not just brand: verdigris is the colour of "checked
+      // against the source". Ochre means a parse needs review, oxblood means
+      // ingestion failed, and outside those three states nothing is coloured.
       colors: {
         indigo: {
-          50: "#eef2f5", 100: "#dbe3e9", 200: "#bccbd6", 300: "#94a8b6",
-          400: "#688094", 500: "#486174", 600: "#2f4858", 700: "#273b48",
-          800: "#1f2f3a", 900: "#17242d", 950: "#0f181f",
+          50: "#eff6f4", 100: "#d9ebe6", 200: "#b4d7ce", 300: "#85bcaf",
+          400: "#559c8c", 500: "#33806f", 600: "#1f6b5c", 700: "#1a574b",
+          800: "#17453c", 900: "#143931", 950: "#0a211c",
+        },
+        // the frame — graphite in both themes, see globals.css
+        rail: {
+          DEFAULT: "rgb(var(--rail) / <alpha-value>)",
+          ink: "rgb(var(--rail-ink) / <alpha-value>)",
+          hi: "rgb(var(--rail-ink-hi) / <alpha-value>)",
+          line: "rgb(var(--rail-line) / <alpha-value>)",
         },
         // Semantic tokens — defined once per theme in globals.css, so a single
         // class (`text-ink-muted`) is correct on paper AND on ink. Written as
@@ -51,8 +63,11 @@ const config: Config = {
         "2xl": "10px", "3xl": "14px",
       },
       boxShadow: {
-        // lean on hairline rules, not floating shadows (the SaaS/AI tell)
-        card: "0 1px 0 0 rgb(31 47 58 / 0.04), 0 1px 2px 0 rgb(31 47 58 / 0.06)",
+        // A page has to lift off the table, and the lift needs a different
+        // weight on graphite than on grey — so the value lives in a CSS
+        // variable that each theme sets (see globals.css).
+        card: "var(--shadow-card)",
+        lift: "var(--shadow-lift)",
       },
     },
   },

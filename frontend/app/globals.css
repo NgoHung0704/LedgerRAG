@@ -3,52 +3,70 @@
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   Semantic colour tokens.
+   Semantic colour tokens — "light table".
 
-   Every surface and every shade of text in the app resolves to one of these,
-   so a colour decision is made once here instead of being re-typed as a raw
-   hex or a slate step at each call site. Two things this buys us:
+   The interface is the frame; the documents are the thing. Chrome is warm
+   graphite, and a document sits on it like film on a light table: `canvas` is
+   the TABLE, `surface` is the PAGE. Light and dark move the table the pages
+   rest on, not the idea.
 
-   1. Light and dark each get their own value for the SAME token, which is what
-      muted text needs — a grey that reads correctly on paper is too dark on
-      ink, and the pairing that was in use (`text-slate-400 dark:text-slate-500`)
-      had it backwards in both directions.
-   2. Contrast is verified once, here. Every `ink-*` token below clears WCAG AA
-      (4.5:1) against both `canvas` and `surface` in its own theme; the ratios
-      are noted so a future edit can't quietly regress one.
+   Colour is rationed. The accent (verdigris, a bronze patina) is not
+   decoration — it is the app's one claim: "checked against the source".
+   Outside the three verification states, nothing in the product is coloured.
+
+   Contrast is verified once, here. Every `ink-*` token clears WCAG AA (4.5:1)
+   against both `canvas` and `surface` in its own theme; the ratios are noted
+   so a future edit can't quietly regress one.
    --------------------------------------------------------------------------- */
 @layer base {
   :root {
-    --canvas: 244 243 236; /* #f4f3ec — warm ledger paper */
-    --surface: 255 255 255;
-    --surface-sunken: 248 250 252;
+    --canvas: 220 217 207; /*  #DCD9CF — the table */
+    --surface: 252 251 247; /* #FCFBF7 — the page */
+    --surface-sunken: 244 242 234;
 
-    --ink: 15 23 42; /*      #0f172a — 16.5:1 on canvas */
-    --ink-muted: 71 85 105; /*  #475569 —  5.9:1 on canvas */
-    --ink-subtle: 91 107 124; /* #5b6b7c —  4.8:1 on canvas */
-    --ink-faint: 148 163 184; /* #94a3b8 — DECORATIVE ONLY (2.3:1). Icons and
+    --ink: 23 22 15; /*        #17160F — 17.4:1 on the page */
+    --ink-muted: 87 82 63; /*  #57523F —  7.4:1 on the page */
+    --ink-subtle: 99 93 76; /* #635D4C —  6.4:1 on page, 4.7:1 on the table */
+    --ink-faint: 154 147 130; /* #9A9382 — DECORATIVE ONLY (2.6:1). Icons and
                                  rules, never text a user has to read. */
 
-    --line: 226 232 240;
-    --line-strong: 203 213 225;
+    --line: 207 202 186;
+    --line-strong: 185 179 160;
 
-    --ring: 47 72 88; /* indigo-600, the ink-blue accent */
+    --ring: 31 107 92; /* verdigris-600 */
+
+    --shadow-card: 0 1px 2px rgb(28 24 16 / 0.09), 0 6px 18px -8px rgb(28 24 16 / 0.20);
+    --shadow-lift: 0 2px 6px rgb(28 24 16 / 0.13), 0 18px 44px -14px rgb(28 24 16 / 0.32);
   }
 
   .dark {
-    --canvas: 15 20 26; /*  #0f141a */
-    --surface: 23 29 36; /* #171d24 */
-    --surface-sunken: 19 25 32;
+    --canvas: 19 18 16; /*  #131210 */
+    --surface: 32 30 26; /* #201E1A */
+    --surface-sunken: 26 25 21;
 
-    --ink: 226 232 240; /*      #e2e8f0 — 13.9:1 on surface */
-    --ink-muted: 148 163 184; /* #94a3b8 —  6.7:1 on surface */
-    --ink-subtle: 139 152 169; /* #8b98a9 —  5.9:1 on surface */
-    --ink-faint: 100 116 139; /*  #64748b — DECORATIVE ONLY */
+    --ink: 237 234 225; /*      #EDEAE1 — 13.2:1 on the page */
+    --ink-muted: 168 162 150; /* #A8A296 —  6.6:1 on the page */
+    --ink-subtle: 139 133 120; /* #8B8578 —  4.5:1 on the page */
+    --ink-faint: 95 89 78; /*    #5F594E — DECORATIVE ONLY */
 
-    --line: 38 48 59;
-    --line-strong: 53 65 79;
+    --line: 52 48 42;
+    --line-strong: 69 64 56;
 
-    --ring: 148 168 182; /* indigo-300 — the accent is too dark to read on ink */
+    --ring: 133 188 175; /* verdigris-300 — 600 is too dark to read on ink */
+
+    /* on graphite a soft grey shadow is invisible; the lift has to come from
+       genuine darkness under the page */
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px -10px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 8px rgb(0 0 0 / 0.55), 0 22px 54px -16px rgb(0 0 0 / 0.8);
+  }
+
+  /* The rail is the frame, so it does NOT follow the theme — it is graphite in
+     both, and the pages are what change around it. */
+  :root {
+    --rail: 30 29 26; /*        #1E1D1A */
+    --rail-ink: 201 197 184; /* #C9C5B8 — 8.9:1 on the rail */
+    --rail-ink-hi: 242 239 230;
+    --rail-line: 50 47 41;
   }
 
   html {
@@ -56,6 +74,9 @@
   }
   body {
     @apply bg-canvas text-ink;
+    /* This is a product about figures. Digits line up in a column everywhere,
+       whether or not anyone remembered to ask for it. */
+    font-variant-numeric: tabular-nums;
   }
   /* headings carry the ledger serif, app-wide */
   h1,
@@ -89,6 +110,80 @@
     animation-duration: 1.4s !important;
     animation-iteration-count: infinite !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   The signature: a figure carries its own proof.
+
+   A number the verifier matched against a cited source gets a verdigris rule
+   drawn under it — left to right, at the moment verification lands, so the
+   motion IS the checking rather than an ornament on top of it. A number it
+   could not match keeps an ochre rule instead: the answer never quietly
+   flattens the difference between "checked" and "not checked".
+   --------------------------------------------------------------------------- */
+@layer components {
+  .fig {
+    @apply relative whitespace-nowrap font-mono text-[0.94em] tracking-[-0.01em];
+    font-variant-numeric: tabular-nums;
+  }
+  .fig::after {
+    content: "";
+    @apply absolute inset-x-0 -bottom-0.5 h-[1.5px] bg-indigo-600 dark:bg-indigo-400;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .fig-unverified::after {
+    @apply bg-amber-700 dark:bg-amber-500;
+  }
+  .verified .fig::after {
+    transform: scaleX(1);
+  }
+
+  /* Citations leave the sentence and stand in the margin, the way a note on a
+     legal document does — the reading line stays clean, and the provenance is
+     still beside the claim it supports. Below `sm` there is no room for a
+     margin, so they fall back to sitting under the paragraph. */
+  .marginal {
+    @apply grid gap-x-3;
+    grid-template-columns: 1fr;
+  }
+  @screen sm {
+    .marginal {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+    .marginal > .marginal-body {
+      grid-column: 2;
+    }
+    .marginal > .marginal-note {
+      grid-column: 1;
+      justify-self: end;
+      align-self: start;
+    }
+  }
+  /* prose keeps a reading measure even when the page is wide — a 120-character
+     line is where a well-set answer stops being readable */
+  .marginal-body > .chat-md {
+    max-width: 68ch;
+  }
+
+  /* every figure in the app is mono and tabular, not just the ones in answers */
+  .num {
+    @apply font-mono;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Content rises into place on arrival. 8px and 260ms — enough to read as
+   "this just appeared", not enough to wait for. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.rise {
+  animation: rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 /* Coloured callouts and status pills.

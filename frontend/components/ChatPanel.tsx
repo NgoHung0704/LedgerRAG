@@ -233,21 +233,25 @@ export default function ChatPanel({
 
         {messages.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} className="group flex items-start justify-end gap-1">
+            // the question is a query on a document, not a chat bubble — it
+            // reads as the line that prompted the excerpt below it
+            <div key={i} className="group flex items-start gap-1">
+              <div className="min-w-0 flex-1 border-l-2 border-line pl-3.5 font-serif text-[15px] italic leading-relaxed text-ink-muted">
+                {m.content}
+              </div>
               <CopyButton
                 text={m.content}
                 title="Copy the question"
-                className="mt-2 opacity-0 transition-opacity group-hover:opacity-100"
+                className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
               />
-              <div className="max-w-[80%] rounded-2xl rounded-br-md bg-indigo-600 px-4 py-2.5 font-serif text-[15px] leading-relaxed text-white">
-                {m.content}
-              </div>
             </div>
           ) : (
             <div key={i} className="flex justify-start">
               <div className="w-full max-w-[92%]">
-                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">
-                  <Sparkles size={12} className="text-indigo-500" /> Assistant
+                <div className="marginal mb-1.5">
+                  <div className="marginal-body font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">
+                    answer
+                  </div>
                 </div>
                 {/* the answer reads like a printed document excerpt, straight on
                     the page — no chat bubble; only errors keep a boxed callout */}
@@ -259,6 +263,7 @@ export default function ChatPanel({
                   <AnswerBody
                     content={m.content}
                     citations={m.citations}
+                    verification={m.verification}
                     onOpen={setOpenSource}
                   />
                 ) : busy && i === messages.length - 1 ? (
@@ -273,28 +278,40 @@ export default function ChatPanel({
                   <VerificationBadge verification={m.verification} />
                 )}
 
+                {/* The margin already carries provenance beside each claim, so
+                    this is the bibliography, not the citation — quiet, one
+                    line, and it names the files the margin only numbers. */}
                 {m.citations && m.citations.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {m.citations.map((c) => (
-                      <button
-                        key={c.index}
-                        onClick={() => setOpenSource(c)}
-                        title={c.snippet}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                          c.needs_review
-                            ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
-                            : "border-line bg-surface text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
-                        }`}
-                      >
-                        {c.kind === "table" ? (
-                          <Table2 size={12} />
-                        ) : (
-                          <FileText size={12} />
-                        )}
-                        [{c.index}] {c.filename} · p.{c.page}
-                        {c.needs_review && <AlertTriangle size={12} />}
-                      </button>
-                    ))}
+                  <div className="marginal mt-2.5">
+                    <div className="marginal-note hidden font-mono text-[10px] uppercase tracking-wider text-ink-faint sm:block sm:pt-1 sm:text-right">
+                      from
+                    </div>
+                    <div className="marginal-body flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {m.citations.map((c) => (
+                        <button
+                          key={c.index}
+                          onClick={() => setOpenSource(c)}
+                          title={c.snippet}
+                          className={`group inline-flex items-center gap-1.5 font-mono text-[11px] transition-colors ${
+                            c.needs_review
+                              ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
+                              : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
+                          }`}
+                        >
+                          {c.kind === "table" ? (
+                            <Table2 size={11} aria-hidden="true" />
+                          ) : (
+                            <FileText size={11} aria-hidden="true" />
+                          )}
+                          <span className="underline decoration-line underline-offset-2 group-hover:decoration-current">
+                            {c.index} · {c.filename} · p.{c.page}
+                          </span>
+                          {c.needs_review && (
+                            <AlertTriangle size={11} aria-hidden="true" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -465,17 +482,20 @@ function splitAnswerSegments(
 function AnswerBody({
   content,
   citations,
+  verification,
   onOpen,
 }: {
   content: string;
   citations?: Citation[];
+  verification?: Verification | null;
   onOpen: (c: Citation) => void;
 }) {
+  const ref = useFigureRules(verification);
   const segments = splitAnswerSegments(content);
   const tableCitations = (citations ?? []).filter((c) => c.kind === "table");
   let t = 0;
   return (
-    <div className="space-y-1">
+    <div ref={ref} className="space-y-1">
       {segments.map((seg, i) => {
         if (seg.type === "table") {
           const cite = tableCitations[t++];
@@ -491,17 +511,143 @@ function AnswerBody({
             );
         }
         if (!seg.text.trim()) return null;
-        return (
-          <MarkdownProse
-            key={i}
-            content={seg.text}
-            citations={citations}
-            onOpen={onOpen}
-          />
-        );
+
+        // The citations a paragraph carries move out to the margin, so the
+        // reading line stays clean and the provenance still sits beside the
+        // claim it supports — a note on a document, not a footnote. One margin
+        // per paragraph, or every mark in a long answer piles up at the top.
+        return seg.text
+          .split(/\n[ \t]*\n/)
+          .filter((para) => para.trim())
+          .map((para, j) => {
+            const marks = citedIn(para, citations);
+            return (
+              <div key={`${i}-${j}`} className="marginal">
+                {marks.length > 0 && (
+                  <div className="marginal-note mb-1 flex flex-row gap-1 sm:mb-0 sm:flex-col sm:items-end sm:gap-0.5">
+                    {marks.map((c) => (
+                      <CiteMark key={c.index} citation={c} onOpen={onOpen} />
+                    ))}
+                  </div>
+                )}
+                <div className="marginal-body">
+                  <MarkdownProse
+                    content={para.replace(/[ \t]*\[\d+\]/g, "")}
+                    citations={citations}
+                    onOpen={onOpen}
+                  />
+                </div>
+              </div>
+            );
+          });
       })}
     </div>
   );
+}
+
+/** The citations referenced inside one run of text, in the order they appear
+ *  and without repeats. */
+function citedIn(text: string, citations?: Citation[]): Citation[] {
+  const seen: number[] = [];
+  const marker = /\[(\d+)\]/g;
+  for (let m = marker.exec(text); m; m = marker.exec(text)) {
+    const n = Number(m[1]);
+    if (seen.indexOf(n) === -1) seen.push(n);
+  }
+  return seen
+    .map((n) => citations?.find((c) => c.index === n))
+    .filter((c): c is Citation => Boolean(c));
+}
+
+/** A citation as marginalia: the index in the ledger mono, with a hairline
+ *  leader that reaches toward the line it supports. */
+function CiteMark({
+  citation: c,
+  onOpen,
+}: {
+  citation: Citation;
+  onOpen: (c: Citation) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(c)}
+      title={`${c.filename} · p.${c.page}${c.needs_review ? " · needs review" : ""}`}
+      aria-label={`Source ${c.index}: ${c.filename}, page ${c.page}`}
+      className={`group mt-[3px] inline-flex items-center gap-1.5 rounded px-1 font-mono text-[11px] transition-colors sm:mt-[7px] ${
+        c.needs_review
+          ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
+          : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
+      }`}
+    >
+      {c.index}
+      <span
+        aria-hidden="true"
+        className="hidden h-px w-2.5 bg-line transition-all group-hover:w-4 group-hover:bg-indigo-600 sm:block dark:group-hover:bg-indigo-400"
+      />
+    </button>
+  );
+}
+
+// A figure is the part of an answer that has to be right, so it is set in the
+// ledger mono and carries its own verdict: a verdigris rule under one the
+// verifier matched to a cited source, ochre under one it could not.
+//
+// The pass runs once, when verification lands — which is the same moment the
+// rules draw themselves. The motion is the checking finishing, not an ornament
+// laid on afterwards. Wrapping happens in the DOM rather than in the markdown
+// so the model's text is never re-parsed as HTML.
+const FIGURE = /\d[\d  .,\s]*\d\s*(?:%|€)?|\d\s*(?:%|€)?/g;
+
+function useFigureRules(verification?: Verification | null) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root || !verification?.enabled || root.dataset.figured === "1") return;
+    root.dataset.figured = "1";
+
+    const unverified = verification.unverified ?? [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const texts: Text[] = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const t = n as Text;
+      // tables already line their own digits up; leave code and controls alone
+      if (t.parentElement?.closest("table, code, pre, button, .fig")) continue;
+      if (/\d/.test(t.data)) texts.push(t);
+    }
+
+    for (const node of texts) {
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      FIGURE.lastIndex = 0;
+      for (let m = FIGURE.exec(node.data); m; m = FIGURE.exec(node.data)) {
+        const raw = m[0].trim();
+        // a lone digit is a list marker or part of a date, not a figure the
+        // answer is staking a claim on
+        if (!raw || /^\d$/.test(raw)) continue;
+        frag.append(node.data.slice(last, m.index));
+        const span = document.createElement("span");
+        const bad = unverified.indexOf(raw) !== -1;
+        span.className = bad ? "fig fig-unverified" : "fig";
+        span.textContent = raw;
+        if (bad) span.title = "This figure could not be matched to a cited source";
+        frag.append(span);
+        last = m.index + m[0].length;
+        // keep any trailing space the trim() dropped
+        frag.append(m[0].slice(raw.length));
+      }
+      if (last === 0) continue;
+      frag.append(node.data.slice(last));
+      node.replaceWith(frag);
+    }
+
+    // one frame later, so the rules have a scaleX(0) to animate FROM
+    const id = requestAnimationFrame(() => root.classList.add("verified"));
+    return () => cancelAnimationFrame(id);
+  }, [verification]);
+
+  return ref;
 }
 
 // Prose (or a fallback markdown table). Inline citation markers ([1], [2][3])
@@ -670,7 +816,7 @@ function VerificationBadge({ verification }: { verification: Verification }) {
         {verification.unverified.map((raw, i) => (
           <code
             key={i}
-            className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px]"
+            className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px] text-amber-900 dark:bg-amber-900/50 dark:text-amber-100"
           >
             {raw}
           </code>
