@@ -140,13 +140,20 @@ def test_a_correct_reading_agrees_with_the_bars():
     assert score > 0.99, note
 
 
-@pytest.mark.parametrize("corruption,label", [
-    ([61.5 if v == 16.5 else v for v in TRUE_VALUES], "a transposed digit"),
-    (TRUE_VALUES + [42.0], "an invented value"),
-])
-def test_a_corrupted_reading_disagrees_loudly(corruption, label):
-    score, _ = agreement(BARS, corruption)
-    assert score < 0.9, f"{label} should not pass"
+def test_a_misread_value_leaves_its_bar_unexplained():
+    misread = [61.5 if v == 16.5 else v for v in TRUE_VALUES]
+    score, note = agreement(BARS, misread)
+    assert score < 0.95, note        # the configured threshold for Review
+
+
+def test_an_extra_number_is_reported_but_cannot_fail_the_check():
+    """The honest limit of this signal: geometry can only speak about BARS.
+    A number that no bar carries may be an invention — or the axis maximum,
+    which every description mentions. The two are indistinguishable here, so
+    it is surfaced in the note for the reviewer rather than scored."""
+    score, note = agreement(BARS, TRUE_VALUES + [42.0])
+    assert score == 1.0
+    assert "1 number(s) read that no bar carries" in note
 
 
 def test_missing_values_are_a_failure_not_a_pass():
@@ -162,3 +169,51 @@ def test_an_unmeasurable_figure_is_not_checked_rather_than_failed(bars):
     score, note = agreement(bars, [10.0, 20.0])
     assert score is None
     assert "not checked" in note
+
+
+# --- the check must tolerate the numbers that are NOT bars -----------------
+
+AXIS_MENTION = [0.0, 28.0]      # "Y-axis: %, from 0% to 28%"
+
+
+def test_axis_numbers_in_the_description_do_not_fail_a_correct_reading():
+    """Measured regression: the factsheet's sectorielle chart was read
+    perfectly and scored 0.76. Discarding extra numbers by size kept the axis
+    maximum — larger than every bar but the tallest — and threw away the
+    smallest real bar instead."""
+    score, note = agreement(BARS, TRUE_VALUES + AXIS_MENTION)
+    assert score == 1.0, note
+    assert "no bar carries" in note      # and it says the extras were ignored
+
+
+def test_a_misread_value_still_fails_even_with_extras():
+    misread = [61.5 if v == 16.5 else v for v in TRUE_VALUES]
+    score, _ = agreement(BARS, misread + AXIS_MENTION)
+    assert score < 0.95
+
+
+# --- group structure: the error a pairing-free check cannot see ------------
+
+def test_group_sizes_are_measured_from_the_drawing():
+    """Two bars per category, except the third which holds one — the shape
+    that made the model slide every later value one category along."""
+    doc = fitz.open()
+    page = doc.new_page(width=400, height=500)
+    layout = [(80, [20, 30]), (140, [25, 15]), (200, [18]), (260, [22, 12])]
+    for x0, values in layout:
+        for k, value in enumerate(values):
+            x = x0 + k * 12
+            page.draw_rect(fitz.Rect(x, 400 - value * 2, x + 11, 400),
+                           color=None, fill=(0.1, 0.5, 0.7))
+    data = doc.tobytes()
+    doc.close()
+    page = fitz.open(stream=data, filetype="pdf")[0]
+
+    from tablerag.ingestion.chart_check import bar_groups
+    assert bar_groups(page, (0, 0, 400, 500)) == [2, 2, 1, 2]
+
+
+def test_a_chart_with_nothing_to_group_returns_nothing():
+    from tablerag.ingestion.chart_check import bar_groups
+    page = bar_chart_pdf([10, 25])          # too few to be a series
+    assert bar_groups(page, (0, 0, 400, 500)) == []

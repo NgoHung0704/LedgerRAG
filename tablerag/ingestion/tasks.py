@@ -274,7 +274,7 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                     and len(figures_out) < settings.figure_describe_max_per_doc):
                 try:
                     description, informative = asyncio.run(
-                        describe_figure(crop, region.caption))
+                        describe_figure(crop, region.caption, region.groups))
                 except Exception:  # noqa: BLE001 — a figure must not fail a doc
                     logger.exception("doc %s page %d: figure description "
                                      "failed; keeping image only",

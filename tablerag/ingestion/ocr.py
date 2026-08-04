@@ -139,18 +139,32 @@ async def reread_page(image_png: bytes, mode: str = "structure") -> str:
     return await _transcribe(image_png, REREAD_MODES[mode])
 
 
-async def describe_figure(image_png: bytes,
-                          caption: str | None = None) -> tuple[str, bool]:
+async def describe_figure(image_png: bytes, caption: str | None = None,
+                          groups: list[int] | None = None) -> tuple[str, bool]:
     """Describe a figure crop. Returns (description, informative).
 
     `informative` is False for a logo, a letterhead, a signature — images that
     would only add noise to the index. The caller stores the description either
-    way (a reviewer may disagree) but indexes only the informative ones."""
+    way (a reviewer may disagree) but indexes only the informative ones.
+
+    `groups` is how many bars each category holds, measured from the vector
+    drawing. It is EVIDENCE, the way a table's text-layer grid already is: on
+    the factsheet this was built from, two sectors carried only one bar, the
+    model did not notice, and every value from there on landed one sector
+    early — each number read correctly, all of them attributed wrongly."""
     prompt = _FIGURE_PROMPT
     if caption:
         # the printed caption is the document's own words for this figure and
         # anchors the description; it is evidence, not an instruction
         prompt += f"\n\nThe document prints this caption with the figure: {caption}"
+    if groups and len(groups) > 1:
+        counts = ", ".join(str(n) for n in groups)
+        prompt += (
+            f"\n\nMeasured from the drawing itself: the bars form {len(groups)} "
+            f"groups, holding these numbers of bars from first to last: "
+            f"{counts}. Groups do not all hold the same number, so keep every "
+            f"value with the group it is drawn over and never carry one across "
+            f"into the next group. Trust the image if it clearly disagrees.")
     text = await _transcribe(image_png, prompt)
 
     informative = True

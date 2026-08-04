@@ -22,10 +22,19 @@ import re
 import fitz
 
 # hairlines are gridlines and axes; the plot frame is not a bar either
-_MIN_BAR_SIDE = 1.5
+# 0.8, not more: a bar for a value of 0,2 is under a point tall, and dropping
+# it cost two whole categories on the factsheet's geographic chart — with this
+# the measured group pattern matches the drawing exactly on both its charts.
+_MIN_BAR_SIDE = 0.8
 _MAX_BAR_SHARE = 0.9      # a rect filling the plot is its background
 _BASELINE_TOL = 1.0       # points; bars on the same axis line up this closely
 _RULE_MAJORITY = 0.5      # this share sharing one length = rules, not bars
+# the tallest bar carries one of the largest values read — try each in turn
+# rather than assuming which, and keep the scale that explains the most bars
+_SCALE_CANDIDATES = 3
+_MATCH_TOLERANCE = 0.02   # of the largest value read
+# bars of one category touch; the gap to the next category is wider than a bar
+_GROUP_GUTTER = 1.6
 # a number as printed on a French chart: 27,6 · 1 234,5 · 81.5%
 _NUMBER = re.compile(r"-?\d{1,3}(?:[  ]\d{3})*(?:[.,]\d+)?")
 
@@ -43,22 +52,22 @@ def read_numbers(text: str) -> list[float]:
     return out
 
 
-def chart_bars(page: fitz.Page,
-               bbox: tuple[float, float, float, float]) -> list[float]:
-    """Lengths of the bars inside `bbox`.
+def _bars(page: fitz.Page, bbox: tuple[float, float, float, float]
+          ) -> tuple[list[fitz.Rect], bool]:
+    """The bars inside `bbox`, and whether the chart runs in columns.
 
     Bars are identified by the one property that defines them: they all grow
-    from the SAME baseline — the axis. Colour does not identify them (tick
-    marks and label backgrounds outnumbered the bars 40 to 18 on the chart
-    this was built from), and a grouped chart's two colours share one scale
-    anyway, so both series belong in the same comparison.
+    from the SAME baseline. Colour does not identify them — tick marks and
+    label backgrounds outnumbered the bars 40 to 18 on the chart this was
+    built from — and a grouped chart's two colours share one scale anyway, so
+    both series belong to the same comparison.
 
-    Both orientations are tried — a column chart shares a bottom edge and
+    Both orientations are tried: a column chart shares a bottom edge and
     carries its value in the height, a horizontal bar chart shares a left edge
-    and carries it in the width — and whichever finds more bars wins."""
+    and carries it in the width."""
     box = fitz.Rect(bbox)
     plot_area = box.get_area()
-    rects = []
+    candidates = []
     for drawing in page.get_drawings():
         if not drawing.get("fill"):
             continue
@@ -69,19 +78,57 @@ def chart_bars(page: fitz.Page,
             continue                                   # gridline / axis
         if rect.get_area() > _MAX_BAR_SHARE * plot_area:
             continue                                   # plot background
-        rects.append(rect)
+        candidates.append(rect)
 
-    def on_shared_edge(edge, length) -> list[float]:
-        tally: dict[int, list[float]] = {}
-        for rect in rects:
-            key = round(edge(rect) / _BASELINE_TOL)
-            tally.setdefault(key, []).append(length(rect))
+    def on_shared_edge(edge) -> list[fitz.Rect]:
+        tally: dict[int, list[fitz.Rect]] = {}
+        for rect in candidates:
+            tally.setdefault(round(edge(rect) / _BASELINE_TOL), []).append(rect)
         return max(tally.values(), key=len) if tally else []
 
-    columns = on_shared_edge(lambda r: r.y1, lambda r: r.height)
-    horizontal = on_shared_edge(lambda r: r.x0, lambda r: r.width)
-    best = columns if len(columns) >= len(horizontal) else horizontal
-    return best if varies(best) else []
+    columns = on_shared_edge(lambda r: r.y1)
+    horizontal = on_shared_edge(lambda r: r.x0)
+    if len(columns) >= len(horizontal):
+        return (columns, True) if varies([r.height for r in columns]) else ([], True)
+    return (horizontal, False) if varies([r.width for r in horizontal]) else ([], False)
+
+
+def chart_bars(page: fitz.Page,
+               bbox: tuple[float, float, float, float]) -> list[float]:
+    """Lengths of the bars inside `bbox` — what carries their value."""
+    rects, vertical = _bars(page, bbox)
+    return [(r.height if vertical else r.width) for r in rects]
+
+
+def bar_groups(page: fitz.Page,
+               bbox: tuple[float, float, float, float]) -> list[int]:
+    """How many bars sit under each category, in order.
+
+    This is the error a reader never makes and a model does: on the factsheet,
+    two sectors carry only the index bar, and the VLM — reading a row of values
+    without knowing a slot held one — slid every later value one sector along.
+    Every number it read was RIGHT; from "Santé" on, all of them landed on the
+    wrong sector.
+
+    A pairing-free check cannot see that at all — the multiset of values is
+    identical either way — so the geometry is handed to the model as evidence
+    instead, the way a table's text-layer grid already is."""
+    rects, vertical = _bars(page, bbox)
+    if len(rects) < 3:
+        return []
+    thickness = [(r.width if vertical else r.height) for r in rects]
+    gutter = (sum(thickness) / len(thickness)) * _GROUP_GUTTER
+    positions = sorted((r.x0 + r.x1) / 2 if vertical else (r.y0 + r.y1) / 2
+                       for r in rects)
+    groups, run = [], 1
+    for previous, position in zip(positions, positions[1:]):
+        if position - previous > gutter:
+            groups.append(run)
+            run = 1
+        else:
+            run += 1
+    groups.append(run)
+    return groups
 
 
 def varies(lengths: list[float]) -> bool:
@@ -121,14 +168,33 @@ def agreement(heights: list[float],
     if len(reads) < len(bars):
         return 0.0, (f"read {len(reads)} values for {len(bars)} bars — "
                      "the chart has more bars than numbers were read")
-    # more numbers than bars is normal: axis ticks and a legend are numbers
-    # too. Take the largest ones, which is what the bars carry.
-    reads = reads[-len(bars):]
-    total_h, total_v = sum(bars), sum(reads)
-    if total_v <= 0 or total_h <= 0:
-        return None, "degenerate scale — not checked"
-    scale = total_h / total_v
-    span = max(reads)
-    worst = max(abs(h / scale - v) for h, v in zip(bars, reads))
-    return max(0.0, 1.0 - worst / span), (
-        f"{len(bars)} bars, worst disagreement {worst:.2f} on a span of {span:g}")
+
+    # Every bar must find a value; leftover values are EXPECTED and ignored.
+    # A description mentions the axis ("from 0% to 28%") and its legend, and
+    # those numbers are not bars. Discarding the extras by size was wrong and
+    # measured wrong: the axis maximum outranks every bar but the tallest, so
+    # it survived while the smallest real bar was thrown away — a perfect
+    # reading of a factsheet chart scored 0.76 instead of 0.998.
+    best_score, best_note = 0.0, "no scale fits the bars"
+    for candidate in reads[-_SCALE_CANDIDATES:]:
+        scale = bars[-1] / candidate
+        if scale <= 0:
+            continue
+        matched, worst, free = 0, 0.0, list(reads)
+        tolerance = _MATCH_TOLERANCE * max(reads)
+        for bar in bars:
+            wanted = bar / scale
+            near = min(free, key=lambda v: abs(v - wanted), default=None)
+            if near is None or abs(near - wanted) > tolerance:
+                continue
+            free.remove(near)
+            worst = max(worst, abs(near - wanted))
+            matched += 1
+        score = matched / len(bars)
+        if score > best_score:
+            best_score, best_note = score, (
+                f"{matched}/{len(bars)} bars matched a value read from them, "
+                f"worst disagreement {worst:.2f}"
+                + (f"; {len(free)} number(s) read that no bar carries"
+                   if free else ""))
+    return best_score, best_note

@@ -139,7 +139,7 @@ def _ingest_one_figure(db_session, monkeypatch, reply, *, enabled=True, cap=30,
     from tablerag.storage import repositories as repo
     from tablerag.storage.orm import Chunk
 
-    async def fake_describe(image, caption=None):
+    async def fake_describe(image, caption=None, groups=None):
         return reply
 
     monkeypatch.setattr(tasks, "describe_figure", describe or fake_describe)

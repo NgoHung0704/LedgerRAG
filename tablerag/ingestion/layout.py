@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 import fitz  # PyMuPDF
 from PIL import Image
 
-from tablerag.ingestion.chart_check import chart_bars
+from tablerag.ingestion.chart_check import bar_groups, chart_bars
 from tablerag.ingestion.extract import PdfError
 
 # image blocks smaller than this fraction of the page are decorations, not figures
@@ -58,6 +58,7 @@ class Region:
     # (see ingestion/chart_check.py)
     vector: bool = False
     bars: list[float] = field(default_factory=list)  # figures: bar lengths
+    groups: list[int] = field(default_factory=list)  # figures: bars per category
 
 
 @dataclass
@@ -391,7 +392,8 @@ def detect_vector_figures(page: fitz.Page,
         # measured HERE because this is where the fitz page lives; ingestion
         # only ever sees the page image
         regions.append(Region(type="figure", bbox=tuple(box), vector=True,
-                              bars=chart_bars(page, tuple(box))))
+                              bars=chart_bars(page, tuple(box)),
+                              groups=bar_groups(page, tuple(box))))
     return regions
 
 
