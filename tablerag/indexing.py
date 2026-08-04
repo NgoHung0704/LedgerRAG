@@ -120,6 +120,15 @@ def convert_table_to_text(element_id: uuid.UUID) -> bool:
     return True
 
 
+def _drop_crops(keys: list[str], keep: str | None = None) -> None:
+    from tablerag.storage.object_store import get_object_store
+
+    store = get_object_store()
+    for key in keys:
+        if key and key != keep:
+            store.delete(key)
+
+
 def undo_element_edit(element_id: uuid.UUID) -> str | None:
     """Put the element back the way it was before the last edit.
 
@@ -139,6 +148,15 @@ def undo_element_edit(element_id: uuid.UUID) -> str | None:
         previous = repo.pop_revision(s, element_id)
         if previous is None:
             return None
+
+        if previous["action"] == "split":
+            # the parts that were carved off go with it, or undo would leave
+            # the first table restored to its full range AND its siblings
+            # still standing — the same rows indexed twice
+            siblings = repo.split_children(s, element_id)
+            if siblings:
+                keys = repo.delete_elements(s, siblings)
+                _drop_crops(keys, keep=element.crop_image_path)
 
         element.type = previous["element_type"]
         element.needs_review = previous["needs_review"]
@@ -227,6 +245,159 @@ def _render_region(pdf_bytes: bytes, page_no: int, bbox: list[float],
                 if area > best:
                     best, grid = area, candidate
     return png, grid
+
+
+def _region_rows(pdf_bytes: bytes, page_no: int,
+                 bbox: list[float]) -> tuple[list[list[str | None]] | None,
+                                             list[float]]:
+    """The region's grid AND the y coordinate of each row's top edge.
+
+    Splitting a wrongly merged region needs both: the model says which row
+    starts the second table, and the PDF says where that row is on the page —
+    so each part gets a real bbox and a real crop of its own rather than a
+    shared picture of the pair (principle #3)."""
+    import fitz
+
+    from tablerag.ingestion.layout import detect_tables
+
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        page = doc[page_no - 1]
+        clip = fitz.Rect(*bbox) if len(bbox) == 4 else page.rect
+        best, grid, tops = 0.0, None, []
+        for table, candidate in detect_tables(page):
+            rect = fitz.Rect(table.bbox) & clip
+            if rect.is_empty:
+                continue
+            area = rect.get_area()
+            if area > best:
+                best = area
+                grid = candidate
+                tops = [float(row.bbox[1]) for row in table.rows]
+    return grid, tops
+
+
+def _write_split(element_id: uuid.UUID, info: dict, results: list) -> None:
+    """First part replaces the element; the rest become new elements beside it.
+
+    Each carries its own bbox and its own crop, so a split table is
+    indistinguishable from two tables that were detected separately — which is
+    what they should have been."""
+    from tablerag.ingestion.tasks import element_image_key
+    from tablerag.storage.object_store import get_object_store
+
+    store = get_object_store()
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None:
+            return
+        repo.snapshot_element(s, element_id, "split")
+
+        first_box, first_crop, first = results[0]
+        store.put(element.crop_image_path, first_crop, "image/png")
+        element.bbox = first_box
+        element.needs_review = first.needs_review
+        element.meta = {**(element.meta or {}), "edited": True, "split": True}
+        table = s.get(TableElement, element_id)
+        if table is None:
+            table = repo.add_table_element(s, element_id, None, None, None,
+                                           None, first.parse_strategy)
+        table.html = first.html or None
+        table.summary = None       # it described the pair; it is wrong now
+        table.n_rows, table.n_cols = first.n_rows, first.n_cols
+        _replace_records(s, element_id, first.records or [])
+
+        for box, crop, part in results[1:]:
+            new_id = uuid.uuid4()
+            key = element_image_key(info["kb_id"], info["doc_id"], new_id)
+            store.put(key, crop, "image/png")
+            repo.add_element(
+                s, info["doc_id"], element.page, bbox=box, type_="table",
+                crop_image_path=key, confidence=None,
+                needs_review=part.needs_review,
+                meta={"split_from": str(element_id)}, element_id=new_id)
+            repo.add_table_element(s, new_id, part.html or None, None,
+                                   part.n_rows, part.n_cols,
+                                   part.parse_strategy)
+            if part.records:
+                repo.add_records(s, new_id, [
+                    {**r, "text_repr": build_text_repr(
+                        r.get("dimensions", {}), r.get("metrics", {}),
+                        r.get("raw_values", {}))}
+                    for r in part.records])
+
+
+def split_bboxes(bbox: list[float], row_tops: list[float],
+                 seams: list[int]) -> list[list[float]]:
+    """Cut a region's bbox at the given row numbers (1-based, each starting a
+    new table). Returns one bbox per part, top to bottom."""
+    x0, y0, x1, y1 = bbox
+    cuts = [row_tops[row - 1] for row in seams
+            if 0 < row <= len(row_tops) and y0 < row_tops[row - 1] < y1]
+    edges = [y0, *sorted(cuts), y1]
+    return [[x0, top, x1, bottom]
+            for top, bottom in zip(edges, edges[1:]) if bottom - top > 1.0]
+
+
+async def split_table(element_id: uuid.UUID) -> int | None:
+    """Break a region that holds two tables into one element per table.
+
+    Detection sometimes draws one box around two tables printed one under
+    another. Read as one, their rows land in a single set of records, and a
+    question about the first can be answered from a row of the second — wrong
+    in the way that looks right.
+
+    The model is asked only WHERE the seam is; each part is then re-rendered
+    from the PDF and parsed through the ordinary contract, so every guard that
+    applies to a table applies to these. Parts after the first become new
+    elements carrying `split_from`, and the whole thing is recorded on the
+    revision stack, so undo puts the single table back and removes them.
+
+    Returns the number of tables now standing, or None when there is nothing
+    to split (or no source to split from)."""
+    from tablerag.ingestion.table_pipeline import parse_table_region
+    from tablerag.models.base import Msg
+    from tablerag.models.registry import get_provider
+    from tablerag.models.table_parsing import (
+        SPLIT_PROMPT,
+        numbered_rows,
+        parse_split_rows,
+    )
+
+    info = await asyncio.to_thread(_table_region_inputs, element_id)
+    if info is None or info["spans_pages"]:
+        # a cross-page merge has no single page to cut: its parts live on
+        # different pages, and undoing THAT merge is a different operation
+        return None
+    settings = get_settings()
+    grid, row_tops = await asyncio.to_thread(
+        _region_rows, info["pdf"], info["page"], info["bbox"])
+    if not grid or len(row_tops) < 4:
+        return None            # nothing to count rows against
+
+    parser = get_provider("parser")
+    prompt = SPLIT_PROMPT.replace("{rows}", numbered_rows(grid))
+    parts = []
+    async for token in parser.chat([Msg(role="user", content=prompt)],
+                                   stream=True, temperature=0.0):
+        parts.append(token)
+    seams = parse_split_rows("".join(parts), len(grid))
+    if not seams:
+        return None
+
+    boxes = split_bboxes(info["bbox"], row_tops, seams)
+    if len(boxes) < 2:
+        return None
+
+    dpi = settings.table_crop_dpi
+    results = []
+    for box in boxes:
+        crop, sub_grid = await asyncio.to_thread(
+            _render_region, info["pdf"], info["page"], box, dpi)
+        results.append((box, crop, await parse_table_region(
+            crop, sub_grid, True, info["locale"])))
+
+    await asyncio.to_thread(_write_split, element_id, info, results)
+    return len(results)
 
 
 async def recheck_table(element_id: uuid.UUID) -> dict | None:

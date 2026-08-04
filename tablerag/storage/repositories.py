@@ -437,6 +437,16 @@ def snapshot_element(s: Session, element_id: uuid.UUID, action: str) -> None:
         s.delete(revision)
 
 
+def split_children(s: Session, element_id: uuid.UUID) -> list[uuid.UUID]:
+    """Elements carved off this one by a split, so undoing it can take them
+    back too. Matched on meta rather than a column: create_all adds tables,
+    never columns, and this needs no schema change on a live database."""
+    rows = s.scalars(select(Element).where(Element.doc_id == select(
+        Element.doc_id).where(Element.id == element_id).scalar_subquery()))
+    return [e.id for e in rows
+            if (e.meta or {}).get("split_from") == str(element_id)]
+
+
 def revision_count(s: Session, element_id: uuid.UUID) -> int:
     from tablerag.storage.orm import ElementRevision
 

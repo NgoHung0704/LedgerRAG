@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ScanSearch,
   ScanText,
+  SplitSquareVertical,
   Table2,
   TableCellsMerge,
   Trash2,
@@ -34,6 +35,7 @@ import {
   markElementUnusable,
   recheckElement,
   rereadElement,
+  splitElementTable,
   undoElementEdit,
   type DocumentView,
   type ElementDetail,
@@ -314,6 +316,7 @@ function ElementCard({
   const [rereading, setRereading] = useState(false);
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [splitting, setSplitting] = useState(false);
   const [undoing, setUndoing] = useState(false);
   const [removing, setRemoving] = useState(false);
 
@@ -389,6 +392,32 @@ ${r.findings}` : ""),
     } catch (e) {
       setReviewError(String(e));
       setRemoving(false);
+    }
+  };
+
+  const splitTable = async () => {
+    if (
+      !(await confirm({
+        title: "Are these two tables?",
+        message:
+          "The model is asked only where the seam is; each part is then " +
+          "re-parsed on its own and gets its own crop. Undo puts the single " +
+          "table back.",
+        confirmLabel: "Split",
+        danger: false,
+      }))
+    )
+      return;
+    setSplitting(true);
+    setReviewError(null);
+    try {
+      const result = await splitElementTable(element.id);
+      onChanged();
+      setDetail(result);
+    } catch (e) {
+      setReviewError(String(e));
+    } finally {
+      setSplitting(false);
     }
   };
 
@@ -599,6 +628,17 @@ ${r.findings}` : ""),
             >
               {rechecking ? <Spinner size={11} /> : <ScanSearch size={12} />}
               {rechecking ? "re-parsing…" : "double-check"}
+            </button>
+          )}
+          {element.type === "table" && (
+            <button
+              onClick={splitTable}
+              disabled={splitting}
+              title="Detection sometimes draws one box around two tables printed one under another. Read as one, their rows share a set of records and a question about the first can be answered from a row of the second."
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
+            >
+              {splitting ? <Spinner size={11} /> : <SplitSquareVertical size={12} />}
+              {splitting ? "splitting…" : "two tables"}
             </button>
           )}
           {element.type === "table" && (

@@ -151,3 +151,62 @@ def test_the_crop_image_is_never_versioned(db_session, table):
     indexing.undo_element_edit(table.id)
     db_session.flush()
     assert db_session.get(Element, table.id).crop_image_path == before
+
+
+# --- splitting a region detection drew around two tables ------------------
+
+def test_the_seam_answer_is_read_strictly():
+    """Row 1 starts the FIRST table, so it is not a seam, and a row past the
+    end would cut off nothing. A model that answers with either must not be
+    allowed to produce an empty or duplicated part."""
+    from tablerag.models.table_parsing import parse_split_rows
+
+    assert parse_split_rows("SPLIT BEFORE ROWS: 7", 12) == [7]
+    assert parse_split_rows("SPLIT BEFORE ROWS: 4, 9", 12) == [4, 9]
+    assert parse_split_rows("SPLIT BEFORE ROWS: none", 12) == []
+    assert parse_split_rows("SPLIT BEFORE ROWS: 1", 12) == []      # not a seam
+    assert parse_split_rows("SPLIT BEFORE ROWS: 40", 12) == []     # past the end
+    assert parse_split_rows("SPLIT BEFORE ROWS: 7, 7", 12) == [7]
+    assert parse_split_rows("I think it is one table.", 12) == []
+
+
+def test_a_region_is_cut_at_the_row_the_model_named():
+    """Each part gets a real bbox, so it can be re-rendered and cropped on its
+    own — a split table must be indistinguishable from two that were detected
+    separately."""
+    from tablerag.indexing import split_bboxes
+
+    rows = [100.0, 120.0, 140.0, 160.0, 180.0]
+    parts = split_bboxes([50.0, 100.0, 300.0, 200.0], rows, [4])
+    assert parts == [[50.0, 100.0, 300.0, 160.0],
+                     [50.0, 160.0, 300.0, 200.0]]
+
+
+def test_a_seam_outside_the_region_is_ignored():
+    from tablerag.indexing import split_bboxes
+
+    rows = [100.0, 120.0, 900.0]
+    assert split_bboxes([50.0, 100.0, 300.0, 200.0], rows, [3]) == [
+        [50.0, 100.0, 300.0, 200.0]]
+
+
+def test_undoing_a_split_takes_the_parts_with_it(db_session, table,
+                                                 monkeypatch):
+    """Otherwise undo restores the first table to its full range while its
+    siblings still stand — the same rows indexed twice, which is worse than
+    the merge it was undoing."""
+    from tablerag import indexing
+
+    monkeypatch.setattr(indexing, "_drop_crops", lambda *a, **k: None)
+    doc_id = db_session.get(Element, table.id).doc_id
+    repo.snapshot_element(db_session, table.id, "split")
+    part2 = repo.add_element(db_session, doc_id, page=1, bbox=[0, 0, 1, 1],
+                             type_="table", crop_image_path="p2.png",
+                             meta={"split_from": str(table.id)})
+    db_session.flush()
+    assert repo.split_children(db_session, table.id) == [part2.id]
+
+    assert indexing.undo_element_edit(table.id) == "split"
+    db_session.flush()
+    assert db_session.get(Element, part2.id) is None
+    assert db_session.get(Element, table.id) is not None

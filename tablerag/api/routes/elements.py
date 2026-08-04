@@ -208,6 +208,37 @@ async def recheck_element(element_id: uuid.UUID) -> dict:
     return proposal
 
 
+@router.post("/{element_id}/split")
+async def split_element_table(element_id: uuid.UUID) -> dict:
+    """"These are two tables": break a region detection drew around both.
+
+    Read as one, their rows land in a single set of records, and a question
+    about the first table can be answered from a row of the second — wrong in
+    the way that looks right. The model is asked only WHERE the seam is; each
+    part is then re-rendered from the PDF and parsed through the ordinary
+    contract, and gets its own bbox and crop.
+
+    Undo puts the single table back and removes the parts."""
+    from tablerag import indexing
+
+    parts = await indexing.split_table(element_id)
+    if parts is None:
+        raise HTTPException(
+            409, "no seam found: the model read this region as one table. A "
+                 "table merged across PAGES cannot be split here — reprocess "
+                 "the document instead.")
+    with session_scope() as s:
+        children = repo.split_children(s, element_id)
+    await indexing.reindex_element(element_id)
+    for child in children:
+        await indexing.reindex_element(child)
+    with session_scope() as s:
+        detail = repo.get_element_detail(s, element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    detail["parts"] = parts
+    return detail
+
+
 @router.post("/{element_id}/convert-to-text")
 async def convert_element_to_text(element_id: uuid.UUID) -> dict:
     """"This is not a table": demote a wrongly detected table to plain text.

@@ -244,6 +244,67 @@ def build_retry_prompt(error: str) -> str:
     )
 
 
+# Detection sometimes draws one region around two tables that happen to share a
+# ruling or sit flush against each other. Read as one, their rows land in one
+# set of records, and a question about the first table can be answered from a
+# row of the second — the worst kind of wrong, because it looks right.
+#
+# The model is asked ONLY where the seam is, never to parse both: the split is
+# a judgement it can make (a second header, a change of subject) and the
+# parsing is left to the contract that has been measured.
+SPLIT_PROMPT = """\
+The rows below were read as ONE table. Decide whether they are really two or \
+more tables printed one under another — a second table has its own header row \
+and its own subject, not a continuation of the first.
+
+Rows, numbered:
+{rows}
+
+Reply with exactly one line and nothing else:
+SPLIT BEFORE ROWS: 7
+listing the row number that STARTS each table after the first, separated by \
+commas. If it is a single table, reply:
+SPLIT BEFORE ROWS: none
+
+A repeated header alone is not a split — a long table continuing on the same \
+page may repeat its header. Split only when the SUBJECT changes.\
+"""
+
+_SPLIT_RE = re.compile(r"SPLIT\s+BEFORE\s+ROWS?\s*:\s*(.+)", re.IGNORECASE)
+
+
+def numbered_rows(grid: list[list[str | None]], max_chars: int = 3000) -> str:
+    """The grid as numbered lines, so a row number means the same thing to the
+    model and to the caller that will cut the region at it."""
+    lines = []
+    for i, row in enumerate(grid, start=1):
+        cells = "; ".join(" ".join(str(c or "").split()) for c in row)
+        lines.append(f"{i}. {cells}")
+    return "\n".join(lines)[:max_chars]
+
+
+def parse_split_rows(text: str, n_rows: int) -> list[int]:
+    """Row numbers (1-based) where a new table starts. Empty when there is no
+    split, or when the answer names rows that cannot be seams."""
+    match = _SPLIT_RE.search(text or "")
+    if not match:
+        return []
+    answer = match.group(1).strip()
+    if answer.lower().startswith("none"):
+        return []
+    rows = []
+    for piece in re.split(r"[,\s]+", answer):
+        try:
+            row = int(piece)
+        except ValueError:
+            continue
+        # row 1 is the start of the FIRST table, not a seam, and a seam past
+        # the end would cut off nothing
+        if 1 < row <= n_rows and row not in rows:
+            rows.append(row)
+    return sorted(rows)
+
+
 class TableContractError(Exception):
     pass
 

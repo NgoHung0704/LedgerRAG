@@ -371,6 +371,14 @@ export const convertElementToText = (elementId: string) =>
     method: "POST",
   }).then((r) => jsonOrThrow<ElementDetail>(r));
 
+/** "These are two tables": break a region detection drew around both. The
+ * model is asked only where the seam is; each part is re-parsed and gets its
+ * own bbox and crop. Undo puts the single table back. */
+export const splitElementTable = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/split`, { method: "POST" }).then(
+    (r) => jsonOrThrow<ElementDetail & { parts: number }>(r),
+  );
+
 /** Put an element back the way it was before its last edit, and re-index.
  * Reprocessing the document undoes anything, but re-runs the whole file and
  * discards every other correction made to it. */
