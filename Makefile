@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint
 
 up:
 	docker compose up -d --build
@@ -60,6 +60,14 @@ eval-accords:
 eval-convention:
 	python tests/eval/qa/run_eval_qa.py --kb $(KB) \
 		--questions tests/eval/qa/convention.jsonl $(ARGS)
+
+# ---- figure-reading gate (needs a live parser endpoint) --------------------
+# Charts are the one thing with no text to fall back on. Scores three things:
+# are the printed values in the description, is anything INVENTED for a chart
+# that prints none, and is a logo told apart from a chart.
+# Drop the documents named in figures.jsonl into tests/eval/figures/pdfs/.
+eval-figures:
+	python tests/eval/figures/run_eval_figures.py $(ARGS)
 
 # ---- Phase 5: routing gate (needs several KBs; scores router, not answers) --
 # Split the 3 sample PDFs into 3 KBs whose names contain CETIAT / Avenant /

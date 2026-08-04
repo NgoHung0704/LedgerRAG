@@ -249,3 +249,45 @@ def test_a_neighbour_that_is_not_level_with_the_figure_is_left_alone():
     donut = fitz.Rect(135, 708, 209, 776)
     elsewhere = fitz.Rect(293, 200, 357, 230)
     assert with_legend(donut, 3, [elsewhere]) == donut
+
+
+# --- a page's layout frame is not a table ---------------------------------
+
+def test_a_frame_holding_a_title_is_not_a_table():
+    """The factsheet's first page gave a 5x2 whose ten cells held the title
+    and the date. It reached the VLM, which refused it — correctly, it is not
+    a table — and it then sat in Review with nothing a reviewer could do."""
+    from tablerag.ingestion.layout import looks_like_page_layout
+
+    banner = [["", ""], ["EPSENS TRANSITION CLIMAT - Part A", ""],
+              ["", ""], ["Reporting au 30/09/2021", ""], ["", ""]]
+    assert looks_like_page_layout(banner) is True
+
+
+def test_a_frame_holding_paragraphs_is_not_a_table():
+    """And a 7x5 whose cells held whole paragraphs — 606 characters in one."""
+    from tablerag.ingestion.layout import looks_like_page_layout
+
+    page = [["CARACTERISTIQUES\n" + "Date de création : 01/01/2021 " * 30,
+             "b", "c"], ["d", "e", "f"], ["g", "h", "i"]]
+    assert looks_like_page_layout(page) is True
+
+
+def test_a_real_table_still_passes():
+    from tablerag.ingestion.layout import looks_like_page_layout
+
+    cotation = [["Classe", "Cotation", "Groupe"],
+                ["16", "52 à 54", "H"],
+                ["17", "55 à 57", "I"],
+                ["18", "58 à 60", "I"]]
+    assert looks_like_page_layout(cotation) is False
+
+
+def test_a_ruled_table_with_merged_cells_still_passes():
+    """Merged cells surface as holes; the threshold sits below the sparsest
+    ruled table the suite already accepts, so they keep coming through."""
+    from tablerag.ingestion.layout import looks_like_page_layout
+
+    merged = [["Effectifs", None, "2024"], [None, "Cadres", "120"],
+              [None, "Employés", "340"]]
+    assert looks_like_page_layout(merged) is False

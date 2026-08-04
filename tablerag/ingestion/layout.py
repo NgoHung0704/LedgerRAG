@@ -139,11 +139,42 @@ def duplicates_table_text(content: str, cell_texts: set[str],
 _TABLE_STRATEGIES = ("lines_strict", "lines", "text")
 
 
+# a grid emptier than this, or holding a cell this long, is a page's layout
+# frame rather than a table (measured on a fund factsheet: 0.20 fill, and a
+# 606-character cell). Real tables here run to tens of characters a cell.
+_LAYOUT_MAX_FILL = 0.25
+_LAYOUT_MAX_CELL_CHARS = 400
+
+
 def grid_fill_ratio(grid: list[list]) -> float:
     cells = [c for row in grid for c in row]
     if not cells:
         return 0.0
     return sum(1 for c in cells if c is not None and str(c).strip()) / len(cells)
+
+
+def looks_like_page_layout(grid: list[list]) -> bool:
+    """Is this "table" really a page's layout frame?
+
+    The ruled strategies find one wherever a page is built out of boxes, and a
+    fund factsheet gave two on its first page: a 5x2 whose ten cells held the
+    title and the date, and a 7x5 whose cells held whole paragraphs — 606
+    characters in one of them. Both reached the VLM, which refused them (they
+    are not tables), and both then sat in Review forever.
+
+    Two independent signs, either of which settles it:
+      - three cells in four are empty — a grid that is mostly holes is a
+        frame. The line is drawn below the sparsest RULED table the suite
+        already accepts, so a merged-cell table keeps coming through;
+      - one cell holds a paragraph — a data cell is a value, not a page of
+        prose. Real tables in this corpus run to tens of characters a cell.
+    """
+    cells = [str(cell or "") for row in grid for cell in row]
+    filled = [cell for cell in cells if cell.strip()]
+    if not filled:
+        return True
+    return (grid_fill_ratio(grid) < _LAYOUT_MAX_FILL
+            or max(len(cell) for cell in filled) > _LAYOUT_MAX_CELL_CHARS)
 
 
 def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
@@ -158,6 +189,8 @@ def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
         return False
     n_cols = max((len(row) for row in grid), default=0)
     if n_cols < 2 or len(grid) < 2:  # need a real 2-D grid
+        return False
+    if looks_like_page_layout(grid):
         return False
     if strategy == "text" and grid_fill_ratio(grid) < 0.6:
         return False  # sparse -> probably prose, not a table
@@ -249,6 +282,11 @@ def detect_tables(page: fitz.Page) -> list[tuple]:
             rect = fitz.Rect(table.bbox)
             n_cols = max((len(row) for row in grid), default=0) if grid else 0
             if rect.get_area() <= 0 or n_cols < 2 or len(grid) < 2:
+                continue
+            # the ruled strategies find a "table" wherever a page is built out
+            # of boxes; that check used to guard only the lenient strategy, so
+            # a page frame came through here and became an element
+            if looks_like_page_layout(grid):
                 continue
             line_candidates.append(
                 (len(grid) * n_cols, rect.get_area(), priority, rect))
@@ -429,6 +467,9 @@ def detect_vector_figures(page: fitz.Page,
         regions.append(Region(type="figure", bbox=tuple(box), vector=True,
                               bars=chart_bars(page, tuple(box)),
                               groups=bar_groups(page, tuple(box))))
+    # reading order, so a figure keeps its position between runs — the eval
+    # gate addresses them by index
+    regions.sort(key=lambda r: (r.bbox[1], r.bbox[0]))
     return regions
 
 

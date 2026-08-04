@@ -36,7 +36,10 @@ _MATCH_TOLERANCE = 0.02   # of the largest value read
 # bars of one category touch; the gap to the next category is wider than a bar
 _GROUP_GUTTER = 1.6
 # a number as printed on a French chart: 27,6 · 1 234,5 · 81.5%
-_NUMBER = re.compile(r"-?\d{1,3}(?:[  ]\d{3})*(?:[.,]\d+)?")
+# the integer part is unbounded on purpose: \d{1,3} was meant for grouped
+# thousands, but it chopped a bare year into "202" and "1", which turned a
+# description that correctly refused to state any value into twelve phantoms
+_NUMBER = re.compile(r"-?\d+(?:[  ]\d{3})*(?:[.,]\d+)?")
 
 
 def read_numbers(text: str) -> list[float]:
