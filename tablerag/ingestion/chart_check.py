@@ -82,6 +82,23 @@ def duplicates_page_text(description: str, page_text: str) -> bool:
     return numbers <= set(read_numbers(page_text))
 
 
+def index_verdict(description: str, informative: bool,
+                  page_text: str) -> str | None:
+    """Should this figure's description go into the index? None means yes;
+    otherwise the reason it is held out.
+
+    Both the ingest path and the eval gate ask THIS, not the model's flag on
+    its own. The gate first graded the raw flag and reported the banner as a
+    miss after the pipeline had already learnt to hold it back — a gate that
+    scores an intermediate result cannot tell you what the system does.
+    """
+    if not informative:
+        return "decorative"
+    if duplicates_page_text(description, page_text):
+        return "duplicate"
+    return None
+
+
 def _bars(page: fitz.Page, bbox: tuple[float, float, float, float]
           ) -> tuple[list[fitz.Rect], bool]:
     """The bars inside `bbox`, and whether the chart runs in columns.

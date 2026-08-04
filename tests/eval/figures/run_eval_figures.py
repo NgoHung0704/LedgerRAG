@@ -40,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from tablerag.ingestion.chart_check import (  # noqa: E402
     agreement,
+    index_verdict,
     read_numbers,
 )
 from tablerag.ingestion.layout import analyze_document, crop_region_png  # noqa: E402
@@ -124,8 +125,15 @@ async def run(item: dict, pdf_dir: Path) -> dict:
     crop = crop_region_png(layout.image_png, layout.width, region.bbox)
     description, informative = await describe_figure(
         crop, region.caption, region.groups)
-    result = grade(item, description, informative, region.bars)
+
+    # grade the decision the PIPELINE makes, not the model's flag on its own:
+    # a description whose numbers the page's text already carries is held out
+    # of the index even when the model calls it informative
+    page_text = next((r.text for r in layout.regions if r.type == "text"), "")
+    held_out = index_verdict(description, informative, page_text)
+    result = grade(item, description, held_out is None, region.bars)
     result["description"] = description
+    result["held_out"] = held_out
     result["groups_measured"] = region.groups
     return result
 
