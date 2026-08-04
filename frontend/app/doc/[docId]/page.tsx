@@ -17,6 +17,7 @@ import {
   Table2,
   TableCellsMerge,
   Trash2,
+  Undo2,
 } from "lucide-react";
 import BoilerplatePanel from "@/components/BoilerplatePanel";
 import ElementEditor, { type ElementProposal } from "@/components/ElementEditor";
@@ -33,6 +34,7 @@ import {
   markElementUnusable,
   recheckElement,
   rereadElement,
+  undoElementEdit,
   type DocumentView,
   type ElementDetail,
   type ElementView,
@@ -312,6 +314,7 @@ function ElementCard({
   const [rereading, setRereading] = useState(false);
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [undoing, setUndoing] = useState(false);
   const [removing, setRemoving] = useState(false);
 
   // The lazily fetched full content must not outlive the element it came from.
@@ -389,14 +392,28 @@ ${r.findings}` : ""),
     }
   };
 
+  const undo = async () => {
+    setUndoing(true);
+    setReviewError(null);
+    try {
+      const detail = await undoElementEdit(element.id);
+      onChanged();
+      setDetail(detail);
+    } catch (e) {
+      setReviewError(String(e));
+    } finally {
+      setUndoing(false);
+    }
+  };
+
   const convertToText = async () => {
     if (
       !(await confirm({
         title: "Treat this as plain text?",
         message:
           "The cells' words become the text; the grid and its records are " +
-          "dropped. Reprocessing the document brings the table back if " +
-          "detection was right after all.",
+          "dropped. Undo puts the table back, and so does reprocessing the " +
+          "document if detection was right after all.",
         confirmLabel: "Convert to text",
         danger: false,
       }))
@@ -593,6 +610,23 @@ ${r.findings}` : ""),
             >
               {converting ? <Spinner size={11} /> : <TableCellsMerge size={12} />}
               {converting ? "converting…" : "not a table"}
+            </button>
+          )}
+          {element.undo_steps > 0 && (
+            <button
+              onClick={undo}
+              disabled={undoing}
+              title={
+                `Put this element back the way it was before the last edit ` +
+                `(${element.undo_steps} step${
+                  element.undo_steps === 1 ? "" : "s"
+                } kept). Reprocessing the document also undoes it, but re-runs ` +
+                `the whole file and drops every other correction made to it.`
+              }
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
+            >
+              {undoing ? <Spinner size={11} /> : <Undo2 size={12} />}
+              {undoing ? "undoing…" : `undo (${element.undo_steps})`}
             </button>
           )}
           {element.type !== "figure" && (

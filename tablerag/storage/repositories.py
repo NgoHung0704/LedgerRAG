@@ -370,6 +370,8 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
             "layout_suspect": bool((element.meta or {}).get("layout_suspect")),
             "unusable": bool((element.meta or {}).get("unusable")),
             "edited": bool((element.meta or {}).get("edited")),
+            # how many edits can still be taken back
+            "undo_steps": revision_count(s, element.id),
             "confidence_detail": (element.meta or {}).get("confidence_detail"),
             "span_pages": (element.meta or {}).get("span_pages"),
             "chunk_count": len(chunks),
@@ -395,6 +397,72 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
             }
         view.append(item)
     return view
+
+
+MAX_REVISIONS = 10
+
+
+def snapshot_element(s: Session, element_id: uuid.UUID, action: str) -> None:
+    """Record what this element holds NOW, before something replaces it.
+
+    Called on the way in to every edit, so undo restores the state the reviewer
+    was looking at when they pressed save. Trimmed to the last few: the point
+    is to take back a mistake, not to archive a document's life.
+
+    Reprocessing already undoes anything — but it re-runs the whole document
+    and discards every other correction made to it, which is far too blunt
+    when what you want back is the previous save of one element."""
+    from tablerag.storage.orm import ElementRevision
+
+    element = s.get(Element, element_id)
+    if element is None:
+        return
+    table = s.get(TableElement, element_id)
+    s.add(ElementRevision(
+        element_id=element_id, action=action,
+        text="\n\n".join(c.text for c in element.chunks) or None,
+        html=table.html if table else None,
+        summary=table.summary if table else None,
+        records=[{"dimensions": r.dimensions, "metrics": r.metrics,
+                  "raw_values": r.raw_values} for r in table.records]
+        if table else None,
+        element_type=element.type, needs_review=element.needs_review))
+    s.flush()
+
+    keep = list(s.scalars(
+        select(ElementRevision)
+        .where(ElementRevision.element_id == element_id)
+        .order_by(ElementRevision.created_at.desc(), ElementRevision.id.desc())))
+    for revision in keep[MAX_REVISIONS:]:
+        s.delete(revision)
+
+
+def revision_count(s: Session, element_id: uuid.UUID) -> int:
+    from tablerag.storage.orm import ElementRevision
+
+    return len(list(s.scalars(
+        select(ElementRevision.id)
+        .where(ElementRevision.element_id == element_id))))
+
+
+def pop_revision(s: Session, element_id: uuid.UUID) -> dict | None:
+    """The most recent snapshot, taken off the stack. None when there is none."""
+    from tablerag.storage.orm import ElementRevision
+
+    revision = s.scalars(
+        select(ElementRevision)
+        .where(ElementRevision.element_id == element_id)
+        .order_by(ElementRevision.created_at.desc(), ElementRevision.id.desc())
+        .limit(1)).first()
+    if revision is None:
+        return None
+    data = {"action": revision.action, "text": revision.text,
+            "html": revision.html, "summary": revision.summary,
+            "records": revision.records, "element_type": revision.element_type,
+            "needs_review": revision.needs_review}
+    s.delete(revision)
+    s.flush()
+    return data
 
 
 def delete_elements(s: Session, element_ids: list[uuid.UUID]) -> list[str]:

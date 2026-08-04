@@ -208,6 +208,40 @@ class ChatMessage(Base):
         server_default=func.now())
 
 
+class ElementRevision(Base):
+    """What an element held BEFORE an edit, so the edit can be taken back.
+
+    Reprocessing already undoes anything, but it re-runs the whole document and
+    throws away every other correction made to it — far too blunt when what
+    you want is the last save back. This keeps the previous content per
+    element: a stack, newest first, trimmed to the last few.
+
+    Its own table so `create_all` adds it with no migration. The crop image is
+    NOT versioned — it never changes, and it is the authority a reviewer reads
+    against (principle #3)."""
+
+    __tablename__ = "element_revision"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    element_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("element.id", ondelete="CASCADE"), index=True)
+    # what the edit was, for the button's label: edit | convert-to-text | undo
+    action: Mapped[str] = mapped_column(Text)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    records: Mapped[list | None] = mapped_column(JSONVariant, nullable=True)
+    element_type: Mapped[str] = mapped_column(Text)
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    # a strictly increasing clock, for the same reason chat messages need one:
+    # several saves land inside one coarse clock tick, and the primary key is a
+    # random uuid, so the tie-break would be random — and undo would walk the
+    # history in an arbitrary order instead of backwards
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=message_timestamp,
+        server_default=func.now())
+
+
 class AuditEvent(Base):
     """GDPR accountability (SPEC Phase 5): who did what, when. Its own table so
     create_all adds it with no migration. actor is the proxy identity (or

@@ -68,6 +68,8 @@ def apply_element_edit(element_id: uuid.UUID, *, text: str | None = None,
         element = s.get(Element, element_id)
         if element is None:
             return False
+        # what it held before this save, so the save can be taken back
+        repo.snapshot_element(s, element_id, "edit")
         if text is not None and element.type == "text":
             _rechunk(s, element, text)
         table = s.get(TableElement, element_id)
@@ -98,6 +100,9 @@ def convert_table_to_text(element_id: uuid.UUID) -> bool:
         element = s.get(Element, element_id)
         if element is None or element.type != "table":
             return False
+        # the grid and its records are about to go: this is the one edit that
+        # destroys a representation outright, so it must be recoverable
+        repo.snapshot_element(s, element_id, "convert-to-text")
         table = s.get(TableElement, element_id)
         text = ""
         if table is not None:
@@ -113,6 +118,46 @@ def convert_table_to_text(element_id: uuid.UUID) -> bool:
         # content, which the reviewer can fill via "re-read with the VLM"
         _rechunk(s, element, text)
     return True
+
+
+def undo_element_edit(element_id: uuid.UUID) -> str | None:
+    """Put the element back the way it was before the last edit.
+
+    Returns the action that was undone, or None when there is nothing to undo.
+    A table demoted to text comes back as a table, grid and records included —
+    that is the edit worth being able to take back, since it is the only one
+    that destroys a representation outright.
+
+    Plain stack semantics: each edit pushes the state before it, undo pops one
+    and restores it, so pressing it again walks further back. There is no redo
+    — a toggle would make "undo, undo" mean nothing, and walking back through
+    real history is the more useful of the two."""
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None:
+            return None
+        previous = repo.pop_revision(s, element_id)
+        if previous is None:
+            return None
+
+        element.type = previous["element_type"]
+        element.needs_review = previous["needs_review"]
+        element.meta = {**(element.meta or {}), "edited": True}
+        _rechunk(s, element, previous["text"] or "")
+
+        table = s.get(TableElement, element_id)
+        if previous["html"] is None and previous["records"] is None:
+            if table is not None:
+                s.delete(table)          # it was a text element before
+                s.flush()
+        else:
+            if table is None:            # a demoted table coming back
+                table = repo.add_table_element(s, element_id, None, None,
+                                               None, None, "restored")
+            table.html = previous["html"]
+            table.summary = previous["summary"]
+            _replace_records(s, element_id, previous["records"] or [])
+    return previous["action"]
 
 
 def _table_region_inputs(element_id: uuid.UUID) -> dict | None:

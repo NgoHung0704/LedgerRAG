@@ -71,6 +71,27 @@ def delete_element(element_id: uuid.UUID) -> Response:
     return Response(status_code=204)
 
 
+@router.post("/{element_id}/undo")
+async def undo_element_edit(element_id: uuid.UUID) -> dict:
+    """Put this element back the way it was before the last edit, and re-index.
+
+    Reprocessing the document already undoes anything, but it re-runs the whole
+    file and discards every other correction made to it. This takes back one
+    element's last save — including "this is not a table", the one edit that
+    destroys a representation outright."""
+    from tablerag import indexing
+
+    action = await asyncio.to_thread(indexing.undo_element_edit, element_id)
+    if action is None:
+        raise HTTPException(404, "element not found, or nothing to undo")
+    await indexing.reindex_element(element_id)
+    with session_scope() as s:
+        detail = repo.get_element_detail(s, element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    detail["undone"] = action
+    return detail
+
+
 @router.post("/{element_id}/reread")
 async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict:
     """Have the parser VLM re-read this element's PAGE.

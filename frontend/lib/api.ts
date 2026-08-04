@@ -118,6 +118,8 @@ export type ElementView = {
   description: string | null;
   decorative: boolean;
   chart_check: string | null;
+  /** how many edits can still be taken back */
+  undo_steps: number;
   ocr: boolean;
   layout_suspect: boolean;
   unusable: boolean;
@@ -368,6 +370,14 @@ export const convertElementToText = (elementId: string) =>
   fetch(`${API_URL}/api/elements/${elementId}/convert-to-text`, {
     method: "POST",
   }).then((r) => jsonOrThrow<ElementDetail>(r));
+
+/** Put an element back the way it was before its last edit, and re-index.
+ * Reprocessing the document undoes anything, but re-runs the whole file and
+ * discards every other correction made to it. */
+export const undoElementEdit = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/undo`, { method: "POST" }).then(
+    (r) => jsonOrThrow<ElementDetail & { undone: string }>(r),
+  );
 
 /** How the VLM should re-read a page: a faithful transcription that keeps a
  * grid as a markdown table, an explanation of what the page says, or both. */
