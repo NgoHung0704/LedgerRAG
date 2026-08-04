@@ -295,6 +295,8 @@ _VEC_BAND_MIN_HEIGHT = 3.0    # taller than a hairline: a row band, not a rule
 _VEC_MIN_BANDS = 4            # below this, equal heights are a coincidence
 _VEC_BAND_MAJORITY = 0.6      # this share sharing one height = rows, not bars
 _VEC_TABLE_IOU = 0.5          # a cluster IS a table only if they coincide
+_LEGEND_REACH = 1.5           # of the figure's width: how far its key may sit
+_LEGEND_MAX_PATHS = 12        # above this a figure carries its own labels
 
 
 def _iou(a: fitz.Rect, b: fitz.Rect) -> float:
@@ -367,18 +369,51 @@ def looks_like_table_striping(rects: list[fitz.Rect]) -> bool:
     return max(tally.values()) / len(bands) >= _VEC_BAND_MAJORITY
 
 
+def with_legend(box: fitz.Rect, paths: int,
+                aside: list[fitz.Rect]) -> fitz.Rect:
+    """Grow a figure to take in a key drawn beside it.
+
+    A doughnut's key sits in its own cluster — 30 points tall, under the size
+    floor — so it was dropped, and the crop reaching the model held the ring
+    without a single label. It said, correctly, that nothing was labelled, and
+    the figure was written off as decorative: three values lost because the
+    key was standing next to the picture instead of inside it.
+
+    Only a figure of very FEW paths reaches out. That is what says its labels
+    cannot be inside it: a doughnut is three arcs, while a line chart carrying
+    its own axis is two hundred. Without that condition the line chart reached
+    across the page and swallowed the risk scale in the next column, which sat
+    23 points away and looked exactly like a key."""
+    if paths > _LEGEND_MAX_PATHS:
+        return box
+    grown = fitz.Rect(box)
+    for other in aside:
+        if other.y1 < box.y0 or other.y0 > box.y1:
+            continue                              # not level with the figure
+        gap = max(other.x0 - box.x1, box.x0 - other.x1, 0.0)
+        if gap <= _LEGEND_REACH * box.width:
+            grown |= other
+    return grown
+
+
 def detect_vector_figures(page: fitz.Page,
                           table_rects: list[fitz.Rect]) -> list[Region]:
     """Charts drawn as vector paths — invisible to the image-block rule."""
     marks = _drawing_marks(page)
     if not marks:
         return []
+    clusters = cluster_rects(marks)
+    aside = [box for box, count in clusters
+             if count < _VEC_MIN_PATHS
+             or box.width < _VEC_MIN_WIDTH or box.height < _VEC_MIN_HEIGHT]
+
     regions: list[Region] = []
-    for box, count in cluster_rects(marks):
+    for box, count in clusters:
         if count < _VEC_MIN_PATHS:
             continue
         if box.width < _VEC_MIN_WIDTH or box.height < _VEC_MIN_HEIGHT:
             continue
+        box = with_legend(box, count, aside)
         # a bordered table is also a cluster of paths; it is already an
         # element, and describing its picture would duplicate it. The test is
         # COINCIDENCE, not overlap: find_tables can return a bogus region

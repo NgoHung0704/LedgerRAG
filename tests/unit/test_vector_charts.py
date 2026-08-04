@@ -217,3 +217,35 @@ def test_a_chart_with_nothing_to_group_returns_nothing():
     from tablerag.ingestion.chart_check import bar_groups
     page = bar_chart_pdf([10, 25])          # too few to be a series
     assert bar_groups(page, (0, 0, 400, 500)) == []
+
+
+# --- a key drawn beside its figure ----------------------------------------
+
+def test_a_doughnut_reaches_for_the_key_beside_it():
+    """Its key is a cluster of its own, under the size floor, so it was
+    dropped — and the model, shown a ring with no labels, correctly said
+    nothing was labelled and the figure was written off as decorative."""
+    from tablerag.ingestion.layout import with_legend
+
+    donut = fitz.Rect(135, 708, 209, 776)
+    key = fitz.Rect(293, 725, 357, 755)
+    assert with_legend(donut, 3, [key]) == fitz.Rect(135, 708, 357, 776)
+
+
+def test_a_figure_carrying_its_own_labels_does_not_reach():
+    """The line chart has two hundred paths — its axis is inside it. Without
+    this it crossed the page and swallowed the risk scale in the next column,
+    23 points away and shaped exactly like a key."""
+    from tablerag.ingestion.layout import with_legend
+
+    chart = fitz.Rect(26, 271, 395, 429)
+    risk_scale = fitz.Rect(418, 330, 588, 348)
+    assert with_legend(chart, 191, [risk_scale]) == chart
+
+
+def test_a_neighbour_that_is_not_level_with_the_figure_is_left_alone():
+    from tablerag.ingestion.layout import with_legend
+
+    donut = fitz.Rect(135, 708, 209, 776)
+    elsewhere = fitz.Rect(293, 200, 357, 230)
+    assert with_legend(donut, 3, [elsewhere]) == donut
