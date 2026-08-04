@@ -24,6 +24,8 @@ from tablerag.ingestion.chunking import chunk_text
 from tablerag.ingestion.convert import ConversionError, needs_conversion, to_pdf
 from tablerag.ingestion.extract import PdfError
 from tablerag.ingestion.layout import PageLayout, analyze_document, crop_region_png
+from tablerag.ingestion.chart_check import agreement as chart_agreement
+from tablerag.ingestion.chart_check import read_numbers
 from tablerag.ingestion.ocr import describe_figure, ocr_page
 from tablerag.ingestion.table_pipeline import parse_table_region, summarize_table
 from tablerag.models.base import ModelProvider, TableCtx, Vector
@@ -277,6 +279,7 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                     logger.exception("doc %s page %d: figure description "
                                      "failed; keeping image only",
                                      doc_id, layout.page)
+            confidence, needs_review = 1.0, False
             if description:
                 meta["description"] = description
                 meta["description_source"] = "vlm"
@@ -284,11 +287,27 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                     # a logo or a letterhead: keep what the model said for the
                     # reviewer, but do not put it in the index as content
                     meta["figure_kind"] = "decorative"
+                if region.bars:
+                    # the bars were measured from the PDF, so the numbers the
+                    # model claims to have read are checkable — the only
+                    # deterministic signal available for a picture
+                    score, note = chart_agreement(
+                        region.bars, read_numbers(description))
+                    meta["chart_check"] = note
+                    # a check that could not run is not a failed check
+                    if score is not None:
+                        confidence = round(score, 3)
+                        needs_review = (score
+                                        < settings.figure_chart_min_agreement)
+                    if needs_review:
+                        logger.warning(
+                            "doc %s page %d: the chart's bars do not match the "
+                            "values read from it (%s)", doc_id, layout.page, note)
 
             element = repo.add_element(
                 s, doc_id, layout.page, bbox=list(region.bbox), type_="figure",
-                crop_image_path=crop_key, confidence=1.0, meta=meta,
-                element_id=element_id)
+                crop_image_path=crop_key, confidence=confidence,
+                needs_review=needs_review, meta=meta, element_id=element_id)
             if description and informative:
                 figures_out.append(element_id)
                 chunks = chunk_text(

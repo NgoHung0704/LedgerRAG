@@ -170,6 +170,11 @@ class Settings(BaseSettings):
     # off the page. The cap bounds what one pathological document can cost.
     figure_describe_enabled: bool = True
     figure_describe_max_per_doc: int = 30
+    # A vector chart's bars are measurable, so the numbers a model claims to
+    # have read off it can be checked against them. Measured on a fund
+    # factsheet: a correct reading scores 0.998, a single transposed digit
+    # 0.55, an invented value 0.80. Below this the figure goes to Review.
+    figure_chart_min_agreement: float = 0.95
 
     # consume folder (Paperless-style bulk ingest). Empty = disabled. Drop PDFs
     # into consume_dir/<KB name>/*.pdf; the consumer service (tablerag.ingestion

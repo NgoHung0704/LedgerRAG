@@ -12,11 +12,13 @@ corpus defeats find_tables, a PP-Structure detector can be swapped in behind
 from __future__ import annotations
 
 import io
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 import fitz  # PyMuPDF
 from PIL import Image
 
+from tablerag.ingestion.chart_check import chart_bars
 from tablerag.ingestion.extract import PdfError
 
 # image blocks smaller than this fraction of the page are decorations, not figures
@@ -51,6 +53,11 @@ class Region:
     # text regions: the page lays its text out in columns (a slide or diagram),
     # so the flattened reading order is not faithful — flagged for review
     layout_suspect: bool = False
+    # figures: drawn as vector paths rather than pasted as an image. Its bars
+    # have exact coordinates, so what a model reads off it can be CHECKED
+    # (see ingestion/chart_check.py)
+    vector: bool = False
+    bars: list[float] = field(default_factory=list)  # figures: bar lengths
 
 
 @dataclass
@@ -267,6 +274,127 @@ def detect_tables(page: fitz.Page) -> list[tuple]:
     return found
 
 
+# --- vector figures -------------------------------------------------------
+# A chart emitted by PowerPoint/Excel is not an image block: it is vector paths
+# plus text, and the text is often OUTLINED (drawn as curves), so its numbers
+# are in NO text layer at all. Measured on a fund factsheet: 0 image blocks and
+# 281/312/59 vector paths across three pages, with every value in every chart
+# unextractable — about fifty numbers that ingestion simply lost.
+_VEC_MERGE_GAP = 8.0          # points; paths closer than this are one picture
+# 3, not more: a doughnut chart is three arcs. Measured on the factsheet, a
+# threshold of 6 was exactly what dropped it.
+_VEC_MIN_PATHS = 3
+_VEC_MIN_WIDTH = 60.0
+_VEC_MIN_HEIGHT = 40.0
+_VEC_PANEL_AREA_RATIO = 0.12  # bigger than this is a background, not a mark
+_VEC_RULE_WIDTH_RATIO = 0.45  # a wide, flat rect is a separator
+_VEC_RULE_HEIGHT = 4.0
+_VEC_UNIFORM_TOL = 1.0        # points; below this two rects are "the same size"
+_VEC_BAND_MIN_HEIGHT = 3.0    # taller than a hairline: a row band, not a rule
+_VEC_MIN_BANDS = 4            # below this, equal heights are a coincidence
+_VEC_BAND_MAJORITY = 0.6      # this share sharing one height = rows, not bars
+_VEC_TABLE_IOU = 0.5          # a cluster IS a table only if they coincide
+
+
+def _iou(a: fitz.Rect, b: fitz.Rect) -> float:
+    """Intersection over union — how much two regions ARE each other."""
+    inter = (fitz.Rect(a) & b).get_area()
+    union = a.get_area() + fitz.Rect(b).get_area() - inter
+    return inter / union if union > 0 else 0.0
+
+
+def _drawing_marks(page: fitz.Page) -> list[fitz.Rect]:
+    """Vector paths with the page's DECORATION removed.
+
+    Without this every chart merges into the coloured header and the grey side
+    panel that bridge them, and one cluster comes back covering the page."""
+    page_area = page.rect.get_area()
+    marks = []
+    for drawing in page.get_drawings():
+        rect = fitz.Rect(drawing["rect"])
+        if rect.get_area() > _VEC_PANEL_AREA_RATIO * page_area:
+            continue                                    # panel / background
+        if (rect.width > _VEC_RULE_WIDTH_RATIO * page.rect.width
+                and rect.height < _VEC_RULE_HEIGHT):
+            continue                                    # separator rule
+        if rect.width < 1 and rect.height < 1:
+            continue                                    # artefact
+        marks.append(rect)
+    return marks
+
+
+def cluster_rects(rects: list[fitz.Rect],
+                  gap: float = _VEC_MERGE_GAP) -> list[tuple[fitz.Rect, int]]:
+    """Merge rects whose inflated boxes touch. Returns (bbox, path count)."""
+    groups: list[list] = [[fitz.Rect(r), 1] for r in rects]
+    merged = True
+    while merged:
+        merged = False
+        for i in range(len(groups)):
+            for j in range(i + 1, len(groups)):
+                a, b = groups[i][0], groups[j][0]
+                if (a + (-gap, -gap, gap, gap)).intersects(
+                        b + (-gap, -gap, gap, gap)):
+                    groups[i] = [a | b, groups[i][1] + groups[j][1]]
+                    del groups[j]
+                    merged = True
+                    break
+            if merged:
+                break
+    return [(g[0], g[1]) for g in groups]
+
+
+def looks_like_table_striping(rects: list[fitz.Rect]) -> bool:
+    """Is this cluster a table's alternating row backgrounds?
+
+    Those are row bands of one HEIGHT — a borderless table already extracted
+    as text, which must not come back as a "figure" and be described a second
+    time. A bar chart is the opposite: its whole point is that the bars differ.
+
+    Widths are not part of the test: a striped table with two column blocks
+    draws two widths per row, and requiring one width missed it. Hairlines are
+    excluded — a line chart's gridlines are perfectly uniform, and testing
+    them threw the chart away. The test is on the DOMINANT height rather than
+    the spread, because a header band is taller than the rows under it and
+    that one outlier was enough to let a table through."""
+    bands = [r for r in rects if r.height >= _VEC_BAND_MIN_HEIGHT]
+    if len(bands) < _VEC_MIN_BANDS:
+        return False
+    tally: dict[float, int] = defaultdict(int)
+    for band in bands:
+        tally[round(band.height / _VEC_UNIFORM_TOL)] += 1
+    return max(tally.values()) / len(bands) >= _VEC_BAND_MAJORITY
+
+
+def detect_vector_figures(page: fitz.Page,
+                          table_rects: list[fitz.Rect]) -> list[Region]:
+    """Charts drawn as vector paths — invisible to the image-block rule."""
+    marks = _drawing_marks(page)
+    if not marks:
+        return []
+    regions: list[Region] = []
+    for box, count in cluster_rects(marks):
+        if count < _VEC_MIN_PATHS:
+            continue
+        if box.width < _VEC_MIN_WIDTH or box.height < _VEC_MIN_HEIGHT:
+            continue
+        # a bordered table is also a cluster of paths; it is already an
+        # element, and describing its picture would duplicate it. The test is
+        # COINCIDENCE, not overlap: find_tables can return a bogus region
+        # covering most of the page (it does on the factsheet this was built
+        # from), and mere overlap let that swallow every chart under it.
+        if any(_iou(box, tr) > _VEC_TABLE_IOU for tr in table_rects):
+            continue
+        inside = [r for r in marks if box.contains(r)]
+        if looks_like_table_striping(inside):
+            continue
+        # measured HERE because this is where the fitz page lives; ingestion
+        # only ever sees the page image
+        regions.append(Region(type="figure", bbox=tuple(box), vector=True,
+                              bars=chart_bars(page, tuple(box))))
+    return regions
+
+
 def looks_like_column_layout(boxes: list[tuple[float, float, float, float]],
                              page_width: float) -> bool:
     """Does this page lay its text out in columns (a slide / diagram grid)?
@@ -373,6 +501,14 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
             type="text", bbox=tuple(text_bbox), text="\n\n".join(text_parts),
             layout_suspect=looks_like_column_layout(kept_boxes, rect.width)))
     layout.regions.extend(figures)
+
+    # charts drawn as vector paths — no image block, so nothing above sees
+    # them. Skip any that a raster figure already covers.
+    for region in detect_vector_figures(page, table_rects):
+        box = fitz.Rect(region.bbox)
+        if any(_overlap_ratio(box, fitz.Rect(f.bbox)) > 0.3 for f in figures):
+            continue
+        layout.regions.append(region)
     layout.regions.sort(key=lambda r: (r.bbox[1], r.bbox[0]))
     return layout
 

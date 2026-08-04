@@ -754,6 +754,12 @@ ${r.findings}` : ""),
             >
               {element.description}
             </p>
+            {element.chart_check && (
+              <p className="mt-1.5 text-[12px] text-slate-400 dark:text-slate-500">
+                Bars measured from the PDF vs the values read off them:{" "}
+                {element.chart_check}
+              </p>
+            )}
           </div>
         )}
 

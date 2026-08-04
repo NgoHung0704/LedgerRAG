@@ -117,6 +117,7 @@ export type ElementView = {
   caption: string | null;
   description: string | null;
   decorative: boolean;
+  chart_check: string | null;
   ocr: boolean;
   layout_suspect: boolean;
   unusable: boolean;

@@ -363,6 +363,9 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
             # picture to carry any information at all
             "description": (element.meta or {}).get("description"),
             "decorative": (element.meta or {}).get("figure_kind") == "decorative",
+            # why a chart was trusted or flagged: its drawn bars vs the values
+            # the model says it read off them
+            "chart_check": (element.meta or {}).get("chart_check"),
             "ocr": bool((element.meta or {}).get("ocr")),
             "layout_suspect": bool((element.meta or {}).get("layout_suspect")),
             "unusable": bool((element.meta or {}).get("unusable")),
