@@ -81,15 +81,30 @@ DEFAULT_IDENTITY = (
 
 IDENTITY_HEADER = "You are {identity}\n\n"
 
+# Appended only when a figure description is actually among the sources. Kept
+# out of SYSTEM_PROMPT deliberately: that prompt IS the measured configuration,
+# and a corpus without figures must not pay for a rule it cannot use — its
+# answers stay byte-identical to what the gates scored.
+FIGURE_RULE = """
+- A source marked "FIGURE DESCRIPTION" is not text from the document: it is a \
+reading of a picture. Use it to say what the figure shows and to point the \
+user at it, and say when an answer comes from a figure. Quote a number from it \
+only if the description presents that number as printed on the figure; never \
+present it as a value the document states.\
+"""
 
-def build_system_prompt(extra_instructions: str = "",
-                        identity: str = "") -> str:
+
+def build_system_prompt(extra_instructions: str = "", identity: str = "",
+                        has_figures: bool = False) -> str:
     """The answering prompt: safety core, plus optional operator layers.
 
     An identity is prepended ONLY when the operator set one — with none, the
     prompt stays byte-identical to the measured configuration, so the eval
-    gates cannot move on an unrelated change."""
+    gates cannot move on an unrelated change. The figure rule is conditional
+    for the same reason."""
     prompt = SYSTEM_PROMPT
+    if has_figures:
+        prompt += FIGURE_RULE
     ident = (identity or "").strip()
     if ident:
         prompt = IDENTITY_HEADER.format(identity=ident) + prompt
@@ -99,7 +114,15 @@ def build_system_prompt(extra_instructions: str = "",
 
 def _render_source(citation_index: int, block: SourceBlock) -> str:
     header = f"[{citation_index}] ({block.filename}, page {block.page}"
-    header += ", table)" if block.kind == "table" else ")"
+    if block.kind == "table":
+        header += ", table)"
+    elif block.from_figure:
+        # the content came from the VLM looking at a picture, not from the
+        # page's text; conflating the two is how a chart caption becomes a
+        # quoted fact
+        header += ", FIGURE DESCRIPTION — a reading of an image, not text)"
+    else:
+        header += ")"
     if block.needs_review:
         header += " LOW CONFIDENCE — do not assert numbers from this source"
     return f"{header}\n{block.content}"
@@ -138,7 +161,9 @@ class GenerateAnswer:
             return
         messages = [
             Msg(role="system",
-                content=build_system_prompt(ctx.extra_instructions, ctx.identity)),
+                content=build_system_prompt(
+                    ctx.extra_instructions, ctx.identity,
+                    has_figures=any(b.from_figure for b in ctx.sources))),
             Msg(role="user", content=(
                 f"{build_history_block(ctx)}"
                 f"Sources:\n\n{build_context_block(ctx)}\n\n"

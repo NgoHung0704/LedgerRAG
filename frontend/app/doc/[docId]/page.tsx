@@ -728,11 +728,32 @@ ${r.findings}` : ""),
           </div>
         )}
 
-        {/* figure */}
+        {/* figure: the caption is the document's own words, the description is
+            the parser VLM's reading of the picture — never conflate the two */}
         {element.type === "figure" && element.caption && (
           <div>
             <SectionLabel>Caption</SectionLabel>
             <p className="text-[13px] italic text-ink-muted">{element.caption}</p>
+          </div>
+        )}
+        {element.type === "figure" && element.description && (
+          <div>
+            <SectionLabel>
+              Description{" "}
+              <span className="font-normal normal-case tracking-normal text-slate-400">
+                — read from the image by the parser model
+                {element.decorative && ", judged decorative and not indexed"}
+              </span>
+            </SectionLabel>
+            <p
+              className={`whitespace-pre-wrap text-[13px] ${
+                element.decorative
+                  ? "text-slate-400 dark:text-slate-500"
+                  : "text-slate-600 dark:text-slate-300"
+              }`}
+            >
+              {element.description}
+            </p>
           </div>
         )}
 

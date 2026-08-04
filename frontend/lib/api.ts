@@ -37,6 +37,9 @@ export type Citation = {
   snippet: string;
   score: number;
   needs_review: boolean;
+  /** this source's text is the parser model's reading of a picture, not text
+   *  extracted from the page */
+  from_figure: boolean;
 };
 
 export type Verification = {
@@ -112,6 +115,8 @@ export type ElementView = {
   needs_review: boolean;
   parse_error: string | null;
   caption: string | null;
+  description: string | null;
+  decorative: boolean;
   ocr: boolean;
   layout_suspect: boolean;
   unusable: boolean;

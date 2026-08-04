@@ -28,7 +28,8 @@ export default function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-      className="inline-flex items-center gap-2 rounded border border-line px-2.5 py-1.5 text-[12px] font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-400"
+      // lives on the rail, so it is styled against graphite in both themes
+      className="inline-flex items-center gap-2 rounded border border-rail-line px-2.5 py-1.5 text-[12px] font-medium text-rail-ink transition-colors hover:border-indigo-500 hover:text-indigo-300"
     >
       {dark ? <Sun size={14} /> : <Moon size={14} />}
       {dark ? "Light" : "Dark"}

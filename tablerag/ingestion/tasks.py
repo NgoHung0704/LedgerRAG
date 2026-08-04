@@ -24,7 +24,7 @@ from tablerag.ingestion.chunking import chunk_text
 from tablerag.ingestion.convert import ConversionError, needs_conversion, to_pdf
 from tablerag.ingestion.extract import PdfError
 from tablerag.ingestion.layout import PageLayout, analyze_document, crop_region_png
-from tablerag.ingestion.ocr import ocr_page
+from tablerag.ingestion.ocr import describe_figure, ocr_page
 from tablerag.ingestion.table_pipeline import parse_table_region, summarize_table
 from tablerag.models.base import ModelProvider, TableCtx, Vector
 from tablerag.models.registry import get_provider
@@ -177,7 +177,10 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
 
 def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                  locale: str | None, chunks_out: list, records_out: list,
-                 summaries_out: list, double_read: bool = True) -> None:
+                 summaries_out: list, figures_out: list,
+                 double_read: bool = True) -> None:
+    """`figures_out` collects the figures actually described. It doubles as the
+    per-document budget: one deck of 200 slides must not spend 200 VLM calls."""
     page_key = page_image_key(kb_id, doc_id, layout.page)
     store.put(page_key, layout.image_png, "image/png")
     full_bbox = [0.0, 0.0, layout.width, layout.height]
@@ -256,15 +259,44 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                           records_out, summaries_out, double_read=double_read,
                           extra_meta=extra)
         elif region.type == "figure":
-            # C5: store image + caption, mark figure, never extract data
+            # C5: store image + caption, mark figure, never extract data.
+            # What the VLM adds is a DESCRIPTION of the picture — the element
+            # stays type='figure' so the answer layer can say so.
             element_id = uuid.uuid4()
             crop_key = element_image_key(kb_id, doc_id, element_id)
             store.put(crop_key, crop, "image/png")
-            repo.add_element(s, doc_id, layout.page, bbox=list(region.bbox),
-                             type_="figure", crop_image_path=crop_key,
-                             confidence=1.0,
-                             meta={"caption": region.caption} if region.caption else {},
-                             element_id=element_id)
+            meta = {"caption": region.caption} if region.caption else {}
+
+            description, informative = "", False
+            if (settings.figure_describe_enabled
+                    and len(figures_out) < settings.figure_describe_max_per_doc):
+                try:
+                    description, informative = asyncio.run(
+                        describe_figure(crop, region.caption))
+                except Exception:  # noqa: BLE001 — a figure must not fail a doc
+                    logger.exception("doc %s page %d: figure description "
+                                     "failed; keeping image only",
+                                     doc_id, layout.page)
+            if description:
+                meta["description"] = description
+                meta["description_source"] = "vlm"
+                if not informative:
+                    # a logo or a letterhead: keep what the model said for the
+                    # reviewer, but do not put it in the index as content
+                    meta["figure_kind"] = "decorative"
+
+            element = repo.add_element(
+                s, doc_id, layout.page, bbox=list(region.bbox), type_="figure",
+                crop_image_path=crop_key, confidence=1.0, meta=meta,
+                element_id=element_id)
+            if description and informative:
+                figures_out.append(element_id)
+                chunks = chunk_text(
+                    description, target_tokens=settings.chunk_target_tokens,
+                    overlap_ratio=settings.chunk_overlap_ratio)
+                rows = repo.add_chunks(s, element.id,
+                                       [(c.text, c.token_count) for c in chunks])
+                chunks_out.extend((row.id, row.text, element.id) for row in rows)
 
 
 def _as_pdf(store, settings, kb_id, doc_id, file_path: str,
@@ -323,12 +355,13 @@ def process_document(self, doc_id_str: str) -> None:
         chunks_out: list[tuple[uuid.UUID, str, uuid.UUID]] = []
         records_out: list[tuple[uuid.UUID, str, uuid.UUID]] = []
         summaries_out: list[tuple[uuid.UUID, str]] = []
+        figures_out: list[uuid.UUID] = []
         with session_scope() as s:
             repo.delete_doc_elements(s, doc_id)
             for layout in pages:
                 _ingest_page(s, store, settings, kb_id, doc_id, layout, locale,
                              chunks_out, records_out, summaries_out,
-                             double_read=double_read)
+                             figures_out, double_read=double_read)
             repo.set_document_status(s, doc_id, "indexing", page_count=len(pages))
 
         embedder = get_provider("embedder")

@@ -94,7 +94,8 @@ class AssembleContext:
                      filename=b.filename, page=b.page, element_id=b.element_id,
                      chunk_id=b.chunk_id, snippet=b.snippet, score=b.score,
                      crop_image_path=b.crop_image_path,
-                     confidence=b.confidence, needs_review=b.needs_review)
+                     confidence=b.confidence, needs_review=b.needs_review,
+                     from_figure=b.from_figure)
             for i, b in enumerate(blocks)
         ]
         return ctx
@@ -106,7 +107,8 @@ class AssembleContext:
             element_id=c.element_id, chunk_id=c.chunk_id, content=c.text,
             snippet=c.text[:SNIPPET_CHARS], score=scores.get(c.chunk_id, 0.0),
             crop_image_path=c.crop_image_path, confidence=c.confidence,
-            needs_review=c.needs_review)
+            needs_review=c.needs_review,
+            from_figure=c.element_type == "figure")
 
     @staticmethod
     def _table_block(t: TableSource, scores: dict,

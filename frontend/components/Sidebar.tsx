@@ -63,30 +63,36 @@ export default function Sidebar({
 
       <aside
         id="app-nav"
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-line bg-surface transition-transform duration-200 lg:static lg:translate-x-0 ${
+        // The rail is the frame around the documents, so it is graphite in both
+        // themes — light mode changes the table the pages sit on, not the frame.
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-rail-line bg-rail text-rail-ink transition-transform duration-200 lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-start gap-2 px-5 pb-4 pt-5">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
             <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
-              <rect x="2" y="2.5" width="28" height="27" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-indigo-700 dark:text-indigo-300" />
-              <line x1="2" y1="10" x2="30" y2="10" stroke="currentColor" strokeWidth="1.2" className="text-indigo-700 dark:text-indigo-300" />
-              <line x1="12" y1="10" x2="12" y2="29.5" stroke="currentColor" strokeWidth="1.2" className="text-indigo-700 dark:text-indigo-300" />
+              <rect x="2" y="2.5" width="28" height="27" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-indigo-400" />
+              <line x1="2" y1="10" x2="30" y2="10" stroke="currentColor" strokeWidth="1.2" className="text-indigo-400" />
+              <line x1="12" y1="10" x2="12" y2="29.5" stroke="currentColor" strokeWidth="1.2" className="text-indigo-400" />
               <line x1="15.5" y1="16" x2="27" y2="16" stroke="currentColor" strokeWidth="1.6" className="text-amber-500" />
-              <line x1="15.5" y1="21" x2="24" y2="21" stroke="currentColor" strokeWidth="1" className="text-indigo-700 opacity-50 dark:text-indigo-300" />
+              <line x1="15.5" y1="21" x2="24" y2="21" stroke="currentColor" strokeWidth="1" className="text-indigo-400 opacity-50" />
             </svg>
             <div className="min-w-0">
-              <div className="font-serif text-[17px] font-semibold leading-tight tracking-tight">
+              <div className="font-serif text-[17px] font-semibold leading-tight tracking-tight text-rail-hi">
                 LedgerRAG
               </div>
-              <div className="truncate text-[11px] italic leading-tight text-ink-subtle">
+              <div className="truncate text-[11px] italic leading-tight text-rail-ink/60">
                 parse it right, or fail honestly
               </div>
             </div>
           </Link>
           <div className="ml-auto lg:hidden">
-            <IconButton label="Close navigation" onClick={onClose}>
+            <IconButton
+              label="Close navigation"
+              onClick={onClose}
+              className="!text-rail-ink hover:!bg-white/10 hover:!text-rail-hi"
+            >
               <X size={18} />
             </IconButton>
           </div>
@@ -100,10 +106,12 @@ export default function Sidebar({
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                // the active page is marked by a verdigris edge, not a filled
+                // pill — the rail should read as a margin, not a toolbar
+                className={`flex items-center gap-2.5 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
-                    : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
+                    ? "bg-white/[0.07] text-rail-hi shadow-[inset_2px_0_0_theme(colors.indigo.400)]"
+                    : "text-rail-ink hover:bg-white/[0.05] hover:text-rail-hi"
                 }`}
               >
                 <Icon size={17} strokeWidth={2} aria-hidden="true" />
@@ -113,15 +121,15 @@ export default function Sidebar({
           })}
         </nav>
 
-        <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-3">
+        <div className="flex items-center justify-between gap-2 border-t border-rail-line px-4 py-3">
           {me ? (
             <div className="flex min-w-0 items-center gap-2">
-              <UserCircle2 size={20} className="shrink-0 text-ink-faint" aria-hidden="true" />
+              <UserCircle2 size={20} className="shrink-0 text-rail-ink/50" aria-hidden="true" />
               <div className="min-w-0">
-                <div className="truncate text-[12px] font-medium text-ink">
+                <div className="truncate text-[12px] font-medium text-rail-hi">
                   {me.username}
                 </div>
-                <div className="text-[10px] uppercase tracking-wide text-ink-subtle">
+                <div className="text-[10px] uppercase tracking-wide text-rail-ink/60">
                   {me.is_admin ? "Admin" : "User"}
                 </div>
               </div>

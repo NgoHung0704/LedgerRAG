@@ -75,6 +75,34 @@ _BOTH_PROMPT = _STRUCTURED_PROMPT.replace(
     "that is not on the page.\n"
     "- Output only that — no preamble, no commentary.")
 
+# A figure has no text layer: stored for provenance, it is invisible to search.
+# What the VLM writes here is a DESCRIPTION of a picture, not text read off the
+# page, so the prompt's hardest job is the line between the two — an unlabelled
+# bar has no value, and reading one off it is exactly the invention this project
+# exists to avoid.
+_FIGURE_PROMPT = """\
+Describe this figure taken from a document, in the SAME language as its labels.
+
+- Say what kind of figure it is (chart, diagram, photo, map, screenshot, logo) \
+and what it shows.
+- Copy EVERY printed label exactly: title, axis names, units, legend entries, \
+series names, and any value written on the figure. Numbers character-exact.
+- Describe only what is DRAWN. Never infer a cause, a conclusion or a trend the \
+figure does not state, and NEVER read a value that is not printed — an \
+unlabelled bar or slice has no number, so say it is not labelled rather than \
+estimating it.
+- Write [?] for anything unreadable. Keep it under 8 lines.
+
+Then output exactly one final line:
+INFORMATIVE: yes
+or
+INFORMATIVE: no
+Answer "no" when the image says nothing about the document's subject — a logo, \
+a letterhead, a decorative rule, a signature, a background photo.\
+"""
+
+_INFORMATIVE_RE = re.compile(r"INFORMATIVE:\s*(yes|no)\s*$", re.IGNORECASE)
+
 # what the caller may ask for
 REREAD_MODES = {
     "structure": _STRUCTURED_PROMPT,   # faithful, grid -> markdown table
@@ -109,6 +137,28 @@ async def reread_page(image_png: bytes, mode: str = "structure") -> str:
     retrieval and rendered as markdown in answers, so tags would pollute the
     vector and show up as literal `<table>` in the chat."""
     return await _transcribe(image_png, REREAD_MODES[mode])
+
+
+async def describe_figure(image_png: bytes,
+                          caption: str | None = None) -> tuple[str, bool]:
+    """Describe a figure crop. Returns (description, informative).
+
+    `informative` is False for a logo, a letterhead, a signature — images that
+    would only add noise to the index. The caller stores the description either
+    way (a reviewer may disagree) but indexes only the informative ones."""
+    prompt = _FIGURE_PROMPT
+    if caption:
+        # the printed caption is the document's own words for this figure and
+        # anchors the description; it is evidence, not an instruction
+        prompt += f"\n\nThe document prints this caption with the figure: {caption}"
+    text = await _transcribe(image_png, prompt)
+
+    informative = True
+    match = _INFORMATIVE_RE.search(text)
+    if match:
+        informative = match.group(1).lower() == "yes"
+        text = text[:match.start()].rstrip()
+    return text, informative
 
 
 async def ocr_page(image_png: bytes) -> tuple[str, bool]:

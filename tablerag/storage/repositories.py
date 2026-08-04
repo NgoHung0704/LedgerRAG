@@ -263,6 +263,7 @@ class ChunkContext:
     needs_review: bool
     doc_id: uuid.UUID
     filename: str
+    element_type: str = "text"  # 'figure' -> the text is a description
 
 
 def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkContext]:
@@ -279,7 +280,8 @@ def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkCont
             chunk_id=chunk.id, text=chunk.text, element_id=element.id,
             page=element.page, crop_image_path=element.crop_image_path,
             confidence=element.confidence, needs_review=element.needs_review,
-            doc_id=document.id, filename=document.filename)
+            doc_id=document.id, filename=document.filename,
+            element_type=element.type)
         for chunk, element, document in rows
     }
     # preserve caller's (relevance) ordering
@@ -357,6 +359,10 @@ def get_document_view(s: Session, doc_id: uuid.UUID,
             "needs_review": element.needs_review,
             "parse_error": (element.meta or {}).get("parse_error"),
             "caption": (element.meta or {}).get("caption"),
+            # what the VLM saw in the picture, and whether it judged the
+            # picture to carry any information at all
+            "description": (element.meta or {}).get("description"),
+            "decorative": (element.meta or {}).get("figure_kind") == "decorative",
             "ocr": bool((element.meta or {}).get("ocr")),
             "layout_suspect": bool((element.meta or {}).get("layout_suspect")),
             "unusable": bool((element.meta or {}).get("unusable")),
