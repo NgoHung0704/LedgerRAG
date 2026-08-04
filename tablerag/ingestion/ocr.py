@@ -98,10 +98,7 @@ INFORMATIVE: yes
 or
 INFORMATIVE: no
 Answer "no" when the image says nothing about the document's subject — a logo, \
-a letterhead, a decorative rule, a signature, a background photo. A title \
-banner is "no" even when it carries the document's name or date: that text \
-sits on the page and is already captured with it, so describing it again only \
-stores the same words twice.\
+a letterhead, a decorative rule, a signature, a background photo.\
 """
 
 _INFORMATIVE_RE = re.compile(r"INFORMATIVE:\s*(yes|no)\s*$", re.IGNORECASE)

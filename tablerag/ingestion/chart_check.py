@@ -55,6 +55,33 @@ def read_numbers(text: str) -> list[float]:
     return out
 
 
+def duplicates_page_text(description: str, page_text: str) -> bool:
+    """Does this description carry no number the page's text does not already?
+
+    A title banner holds the document's name and date, so a model calls it
+    informative — reasonably, it IS information. But that text is real text on
+    the page and already indexed, so describing it stores the same words a
+    second time, and in a corpus of near-identical factsheets those copies
+    compete with each other in retrieval.
+
+    Telling the model this in the prompt was tried and measured: it did not
+    change the judgement, and it made every description more verbose — the
+    numbers read off one chart went from 5 stray to 29, and the geometric
+    agreement on another fell from 0.91 to 0.82. So the rule lives here, where
+    it is deterministic and costs the model nothing. It is the same test
+    layout.duplicates_table_text already applies to text blocks.
+
+    Numbers, not words: "orange", "banner" and "logo" are the model's own
+    vocabulary and appear nowhere on the page, while the facts a figure is
+    worth indexing for are its figures. A description with no numbers at all
+    is left to the model's own judgement.
+    """
+    numbers = set(read_numbers(description))
+    if not numbers:
+        return False
+    return numbers <= set(read_numbers(page_text))
+
+
 def _bars(page: fitz.Page, bbox: tuple[float, float, float, float]
           ) -> tuple[list[fitz.Rect], bool]:
     """The bars inside `bbox`, and whether the chart runs in columns.

@@ -291,3 +291,38 @@ def test_a_ruled_table_with_merged_cells_still_passes():
     merged = [["Effectifs", None, "2024"], [None, "Cadres", "120"],
               [None, "Employés", "340"]]
     assert looks_like_page_layout(merged) is False
+
+
+# --- a description that only repeats the page ------------------------------
+
+PAGE = ("EPSENS TRANSITION CLIMAT - Part A\nReporting au 30/09/2021\n"
+        "Actif net du portefeuille : 2,00 M€\nValeur liquidative : 16,267 €")
+
+
+def test_a_banner_description_adds_nothing_the_page_does_not_say():
+    """The model calls a title banner informative — reasonably, it holds the
+    fund name and the date. But that text is real text on the page and already
+    indexed, and in a corpus of near-identical factsheets a second copy only
+    competes with the first."""
+    from tablerag.ingestion.chart_check import duplicates_page_text
+
+    banner = ("Orange banner with the epsens logo, the title EPSENS TRANSITION "
+              "CLIMAT - Part A and Reporting au 30/09/2021.")
+    assert duplicates_page_text(banner, PAGE) is True
+
+
+def test_a_chart_whose_labels_are_outlined_adds_facts():
+    """Its numbers are drawn as curves, so they are in NO text layer — which
+    is the whole reason the figure is worth describing."""
+    from tablerag.ingestion.chart_check import duplicates_page_text
+
+    chart = "Industries 27,6 et 16,5 ; Matériaux de base 18,2 et 7,5."
+    assert duplicates_page_text(chart, PAGE) is False
+
+
+def test_a_description_without_numbers_is_left_to_the_model():
+    """Nothing to compare, so the INFORMATIVE flag decides — a diagram with no
+    figures must not be dropped on a vacuous truth."""
+    from tablerag.ingestion.chart_check import duplicates_page_text
+
+    assert duplicates_page_text("A process diagram of four steps.", PAGE) is False

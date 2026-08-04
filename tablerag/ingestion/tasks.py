@@ -25,7 +25,7 @@ from tablerag.ingestion.convert import ConversionError, needs_conversion, to_pdf
 from tablerag.ingestion.extract import PdfError
 from tablerag.ingestion.layout import PageLayout, analyze_document, crop_region_png
 from tablerag.ingestion.chart_check import agreement as chart_agreement
-from tablerag.ingestion.chart_check import read_numbers
+from tablerag.ingestion.chart_check import duplicates_page_text, read_numbers
 from tablerag.ingestion.ocr import describe_figure, ocr_page
 from tablerag.ingestion.table_pipeline import parse_table_region, summarize_table
 from tablerag.models.base import ModelProvider, TableCtx, Vector
@@ -227,6 +227,10 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                               double_read=double_read)
         return
 
+    # what the page says in real text — a figure whose description only repeats
+    # it is not worth a second copy in the index
+    page_text = next((r.text for r in layout.regions if r.type == "text"), "")
+
     for region in layout.regions:
         crop = crop_region_png(layout.image_png, layout.width, region.bbox)
         if region.type == "text":
@@ -287,6 +291,11 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                     # a logo or a letterhead: keep what the model said for the
                     # reviewer, but do not put it in the index as content
                     meta["figure_kind"] = "decorative"
+                elif duplicates_page_text(description, page_text):
+                    # a title banner: real information, but the page's own text
+                    # already carries it, so indexing this stores it twice
+                    informative = False
+                    meta["figure_kind"] = "duplicate"
                 if region.bars:
                     # the bars were measured from the PDF, so the numbers the
                     # model claims to have read are checkable — the only
