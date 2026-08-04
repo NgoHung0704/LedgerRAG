@@ -108,6 +108,13 @@ async def run(item: dict, pdf_dir: Path) -> dict:
     pdf = pdf_dir / item["pdf"]
     if not pdf.exists():
         return {"error": f"{pdf} not found"}
+    # exists but unreadable is the likelier accident — a half-finished copy,
+    # or an API error page saved under a .pdf name
+    head = pdf.read_bytes()[:5]
+    if head != b"%PDF-":
+        return {"error": f"{pdf.name} is {pdf.stat().st_size} bytes and does "
+                         f"not start with %PDF- (got {head!r}) — the copy did "
+                         f"not finish, or this is not a PDF"}
     found = figures_of(pdf, item["page"])
     index = item.get("index", 0)
     if index >= len(found):
@@ -136,7 +143,7 @@ def main() -> None:
              args.questions.read_text(encoding="utf-8").splitlines()
              if line.strip()]
 
-    rows, transcript = [], []
+    rows, errors, transcript = [], [], []
     print(f"{'id':22s} {'values':>7s} {'phantom':>7s} {'kind':>5s} "
           f"{'agree':>6s}  detail")
     print("-" * 78)
@@ -147,8 +154,11 @@ def main() -> None:
             result = {"error": str(e)}
         transcript.append({**item, **result})
         if "error" in result:
+            # an item that could not RUN is not an item the model got wrong.
+            # Folding it into the scores reported a broken input as "7
+            # invented values", which is the gate lying about the pipeline.
             print(f"{item['id']:22s} {'ERROR':>7s} — {result['error']}")
-            rows.append({"values": 0.0, "phantom": 1, "kind_ok": False})
+            errors.append(item["id"])
             continue
         rows.append(result)
         values = ("  —  " if result["values"] is None
@@ -174,13 +184,22 @@ def main() -> None:
     kinds = sum(1 for r in rows if r["kind_ok"]) / len(rows) if rows else 1.0
 
     print("-" * 78)
+    if errors:
+        print(f"NOT RUN: {len(errors)}/{len(items)} — {', '.join(errors)}")
+    if not rows:
+        # printing three PASS lines under "nothing ran" is how a gate comes to
+        # be believed when it has measured nothing at all
+        print("Nothing was measured. No score is reported.")
+        sys.exit(1)
+    if errors:
+        print("The scores below cover only what ran.")
     verdicts = [
         ("values ", value_rate, 0.95, f"{value_rate:.0%}"),
         ("phantom", 1.0 if phantoms == 0 else 0.0, 1.0,
          f"{phantoms} invented"),
         ("kind   ", kinds, 1.0, f"{kinds:.0%}"),
     ]
-    failed = False
+    failed = bool(errors)
     for name, score, target, shown in verdicts:
         ok = score >= target
         failed |= not ok
