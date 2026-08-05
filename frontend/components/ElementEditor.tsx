@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Image as ImageIcon, Sparkles, Wand2, X } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Maximize2,
+  Minimize2,
+  Sparkles,
+  Wand2,
+  X,
+} from "lucide-react";
 import { Portal } from "@/components/ui";
 import {
   deriveFromHtml,
@@ -61,6 +68,36 @@ export default function ElementEditor({
   // card behind this dialog, which meant closing the editor, hunting the page
   // for the card, and opening it again to check a single figure.
   const [showOriginal, setShowOriginal] = useState(Boolean(proposed));
+  // How big you like this window is a working habit, not a per-element choice,
+  // so it survives the dialog closing.
+  const [maximised, setMaximised] = useState(false);
+  useEffect(() => {
+    try {
+      setMaximised(localStorage.getItem("editor-max") === "1");
+    } catch {
+      /* storage disabled — the editor just starts windowed every time */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("editor-max", maximised ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [maximised]);
+
+  // Filling the screen removes the backdrop, and with it the click-outside way
+  // out — so Escape has to work. It steps down one level at a time rather than
+  // throwing away an edit on the first press.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (maximised) setMaximised(false);
+      else onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [maximised, onClose]);
 
   useEffect(() => {
     getElement(elementId)
@@ -158,11 +195,17 @@ export default function ElementEditor({
   return (
     <Portal>
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 ${
+        maximised ? "p-0" : "p-3 sm:p-6"
+      }`}
       onClick={onClose}
     >
       <div
-        className="flex h-full max-h-[92vh] w-full max-w-6xl flex-col rounded-xl bg-surface text-ink shadow-2xl"
+        className={`flex w-full flex-col bg-surface text-ink shadow-2xl ${
+          maximised
+            ? "h-full max-h-none max-w-none rounded-none"
+            : "h-full max-h-[92vh] max-w-6xl rounded-xl"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* header: title + tabs + close */}
@@ -207,9 +250,22 @@ export default function ElementEditor({
             <ImageIcon size={13} /> Original
           </button>
           <button
+            onClick={() => setMaximised((v) => !v)}
+            aria-pressed={maximised}
+            title={
+              maximised
+                ? "Back to a windowed editor"
+                : "Fill the screen — the panes get the whole width"
+            }
+            aria-label={maximised ? "Restore the editor" : "Maximise the editor"}
+            className="rounded-lg p-1.5 text-ink-subtle transition-colors hover:bg-surface-sunken hover:text-ink-muted"
+          >
+            {maximised ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+          <button
             onClick={onClose}
             aria-label="Close editor"
-            className="rounded-lg p-1 text-ink-subtle hover:bg-surface-sunken hover:text-ink-muted"
+            className="rounded-lg p-1 text-ink-subtle transition-colors hover:bg-surface-sunken hover:text-ink-muted"
           >
             <X size={18} />
           </button>
@@ -252,7 +308,22 @@ export default function ElementEditor({
                   }`}
                 >
                   {showOriginal && (
-                    <Pane label="Original — as printed">
+                    <Pane
+                      label="Original — as printed"
+                      action={
+                        // on the pane itself, where someone who wants the room
+                        // back is already looking
+                        <button
+                          type="button"
+                          onClick={() => setShowOriginal(false)}
+                          title="Hide the original and give the width to the source and preview"
+                          aria-label="Hide the original"
+                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-ink-subtle transition-colors hover:bg-surface-sunken hover:text-ink"
+                        >
+                          <X size={12} aria-hidden="true" /> hide
+                        </button>
+                      }
+                    >
                       <div className="h-full overflow-auto rounded-lg border border-line bg-white p-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
