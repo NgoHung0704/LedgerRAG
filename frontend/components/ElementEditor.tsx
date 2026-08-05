@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Sparkles, Wand2, X } from "lucide-react";
+import { Image as ImageIcon, Sparkles, Wand2, X } from "lucide-react";
+import { Portal } from "@/components/ui";
 import {
   deriveFromHtml,
   editElement,
+  elementImageUrl,
   getElement,
   type ElementDetail,
   type ElementEdit,
@@ -54,6 +56,11 @@ export default function ElementEditor({
   const [deriving, setDeriving] = useState(false);
   const [derived, setDerived] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A proposal asks you to judge a re-reading against what is actually printed,
+  // so the printed thing has to be HERE. It used to live only on the element
+  // card behind this dialog, which meant closing the editor, hunting the page
+  // for the card, and opening it again to check a single figure.
+  const [showOriginal, setShowOriginal] = useState(Boolean(proposed));
 
   useEffect(() => {
     getElement(elementId)
@@ -149,6 +156,7 @@ export default function ElementEditor({
   };
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
       onClick={onClose}
@@ -187,7 +195,20 @@ export default function ElementEditor({
             <Sparkles size={13} /> Assistant
           </button>
           <button
+            onClick={() => setShowOriginal((v) => !v)}
+            aria-pressed={showOriginal}
+            title="Show the original crop from the document beside the editor"
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              showOriginal
+                ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
+                : "text-ink-muted hover:bg-surface-sunken"
+            }`}
+          >
+            <ImageIcon size={13} /> Original
+          </button>
+          <button
             onClick={onClose}
+            aria-label="Close editor"
             className="rounded-lg p-1 text-ink-subtle hover:bg-surface-sunken hover:text-ink-muted"
           >
             <X size={18} />
@@ -204,8 +225,8 @@ export default function ElementEditor({
               <div className="mx-4 mt-3 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200">
                 {proposed.note ??
                   "This is the model's re-reading of the page, not the stored content."}{" "}
-                Check it against the original image (the element card shows it) —
-                it replaces what is stored only when you save.
+                Check it against the original beside it — it replaces what is
+                stored only when you save.
               </div>
             )}
             <div className="min-h-0 flex-1 overflow-hidden p-4">
@@ -221,11 +242,27 @@ export default function ElementEditor({
               ) : (
                 <div
                   className={`grid h-full grid-cols-1 gap-3 ${
-                    assistantOpen
-                      ? "md:grid-cols-2 xl:grid-cols-3"
-                      : "md:grid-cols-2"
+                    // written out rather than built from a count, so Tailwind
+                    // can see every class it has to keep
+                    [
+                      "md:grid-cols-2",
+                      "md:grid-cols-2 xl:grid-cols-3",
+                      "md:grid-cols-2 xl:grid-cols-4",
+                    ][(showOriginal ? 1 : 0) + (assistantOpen ? 1 : 0)]
                   }`}
                 >
+                  {showOriginal && (
+                    <Pane label="Original — as printed">
+                      <div className="h-full overflow-auto rounded-lg border border-line bg-white p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={elementImageUrl(elementId)}
+                          alt="The crop of this element as it appears in the document"
+                          className="w-full object-contain"
+                        />
+                      </div>
+                    </Pane>
+                  )}
                   <Pane
                     label={`Source · ${tab}`}
                     action={
@@ -341,6 +378,7 @@ export default function ElementEditor({
         )}
       </div>
     </div>
+    </Portal>
   );
 }
 

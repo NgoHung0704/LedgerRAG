@@ -182,8 +182,11 @@
     transform: translateY(8px);
   }
 }
+/* `backwards`, never `both`: a forwards fill can leave a resolved transform on
+   the wrapper, and any transform makes it the containing block for every
+   `position: fixed` dialog inside it. */
 .rise {
-  animation: rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 
 /* Coloured callouts and status pills.

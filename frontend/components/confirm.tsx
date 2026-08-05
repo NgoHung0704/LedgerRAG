@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { Button, useDialog } from "@/components/ui";
+import { Button, Portal, useDialog } from "@/components/ui";
 
 export type ConfirmOptions = {
   title: string;
@@ -67,6 +67,7 @@ function ConfirmDialog({
   const danger = pending.danger ?? true;
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-[1px] sm:items-center sm:p-4"
       onClick={onDismiss}
@@ -114,5 +115,6 @@ function ConfirmDialog({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

@@ -17,7 +17,7 @@ import {
   type Citation,
   type ElementDetail,
 } from "@/lib/api";
-import { IconButton, Spinner, useDialog } from "@/components/ui";
+import { IconButton, Portal, Spinner, useDialog } from "@/components/ui";
 
 /** Citation click-through as a right-side drawer: a confidence read-out, the
  * parsed table HTML, and the ORIGINAL crop image (principle #3 — the trace back
@@ -59,6 +59,7 @@ export default function SourceModal({
   const conf = detail?.confidence;
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-50">
       <div
         onClick={close}
@@ -204,6 +205,7 @@ export default function SourceModal({
         </div>
       </aside>
     </div>
+    </Portal>
   );
 }
 

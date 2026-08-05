@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, X } from "lucide-react";
 import type { Doc } from "@/lib/api";
 
@@ -154,6 +155,22 @@ export function StatusPill({ status }: { status: Doc["status"] }) {
   );
 }
 
+/** Renders an overlay into <body>.
+ *
+ *  `position: fixed` is only fixed to the VIEWPORT when no ancestor has a
+ *  transform, filter, backdrop-filter or containment — any of those makes the
+ *  ancestor the containing block instead. A dialog mounted deep inside the page
+ *  (inside an element card, under an animated wrapper, below a blurred sticky
+ *  header) therefore opens somewhere down the document and the user has to
+ *  scroll to find it. Going through the body makes that impossible by
+ *  construction rather than by remembering not to animate the wrong div. */
+export function Portal({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted || typeof document === "undefined") return null;
+  return createPortal(children, document.body);
+}
+
 /** Keeps Tab inside the dialog, sends Escape to `onClose`, and hands focus back
  *  to whatever opened it. Without this a keyboard user tabs straight out of an
  *  open dialog into the page behind it and cannot find their way back. */
@@ -239,6 +256,7 @@ export function Modal({
   const titleId = `dlg-${title.replace(/\W+/g, "-").toLowerCase()}`;
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-[1px] sm:items-center sm:p-4"
       onClick={onClose}
@@ -262,6 +280,7 @@ export function Modal({
         {children}
       </div>
     </div>
+    </Portal>
   );
 }
 

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -774,15 +776,17 @@ ${r.findings}` : ""),
               Extracted text · {element.chunk_count} chunk
               {element.chunk_count === 1 ? "" : "s"} indexed
             </SectionLabel>
-            <p className="whitespace-pre-wrap rounded-lg bg-surface-sunken p-3 text-[13px] leading-6 text-ink dark:bg-slate-800/50">
-              {showFullText && detail?.text
-                ? detail.text
-                : element.text_preview}
-              {!showFullText &&
-                (element.text_preview.length >= 600 ||
-                  element.chunk_count > 1) &&
-                "…"}
-            </p>
+            <TextBody
+              text={
+                (showFullText && detail?.text
+                  ? detail.text
+                  : element.text_preview) +
+                (!showFullText &&
+                (element.text_preview.length >= 600 || element.chunk_count > 1)
+                  ? "…"
+                  : "")
+              }
+            />
             {(element.text_preview.length >= 600 || element.chunk_count > 1) && (
               <button
                 onClick={async () => {
@@ -909,6 +913,32 @@ ${r.findings}` : ""),
         )}
       </div>
     </Card>
+  );
+}
+
+/** Is this text actually marked up, or just text that happens to contain
+ *  punctuation? A re-read in transcription mode hands back a markdown table or
+ *  a heading structure; the original extraction is plain prose. Rendering the
+ *  first as text shows the reader a wall of pipes and hashes, and rendering the
+ *  second as markdown eats its line breaks — so the answer has to be decided
+ *  per element rather than picked once. */
+function looksLikeMarkdown(s: string): boolean {
+  return (
+    /^\s*\|.*\|\s*$/m.test(s) || // a table row
+    /^\s{0,3}#{1,6}\s+\S/m.test(s) || // an ATX heading
+    /^\s{0,3}([-*+]|\d+[.)])\s+\S/m.test(s) // a list item
+  );
+}
+
+function TextBody({ text }: { text: string }) {
+  const cls =
+    "rounded-lg bg-surface-sunken p-3 text-[13px] leading-6 text-ink";
+  if (!looksLikeMarkdown(text))
+    return <p className={`whitespace-pre-wrap ${cls}`}>{text}</p>;
+  return (
+    <div className={`doc-table prose prose-sm max-w-none dark:prose-invert ${cls}`}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+    </div>
   );
 }
 
