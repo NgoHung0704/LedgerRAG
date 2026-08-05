@@ -20,6 +20,9 @@ frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/package-lock.json
+# TypeScript's incremental build cache — a build artifact that was tracked, so
+# every `tsc` run showed up as a change to review
+frontend/tsconfig.tsbuildinfo
 
 # Data & runtime artifacts
 data/
