@@ -262,7 +262,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
                 )}
                 delete page
               </button>
-              <div className="h-px flex-1 bg-slate-200" />
+              <div className="h-px flex-1 bg-line" />
             </div>
             <div className="space-y-4">
               {elements
@@ -514,11 +514,15 @@ ${r.findings}` : ""),
         rereadMenu ? "z-30" : ""
       } ${
         highlighted
-          ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-[#f4f3ec] dark:ring-amber-500 dark:ring-offset-[#0f141a]"
+          ? // the accent, not a warning colour: this ring means "the element
+            // you asked for is here", not "something is wrong with it". The
+            // offset follows the ground token instead of a hex left over from
+            // an older palette.
+            "ring-2 ring-indigo-500 ring-offset-2 ring-offset-canvas"
           : ""
       }`}
     >
-      <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-line bg-slate-50/60 px-4 py-2 dark:bg-slate-800/40">
+      <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-line bg-surface-sunken px-4 py-2">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink">
           <Icon size={14} /> {label}
         </span>
@@ -551,7 +555,7 @@ ${r.findings}` : ""),
           </span>
         )}
         {element.unusable && (
-          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+          <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted">
             excluded from retrieval
           </span>
         )}
@@ -728,12 +732,16 @@ ${r.findings}` : ""),
             {Object.entries(signals).map(([name, score]) => (
               <span
                 key={name}
+                // Colour marks the two ends that need a decision — clean, or
+                // low enough to distrust. The middle band stays neutral: the
+                // percentage is right there, and painting "acceptable" in the
+                // needs-review colour cries wolf on every ordinary parse.
                 className={`rounded-full px-2 py-0.5 font-medium ${
                   score >= 0.98
-                    ? "bg-emerald-50 text-emerald-700"
+                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
                     : score >= 0.9
-                      ? "bg-amber-50 text-amber-700"
-                      : "bg-red-50 text-red-700"
+                      ? "bg-surface-sunken text-ink-muted"
+                      : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
                 }`}
               >
                 {name} {(score * 100).toFixed(0)}%
@@ -818,22 +826,20 @@ ${r.findings}` : ""),
           <div>
             <SectionLabel>
               Description{" "}
-              <span className="font-normal normal-case tracking-normal text-slate-400">
+              <span className="font-normal normal-case tracking-normal text-ink-subtle">
                 — read from the image by the parser model
                 {element.decorative && ", judged decorative and not indexed"}
               </span>
             </SectionLabel>
             <p
               className={`whitespace-pre-wrap text-[13px] ${
-                element.decorative
-                  ? "text-slate-400 dark:text-slate-500"
-                  : "text-slate-600 dark:text-slate-300"
+                element.decorative ? "text-ink-subtle" : "text-ink-muted"
               }`}
             >
               {element.description}
             </p>
             {element.chart_check && (
-              <p className="mt-1.5 text-[12px] text-slate-400 dark:text-slate-500">
+              <p className="mt-1.5 text-[12px] text-ink-subtle">
                 Bars measured from the PDF vs the values read off them:{" "}
                 {element.chart_check}
               </p>

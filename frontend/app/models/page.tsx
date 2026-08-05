@@ -452,7 +452,7 @@ function PullBox({
       {(status || percent !== null) && (
         <div className="mt-2">
           {percent !== null && (
-            <div className="mb-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+            <div className="mb-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
               <div
                 className="h-full rounded-full bg-indigo-500 transition-all"
                 style={{ width: `${percent}%` }}

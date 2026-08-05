@@ -184,7 +184,7 @@ export default function KbSettings({
               type="button"
               onClick={() => setVerify((v) => !v)}
               className={`relative h-5 w-9 rounded-full transition-colors ${
-                verify ? "bg-indigo-600" : "bg-slate-300"
+                verify ? "bg-indigo-600" : "bg-line-strong"
               }`}
             >
               <span
