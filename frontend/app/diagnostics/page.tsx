@@ -207,7 +207,7 @@ function PageCard({
                           ))}
                         </div>
                       ) : (
-                        <span className="text-ink-faint">—</span>
+                        <span className="text-ink-subtle">—</span>
                       )}
                     </td>
                   </tr>

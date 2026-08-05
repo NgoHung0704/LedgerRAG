@@ -8,6 +8,7 @@ import {
   BadgeCheck,
   FileText,
   Gauge,
+  RotateCcw,
   Search,
   Send,
   Sparkles,
@@ -87,6 +88,10 @@ export default function ChatPanel({
   const sessionRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  // Up/Down walk back through what you have already asked, the way a shell
+  // does. `null` means "not browsing" — typing anything drops you out.
+  const [historyAt, setHistoryAt] = useState<number | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   // changing what we search starts a fresh conversation thread
   useEffect(() => {
@@ -115,13 +120,16 @@ export default function ChatPanel({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // the composer grows with the question, capped so it never eats the thread
+  // The composer grows with the question and is capped so it never eats the
+  // thread. It also opens up the moment you reach for it — a one-line slot is
+  // fine for reading past, and a poor invitation to write a long question in.
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }, [question]);
+    const floor = composerOpen || question ? 62 : 24;
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, floor), 200)}px`;
+  }, [question, composerOpen]);
 
   const rate = async (index: number, next: -1 | 1) => {
     const msg = messages[index];
@@ -139,11 +147,40 @@ export default function ChatPanel({
     }
   };
 
-  const ask = async (e?: React.FormEvent) => {
+  // everything you have asked in this thread, oldest first
+  const history = messages
+    .filter((m) => m.role === "user")
+    .map((m) => m.content);
+
+  /** Step through past questions. Returns false when there is nothing to step
+   *  to, so the key event can fall through to normal caret movement. */
+  const recall = (dir: -1 | 1) => {
+    if (history.length === 0) return false;
+    if (dir === -1) {
+      const next = historyAt === null ? history.length - 1 : historyAt - 1;
+      if (next < 0) return true; // already at the oldest — hold there
+      setHistoryAt(next);
+      setQuestion(history[next]);
+      return true;
+    }
+    if (historyAt === null) return false;
+    const next = historyAt + 1;
+    if (next >= history.length) {
+      setHistoryAt(null);
+      setQuestion("");
+      return true;
+    }
+    setHistoryAt(next);
+    setQuestion(history[next]);
+    return true;
+  };
+
+  const ask = async (e?: React.FormEvent, override?: string) => {
     e?.preventDefault();
-    const q = question.trim();
+    const q = (override ?? question).trim();
     if (!q || busy) return;
     setQuestion("");
+    setHistoryAt(null);
     setBusy(true);
     setMessages((m) => [
       ...m,
@@ -212,7 +249,7 @@ export default function ChatPanel({
     // dvh, not vh: on a phone `vh` counts the space behind the browser's own
     // toolbars, which pushed the composer off the bottom of the screen. min-h
     // keeps the thread usable when a long KB description eats the header.
-    <div className="flex h-[calc(100dvh-17rem)] min-h-[22rem] flex-col rounded-xl border border-line bg-surface shadow-card lg:h-[calc(100dvh-14rem)]">
+    <div className="flex h-[calc(100dvh-15rem)] min-h-[26rem] flex-col rounded-xl border border-line bg-surface shadow-card lg:h-[calc(100dvh-11.5rem)]">
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
         {messages.length === 0 &&
           (emptyState ?? (
@@ -233,23 +270,34 @@ export default function ChatPanel({
 
         {messages.map((m, i) =>
           m.role === "user" ? (
-            // the question is a query on a document, not a chat bubble — it
-            // reads as the line that prompted the excerpt below it
-            <div key={i} className="group flex items-start gap-1">
-              <div className="min-w-0 flex-1 border-l-2 border-line pl-3.5 font-serif text-[15px] italic leading-relaxed text-ink-muted">
+            // your turn and the machine's turn are two different surfaces, so a
+            // long thread can be skimmed for "where did I ask that?" without
+            // reading a word
+            <div key={i} className="group flex items-start gap-1.5">
+              <div className="min-w-0 flex-1 rounded-lg rounded-l-sm border-l-[3px] border-indigo-500 bg-indigo-50/70 px-3.5 py-2.5 text-[15px] leading-relaxed text-ink dark:bg-indigo-950/30">
                 {m.content}
               </div>
-              <CopyButton
-                text={m.content}
-                title="Copy the question"
-                className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
-              />
+              <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => ask(undefined, m.content)}
+                  disabled={busy}
+                  title="Ask this again"
+                  aria-label="Ask this question again"
+                  className="relative rounded-md p-1.5 text-ink-subtle transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-surface-sunken hover:text-indigo-700 disabled:opacity-40 dark:hover:text-indigo-300"
+                >
+                  <RotateCcw size={13} aria-hidden="true" />
+                </button>
+                <CopyButton text={m.content} title="Copy the question" />
+              </div>
             </div>
           ) : (
             <div key={i} className="flex justify-start">
-              <div className="w-full max-w-[92%]">
+              {/* the machine's turn: a neutral panel against the accent-tinted
+                  question above it */}
+              <div className="w-full max-w-[94%] rounded-lg rounded-l-sm border-l-[3px] border-line-strong bg-surface-sunken/70 px-3.5 py-3">
                 <div className="marginal mb-1.5">
-                  <div className="marginal-body font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">
+                  <div className="marginal-body font-mono text-[10px] uppercase tracking-[0.14em] text-ink-subtle">
                     answer
                   </div>
                 </div>
@@ -282,37 +330,7 @@ export default function ChatPanel({
                     this is the bibliography, not the citation — quiet, one
                     line, and it names the files the margin only numbers. */}
                 {m.citations && m.citations.length > 0 && (
-                  <div className="marginal mt-2.5">
-                    <div className="marginal-note hidden font-mono text-[10px] uppercase tracking-wider text-ink-faint sm:block sm:pt-1 sm:text-right">
-                      from
-                    </div>
-                    <div className="marginal-body flex flex-wrap items-center gap-x-3 gap-y-1">
-                      {m.citations.map((c) => (
-                        <button
-                          key={c.index}
-                          onClick={() => setOpenSource(c)}
-                          title={c.snippet}
-                          className={`group inline-flex items-center gap-1.5 font-mono text-[11px] transition-colors ${
-                            c.needs_review
-                              ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
-                              : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
-                          }`}
-                        >
-                          {c.kind === "table" ? (
-                            <Table2 size={11} aria-hidden="true" />
-                          ) : (
-                            <FileText size={11} aria-hidden="true" />
-                          )}
-                          <span className="underline decoration-line underline-offset-2 group-hover:decoration-current">
-                            {c.index} · {c.filename} · p.{c.page}
-                          </span>
-                          {c.needs_review && (
-                            <AlertTriangle size={11} aria-hidden="true" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <Bibliography citations={m.citations} onOpen={setOpenSource} />
                 )}
 
                 {m.content && !m.error && (
@@ -355,20 +373,36 @@ export default function ChatPanel({
         )}
         <form
           onSubmit={ask}
-          className="flex items-end gap-2 rounded-xl border border-line-strong bg-surface p-1.5 pl-3 transition-colors focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900/40"
+          onMouseEnter={() => setComposerOpen(true)}
+          onMouseLeave={() => !question && setComposerOpen(false)}
+          className="flex items-end gap-2 rounded-xl border border-line-strong bg-surface p-2 pl-3 shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-line-strong hover:shadow-md focus-within:border-indigo-500 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-500/25"
         >
           <textarea
             ref={taRef}
             rows={1}
-            className="flex-1 resize-none border-0 bg-transparent py-1.5 font-serif text-[15px] leading-relaxed text-ink placeholder:font-sans placeholder:text-sm placeholder:text-ink-subtle focus:outline-none focus:ring-0"
+            className="flex-1 resize-none border-0 bg-transparent py-1 text-[15px] leading-relaxed text-ink transition-[height] duration-200 placeholder:text-sm placeholder:text-ink-subtle focus:outline-none focus:ring-0"
             aria-label="Your question"
-            placeholder="Ask your question… (Enter to send, Shift+Enter for a new line)"
+            placeholder="Ask your question… (Enter to send, ↑ for an earlier one)"
             value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            onFocus={() => setComposerOpen(true)}
+            onBlur={() => !question && setComposerOpen(false)}
+            onChange={(e) => {
+              setQuestion(e.target.value);
+              setHistoryAt(null); // typing leaves the history behind
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 ask();
+                return;
+              }
+              // Only when there is nothing to move a caret through, so editing
+              // a multi-line question still works normally.
+              const browsing = historyAt !== null;
+              if (e.key === "ArrowUp" && (browsing || question === "")) {
+                if (recall(-1)) e.preventDefault();
+              } else if (e.key === "ArrowDown" && browsing) {
+                if (recall(1)) e.preventDefault();
               }
             }}
             disabled={busy}
@@ -415,7 +449,7 @@ function TimingBadge({ timing }: { timing: Timing }) {
       )}
       <span className="inline-flex items-center gap-1">
         <Gauge size={11} /> {secs(timing.genMs)}
-        {rate && <span className="text-ink-faint">· {rate} tok/s</span>}
+        {rate && <span className="text-ink-subtle">· {rate} tok/s</span>}
       </span>
     </span>
   );
@@ -541,6 +575,68 @@ function AnswerBody({
             );
           });
       })}
+    </div>
+  );
+}
+
+/** The sources an answer drew on.
+ *
+ *  The margin already carries provenance beside each claim, so this is the
+ *  bibliography rather than the citation: it names the files the margin only
+ *  numbers. A wide search can return a dozen, which buries the answer above it
+ *  — so three, and the rest on request. */
+const SHOWN = 3;
+
+function Bibliography({
+  citations,
+  onOpen,
+}: {
+  citations: Citation[];
+  onOpen: (c: Citation) => void;
+}) {
+  const [all, setAll] = useState(false);
+  const hidden = citations.length - SHOWN;
+  const shown = all ? citations : citations.slice(0, SHOWN);
+
+  return (
+    <div className="marginal mt-2.5">
+      <div className="marginal-note hidden font-mono text-[10px] uppercase tracking-wider text-ink-subtle sm:block sm:pt-1 sm:text-right">
+        from
+      </div>
+      <div className="marginal-body flex flex-wrap items-center gap-x-3 gap-y-1">
+        {shown.map((c) => (
+          <button
+            key={c.index}
+            onClick={() => onOpen(c)}
+            title={c.snippet}
+            className={`group inline-flex items-center gap-1.5 font-mono text-[11px] transition-colors ${
+              c.needs_review
+                ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
+                : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
+            }`}
+          >
+            {c.kind === "table" ? (
+              <Table2 size={11} aria-hidden="true" />
+            ) : (
+              <FileText size={11} aria-hidden="true" />
+            )}
+            <span className="underline decoration-line underline-offset-2 group-hover:decoration-current">
+              {c.index} · {c.filename} · p.{c.page}
+            </span>
+            {c.needs_review && <AlertTriangle size={11} aria-hidden="true" />}
+          </button>
+        ))}
+        {hidden > 0 && (
+          <button
+            type="button"
+            onClick={() => setAll((v) => !v)}
+            aria-expanded={all}
+            className="font-mono text-[11px] text-indigo-700 underline decoration-dotted underline-offset-2 transition-colors hover:text-indigo-600 dark:text-indigo-300"
+          >
+            {all ? "show fewer" : `+${hidden} more`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

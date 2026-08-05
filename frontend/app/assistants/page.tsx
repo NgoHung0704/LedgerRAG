@@ -2,21 +2,27 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bot, Database, Plus } from "lucide-react";
 import {
   createAssistant,
+  deleteAssistant,
   getAssistants,
   getKbs,
+  updateAssistant,
   type Assistant,
   type KB,
 } from "@/lib/api";
 import { Button, Card, EmptyState, Spinner } from "@/components/ui";
 import AssistantForm from "@/components/AssistantForm";
+import AssistantCardMenu from "@/components/AssistantCardMenu";
 
 // Assistants are chat apps: each one has its own knowledge bases (its context),
 // its own instructions, and its own conversations. Knowledge bases stay
 // independent — an assistant references them, so one corpus can back several.
 export default function AssistantsPage() {
+  const router = useRouter();
+  const [editing, setEditing] = useState<Assistant | null>(null);
   const [assistants, setAssistants] = useState<Assistant[] | null>(null);
   const [kbs, setKbs] = useState<KB[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -80,14 +86,15 @@ export default function AssistantsPage() {
           hint="Create one: choose which knowledge bases it can search and write its instructions — e.g. an HR assistant over your agreements."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {assistants.map((a) => (
-            <Link key={a.id} href={`/assistants/${a.id}`}>
-              <Card className="group h-full p-4 transition-colors hover:border-indigo-300 dark:hover:border-indigo-700">
-                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
+            <div key={a.id} className="group relative">
+            <Link href={`/assistants/${a.id}`}>
+              <Card className="lift h-full p-4">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-950/60 dark:text-indigo-300 dark:group-hover:bg-indigo-500 dark:group-hover:text-white">
                   <Bot size={18} />
                 </div>
-                <div className="font-serif text-[15px] font-semibold text-ink group-hover:text-indigo-700 dark:group-hover:text-indigo-300">
+                <div className="font-display text-[16px] font-bold tracking-[0.005em] text-ink transition-colors group-hover:text-indigo-700 dark:group-hover:text-indigo-300">
                   {a.name}
                 </div>
                 <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-ink-muted">
@@ -111,6 +118,14 @@ export default function AssistantsPage() {
                 </div>
               </Card>
             </Link>
+            <div className="absolute right-3 top-3">
+              <AssistantCardMenu
+                assistant={a}
+                onSettings={() => setEditing(a)}
+                onOpen={() => router.push(`/assistants/${a.id}`)}
+              />
+            </div>
+            </div>
           ))}
         </div>
       )}
@@ -123,6 +138,26 @@ export default function AssistantsPage() {
           onSubmit={async (values) => {
             await createAssistant(values);
             setCreating(false);
+            refresh();
+          }}
+        />
+      )}
+
+      {/* the same form the assistant's own page uses, opened from the list */}
+      {editing && (
+        <AssistantForm
+          title={`${editing.name} — settings`}
+          kbs={kbs}
+          assistant={editing}
+          onClose={() => setEditing(null)}
+          onSubmit={async (values) => {
+            await updateAssistant(editing.id, values);
+            setEditing(null);
+            refresh();
+          }}
+          onDelete={async () => {
+            await deleteAssistant(editing.id);
+            setEditing(null);
             refresh();
           }}
         />

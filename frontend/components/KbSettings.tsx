@@ -176,7 +176,7 @@ export default function KbSettings({
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
             placeholder="fr · de · en · es · (blank = auto)"
-            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-faint bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
           <label className="mt-3 flex items-center gap-2.5 text-sm text-ink">
