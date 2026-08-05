@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,6 +8,8 @@ import {
   Database,
   FileSearch,
   MessagesSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
   ScrollText,
   SlidersHorizontal,
   UserCircle2,
@@ -26,6 +28,8 @@ const NAV = [
   { href: "/diagnostics", label: "Diagnostics", icon: FileSearch, match: /^\/diagnostics/, admin: false },
 ];
 
+const STORE = "rail-collapsed";
+
 export default function Sidebar({
   open = false,
   onClose,
@@ -35,10 +39,31 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const [me, setMe] = useState<Me | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const [marker, setMarker] = useState<{ top: number; height: number } | null>(null);
 
   useEffect(() => {
     getMe().then(setMe).catch(() => setMe(null));
   }, []);
+
+  // the rail remembers how you left it
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(STORE) === "1");
+    } catch {
+      /* storage disabled — the rail just starts expanded every time */
+    }
+  }, []);
+  const toggle = () =>
+    setCollapsed((v) => {
+      try {
+        localStorage.setItem(STORE, v ? "0" : "1");
+      } catch {
+        /* ignore */
+      }
+      return !v;
+    });
 
   // Escape closes the drawer, the same as every other overlay in the app
   useEffect(() => {
@@ -48,14 +73,25 @@ export default function Sidebar({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // The active marker is one element that MOVES between items rather than a
+  // border that blinks on and off — the eye follows it and keeps its place.
+  const place = useCallback(() => {
+    const el = navRef.current?.querySelector<HTMLElement>("[data-active='true']");
+    setMarker(el ? { top: el.offsetTop, height: el.offsetHeight } : null);
+  }, []);
+  useLayoutEffect(place, [place, pathname, collapsed, me]);
+  useEffect(() => {
+    addEventListener("resize", place);
+    return () => removeEventListener("resize", place);
+  }, [place]);
+
   const nav = NAV.filter((n) => !n.admin || me?.is_admin);
 
   return (
     <>
-      {/* drawer scrim — mobile only, since the rail is always visible above lg */}
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -63,83 +99,168 @@ export default function Sidebar({
 
       <aside
         id="app-nav"
-        // The rail is the frame around the documents, so it is graphite in both
-        // themes — light mode changes the table the pages sit on, not the frame.
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-rail-line bg-rail text-rail-ink transition-transform duration-200 lg:static lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        data-collapsed={collapsed ? "" : undefined}
+        className={`fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col border-r border-rail-line bg-rail text-rail-ink transition-[transform,width] duration-300 lg:static lg:translate-x-0 ${
+          collapsed ? "w-[68px]" : "w-60"
+        } ${open ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ transitionTimingFunction: "cubic-bezier(.2,.9,.25,1)" }}
       >
-        <div className="flex items-start gap-2 px-5 pb-4 pt-5">
-          <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
-              <rect x="2" y="2.5" width="28" height="27" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-indigo-400" />
-              <line x1="2" y1="10" x2="30" y2="10" stroke="currentColor" strokeWidth="1.2" className="text-indigo-400" />
-              <line x1="12" y1="10" x2="12" y2="29.5" stroke="currentColor" strokeWidth="1.2" className="text-indigo-400" />
-              <line x1="15.5" y1="16" x2="27" y2="16" stroke="currentColor" strokeWidth="1.6" className="text-amber-500" />
-              <line x1="15.5" y1="21" x2="24" y2="21" stroke="currentColor" strokeWidth="1" className="text-indigo-400 opacity-50" />
-            </svg>
-            <div className="min-w-0">
-              <div className="font-serif text-[17px] font-semibold leading-tight tracking-tight text-rail-hi">
-                LedgerRAG
+        <div className="flex items-start gap-2 px-4 pb-4 pt-4">
+          <Link
+            href="/"
+            className="emblem group flex min-w-0 items-center gap-2.5 rounded"
+            aria-label="LedgerRAG — home"
+          >
+            <Emblem />
+            {!collapsed && (
+              <div className="min-w-0">
+                <div className="font-display text-[16px] font-bold leading-tight tracking-[0.01em] text-rail-hi">
+                  LedgerRAG
+                </div>
+                <div className="truncate text-[10.5px] leading-tight text-rail-ink/55">
+                  parse it right, or fail honestly
+                </div>
               </div>
-              <div className="truncate text-[11px] italic leading-tight text-rail-ink/60">
-                parse it right, or fail honestly
-              </div>
-            </div>
+            )}
           </Link>
-          <div className="ml-auto lg:hidden">
-            <IconButton
-              label="Close navigation"
-              onClick={onClose}
-              className="!text-rail-ink hover:!bg-white/10 hover:!text-rail-hi"
-            >
-              <X size={18} />
-            </IconButton>
-          </div>
+          {!collapsed && (
+            <div className="ml-auto lg:hidden">
+              <IconButton
+                label="Close navigation"
+                onClick={onClose}
+                className="!text-rail-ink hover:!bg-white/10 hover:!text-rail-hi"
+              >
+                <X size={18} />
+              </IconButton>
+            </div>
+          )}
         </div>
 
-        <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-3 pt-2">
+        <nav
+          ref={navRef}
+          aria-label="Main"
+          className="relative flex-1 space-y-0.5 overflow-y-auto px-2.5 pt-1"
+        >
+          {marker && (
+            <span
+              aria-hidden="true"
+              className="absolute left-0 w-[3px] rounded-r bg-indigo-400 transition-[transform,height] duration-300"
+              style={{
+                height: marker.height,
+                transform: `translateY(${marker.top}px)`,
+                transitionTimingFunction: "cubic-bezier(.2,.9,.25,1)",
+              }}
+            />
+          )}
           {nav.map(({ href, label, icon: Icon, match }) => {
             const active = match.test(pathname);
             return (
               <Link
                 key={href}
                 href={href}
+                data-active={active}
                 aria-current={active ? "page" : undefined}
-                // the active page is marked by a verdigris edge, not a filled
-                // pill — the rail should read as a margin, not a toolbar
-                className={`flex items-center gap-2.5 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
+                title={collapsed ? label : undefined}
+                className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13.5px] font-medium transition-colors ${
+                  collapsed ? "justify-center px-0" : ""
+                } ${
                   active
-                    ? "bg-white/[0.07] text-rail-hi shadow-[inset_2px_0_0_theme(colors.indigo.400)]"
+                    ? "bg-white/[0.08] text-rail-hi"
                     : "text-rail-ink hover:bg-white/[0.05] hover:text-rail-hi"
                 }`}
               >
-                <Icon size={17} strokeWidth={2} aria-hidden="true" />
-                {label}
+                <Icon size={17} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+                {!collapsed && <span className="truncate">{label}</span>}
+                {collapsed && <span className="sr-only">{label}</span>}
               </Link>
             );
           })}
         </nav>
 
-        <div className="flex items-center justify-between gap-2 border-t border-rail-line px-4 py-3">
-          {me ? (
+        <div
+          className={`flex items-center gap-2 border-t border-rail-line px-3 py-3 ${
+            collapsed ? "flex-col" : "justify-between"
+          }`}
+        >
+          {me && !collapsed && (
             <div className="flex min-w-0 items-center gap-2">
               <UserCircle2 size={20} className="shrink-0 text-rail-ink/50" aria-hidden="true" />
               <div className="min-w-0">
                 <div className="truncate text-[12px] font-medium text-rail-hi">
                   {me.username}
                 </div>
-                <div className="text-[10px] uppercase tracking-wide text-rail-ink/60">
+                <div className="text-[10px] uppercase tracking-wide text-rail-ink/55">
                   {me.is_admin ? "Admin" : "User"}
                 </div>
               </div>
             </div>
-          ) : (
-            <span />
           )}
-          <ThemeToggle />
+          {me && collapsed && (
+            <UserCircle2
+              size={20}
+              className="text-rail-ink/50"
+              aria-label={`Signed in as ${me.username}`}
+            />
+          )}
+          <ThemeToggle compact={collapsed} />
+        </div>
+
+        <div className="hidden border-t border-rail-line p-2 lg:block">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={collapsed ? "Expand the navigation rail" : "Collapse the navigation rail"}
+            aria-expanded={!collapsed}
+            aria-controls="app-nav"
+            title={collapsed ? "Expand" : "Collapse"}
+            className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[12px] font-medium text-rail-ink transition-colors hover:bg-white/[0.06] hover:text-rail-hi ${
+              collapsed ? "justify-center px-0" : ""
+            }`}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={16} aria-hidden="true" />
+            ) : (
+              <PanelLeftClose size={16} aria-hidden="true" />
+            )}
+            {!collapsed && "Collapse"}
+          </button>
         </div>
       </aside>
     </>
+  );
+}
+
+/** The mark is the product doing its job: a page of ruled lines with a scan
+ *  crossing it, forever, faster when you point at it. */
+function Emblem() {
+  return (
+    <svg
+      width="30"
+      height="30"
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      className="shrink-0 overflow-hidden"
+    >
+      <rect
+        x="4"
+        y="2.5"
+        width="24"
+        height="27"
+        rx="4"
+        className="fill-indigo-600/15 stroke-indigo-400"
+        strokeWidth="1.5"
+      />
+      <g className="stroke-indigo-300" strokeWidth="1.6" strokeLinecap="round">
+        <line x1="9" y1="10" x2="23" y2="10" className="emblem-rule" opacity="0.75" />
+        <line x1="9" y1="15" x2="20" y2="15" className="emblem-rule" opacity="0.55" style={{ transitionDelay: "40ms" }} />
+        <line x1="9" y1="20" x2="22" y2="20" className="emblem-rule" opacity="0.55" style={{ transitionDelay: "80ms" }} />
+        <line x1="9" y1="25" x2="17" y2="25" className="emblem-rule" opacity="0.35" style={{ transitionDelay: "120ms" }} />
+      </g>
+      {/* the scan */}
+      <g className="emblem-scan">
+        <rect x="4" y="6" width="24" height="1.5" className="fill-indigo-400" opacity="0.9" />
+        <rect x="4" y="7.5" width="24" height="3" className="fill-indigo-400" opacity="0.18" />
+      </g>
+    </svg>
   );
 }

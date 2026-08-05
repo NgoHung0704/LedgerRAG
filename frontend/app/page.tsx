@@ -100,13 +100,13 @@ export default function HomePage() {
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {kbs.map((kb) => (
-            <div key={kb.id} className="relative">
+            <div key={kb.id} className="group relative">
               <Link href={`/kb/${kb.id}`}>
-                <Card className="group h-full p-4 transition-colors hover:border-indigo-300 dark:hover:border-indigo-700">
+                <Card className="lift h-full p-4">
                   <div className="mb-3 flex items-start justify-between">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-950/60 dark:text-indigo-300 dark:group-hover:bg-indigo-500 dark:group-hover:text-white">
                       <Database size={18} />
                     </div>
                     {kb.config?.locale && (
@@ -115,12 +115,13 @@ export default function HomePage() {
                       </span>
                     )}
                   </div>
-                  <div className="font-serif text-[15px] font-semibold text-ink group-hover:text-indigo-700 dark:group-hover:text-indigo-300">
+                  <div className="font-display text-[16px] font-bold tracking-[0.005em] text-ink transition-colors group-hover:text-indigo-700 dark:group-hover:text-indigo-300">
                     {kb.name}
                   </div>
                   <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-ink-muted">
                     {kb.description || "No description — add one, the router will use it."}
                   </p>
+                  <IngestProgress s={kb.doc_status} />
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <KbStatus s={kb.doc_status} />
                     <span className="shrink-0 text-[11px] text-ink-subtle">
@@ -151,6 +152,29 @@ export default function HomePage() {
 }
 
 const plural = (n: number) => (n === 1 ? "" : "s");
+
+/** How far ingestion got, from the counts the list already returns.
+ *
+ *  Only while the worker actually has something in flight. A bar sitting at
+ *  100% on every finished corpus is a rule pretending to be information — the
+ *  pills below already say "40 ready". Here, motion on a card means work is
+ *  happening on it right now. */
+function IngestProgress({ s }: { s?: KBDocStatus | null }) {
+  if (!s || s.total === 0 || s.processing === 0) return null;
+  const settled = s.done + s.failed;
+  return (
+    <div
+      className="progress is-live mt-3"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={s.total}
+      aria-valuenow={settled}
+      aria-label={`${settled} of ${s.total} documents processed`}
+    >
+      <i style={{ width: `${Math.round((settled / s.total) * 100)}%` }} />
+    </div>
+  );
+}
 
 // Aggregate ingestion state of a KB, shown on its list card. One pill per
 // non-zero state (processing / failed / ready) so a glance answers "is it done,

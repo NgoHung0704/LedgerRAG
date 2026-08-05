@@ -32,7 +32,9 @@ export function Button({
   const sizes = { sm: "min-h-8 px-2.5 py-1 text-xs", md: "min-h-9 px-3.5 py-2 text-sm" }[size];
   return (
     <button
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:cursor-not-allowed ${sizes} ${styles} ${className}`}
+      // the press is a real 3% squash: a control should feel like it took the
+      // input, not just repaint afterwards
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100 ${sizes} ${styles} ${className}`}
       {...props}
     >
       {children}

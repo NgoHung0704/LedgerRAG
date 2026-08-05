@@ -12,6 +12,11 @@ const config: Config = {
       // which the deploy blocks) so there's no silent fallback.
       fontFamily: {
         sans: ['"Segoe UI"', "-apple-system", "system-ui", "Roboto", "Helvetica", "Arial", "sans-serif"],
+        // Headings carry a DIN-ish grotesque — the lettering of engineering
+        // drawings and gauges, which is what a tool that reads printed tables
+        // should sound like. Every fallback ships with its OS, so there is no
+        // webfont and no silent download.
+        display: ["Bahnschrift", '"Avenir Next Condensed"', '"Roboto Condensed"', '"Liberation Sans Narrow"', '"Segoe UI"', "system-ui", "sans-serif"],
         serif: ['"Sitka Text"', '"Iowan Old Style"', '"Palatino Linotype"', "Palatino", "Charter", '"Hoefler Text"', "Georgia", "serif"],
         mono: ['"Cascadia Code"', "Consolas", '"SF Mono"', "ui-monospace", '"Liberation Mono"', "Menlo", "monospace"],
       },
@@ -25,9 +30,23 @@ const config: Config = {
       // ingestion failed, and outside those three states nothing is coloured.
       colors: {
         indigo: {
-          50: "#eff6f4", 100: "#d9ebe6", 200: "#b4d7ce", 300: "#85bcaf",
-          400: "#559c8c", 500: "#33806f", 600: "#1f6b5c", 700: "#1a574b",
-          800: "#17453c", 900: "#143931", 950: "#0a211c",
+          50: "#eef0ff", 100: "#dde1ff", 200: "#bfc6ff", 300: "#9aa5ff",
+          400: "#7b8cff", 500: "#5566ff", 600: "#3b4eff", 700: "#2d3adb",
+          800: "#262faf", 900: "#232b87", 950: "#141750",
+        },
+        // The three verification states. Re-pointed rather than re-typed at
+        // every call site, so "checked / needs review / failed" changes shade
+        // in one place. `emerald` is checked, `amber` is needs-review; nothing
+        // outside those states is allowed either colour.
+        emerald: {
+          50: "#e1f5f0", 100: "#c3ebe3", 200: "#8fdacb", 300: "#56c4af",
+          400: "#24a88f", 500: "#0a8f77", 600: "#00806c", 700: "#036b5b",
+          800: "#07564a", 900: "#09463e", 950: "#032722",
+        },
+        amber: {
+          50: "#fdece7", 100: "#fbd9d0", 200: "#f7b49f", 300: "#f08a6b",
+          400: "#e36340", 500: "#d25028", 600: "#c4472a", 700: "#a33a22",
+          800: "#85311f", 900: "#6e2b1d", 950: "#3b140c",
         },
         // the frame — graphite in both themes, see globals.css
         rail: {
