@@ -376,7 +376,7 @@ export const convertElementToText = (elementId: string) =>
  * own bbox and crop. Undo puts the single table back. */
 export const splitElementTable = (elementId: string) =>
   fetch(`${API_URL}/api/elements/${elementId}/split`, { method: "POST" }).then(
-    (r) => jsonOrThrow<ElementDetail & { parts: number }>(r),
+    (r) => jsonOrThrow<ElementDetail & { parts: number; reason: string }>(r),
   );
 
 /** Put an element back the way it was before its last edit, and re-index.

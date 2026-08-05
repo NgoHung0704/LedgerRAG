@@ -319,6 +319,7 @@ function ElementCard({
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
   const [splitting, setSplitting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [removing, setRemoving] = useState(false);
 
@@ -412,12 +413,16 @@ ${r.findings}` : ""),
       return;
     setSplitting(true);
     setReviewError(null);
+    setNotice(null);
     try {
       const result = await splitElementTable(element.id);
+      // say so out loud: a refusal and a success both used to leave the card
+      // looking untouched, so there was no telling which had happened
+      setNotice(`Split into ${result.parts} tables — ${result.reason}.`);
       onChanged();
       setDetail(result);
     } catch (e) {
-      setReviewError(String(e));
+      setReviewError(String(e).replace(/^Error:\s*/, ""));
     } finally {
       setSplitting(false);
     }
@@ -716,6 +721,19 @@ ${r.findings}` : ""),
       )}
 
       <div className="space-y-4 p-4">
+        {/* What the last action did, or why it did nothing. This used to live
+            inside the needs_review box, so on a table that was NOT flagged
+            every failure was swallowed silently — press a button, watch
+            nothing happen, with no way to tell a refusal from a success. */}
+        {reviewError && (
+          <div className="callout callout-danger !px-3 !py-2 text-xs">
+            {reviewError}
+          </div>
+        )}
+        {notice && (
+          <div className="callout !px-3 !py-2 text-xs">{notice}</div>
+        )}
+
         {element.parse_error && (
           <div className="callout callout-warn !px-3 !py-2 text-xs">
             Parse failed honestly: {element.parse_error} — the original image
@@ -771,9 +789,6 @@ ${r.findings}` : ""),
             >
               Mark unusable
             </Button>
-            {reviewError && (
-              <span className="w-full text-xs text-red-600">{reviewError}</span>
-            )}
           </div>
         )}
 

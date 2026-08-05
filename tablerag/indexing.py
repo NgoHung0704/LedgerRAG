@@ -263,16 +263,19 @@ def _region_rows(pdf_bytes: bytes, page_no: int,
     with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
         page = doc[page_no - 1]
         clip = fitz.Rect(*bbox) if len(bbox) == 4 else page.rect
-        best, grid, tops = 0.0, None, []
+        # EVERY table under the region, not just the biggest: an element that
+        # wrongly holds two of them overlaps two detections, and taking only
+        # the larger left the seam outside the rows we knew about — the split
+        # then found nothing to cut and gave up without saying why
+        parts = []
         for table, candidate in detect_tables(page):
             rect = fitz.Rect(table.bbox) & clip
-            if rect.is_empty:
-                continue
-            area = rect.get_area()
-            if area > best:
-                best = area
-                grid = candidate
-                tops = [float(row.bbox[1]) for row in table.rows]
+            if not rect.is_empty and candidate:
+                parts.append((float(table.bbox[1]), candidate,
+                              [float(row.bbox[1]) for row in table.rows]))
+        parts.sort()
+        grid = [row for _, candidate, _ in parts for row in candidate] or None
+        tops = [top for _, _, rows in parts for top in rows]
     return grid, tops
 
 
@@ -352,8 +355,9 @@ async def split_table(element_id: uuid.UUID) -> int | None:
     elements carrying `split_from`, and the whole thing is recorded on the
     revision stack, so undo puts the single table back and removes them.
 
-    Returns the number of tables now standing, or None when there is nothing
-    to split (or no source to split from)."""
+    Returns (parts, reason). `parts` is None when nothing was split, and
+    `reason` always says WHY — five different situations end here, and one
+    message claiming the model decided was wrong about four of them."""
     from tablerag.ingestion.table_pipeline import parse_table_region
     from tablerag.models.base import Msg
     from tablerag.models.registry import get_provider
@@ -364,29 +368,41 @@ async def split_table(element_id: uuid.UUID) -> int | None:
     )
 
     info = await asyncio.to_thread(_table_region_inputs, element_id)
-    if info is None or info["spans_pages"]:
+    if info is None:
+        return None, ("this table's source file is no longer available, so "
+                      "its region cannot be re-read")
+    if info["spans_pages"]:
         # a cross-page merge has no single page to cut: its parts live on
         # different pages, and undoing THAT merge is a different operation
-        return None
+        return None, ("this table was merged across pages, so there is no "
+                      "single page to cut. Reprocess the document instead.")
     settings = get_settings()
     grid, row_tops = await asyncio.to_thread(
         _region_rows, info["pdf"], info["page"], info["bbox"])
     if not grid or len(row_tops) < 4:
-        return None            # nothing to count rows against
+        return None, ("no row grid was found under this region — it has no "
+                      "text layer (a scan), so there are no row positions to "
+                      "cut at")
 
     parser = get_provider("parser")
     prompt = SPLIT_PROMPT.replace("{rows}", numbered_rows(grid))
-    parts = []
+    answer = []
     async for token in parser.chat([Msg(role="user", content=prompt)],
                                    stream=True, temperature=0.0):
-        parts.append(token)
-    seams = parse_split_rows("".join(parts), len(grid))
+        answer.append(token)
+    reply = "".join(answer)
+    seams = parse_split_rows(reply, len(grid))
+    logger.info("split %s: %d rows, model said %r -> seams %s",
+                element_id, len(grid), reply.strip()[:120], seams)
     if not seams:
-        return None
+        return None, ("the model read these %d rows as one table — it found "
+                      "no second header or change of subject" % len(grid))
 
     boxes = split_bboxes(info["bbox"], row_tops, seams)
     if len(boxes) < 2:
-        return None
+        return None, (f"the model put the seam at row {seams[0]}, but that "
+                      f"row is not inside this element's own region — nothing "
+                      f"could be cut")
 
     dpi = settings.table_crop_dpi
     results = []
@@ -397,7 +413,8 @@ async def split_table(element_id: uuid.UUID) -> int | None:
             crop, sub_grid, True, info["locale"])))
 
     await asyncio.to_thread(_write_split, element_id, info, results)
-    return len(results)
+    return len(results), (f"cut at row {', '.join(str(r) for r in seams)} into "
+                          f"{len(results)} tables")
 
 
 async def recheck_table(element_id: uuid.UUID) -> dict | None:

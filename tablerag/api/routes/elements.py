@@ -221,12 +221,11 @@ async def split_element_table(element_id: uuid.UUID) -> dict:
     Undo puts the single table back and removes the parts."""
     from tablerag import indexing
 
-    parts = await indexing.split_table(element_id)
+    parts, reason = await indexing.split_table(element_id)
     if parts is None:
-        raise HTTPException(
-            409, "no seam found: the model read this region as one table. A "
-                 "table merged across PAGES cannot be split here — reprocess "
-                 "the document instead.")
+        # say which of the several ways this can end actually happened —
+        # one message claiming the model decided was wrong about most of them
+        raise HTTPException(409, f"Nothing was split: {reason}")
     with session_scope() as s:
         children = repo.split_children(s, element_id)
     await indexing.reindex_element(element_id)
@@ -236,6 +235,7 @@ async def split_element_table(element_id: uuid.UUID) -> dict:
         detail = repo.get_element_detail(s, element_id)
     detail["crop_url"] = f"/api/elements/{element_id}/image"
     detail["parts"] = parts
+    detail["reason"] = reason
     return detail
 
 

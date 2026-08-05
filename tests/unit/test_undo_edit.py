@@ -210,3 +210,25 @@ def test_undoing_a_split_takes_the_parts_with_it(db_session, table,
     db_session.flush()
     assert db_session.get(Element, part2.id) is None
     assert db_session.get(Element, table.id) is not None
+
+
+def test_every_way_a_split_can_end_says_which_one_it_was(monkeypatch):
+    """Five situations reach the same refusal, and one message claiming the
+    model decided was wrong about four of them. The reviewer pressed a button,
+    saw nothing, and had no way to tell a refusal from a success."""
+    import asyncio
+
+    from tablerag import indexing
+
+    cases = {
+        "no source": (None, "no longer available"),
+        "cross page": ({"spans_pages": True}, "merged across pages"),
+        "no grid": ({"spans_pages": False, "pdf": b"", "page": 1,
+                     "bbox": [0, 0, 1, 1]}, "no row grid"),
+    }
+    for name, (info, expected) in cases.items():
+        monkeypatch.setattr(indexing, "_table_region_inputs", lambda _e, i=info: i)
+        monkeypatch.setattr(indexing, "_region_rows", lambda *a: (None, []))
+        parts, reason = asyncio.run(indexing.split_table(uuid.uuid4()))
+        assert parts is None, name
+        assert expected in reason, f"{name}: {reason}"
