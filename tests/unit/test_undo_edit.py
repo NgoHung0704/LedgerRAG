@@ -222,7 +222,10 @@ def test_every_way_a_split_can_end_says_which_one_it_was(monkeypatch):
 
     cases = {
         "no source": (None, "no longer available"),
-        "cross page": ({"spans_pages": True}, "merged across pages"),
+        # a cross-page merge is now taken apart, not refused — but only when
+        # the file it was merged from is still there to read again
+        "cross page, no file": ({"spans_pages": True, "span_pages": [3, 4]},
+                                "no longer available to take apart"),
         "no grid": ({"spans_pages": False, "pdf": b"", "page": 1,
                      "bbox": [0, 0, 1, 1]}, "no row grid"),
     }

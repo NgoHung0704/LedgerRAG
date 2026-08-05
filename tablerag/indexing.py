@@ -204,19 +204,20 @@ def _table_region_inputs(element_id: uuid.UUID) -> dict | None:
                 # a cross-page table's stored crop is a STITCHED image of its
                 # fragments; re-rendering one page would hand over half a table
                 "spans_pages": len(meta.get("span_pages") or []) > 1,
+                "span_pages": list(meta.get("span_pages") or []),
                 "crop_key": element.crop_image_path}
     store = get_object_store()
-    if info["spans_pages"]:
-        if not store.exists(info["crop_key"]):
-            return None
+    if info["spans_pages"] and store.exists(info["crop_key"]):
         info["crop"] = store.get(info["crop_key"])
-        return info
     # an Office document was ingested through its cached PDF rendering
     if needs_conversion(info["filename"]):
         info["key"] = doc_converted_pdf_key(info["kb_id"], info["doc_id"])
-    if not store.exists(info["key"]):
+    # the PDF is loaded for a stitched table too: recheck reads it from the
+    # stitched crop, but taking a wrong MERGE apart needs each page again
+    if store.exists(info["key"]):
+        info["pdf"] = store.get(info["key"])
+    elif not info.get("crop"):
         return None
-    info["pdf"] = store.get(info["key"])
     return info
 
 
@@ -279,6 +280,56 @@ def _region_rows(pdf_bytes: bytes, page_no: int,
     return grid, tops
 
 
+def _page_table_region(pdf_bytes: bytes, page_no: int,
+                       first: bool) -> list[float] | None:
+    """The fragment on one page of a table that was merged across pages.
+
+    Chosen exactly the way the merge chose it: the BOTTOM-most table on the
+    page where it started, the TOP-most on each page it continued onto. Taking
+    the merge apart is deterministic — the seam is the page boundary, so there
+    is no judgement to ask a model for and none to get wrong."""
+    import fitz
+
+    from tablerag.ingestion.layout import detect_tables
+
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        if not 0 < page_no <= doc.page_count:
+            return None
+        found = [fitz.Rect(t.bbox) for t, _ in detect_tables(doc[page_no - 1])]
+    if not found:
+        return None
+    box = (max(found, key=lambda r: r.y1) if first
+           else min(found, key=lambda r: r.y0))
+    return [box.x0, box.y0, box.x1, box.y1]
+
+
+async def _split_by_page(element_id: uuid.UUID, info: dict):
+    """Undo a cross-page merge: one element per page it covered."""
+    from tablerag.ingestion.table_pipeline import parse_table_region
+
+    pages = info["span_pages"]
+    if len(pages) < 2 or "pdf" not in info:
+        return None, ("this table is recorded as spanning pages, but its "
+                      "source file is no longer available to take apart")
+    settings = get_settings()
+    results = []
+    for index, page in enumerate(pages):
+        box = await asyncio.to_thread(_page_table_region, info["pdf"], page,
+                                      index == 0)
+        if box is None:
+            return None, (f"no table could be found again on page {page}; "
+                          f"reprocess the document instead")
+        crop, grid = await asyncio.to_thread(
+            _render_region, info["pdf"], page, box, settings.table_crop_dpi)
+        results.append((page, box, crop,
+                        await parse_table_region(crop, grid, True,
+                                                 info["locale"])))
+
+    await asyncio.to_thread(_write_split, element_id, info, results)
+    return len(results), (f"unmerged into {len(results)} tables, one per page "
+                          f"({', '.join(str(p) for p in pages)})")
+
+
 def _write_split(element_id: uuid.UUID, info: dict, results: list) -> None:
     """First part replaces the element; the rest become new elements beside it.
 
@@ -295,11 +346,16 @@ def _write_split(element_id: uuid.UUID, info: dict, results: list) -> None:
             return
         repo.snapshot_element(s, element_id, "split")
 
-        first_box, first_crop, first = results[0]
+        first_page, first_box, first_crop, first = results[0]
         store.put(element.crop_image_path, first_crop, "image/png")
+        element.page = first_page
         element.bbox = first_box
         element.needs_review = first.needs_review
-        element.meta = {**(element.meta or {}), "edited": True, "split": True}
+        meta = {**(element.meta or {}), "edited": True, "split": True}
+        # it no longer spans anything: leaving the mark would send recheck back
+        # to a stitched crop that has just been replaced
+        meta.pop("span_pages", None)
+        element.meta = meta
         table = s.get(TableElement, element_id)
         if table is None:
             table = repo.add_table_element(s, element_id, None, None, None,
@@ -309,12 +365,12 @@ def _write_split(element_id: uuid.UUID, info: dict, results: list) -> None:
         table.n_rows, table.n_cols = first.n_rows, first.n_cols
         _replace_records(s, element_id, first.records or [])
 
-        for box, crop, part in results[1:]:
+        for page, box, crop, part in results[1:]:
             new_id = uuid.uuid4()
             key = element_image_key(info["kb_id"], info["doc_id"], new_id)
             store.put(key, crop, "image/png")
             repo.add_element(
-                s, info["doc_id"], element.page, bbox=box, type_="table",
+                s, info["doc_id"], page, bbox=box, type_="table",
                 crop_image_path=key, confidence=None,
                 needs_review=part.needs_review,
                 meta={"split_from": str(element_id)}, element_id=new_id)
@@ -372,10 +428,11 @@ async def split_table(element_id: uuid.UUID) -> int | None:
         return None, ("this table's source file is no longer available, so "
                       "its region cannot be re-read")
     if info["spans_pages"]:
-        # a cross-page merge has no single page to cut: its parts live on
-        # different pages, and undoing THAT merge is a different operation
-        return None, ("this table was merged across pages, so there is no "
-                      "single page to cut. Reprocess the document instead.")
+        # the seam IS the page boundary — no model needed, and no judgement to
+        # get wrong. This is the case the feature was asked for: two tables on
+        # facing pages with the SAME header and the same columns read as one
+        # long table, when the second is simply another table.
+        return await _split_by_page(element_id, info)
     settings = get_settings()
     grid, row_tops = await asyncio.to_thread(
         _region_rows, info["pdf"], info["page"], info["bbox"])
@@ -409,7 +466,7 @@ async def split_table(element_id: uuid.UUID) -> int | None:
     for box in boxes:
         crop, sub_grid = await asyncio.to_thread(
             _render_region, info["pdf"], info["page"], box, dpi)
-        results.append((box, crop, await parse_table_region(
+        results.append((info["page"], box, crop, await parse_table_region(
             crop, sub_grid, True, info["locale"])))
 
     await asyncio.to_thread(_write_split, element_id, info, results)

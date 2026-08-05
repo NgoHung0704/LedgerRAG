@@ -674,7 +674,38 @@ def _tables_continue(last: Region, cur_height: float,
         cols_b = max(len(r) for r in first.grid)
         if cols_a != cols_b:
             return False
+        if restarts(last.grid, first.grid):
+            return False
     return True
+
+
+def restarts(top: list[list], nxt: list[list]) -> bool:
+    """Does the next page BEGIN AGAIN rather than carry on?
+
+    Measured on a savings booklet: two allocation grids on facing pages, one
+    per risk profile, with the same header, the same five columns and the same
+    left edge. Every geometric test said continuation, and they were merged
+    into one 58-row table whose rows then answered for the wrong profile.
+
+    The tell is in the data: both start at "R - 47 ans". A table continuing
+    onto the next page picks up where it left off; it never repeats the row it
+    opened with."""
+    if len(top) < 2 or len(nxt) < 2:
+        return False
+    # not the whole row — the VALUES differ, that is the whole point (64,00 %
+    # against 44,00 % for the two profiles). What repeats is the LABEL.
+    if _norm_row(top[0]) != _norm_row(nxt[0]):
+        return False                      # no repeated header: nothing to tell
+    opening = _row_label(top[1])
+    return bool(opening) and opening == _row_label(nxt[1])
+
+
+def _row_label(row: list) -> str:
+    for cell in row:
+        text = " ".join(str(cell or "").split()).lower()
+        if text:
+            return text
+    return ""
 
 
 def merge_cross_page_tables(pages: list[PageLayout]) -> None:

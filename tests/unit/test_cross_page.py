@@ -101,10 +101,14 @@ def _table(y0: float, y1: float, grid=None, x0=50.0, x1=545.0) -> Region:
                   grid=grid or [["h1", "h2"], ["a", "1"]], crop_png=_png())
 
 
+# a continuation carries on: its rows are NOT the ones the table opened with
+CONTINUES = [["h1", "h2"], ["b", "2"]]
+
+
 def test_two_page_table_is_merged():
     pages = [
-        _page(1, [_table(400, 800)]),           # ends at 800/842 = 95% ✓
-        _page(2, [_table(40, 300)]),            # starts at 40/842 = 5% ✓
+        _page(1, [_table(400, 800)]),                    # ends at 95% ✓
+        _page(2, [_table(40, 300, grid=CONTINUES)]),     # starts at 5% ✓
     ]
     merge_cross_page_tables(pages)
     tables_p1 = [r for r in pages[0].regions if r.type == "table"]
@@ -117,8 +121,10 @@ def test_two_page_table_is_merged():
 def test_three_page_chain_merges_into_first():
     pages = [
         _page(1, [_table(400, 800)]),
-        _page(2, [_table(40, 800)]),   # continuation that itself continues
-        _page(3, [_table(40, 300)]),
+        # continuation that itself continues; each picks up where the last
+        # stopped, so no page opens with the label the table began on
+        _page(2, [_table(40, 800, grid=[["h1", "h2"], ["b", "2"]])]),
+        _page(3, [_table(40, 300, grid=[["h1", "h2"], ["c", "3"]])]),
     ]
     merge_cross_page_tables(pages)
     assert [len([r for r in p.regions if r.type == "table"]) for p in pages] \
@@ -196,3 +202,46 @@ def test_real_pdf_cross_page_table_merged():
     # the stitched crop is taller than a single fragment
     with Image.open(io.BytesIO(merged.crop_png)) as img:
         assert img.height > 300
+
+
+# --- two tables on facing pages are not one long table --------------------
+
+def _grid(header, labels, value):
+    return [header] + [[label, value] for label in labels]
+
+
+HEADER = ["Nombre d'années précédant la retraite (R)", "E ACTIONS ISR A"]
+
+
+def test_a_page_that_starts_again_is_not_a_continuation():
+    """Measured on a savings booklet: two allocation grids on facing pages,
+    one per risk profile, same header, same five columns, same left edge.
+    Every geometric test said continuation and they were merged into one
+    58-row table whose rows then answered for the wrong profile.
+
+    The values differ — 64,00 % against 44,00 % — so comparing whole rows sees
+    nothing. What repeats is the LABEL: both open at "R - 47 ans"."""
+    from tablerag.ingestion.layout import restarts
+
+    equilibre = _grid(HEADER, ["R - 47 ans", "R - 25 ans"], "64,00 %")
+    prudent = _grid(HEADER, ["R - 47 ans", "R - 29 ans"], "44,00 %")
+    assert restarts(equilibre, prudent) is True
+
+
+def test_a_real_continuation_still_merges():
+    """It picks up where it left off, so its first label is a new one."""
+    from tablerag.ingestion.layout import restarts
+
+    top = _grid(HEADER, ["R - 47 ans", "R - 25 ans"], "64,00 %")
+    carries_on = _grid(HEADER, ["R - 24 ans", "R - 23 ans"], "63,00 %")
+    assert restarts(top, carries_on) is False
+
+
+def test_without_a_repeated_header_the_test_says_nothing():
+    """A continuation that does not repeat its header has no label to compare
+    against — the geometry decides, as before."""
+    from tablerag.ingestion.layout import restarts
+
+    top = _grid(HEADER, ["R - 47 ans"], "64,00 %")
+    fragment = [["R - 47 ans", "44,00 %"], ["R - 29 ans", "43,50 %"]]
+    assert restarts(top, fragment) is False
