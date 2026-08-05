@@ -15,14 +15,20 @@ export default function RecordsTable({ records }: { records: LooseRecord[] }) {
   const dimKeys = Object.keys(records[0].dimensions);
   const metricKeys = Object.keys(records[0].metrics);
   return (
+    // A record's keys are identifiers built from the table's own headers, so
+    // they can be long and have no spaces to break at:
+    // "nombre_d_années_précédant_la_retraite_r". A table cannot shrink below
+    // its min-content width, and six such words set a floor wide enough to
+    // push the page — break-all lowers that floor, and an identifier reads
+    // fine broken anywhere.
     <div className="max-h-72 overflow-auto rounded-lg border border-line">
-      <table className="w-full text-[12px]">
+      <table className="w-full table-fixed text-[12px]">
         <thead className="sticky top-0 bg-surface-sunken">
           <tr>
             {dimKeys.map((k) => (
               <th
                 key={k}
-                className="border-b border-line px-2.5 py-1.5 text-left font-semibold text-ink-muted"
+                className="break-all border-b border-line px-2.5 py-1.5 text-left font-semibold text-ink-muted"
               >
                 {k}
               </th>
@@ -30,7 +36,7 @@ export default function RecordsTable({ records }: { records: LooseRecord[] }) {
             {metricKeys.map((k) => (
               <th
                 key={k}
-                className="border-b border-line px-2.5 py-1.5 text-right font-semibold text-indigo-600 dark:text-indigo-300"
+                className="break-all border-b border-line px-2.5 py-1.5 text-right font-semibold text-indigo-600 dark:text-indigo-300"
               >
                 {k}
               </th>
@@ -46,7 +52,7 @@ export default function RecordsTable({ records }: { records: LooseRecord[] }) {
               {dimKeys.map((k) => (
                 <td
                   key={k}
-                  className="px-2.5 py-1 text-ink"
+                  className="break-words px-2.5 py-1 text-ink"
                 >
                   {String(r.dimensions[k] ?? "")}
                 </td>
