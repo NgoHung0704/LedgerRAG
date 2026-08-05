@@ -928,7 +928,7 @@ ${r.findings}` : ""),
             <img
               src={`${API_URL}${element.crop_url}`}
               alt="original crop"
-              className="max-h-96 rounded-lg border border-line bg-surface object-contain"
+              className="max-h-96 max-w-full rounded-lg border border-line bg-surface object-contain"
             />
           </div>
         )}
@@ -955,9 +955,13 @@ function TextBody({ text }: { text: string }) {
   const cls =
     "rounded-lg bg-surface-sunken p-3 text-[13px] leading-6 text-ink";
   if (!looksLikeMarkdown(text))
-    return <p className={`whitespace-pre-wrap ${cls}`}>{text}</p>;
+    return <p className={`whitespace-pre-wrap break-words ${cls}`}>{text}</p>;
+  // a re-read can come back as a markdown TABLE — the only content here with
+  // no width of its own, so it needs a scroller like every other table view
   return (
-    <div className={`doc-table prose prose-sm max-w-none dark:prose-invert ${cls}`}>
+    <div
+      className={`doc-table prose prose-sm max-w-none overflow-x-auto dark:prose-invert ${cls}`}
+    >
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     </div>
   );
