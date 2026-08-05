@@ -336,7 +336,14 @@
   @apply border border-line bg-surface-sunken px-3 py-1.5 text-left font-semibold text-ink;
 }
 .doc-table td {
-  @apply border border-line px-3 py-1.5 text-ink-muted;
+  @apply border border-line px-3 py-1.5 align-top text-ink-muted;
+}
+/* A repeated column is collapsed into one rowspan cell, and a browser centres
+   such a cell vertically by default — so a value covering thirteen rows was
+   drawn beside the SEVENTH of them, and the row it actually starts at looked
+   empty. Reading a merged cell means reading it against its first row. */
+.doc-table th {
+  @apply align-top;
 }
 
 /* Answers are read on screen next to the table they came from, so they are set
