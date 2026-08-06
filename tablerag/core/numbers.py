@@ -50,6 +50,10 @@ def _normalize_spaces(s: str) -> str:
     return _SPACE_RE.sub(" ", s).strip()
 
 
+# a percentage, and optionally what it is a percentage OF: % BRSS, %PMSS, %TM
+_PERCENT_OF = re.compile(r"%\s*[A-Za-z]{0,6}$")
+
+
 def _strip_sign_and_unit(s: str) -> tuple[str, bool, str | None]:
     """Peel off sign, %, currency symbol/code. Returns (core, negative, unit)."""
     negative = False
@@ -65,9 +69,17 @@ def _strip_sign_and_unit(s: str) -> tuple[str, bool, str | None]:
     elif s and s[0] == "+":
         s = s[1:].strip()
 
-    if s.endswith("%"):
-        unit = "%"
-        s = s[:-1].strip()
+    # "%" optionally followed by the base it is a percentage OF. French health
+    # cover is written this way throughout — 300 %BRSS, 4 %PMSS, 100 %TM,
+    # 100 %DE — and refusing them cost more than a unit label: a guarantee
+    # table's value column scored 0.33 parseable, fell under the numeric-column
+    # threshold, and every amount in it was filed as a DIMENSION with no metric
+    # at all. The base is kept in the unit, so "300 %BRSS" and "300 %PMSS" stay
+    # distinguishable.
+    percent = _PERCENT_OF.search(s)
+    if percent:
+        unit = percent.group(0).replace(" ", "")
+        s = s[:percent.start()].strip()
 
     for symbol, code in CURRENCY_SYMBOLS.items():
         if s.startswith(symbol):

@@ -262,3 +262,30 @@ def test_it_refuses_to_guess_from_too_little(monkeypatch):
 
     assert guess_language("Industries 27,6 Technologie 16,0") is None
     assert guess_language("") is None
+
+
+# --- and it must LOOK like a heading ---------------------------------------
+
+@pytest.mark.parametrize("text,is_heading", [
+    # measured in a parse export: all four were used as though they named the
+    # element below them, and all four went into indexed chunks
+    ("LES CAS PARTICULIERS DE MAINTIEN … .................. 29", False),
+    ("■ et, que son tarif soit publiquement affiché.", False),
+    ("délégation)", False),
+    ("Seules les garanties prévues au(x) tableau(x) des garanties peuvent "
+     "faire l'objet d'un remboursement dans les conditions définies ci-après.",
+     False),
+    # every real heading in the corpus
+    ("DEFINITIONS DES VERRES :", True),
+    ("EVOLUTION DE LA VL (BASE 100)", True),
+    ("Répartition sectorielle hors OPC (en % d'actif)*", True),
+    ("Notation ESG du portefeuille", True),
+    ("HOSPITALISATION en médecine, chirurgie ; hors chirurgie esthétique", True),
+    # a lead-in really does introduce the table under it
+    ("Ce remboursement peut nécessiter la fourniture des pièces suivantes :",
+     True),
+])
+def test_a_heading_is_told_from_the_nearest_line_above(text, is_heading):
+    from tablerag.ingestion.layout import looks_like_heading
+
+    assert looks_like_heading(text) is is_heading

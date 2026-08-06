@@ -166,3 +166,36 @@ def test_raw_string_is_never_needed_back():
     raw = "7 462 639 €"
     parse_number(raw, "fr")
     assert raw == "7 462 639 €"
+
+
+# --- "%" and what it is a percentage OF -----------------------------------
+
+@pytest.mark.parametrize("raw,value,unit", [
+    ("300 %BRSS", 300.0, "%BRSS"),      # of the social-security base
+    ("4 %PMSS", 4.0, "%PMSS"),          # of the monthly ceiling
+    ("100 %TM", 100.0, "%TM"),          # of the patient share
+    ("100 %DE", 100.0, "%DE"),          # of actual spend
+    ("27,6 %", 27.6, "%"),              # plain percentage, unchanged
+    ("-4,31%", -4.31, "%"),
+])
+def test_a_percentage_may_name_its_base(raw, value, unit):
+    """French health cover is written this way throughout, and refusing it cost
+    far more than a unit label: a guarantee table's value column scored 0.33
+    parseable, fell under the numeric-column threshold, and every amount in it
+    was filed as a DIMENSION with no metric at all — the one split the record
+    model exists to make."""
+    parsed = parse_number(raw, "fr")
+    assert parsed is not None, raw
+    assert (parsed.value, parsed.unit) == (value, unit)
+
+
+def test_the_base_is_kept_so_two_percentages_stay_distinguishable():
+    """300 %BRSS and 300 %PMSS are different amounts of money."""
+    assert parse_number("300 %BRSS", "fr").unit != parse_number("300 %PMSS", "fr").unit
+
+
+def test_prose_around_a_number_is_still_refused():
+    """The rule is a SUFFIX, not "ignore any letters": these are sentences with
+    a number in them, and turning them into metrics would be an invention."""
+    assert parse_number("100% du forfait", "fr") is None
+    assert parse_number("sans reste à charge", "fr") is None

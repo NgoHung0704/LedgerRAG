@@ -12,6 +12,7 @@ corpus defeats find_tables, a PP-Structure detector can be swapped in behind
 from __future__ import annotations
 
 import io
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -565,6 +566,32 @@ def embedded_images(page: fitz.Page) -> list[fitz.Rect]:
     return seen
 
 
+_BULLET = re.compile(r"^[\W_]*[■▪●•◆‣–—-]")
+_LEADERS = re.compile(r"\.\s*\.\s*\.")
+
+
+def looks_like_heading(text: str) -> bool:
+    """Is this line a HEADING, or just the nearest short text above?
+
+    Excluding other elements' text was not enough. Measured in a parse export,
+    these four went into indexed chunks as though they named the thing below:
+
+        "LES CAS PARTICULIERS DE MAINTIEN … ............... 29"   a contents line
+        "■ et, que son tarif soit publiquement affiché."          a bullet
+        "délégation)"                                            half a word
+        "Seules les garanties prévues au(x) tableau(x) … ci-après."  a sentence
+
+    Four properties settle every one of them, and keep every real heading in
+    the corpus: no bullet, no dot leaders, starts with a capital (a fragment
+    continuing from the line above does not), and does not end in a full stop.
+    A colon is fine — "Ce remboursement peut nécessiter … suivantes :" really
+    does introduce the table under it.
+    """
+    if not text or _BULLET.match(text) or _LEADERS.search(text):
+        return False
+    return text[:1].isupper() and not text.endswith(".")
+
+
 def nearest_heading(text_blocks, bbox, taken=()) -> str | None:
     """The short line printed just above a region — the words a reader would
     use to ask for it.
@@ -589,6 +616,8 @@ def nearest_heading(text_blocks, bbox, taken=()) -> str | None:
     for block in text_blocks:
         text = " ".join(str(block[4] or "").split())
         if not text or len(text) > _HEADING_MAX_CHARS:
+            continue
+        if not looks_like_heading(text):
             continue
         gap = y0 - block[3]
         if not 0 <= gap < best_gap:
