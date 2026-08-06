@@ -59,6 +59,9 @@ class Region:
     vector: bool = False
     bars: list[float] = field(default_factory=list)  # figures: bar lengths
     groups: list[int] = field(default_factory=list)  # figures: bars per category
+    # tables/figures: the heading printed above them. A picture is FOUND by the
+    # words a reader would use, and those are on the page around it.
+    context: str = ""
 
 
 @dataclass
@@ -473,6 +476,34 @@ def detect_vector_figures(page: fitz.Page,
     return regions
 
 
+_HEADING_MAX_GAP = 90.0     # points above the region
+_HEADING_MAX_CHARS = 160    # longer than this is a paragraph, not a title
+
+
+def nearest_heading(text_blocks, bbox) -> str | None:
+    """The short line printed just above a region — the words a reader would
+    use to ask for it.
+
+    Retrieval matches the text of a chunk, and a figure's chunk holds only
+    what a model saw INSIDE the picture. The question is asked in the
+    document's vocabulary, which is printed around it: a booklet's allocation
+    grid says nothing about "gestion pilotée" or which risk profile it is, and
+    a chart whose own title is drawn as curves carries no words at all."""
+    x0, y0, x1, _ = bbox
+    best, best_gap = None, _HEADING_MAX_GAP
+    for block in text_blocks:
+        text = " ".join(str(block[4] or "").split())
+        if not text or len(text) > _HEADING_MAX_CHARS:
+            continue
+        gap = y0 - block[3]
+        if not 0 <= gap < best_gap:
+            continue
+        if block[0] > x1 or block[2] < x0:      # not above THIS region
+            continue
+        best, best_gap = text, gap
+    return best
+
+
 def looks_like_column_layout(boxes: list[tuple[float, float, float, float]],
                              page_width: float) -> bool:
     """Does this page lay its text out in columns (a slide / diagram grid)?
@@ -557,6 +588,14 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
             text_parts.append(content)
             kept_boxes.append(tuple(block_rect))
             text_bbox = block_rect if text_bbox is None else text_bbox | block_rect
+
+    # what each table and figure sits UNDER. A picture is retrieved by the
+    # words a reader would use for it, and those are on the page around it,
+    # not inside it: "Profil PER HORIZON RETRAITE EQUILIBRE" is printed above
+    # the grid, and a chart whose own title is outlined has no words at all.
+    for region in layout.regions:
+        if region.type in ("table", "figure"):
+            region.context = nearest_heading(text_blocks, region.bbox) or ""
 
     # nearest short text block below each figure = its caption (C5: keep
     # image + caption, nothing more)

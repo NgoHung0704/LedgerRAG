@@ -103,6 +103,7 @@ def html_is_trustworthy(html: str | None, from_grid: bool,
 def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                   grid, is_complex: bool, locale: str | None,
                   records_out: list, summaries_out: list,
+                  context: str | None = None,
                   double_read: bool = True,
                   extra_meta: dict | None = None) -> None:
     """Create one table element with its three representations + confidence."""
@@ -157,7 +158,7 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                      element_id=element_id)
     summary = None
     if html_is_trustworthy(result.html, grid is not None, result.error):
-        summary = asyncio.run(summarize_table(result.html, locale))
+        summary = asyncio.run(summarize_table(result.html, locale, context))
     repo.add_table_element(s, element_id, result.html or None, summary,
                            result.n_rows, result.n_cols, result.parse_strategy)
     if result.records:
@@ -262,7 +263,9 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                      if region.span_pages else None)
             _ingest_table(s, store, kb_id, doc_id, layout.page, region.bbox,
                           table_crop, region.grid, region.complex, locale,
-                          records_out, summaries_out, double_read=double_read,
+                          records_out, summaries_out,
+                          context=region.context,
+                          double_read=double_read,
                           extra_meta=extra)
         elif region.type == "figure":
             # C5: store image + caption, mark figure, never extract data.
@@ -278,7 +281,8 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                     and len(figures_out) < settings.figure_describe_max_per_doc):
                 try:
                     description, informative = asyncio.run(
-                        describe_figure(crop, region.caption, region.groups))
+                        describe_figure(crop, region.caption, region.groups,
+                                        locale=locale, context=region.context))
                 except Exception:  # noqa: BLE001 — a figure must not fail a doc
                     logger.exception("doc %s page %d: figure description "
                                      "failed; keeping image only",
@@ -317,8 +321,15 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                 needs_review=needs_review, meta=meta, element_id=element_id)
             if description and informative:
                 figures_out.append(element_id)
+                # the heading goes INTO the indexed text, not just into the
+                # prompt: retrieval matches what a chunk says, and the words a
+                # reader would use for a figure are printed around it, not in
+                # it. Without this a chart is findable only by what a model
+                # happened to call it.
+                indexed = (f"{region.context}\n\n{description}"
+                           if region.context else description)
                 chunks = chunk_text(
-                    description, target_tokens=settings.chunk_target_tokens,
+                    indexed, target_tokens=settings.chunk_target_tokens,
                     overlap_ratio=settings.chunk_overlap_ratio)
                 rows = repo.add_chunks(s, element.id,
                                        [(c.text, c.token_count) for c in chunks])

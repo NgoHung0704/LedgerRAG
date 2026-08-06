@@ -48,6 +48,27 @@ from tablerag.ingestion.ocr import describe_figure  # noqa: E402
 
 TOLERANCE = 0.001   # a value counts as present if a read number matches it
 
+# Which language a description is written in decides whether it can be found at
+# all: a French corpus is searched in French, and "Bar chart showing sector
+# distribution" shares no word with « répartition sectorielle ». Every
+# description on the box came back in English until the KB's locale was passed
+# down. Function words are enough to tell them apart — they are the words a
+# description cannot avoid.
+_MARKERS = {
+    "fr": (" le ", " la ", " les ", " des ", " du ", " une ", " est ", " sur ",
+           " avec ", " par ", " pour "),
+    "en": (" the ", " of ", " and ", " with ", " is ", " are ", " shows ",
+           " showing ", " from "),
+}
+
+
+def language_of(text: str) -> str | None:
+    padded = " " + " ".join((text or "").lower().split()) + " "
+    scores = {code: sum(padded.count(word) for word in words)
+              for code, words in _MARKERS.items()}
+    best = max(scores, key=lambda c: scores[c])
+    return best if scores[best] else None
+
 
 def figures_of(pdf: Path, page: int) -> list:
     """Every figure region ingestion finds on one page, in reading order."""
@@ -94,7 +115,11 @@ def grade(item: dict, description: str, informative: bool,
                           if low <= r <= high and not present(r, ticks))
 
     score, note = agreement(bars, read) if bars else (None, "no bars")
+    want = item.get("language")
+    spoke = language_of(description)
     return {
+        "language_ok": spoke is None or want is None or spoke == want,
+        "language": spoke,
         "values": found / len(expected) if expected else None,
         "missing": [v for v in expected
                     if not present(v, read)] if expected else [],
@@ -123,8 +148,11 @@ async def run(item: dict, pdf_dir: Path) -> dict:
                          f"wanted #{index} — detection regressed"}
     layout, region = found[index]
     crop = crop_region_png(layout.image_png, layout.width, region.bbox)
+    # exactly the call ingestion makes, locale and heading included — a gate
+    # that leaves out an argument measures something the pipeline never runs
     description, informative = await describe_figure(
-        crop, region.caption, region.groups)
+        crop, region.caption, region.groups,
+        locale=item.get("language"), context=region.context)
 
     # grade the decision the PIPELINE makes, not the model's flag on its own:
     # a description whose numbers the page's text already carries is held out
@@ -153,8 +181,8 @@ def main() -> None:
 
     rows, errors, transcript = [], [], []
     print(f"{'id':22s} {'values':>7s} {'phantom':>7s} {'kind':>5s} "
-          f"{'agree':>6s}  detail")
-    print("-" * 78)
+          f"{'lang':>5s} {'agree':>6s}  detail")
+    print("-" * 84)
     for item in items:
         try:
             result = asyncio.run(run(item, args.pdf_dir))
@@ -174,8 +202,9 @@ def main() -> None:
         agree = ("  —  " if result["agreement"] is None
                  else f"{result['agreement']:5.2f}")
         print(f"{item['id']:22s} {values:>7s} {result['phantom']:>7d} "
-              f"{'ok' if result['kind_ok'] else 'WRONG':>5s} {agree:>6s}  "
-              f"{result['note']}")
+              f"{'ok' if result['kind_ok'] else 'WRONG':>5s} "
+              f"{(result['language'] or '—') if result['language_ok'] else 'WRONG':>5s} "
+              f"{agree:>6s}  {result['note']}")
         if result["missing"]:
             print(f"{'':22s} missing: {result['missing']}")
 
@@ -190,6 +219,7 @@ def main() -> None:
                   if scored else 1.0)
     phantoms = sum(r["phantom"] for r in rows)
     kinds = sum(1 for r in rows if r["kind_ok"]) / len(rows) if rows else 1.0
+    langs = sum(1 for r in rows if r["language_ok"]) / len(rows) if rows else 1.0
 
     print("-" * 78)
     if errors:
@@ -206,6 +236,9 @@ def main() -> None:
         ("phantom", 1.0 if phantoms == 0 else 0.0, 1.0,
          f"{phantoms} invented"),
         ("kind   ", kinds, 1.0, f"{kinds:.0%}"),
+        # a description in the wrong language cannot be found by a question
+        # asked in the document's own
+        ("language", langs, 1.0, f"{langs:.0%}"),
     ]
     failed = bool(errors)
     for name, score, target, shown in verdicts:

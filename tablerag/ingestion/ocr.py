@@ -81,17 +81,26 @@ _BOTH_PROMPT = _STRUCTURED_PROMPT.replace(
 # bar has no value, and reading one off it is exactly the invention this project
 # exists to avoid.
 _FIGURE_PROMPT = """\
-Describe this figure taken from a document, in the SAME language as its labels.
+Describe this figure taken from a document. Your description is what someone \
+will SEARCH to find this figure again, and then they will look at the figure \
+themselves. So it must carry the words they would search with — not a \
+conclusion drawn for them.
 
 - Say what kind of figure it is (chart, diagram, photo, map, screenshot, logo) \
-and what it shows.
+and what it is about.
 - Copy EVERY printed label exactly: title, axis names, units, legend entries, \
-series names, and any value written on the figure. Numbers character-exact.
+series names, category names, and any value written on the figure. Numbers \
+character-exact.
+- When COLOUR carries meaning, say which colour means what — "the red band \
+marks level 6", "green = conforme". A colour-coded figure cannot be found or \
+read without that pairing, and "the red zone" is exactly how someone will ask \
+for it.
+- Name what can be LOOKED UP in this figure, in the figure's own words.
 - Describe only what is DRAWN. Never infer a cause, a conclusion or a trend the \
 figure does not state, and NEVER read a value that is not printed — an \
 unlabelled bar or slice has no number, so say it is not labelled rather than \
 estimating it.
-- Write [?] for anything unreadable. Keep it under 8 lines.
+- Write [?] for anything unreadable. Keep it under 12 lines.
 
 Then output exactly one final line:
 INFORMATIVE: yes
@@ -139,8 +148,31 @@ async def reread_page(image_png: bytes, mode: str = "structure") -> str:
     return await _transcribe(image_png, REREAD_MODES[mode])
 
 
+_LANGUAGES = {"fr": "French", "de": "German", "es": "Spanish", "it": "Italian",
+              "nl": "Dutch", "pt": "Portuguese", "en": "English", "vi": "Vietnamese"}
+
+
+def language_line(locale: str | None) -> str:
+    """Which language to write in.
+
+    Measured on the deployment box: every description of a FRENCH factsheet
+    came back in English — "Bar chart showing sector distribution" for a chart
+    titled « Répartition sectorielle ». The prompt said "the same language as
+    its labels" and the model followed the prompt's own language instead.
+    A description in the wrong language is nearly unfindable: the question and
+    the chunk share no words."""
+    name = _LANGUAGES.get((locale or "").strip().lower()[:2])
+    if name:
+        return (f"\n\nWrite the description in {name}. The document is in "
+                f"{name} and it will be searched in {name}.")
+    return ("\n\nWrite the description in the same language as the words "
+            "printed on the figure.")
+
+
 async def describe_figure(image_png: bytes, caption: str | None = None,
-                          groups: list[int] | None = None) -> tuple[str, bool]:
+                          groups: list[int] | None = None,
+                          locale: str | None = None,
+                          context: str | None = None) -> tuple[str, bool]:
     """Describe a figure crop. Returns (description, informative).
 
     `informative` is False for a logo, a letterhead, a signature — images that
@@ -152,7 +184,13 @@ async def describe_figure(image_png: bytes, caption: str | None = None,
     the factsheet this was built from, two sectors carried only one bar, the
     model did not notice, and every value from there on landed one sector
     early — each number read correctly, all of them attributed wrongly."""
-    prompt = _FIGURE_PROMPT
+    prompt = _FIGURE_PROMPT + language_line(locale)
+    if context:
+        # the heading printed above it. Evidence, like the grid hint: a chart
+        # whose own title is outlined has no words of its own, and the words a
+        # reader would use for it are on the page around it.
+        prompt += (f"\n\nThe page prints this heading above the figure: "
+                   f"{context}. Use its wording where it fits what you see.")
     if caption:
         # the printed caption is the document's own words for this figure and
         # anchors the description; it is evidence, not an instruction
