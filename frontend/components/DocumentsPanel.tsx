@@ -74,6 +74,21 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
   };
 
   const reprocess = async (d: Doc) => {
+    // a failed document has nothing to lose; a successful one does — every
+    // element is replaced, and corrections made to them go with it
+    if (
+      d.status !== "failed" &&
+      !(await confirm({
+        title: `Reprocess ${d.filename}?`,
+        message:
+          "Ingestion runs again from the original file, so the document picks " +
+          "up any parsing improvements. Its current elements are replaced — " +
+          "edits, splits and approvals made on them are lost.",
+        confirmLabel: "Reprocess",
+        danger: false,
+      }))
+    )
+      return;
     setReprocessing(d.id);
     setUploadError(null);
     try {
@@ -339,11 +354,18 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-1">
-                      {d.status === "failed" && (
+                      {/* not only after a failure: parsing improves, and a
+                          document that succeeded under an older version is
+                          exactly the one that needs running again */}
+                      {!["queued", "parsing", "indexing"].includes(d.status) && (
                         <button
                           onClick={() => reprocess(d)}
                           disabled={reprocessing === d.id}
-                          title="Clear the error and run ingestion again"
+                          title={
+                            d.status === "failed"
+                              ? "Clear the error and run ingestion again"
+                              : "Run ingestion again — picks up parsing changes. The current elements are replaced, and any manual corrections to them are lost."
+                          }
                           className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 dark:text-indigo-300 dark:hover:bg-indigo-950/50"
                         >
                           {reprocessing === d.id ? (

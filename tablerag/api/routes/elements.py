@@ -239,6 +239,30 @@ async def split_element_table(element_id: uuid.UUID) -> dict:
     return detail
 
 
+@router.post("/{element_id}/merge")
+async def merge_element_table(element_id: uuid.UUID) -> dict:
+    """"This and the next one are one table": join them and re-parse.
+
+    The inverse of "two tables". Detection splits a table wherever its ruling
+    stops — a change of section, a band of colour, a page break it did not read
+    as a continuation — and left apart, half the rows answer for the whole.
+
+    The next table in reading order is the one joined, on the same page or
+    across the page break. Undo restores this table's previous content; the
+    other element is gone until the document is reprocessed."""
+    from tablerag import indexing
+
+    rows, reason = await indexing.merge_tables(element_id)
+    if rows is None:
+        raise HTTPException(409, f"Nothing was joined: {reason}")
+    await indexing.reindex_element(element_id)
+    with session_scope() as s:
+        detail = repo.get_element_detail(s, element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    detail["reason"] = reason
+    return detail
+
+
 @router.post("/{element_id}/convert-to-text")
 async def convert_element_to_text(element_id: uuid.UUID) -> dict:
     """"This is not a table": demote a wrongly detected table to plain text.

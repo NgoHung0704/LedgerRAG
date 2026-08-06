@@ -379,6 +379,14 @@ export const splitElementTable = (elementId: string) =>
     (r) => jsonOrThrow<ElementDetail & { parts: number; reason: string }>(r),
   );
 
+/** "This and the next one are one table": join them and re-parse. The inverse
+ * of splitElementTable. Undo restores this table's previous content; the other
+ * element is gone until the document is reprocessed. */
+export const mergeElementTable = (elementId: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/merge`, { method: "POST" }).then(
+    (r) => jsonOrThrow<ElementDetail & { reason: string }>(r),
+  );
+
 /** Put an element back the way it was before its last edit, and re-index.
  * Reprocessing the document undoes anything, but re-runs the whole file and
  * discards every other correction made to it. */

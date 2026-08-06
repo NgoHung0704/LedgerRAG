@@ -280,6 +280,112 @@ def _region_rows(pdf_bytes: bytes, page_no: int,
     return grid, tops
 
 
+async def merge_tables(element_id: uuid.UUID):
+    """Join this table with the next one — the inverse of "two tables".
+
+    Detection splits a table wherever its ruling stops: a change of section, a
+    band of colour, a page break it did not recognise as a continuation. Left
+    apart, half its rows answer for the whole and the header lives on only one
+    of the pieces.
+
+    Returns (rows, reason); rows is None when nothing was joined."""
+    from tablerag.ingestion.imaging import stitch_vertical
+    from tablerag.ingestion.table_pipeline import parse_table_region
+
+    pair = await asyncio.to_thread(_next_table, element_id)
+    if pair is None:
+        return None, ("there is no table after this one to join it with — a "
+                      "table can only be merged with the next in the document")
+    first, second = pair
+    info = await asyncio.to_thread(_table_region_inputs, element_id)
+    if info is None or "pdf" not in info:
+        return None, ("this table's source file is no longer available, so the "
+                      "joined region cannot be read again")
+
+    settings = get_settings()
+    if first["page"] == second["page"]:
+        box = [min(first["bbox"][0], second["bbox"][0]),
+               min(first["bbox"][1], second["bbox"][1]),
+               max(first["bbox"][2], second["bbox"][2]),
+               max(first["bbox"][3], second["bbox"][3])]
+        crop, grid = await asyncio.to_thread(
+            _render_region, info["pdf"], first["page"], box,
+            settings.table_crop_dpi)
+        spans: list[int] = []
+    else:
+        # across a page break there is no single region to render: the crops
+        # are stitched, exactly as the ingest-time merge does
+        boxes = [_page_table_region(info["pdf"], first["page"], True),
+                 _page_table_region(info["pdf"], second["page"], False)]
+        if None in boxes:
+            return None, "the two regions could not be found again in the PDF"
+        crops = [
+            (await asyncio.to_thread(_render_region, info["pdf"], page, box,
+                                     settings.table_crop_dpi))[0]
+            for page, box in zip((first["page"], second["page"]), boxes)]
+        crop, grid = stitch_vertical(crops[0], crops[1]), None
+        box, spans = first["bbox"], [first["page"], second["page"]]
+
+    result = await parse_table_region(crop, grid, True, info["locale"])
+    await asyncio.to_thread(_write_merge, element_id, second["id"], info,
+                            first["page"], box, crop, result, spans)
+    where = ("across pages " + ", ".join(str(p) for p in spans)
+             if spans else f"on page {first['page']}")
+    return result.n_rows, f"joined {where} into one table of {result.n_rows} rows"
+
+
+def _next_table(element_id: uuid.UUID):
+    """This table and the one after it in reading order, or None."""
+    from sqlalchemy import select
+
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None or element.type != "table":
+            return None
+        tables = [e for e in s.scalars(
+            select(Element).where(Element.doc_id == element.doc_id,
+                                  Element.type == "table"))]
+        tables.sort(key=lambda e: (e.page, (e.bbox or [0, 0])[1]))
+        for a, b in zip(tables, tables[1:]):
+            if a.id == element_id:
+                return ({"id": a.id, "page": a.page, "bbox": list(a.bbox or [])},
+                        {"id": b.id, "page": b.page, "bbox": list(b.bbox or [])})
+    return None
+
+
+def _write_merge(element_id: uuid.UUID, second_id: uuid.UUID, info: dict,
+                 page: int, bbox, crop: bytes, result, spans: list[int]) -> None:
+    from tablerag.storage.object_store import get_object_store
+
+    store = get_object_store()
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None:
+            return
+        repo.snapshot_element(s, element_id, "merge")
+        store.put(element.crop_image_path, crop, "image/png")
+        element.page, element.bbox = page, list(bbox)
+        element.needs_review = result.needs_review
+        meta = {**(element.meta or {}), "edited": True, "merged": True}
+        if spans:
+            meta["span_pages"] = spans
+        else:
+            meta.pop("span_pages", None)
+        element.meta = meta
+
+        table = s.get(TableElement, element_id)
+        if table is None:
+            table = repo.add_table_element(s, element_id, None, None, None,
+                                           None, result.parse_strategy)
+        table.html = result.html or None
+        table.summary = None          # it described half of it
+        table.n_rows, table.n_cols = result.n_rows, result.n_cols
+        _replace_records(s, element_id, result.records or [])
+
+        keys = repo.delete_elements(s, [second_id])
+        _drop_crops(keys, keep=element.crop_image_path)
+
+
 def _page_table_region(pdf_bytes: bytes, page_no: int,
                        first: bool) -> list[float] | None:
     """The fragment on one page of a table that was merged across pages.

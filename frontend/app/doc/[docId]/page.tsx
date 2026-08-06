@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Columns3,
+  Combine,
   Eraser,
   ExternalLink,
   FileText,
@@ -37,6 +38,7 @@ import {
   markElementUnusable,
   recheckElement,
   rereadElement,
+  mergeElementTable,
   splitElementTable,
   undoElementEdit,
   type DocumentView,
@@ -319,6 +321,7 @@ function ElementCard({
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
   const [splitting, setSplitting] = useState(false);
+  const [merging, setMerging] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -395,6 +398,35 @@ ${r.findings}` : ""),
     } catch (e) {
       setReviewError(String(e));
       setRemoving(false);
+    }
+  };
+
+  const mergeTable = async () => {
+    if (
+      !(await confirm({
+        title: "Is the next table part of this one?",
+        message:
+          "The two regions are read again as one table. Detection splits a " +
+          "table wherever its ruling stops, and left apart half its rows " +
+          "answer for the whole. Undo restores this table; the other element " +
+          "comes back only by reprocessing the document.",
+        confirmLabel: "Join",
+        danger: false,
+      }))
+    )
+      return;
+    setMerging(true);
+    setReviewError(null);
+    setNotice(null);
+    try {
+      const result = await mergeElementTable(element.id);
+      setNotice(`Joined — ${result.reason}.`);
+      onChanged();
+      setDetail(result);
+    } catch (e) {
+      setReviewError(String(e).replace(/^Error:\s*/, ""));
+    } finally {
+      setMerging(false);
     }
   };
 
@@ -639,6 +671,17 @@ ${r.findings}` : ""),
             >
               {rechecking ? <Spinner size={11} /> : <ScanSearch size={12} />}
               {rechecking ? "re-parsing…" : "double-check"}
+            </button>
+          )}
+          {element.type === "table" && (
+            <button
+              onClick={mergeTable}
+              disabled={merging}
+              title="Detection splits a table wherever its ruling stops. This reads it together with the NEXT table — same page or across the page break — as one."
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
+            >
+              {merging ? <Spinner size={11} /> : <Combine size={12} />}
+              {merging ? "joining…" : "one table"}
             </button>
           )}
           {element.type === "table" && (

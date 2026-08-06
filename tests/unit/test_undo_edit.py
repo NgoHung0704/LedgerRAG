@@ -235,3 +235,34 @@ def test_every_way_a_split_can_end_says_which_one_it_was(monkeypatch):
         parts, reason = asyncio.run(indexing.split_table(uuid.uuid4()))
         assert parts is None, name
         assert expected in reason, f"{name}: {reason}"
+
+
+# --- joining a table detection cut in two ---------------------------------
+
+def test_the_next_table_in_reading_order_is_the_one_joined(db_session, table):
+    """No picker: a table is joined with the one after it, same page or across
+    the page break. Reading order is (page, top edge), not insertion order."""
+    from tablerag.indexing import _next_table
+
+    doc_id = db_session.get(Element, table.id).doc_id
+    later = repo.add_element(db_session, doc_id, page=2, bbox=[0, 50, 1, 60],
+                             type_="table", crop_image_path="p2.png")
+    # inserted last but sits ABOVE the page-2 table, so it comes first
+    middle = repo.add_element(db_session, doc_id, page=1, bbox=[0, 90, 1, 99],
+                              type_="table", crop_image_path="mid.png")
+    db_session.flush()
+
+    first, second = _next_table(table.id)
+    assert (first["id"], second["id"]) == (table.id, middle.id)
+    assert _next_table(middle.id)[1]["id"] == later.id
+    assert _next_table(later.id) is None      # nothing after the last one
+
+
+def test_a_text_element_has_nothing_to_join(db_session, table, monkeypatch):
+    doc_id = db_session.get(Element, table.id).doc_id
+    text = repo.add_element(db_session, doc_id, page=1, bbox=[0, 0, 1, 1],
+                            type_="text", crop_image_path="t.png")
+    db_session.flush()
+    from tablerag.indexing import _next_table
+
+    assert _next_table(text.id) is None
