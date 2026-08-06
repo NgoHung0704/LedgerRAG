@@ -172,7 +172,8 @@ def language_line(locale: str | None) -> str:
 async def describe_figure(image_png: bytes, caption: str | None = None,
                           groups: list[int] | None = None,
                           locale: str | None = None,
-                          context: str | None = None) -> tuple[str, bool]:
+                          context: str | None = None,
+                          palette: str | None = None) -> tuple[str, bool]:
     """Describe a figure crop. Returns (description, informative).
 
     `informative` is False for a logo, a letterhead, a signature — images that
@@ -191,6 +192,15 @@ async def describe_figure(image_png: bytes, caption: str | None = None,
         # reader would use for it are on the page around it.
         prompt += (f"\n\nThe page prints this heading above the figure: "
                    f"{context}. Use its wording where it fits what you see.")
+    if palette:
+        # measured from the drawing, so the same ink is called the same thing
+        # in every description; what each one MEANS is on the legend, and only
+        # the image can say that
+        prompt += (f"\n\nColours measured in this figure, by how much of it "
+                   f"they cover: {palette}. Use these names. If a colour "
+                   f"stands for something, say what — and if colour is the "
+                   f"only thing telling them apart and nothing on the figure "
+                   f"explains it, say that instead of guessing.")
     if caption:
         # the printed caption is the document's own words for this figure and
         # anchors the description; it is evidence, not an instruction

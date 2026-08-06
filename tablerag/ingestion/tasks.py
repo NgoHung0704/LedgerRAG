@@ -27,6 +27,7 @@ from tablerag.ingestion.layout import PageLayout, analyze_document, crop_region_
 from tablerag.ingestion.chart_check import agreement as chart_agreement
 from tablerag.ingestion.chart_check import index_verdict, read_numbers
 from tablerag.ingestion.ocr import describe_figure, ocr_page
+from tablerag.ingestion.palette import describe_palette, raster_palette
 from tablerag.ingestion.table_pipeline import parse_table_region, summarize_table
 from tablerag.models.base import ModelProvider, TableCtx, Vector
 from tablerag.models.registry import get_provider
@@ -280,9 +281,18 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
             if (settings.figure_describe_enabled
                     and len(figures_out) < settings.figure_describe_max_per_doc):
                 try:
+                    # a drawn figure states its inks; a pasted one is
+                    # quantised. Either way the model is told what they ARE,
+                    # so the same colour is called the same thing every time.
+                    inks = region.palette or raster_palette(crop, locale)
                     description, informative = asyncio.run(
                         describe_figure(crop, region.caption, region.groups,
-                                        locale=locale, context=region.context))
+                                        locale=locale, context=region.context,
+                                        palette=describe_palette(inks)))
+                    if inks:
+                        meta["palette"] = [
+                            {"name": n, "hex": h, "share": round(s_, 3)}
+                            for n, h, s_ in inks]
                 except Exception:  # noqa: BLE001 — a figure must not fail a doc
                     logger.exception("doc %s page %d: figure description "
                                      "failed; keeping image only",

@@ -19,6 +19,7 @@ import fitz  # PyMuPDF
 from PIL import Image
 
 from tablerag.ingestion.chart_check import bar_groups, chart_bars
+from tablerag.ingestion.palette import vector_palette
 from tablerag.ingestion.extract import PdfError
 
 # image blocks smaller than this fraction of the page are decorations, not figures
@@ -62,6 +63,8 @@ class Region:
     # tables/figures: the heading printed above them. A picture is FOUND by the
     # words a reader would use, and those are on the page around it.
     context: str = ""
+    # figures: the inks the drawing actually uses, measured not guessed
+    palette: list = field(default_factory=list)
 
 
 @dataclass
@@ -469,7 +472,8 @@ def detect_vector_figures(page: fitz.Page,
         # only ever sees the page image
         regions.append(Region(type="figure", bbox=tuple(box), vector=True,
                               bars=chart_bars(page, tuple(box)),
-                              groups=bar_groups(page, tuple(box))))
+                              groups=bar_groups(page, tuple(box)),
+                              palette=vector_palette(page, tuple(box))))
     # reading order, so a figure keeps its position between runs — the eval
     # gate addresses them by index
     regions.sort(key=lambda r: (r.bbox[1], r.bbox[0]))

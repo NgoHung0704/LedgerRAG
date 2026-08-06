@@ -326,3 +326,45 @@ def test_a_description_without_numbers_is_left_to_the_model():
     from tablerag.ingestion.chart_check import duplicates_page_text
 
     assert duplicates_page_text("A process diagram of four steps.", PAGE) is False
+
+
+# --- colour, which lives in no text layer ---------------------------------
+
+def test_colours_are_named_perceptually_not_by_rgb_distance():
+    """RGB distance is not perceptual: it calls a vivid red "orange" and a
+    document blue "purple". A name that moves between documents is worse than
+    no name, because the name IS what retrieval matches."""
+    from tablerag.ingestion.palette import name_colour
+
+    assert name_colour((211, 47, 47), "fr") == "rouge"
+    assert name_colour((0, 179, 191), "fr") == "turquoise"
+    assert name_colour((245, 124, 0), "fr") == "orange"
+    assert name_colour((56, 142, 60), "fr") == "vert"
+    assert name_colour((211, 47, 47), "en") == "red"
+
+
+def test_lightness_becomes_a_word_people_search_with():
+    from tablerag.ingestion.palette import name_colour
+
+    assert name_colour((140, 20, 20), "fr") == "rouge foncé"
+    assert name_colour((255, 235, 59), "fr") == "jaune clair"
+    # never for the neutrals, where it would say nothing
+    assert name_colour((158, 158, 158), "fr") == "gris"
+
+
+def test_grey_against_one_accent_counts_as_colour_coding():
+    """The commonest business coding of all, and the factsheet's sector chart
+    is exactly it: portfolio in turquoise against benchmark in grey. A test
+    that dismissed grey as neutral called the clearest colour-coded figure in
+    the corpus uncoded."""
+    from tablerag.ingestion.palette import is_colour_coded
+
+    assert is_colour_coded([("blanc", "#fff", 0.83), ("gris", "#7f7f7f", 0.14),
+                            ("turquoise", "#00b2bf", 0.03)]) is True
+
+
+def test_one_ink_on_paper_is_not_colour_coding():
+    from tablerag.ingestion.palette import is_colour_coded
+
+    assert is_colour_coded([("blanc", "#fff", 0.96),
+                            ("gris", "#7f7f7f", 0.04)]) is False
