@@ -368,3 +368,49 @@ def test_one_ink_on_paper_is_not_colour_coding():
 
     assert is_colour_coded([("blanc", "#fff", 0.96),
                             ("gris", "#7f7f7f", 0.04)]) is False
+
+
+# --- images the block scan never reports ----------------------------------
+
+def test_an_image_placed_through_a_form_xobject_is_still_a_figure():
+    """get_text("blocks") reports an image as a block only sometimes: one
+    placed through a form XObject — what InDesign and most layout tools emit —
+    never appears there at all. Measured on a health-insurance notice: 5 of its
+    32 pages carry an image and NOT ONE is a block, including the page whose
+    lens classification is a grid of coloured cells with no ruling and almost
+    no text. Every raster figure in that document was invisible."""
+    from tablerag.ingestion.layout import embedded_images
+
+    doc = fitz.open()
+    page = doc.new_page(width=400, height=500)
+    pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 60, 40))
+    pixmap.set_rect(pixmap.irect, (200, 40, 40))
+    # inside a form XObject, the way a layout tool places a picture
+    inner = fitz.open()
+    inner_page = inner.new_page(width=120, height=80)
+    inner_page.insert_image(fitz.Rect(0, 0, 120, 80), pixmap=pixmap)
+    page.show_pdf_page(fitz.Rect(100, 60, 220, 140), inner, 0)
+    data = doc.tobytes()
+    doc.close()
+    inner.close()
+
+    page = fitz.open(stream=data, filetype="pdf")[0]
+    assert sum(1 for b in page.get_text("blocks") if b[6] == 1) == 0, \
+        "precondition: the block scan does not see it"
+    found = embedded_images(page)
+    assert len(found) == 1
+    assert found[0].width > 100 and found[0].height > 60
+
+
+def test_the_same_image_placed_twice_is_two_figures():
+    from tablerag.ingestion.layout import embedded_images
+
+    doc = fitz.open()
+    page = doc.new_page(width=400, height=500)
+    pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 40, 40))
+    pixmap.set_rect(pixmap.irect, (10, 120, 200))
+    page.insert_image(fitz.Rect(40, 40, 140, 140), pixmap=pixmap)
+    page.insert_image(fitz.Rect(40, 300, 140, 400), pixmap=pixmap)
+    data = doc.tobytes()
+    doc.close()
+    assert len(embedded_images(fitz.open(stream=data, filetype="pdf")[0])) == 2

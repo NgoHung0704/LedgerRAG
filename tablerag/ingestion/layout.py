@@ -484,6 +484,32 @@ _HEADING_MAX_GAP = 90.0     # points above the region
 _HEADING_MAX_CHARS = 160    # longer than this is a paragraph, not a title
 
 
+def embedded_images(page: fitz.Page) -> list[fitz.Rect]:
+    """Where the page's raster images actually sit.
+
+    get_text("blocks") reports an image as a block only sometimes: an image
+    placed through a form XObject — what InDesign and most professional layout
+    tools emit — never appears there at all. Measured on a health-insurance
+    notice: 5 of its 32 pages carry an image and NOT ONE is a block, including
+    the page whose lens classification is a grid of coloured cells with no
+    ruling and almost no text. Asking the page for its images finds them.
+    """
+    seen: list[fitz.Rect] = []
+    for xref, *_ in page.get_images(full=True):
+        try:
+            rects = page.get_image_rects(xref)
+        except Exception:  # noqa: BLE001 — one odd image must not fail a page
+            continue
+        for rect in rects:
+            rect = fitz.Rect(rect) & page.rect
+            if rect.is_empty or rect.get_area() <= 0:
+                continue
+            if any(_overlap_ratio(rect, other) > 0.5 for other in seen):
+                continue
+            seen.append(rect)
+    return seen
+
+
 def nearest_heading(text_blocks, bbox) -> str | None:
     """The short line printed just above a region — the words a reader would
     use to ask for it.
@@ -593,13 +619,17 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
             kept_boxes.append(tuple(block_rect))
             text_bbox = block_rect if text_bbox is None else text_bbox | block_rect
 
-    # what each table and figure sits UNDER. A picture is retrieved by the
-    # words a reader would use for it, and those are on the page around it,
-    # not inside it: "Profil PER HORIZON RETRAITE EQUILIBRE" is printed above
-    # the grid, and a chart whose own title is outlined has no words at all.
-    for region in layout.regions:
-        if region.type in ("table", "figure"):
-            region.context = nearest_heading(text_blocks, region.bbox) or ""
+    # images the block scan never reported — most of them, on a professionally
+    # laid-out PDF
+    for image_rect in embedded_images(page):
+        if image_rect.get_area() < _MIN_FIGURE_AREA_RATIO * rect.get_area():
+            continue
+        if any(_overlap_ratio(image_rect, tr) > 0.5 for tr in table_rects):
+            continue
+        if any(_overlap_ratio(image_rect, fitz.Rect(f.bbox)) > 0.5
+               for f in figures):
+            continue
+        figures.append(Region(type="figure", bbox=tuple(image_rect)))
 
     # nearest short text block below each figure = its caption (C5: keep
     # image + caption, nothing more)
@@ -631,6 +661,16 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
             continue
         layout.regions.append(region)
     layout.regions.sort(key=lambda r: (r.bbox[1], r.bbox[0]))
+
+    # What each table and figure sits UNDER. Done LAST, once every region
+    # exists: run earlier it only reached the tables, because figures are
+    # appended after it, and every figure in the corpus came out with no
+    # context at all. A picture is retrieved by the words a reader would use,
+    # and those are printed around it, not in it — a chart whose own title is
+    # outlined carries no words whatsoever.
+    for region in layout.regions:
+        if region.type in ("table", "figure"):
+            region.context = nearest_heading(text_blocks, region.bbox) or ""
     return layout
 
 
