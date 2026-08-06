@@ -26,7 +26,7 @@ from tablerag.ingestion.extract import PdfError
 from tablerag.ingestion.layout import PageLayout, analyze_document, crop_region_png
 from tablerag.ingestion.chart_check import agreement as chart_agreement
 from tablerag.ingestion.chart_check import index_verdict, read_numbers
-from tablerag.ingestion.ocr import describe_figure, ocr_page
+from tablerag.ingestion.ocr import describe_figure, guess_language, ocr_page
 from tablerag.ingestion.palette import describe_palette, raster_palette
 from tablerag.ingestion.table_pipeline import parse_table_region, summarize_table
 from tablerag.models.base import ModelProvider, TableCtx, Vector
@@ -290,10 +290,13 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
                     # a drawn figure states its inks; a pasted one is
                     # quantised. Either way the model is told what they ARE,
                     # so the same colour is called the same thing every time.
-                    inks = region.palette or raster_palette(crop, locale)
+                    # the page itself is the authority on its language when
+                    # the KB declares none — see ocr.guess_language
+                    tongue = locale or guess_language(page_text)
+                    inks = region.palette or raster_palette(crop, tongue)
                     description, informative = asyncio.run(
                         describe_figure(crop, region.caption, region.groups,
-                                        locale=locale, context=region.context,
+                                        locale=tongue, context=region.context,
                                         palette=describe_palette(inks)))
                     if inks:
                         meta["palette"] = [

@@ -440,6 +440,59 @@ def with_legend(box: fitz.Rect, paths: int,
     return grown
 
 
+# a sentence: long enough and with enough words that no chart label is one
+_PROSE_MIN_CHARS = 40
+_PROSE_MIN_SPACES = 5
+_VEC_MAX_TABLE_COVER = 0.5
+
+
+def drawn_around_text(page: fitz.Page, box: fitz.Rect,
+                      table_rects: list[fitz.Rect]) -> bool:
+    """Is this cluster a frame around content that is already indexed?
+
+    A PICTURE DOES NOT CONTAIN PROSE. That is the whole test, and it is the
+    third one tried — the first two were measured and thrown away, which is
+    worth recording so they are not tried again:
+
+      - text COVERAGE of the box: real charts measure 0% because their labels
+        are outlined curves, but the junk ran 18-72% and one genuine chart hit
+        27%, so no threshold separated them.
+      - NEW WORDS in the description against the page text: a banner scored
+        0.40 and a real matrix 0.76, which looked clean until a banner on a
+        near-empty page scored 0.84. It also costs a VLM call to find out.
+
+    Prose separates them because it is a property of what the region IS. A
+    chart's labels are "Industries", "27,6", "Portefeuille" — never sentences.
+    A banner, a callout, a bordered paragraph contains one. Measured over both
+    corpus documents: 27 of 30 junk clusters rejected, and every one of the
+    five real charts kept.
+
+    Tables filling the box are the second half. One cluster covered the whole
+    tableau de garantie, already three table elements; the veto above compares
+    the cluster to ONE table and a quarter-sized table never trips it.
+    """
+    for block in page.get_text("blocks"):
+        if block[6] != 0 or not box.contains(fitz.Rect(block[:4])):
+            continue
+        text = " ".join(str(block[4] or "").split())
+        if len(text) >= _PROSE_MIN_CHARS and text.count(" ") >= _PROSE_MIN_SPACES:
+            return True
+    area = box.get_area()
+    if area <= 0:
+        return True
+    # against the UNION, and by IoU — not by how much of the box is covered.
+    # A page-wide bogus region from find_tables covers a chart completely
+    # without being it, and vetoing on that hid every chart on the factsheet
+    # (test_a_page_wide_bogus_table_does_not_swallow_the_charts_under_it).
+    # Coincidence is mutual; coverage is not.
+    inside = [tr for tr in table_rects if (box & tr).get_area() > 0]
+    if not inside:
+        return False
+    covered = sum((box & tr).get_area() for tr in inside)
+    union = area + sum(tr.get_area() for tr in inside) - covered
+    return union > 0 and covered / union > _VEC_MAX_TABLE_COVER
+
+
 def detect_vector_figures(page: fitz.Page,
                           table_rects: list[fitz.Rect]) -> list[Region]:
     """Charts drawn as vector paths — invisible to the image-block rule."""
@@ -467,6 +520,8 @@ def detect_vector_figures(page: fitz.Page,
             continue
         inside = [r for r in marks if box.contains(r)]
         if looks_like_table_striping(inside):
+            continue
+        if drawn_around_text(page, box, table_rects):
             continue
         # measured HERE because this is where the fitz page lives; ingestion
         # only ever sees the page image

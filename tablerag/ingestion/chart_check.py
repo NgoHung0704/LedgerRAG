@@ -35,6 +35,8 @@ _SCALE_CANDIDATES = 3
 _MATCH_TOLERANCE = 0.02   # of the largest value read
 # bars of one category touch; the gap to the next category is wider than a bar
 _GROUP_GUTTER = 1.6
+# fewer numbers than this is not a reading of a chart, it is a remark
+_MIN_CLAIMED_VALUES = 2
 # a number as printed on a French chart: 27,6 · 1 234,5 · 81.5%
 # the integer part is unbounded on purpose: \d{1,3} was meant for grouped
 # thousands, but it chopped a bare year into "202" and "1", which turned a
@@ -212,6 +214,13 @@ def agreement(heights: list[float],
     reads = sorted(v for v in values if v > 0)
     if len(bars) < 3:
         return None, "no measurable bar series — not checked"
+    if len(reads) < _MIN_CLAIMED_VALUES:
+        # Geometry can only CONTRADICT a claim, and a description that reads
+        # no values off the picture makes none. Scoring it zero flagged the
+        # Malakoff logo for review at confidence 0.00 — two curved arcs
+        # measured as seven "bars" against the one number in "le rouge couvre
+        # 100% de la surface". A logo is not a chart that was read badly.
+        return None, "no values claimed — nothing to check"
     if len(reads) < len(bars):
         return 0.0, (f"read {len(reads)} values for {len(bars)} bars — "
                      "the chart has more bars than numbers were read")

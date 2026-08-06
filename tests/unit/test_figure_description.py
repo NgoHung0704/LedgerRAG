@@ -237,3 +237,28 @@ def test_a_real_heading_still_wins():
     # and a region elsewhere on the page does not veto it
     assert nearest_heading(blocks, figure, [(42, 400, 553, 600)]) == \
         "DEFINITIONS DES VERRES :"
+
+
+# --- the page decides its own language -------------------------------------
+
+def test_the_page_says_what_language_it_is_in(monkeypatch):
+    """Measured in a parse export: five descriptions of a FRENCH insurance
+    notice opened "Screenshot of a webpage section titled…" because the KB
+    declared no locale and language_line had nothing to say. A picture is
+    retrieved by the words a reader searches with, and those are in the
+    reader's language — configuration was the wrong place to get it from."""
+    from tablerag.ingestion.ocr import guess_language
+
+    french = ("Vous trouverez dans ce document les garanties et toutes les "
+              "démarches à suivre pour vos soins et vos remboursements par la "
+              "Sécurité sociale, dans la limite des frais réellement engagés.")
+    assert guess_language(french) == "fr"
+
+
+def test_it_refuses_to_guess_from_too_little(monkeypatch):
+    """A chart's own labels are a dozen words. Guessing from those and getting
+    it wrong is worse than saying nothing."""
+    from tablerag.ingestion.ocr import guess_language
+
+    assert guess_language("Industries 27,6 Technologie 16,0") is None
+    assert guess_language("") is None

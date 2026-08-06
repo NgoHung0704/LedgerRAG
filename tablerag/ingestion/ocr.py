@@ -152,6 +152,46 @@ _LANGUAGES = {"fr": "French", "de": "German", "es": "Spanish", "it": "Italian",
               "nl": "Dutch", "pt": "Portuguese", "en": "English", "vi": "Vietnamese"}
 
 
+# the commonest short function words, which no other language on this list
+# shares in the same combination. Enough to tell a French page from an English
+# one, which is all that is asked.
+_STOPWORDS = {
+    "fr": ("le", "la", "les", "des", "une", "vous", "est", "aux", "par", "dans"),
+    "en": ("the", "and", "you", "are", "with", "for", "this", "your", "from"),
+    "de": ("der", "die", "das", "und", "sie", "den", "von", "mit", "ist"),
+    "es": ("los", "las", "una", "por", "con", "para", "del", "que", "sus"),
+    "it": ("del", "che", "per", "una", "sono", "delle", "nel", "alla"),
+    "nl": ("het", "een", "van", "zijn", "met", "voor", "niet", "dat"),
+    "pt": ("dos", "uma", "para", "com", "que", "não", "por", "das"),
+}
+
+
+def guess_language(text: str) -> str | None:
+    """Which language a page is written in, from the page itself.
+
+    The declared KB locale is preferred where there is one (SPEC Phase 2 §5),
+    but there often is not — and then every description of a French corpus came
+    back in English, because language_line had nothing to say and the model
+    followed the prompt's own language. Measured in a parse export: five
+    descriptions opening "Screenshot of a webpage section titled…" on a French
+    insurance notice.
+
+    A picture is retrieved by the words a reader would search with, and those
+    are in the reader's language. Getting this from configuration was the wrong
+    place to get it from.
+    """
+    words = re.findall(r"[^\W\d_]+", (text or "").lower(), re.UNICODE)
+    if len(words) < 20:
+        return None                      # too little to tell; do not guess
+    counts = {lang: sum(1 for w in words if w in set(hits))
+              for lang, hits in _STOPWORDS.items()}
+    best = max(counts, key=lambda k: counts[k])
+    runner_up = max((c for k, c in counts.items() if k != best), default=0)
+    if counts[best] < 3 or counts[best] <= runner_up:
+        return None                      # no clear winner: say nothing
+    return best
+
+
 def language_line(locale: str | None) -> str:
     """Which language to write in.
 
