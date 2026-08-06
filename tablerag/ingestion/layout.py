@@ -510,7 +510,7 @@ def embedded_images(page: fitz.Page) -> list[fitz.Rect]:
     return seen
 
 
-def nearest_heading(text_blocks, bbox) -> str | None:
+def nearest_heading(text_blocks, bbox, taken=()) -> str | None:
     """The short line printed just above a region — the words a reader would
     use to ask for it.
 
@@ -518,7 +518,17 @@ def nearest_heading(text_blocks, bbox) -> str | None:
     what a model saw INSIDE the picture. The question is asked in the
     document's vocabulary, which is printed around it: a booklet's allocation
     grid says nothing about "gestion pilotée" or which risk profile it is, and
-    a chart whose own title is drawn as curves carries no words at all."""
+    a chart whose own title is drawn as curves carries no words at all.
+
+    `taken` is every region already claimed. A heading belongs to NO element,
+    and without that test the nearest text above a stacked table is the bottom
+    row of the table before it. Measured on a health-insurance notice, where it
+    put three summaries under the wrong subject outright: the optique table was
+    summarised as "Tableau sur le scanner, pose d'implant, pilier implantaire",
+    which is the last row of the DENTAL table above it. Summaries are what
+    routing matches, so a contaminated one sends the question to the wrong
+    table — worse than no heading at all.
+    """
     x0, y0, x1, _ = bbox
     best, best_gap = None, _HEADING_MAX_GAP
     for block in text_blocks:
@@ -530,6 +540,10 @@ def nearest_heading(text_blocks, bbox) -> str | None:
             continue
         if block[0] > x1 or block[2] < x0:      # not above THIS region
             continue
+        block_rect = fitz.Rect(block[:4])
+        if any(_overlap_ratio(block_rect, fitz.Rect(box)) > 0.5
+               for box in taken):
+            continue                            # it is another element's text
         best, best_gap = text, gap
     return best
 
@@ -668,9 +682,12 @@ def analyze_page(page: fitz.Page, dpi: int, min_chars: int,
     # context at all. A picture is retrieved by the words a reader would use,
     # and those are printed around it, not in it — a chart whose own title is
     # outlined carries no words whatsoever.
+    claimed = [r.bbox for r in layout.regions if r.type in ("table", "figure")]
     for region in layout.regions:
         if region.type in ("table", "figure"):
-            region.context = nearest_heading(text_blocks, region.bbox) or ""
+            region.context = nearest_heading(
+                text_blocks, region.bbox,
+                [b for b in claimed if b != region.bbox]) or ""
     return layout
 
 

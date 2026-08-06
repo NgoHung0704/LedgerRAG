@@ -209,3 +209,31 @@ def test_the_switch_and_the_budget_both_stop_the_vlm(db_session, monkeypatch):
             db_session, monkeypatch, ("should not be called", True), **kwargs)
         assert element["description"] is None, kwargs
         assert (chunks, figures) == (0, []), kwargs
+
+
+# --- the heading anchor must be a heading ----------------------------------
+
+def test_the_row_above_a_stacked_table_is_not_its_heading():
+    """Summaries are what routing matches, so a contaminated one sends the
+    question to the wrong table. Measured on a health-insurance notice: the
+    optique table was summarised as "Tableau sur le scanner, pose d'implant,
+    pilier implantaire" — the last row of the DENTAL table above it."""
+    from tablerag.ingestion.layout import nearest_heading
+
+    dental = (42, 395, 553, 568)
+    blocks = [(42, 540, 553, 560,
+               "Scanner, pose de l'implant, pilier implantaire - par an", 0, 0)]
+    optique = (42, 600, 553, 791)
+    assert nearest_heading(blocks, optique) is not None      # without the test
+    assert nearest_heading(blocks, optique, [dental]) is None
+
+
+def test_a_real_heading_still_wins():
+    from tablerag.ingestion.layout import nearest_heading
+
+    blocks = [(105, 60, 300, 70, "DEFINITIONS DES VERRES :", 0, 0)]
+    figure = (105, 75, 489, 338)
+    assert nearest_heading(blocks, figure, []) == "DEFINITIONS DES VERRES :"
+    # and a region elsewhere on the page does not veto it
+    assert nearest_heading(blocks, figure, [(42, 400, 553, 600)]) == \
+        "DEFINITIONS DES VERRES :"
