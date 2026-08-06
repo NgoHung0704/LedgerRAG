@@ -475,6 +475,56 @@ def pop_revision(s: Session, element_id: uuid.UUID) -> dict | None:
     return data
 
 
+def document_export(s: Session, doc_id: uuid.UUID) -> tuple[dict, list[dict]] | None:
+    """Everything stored for one document, in FULL — no previews.
+
+    get_document_view truncates on purpose (600 characters of text, eight
+    records) because it feeds a screen. This feeds an export whose whole point
+    is that nothing is left out."""
+    document = s.get(Document, doc_id)
+    if document is None:
+        return None
+    elements = list(s.scalars(select(Element).where(Element.doc_id == doc_id)))
+    elements.sort(key=lambda e: (e.page, (e.bbox or [0, 0])[1]
+                                 if isinstance(e.bbox, list) else 0))
+    out = []
+    for element in elements:
+        meta = element.meta or {}
+        item = {
+            "page": element.page, "type": element.type,
+            "bbox": element.bbox, "confidence": element.confidence,
+            "needs_review": element.needs_review,
+            "context": meta.get("context") or meta.get("heading"),
+            "caption": meta.get("caption"),
+            "description": meta.get("description"),
+            "palette": meta.get("palette"),
+            "chart_check": meta.get("chart_check"),
+            "parse_error": meta.get("parse_error"),
+            "span_pages": meta.get("span_pages"),
+            "unusable": bool(meta.get("unusable")),
+            "edited": bool(meta.get("edited")),
+            "ocr": bool(meta.get("ocr")),
+            "layout_suspect": bool(meta.get("layout_suspect")),
+            "decorative": meta.get("figure_kind") in ("decorative", "duplicate"),
+            "chunks": [c.text for c in s.scalars(
+                select(Chunk).where(Chunk.element_id == element.id))],
+            "table": None,
+        }
+        table = s.get(TableElement, element.id)
+        if table is not None:
+            item["table"] = {
+                "html": table.html, "summary": table.summary,
+                "n_rows": table.n_rows, "n_cols": table.n_cols,
+                "parse_strategy": table.parse_strategy,
+                "records": [{"dimensions": r.dimensions, "metrics": r.metrics,
+                             "raw_values": r.raw_values}
+                            for r in table.records],
+            }
+        out.append(item)
+    return ({"filename": document.filename, "status": document.status,
+             "page_count": document.page_count, "error": document.error}, out)
+
+
 def delete_elements(s: Session, element_ids: list[uuid.UUID]) -> list[str]:
     """Drop parsed elements and everything they own (chunks, table, records
     cascade). Returns their crop-image keys so the caller can clear those too.

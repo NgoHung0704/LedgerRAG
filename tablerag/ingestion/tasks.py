@@ -149,6 +149,8 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
     image_key = element_image_key(kb_id, doc_id, element_id)
     store.put(image_key, crop_png, "image/png")
     meta: dict = dict(extra_meta or {})
+    if context:
+        meta["context"] = context
     if result.error:
         meta["parse_error"] = result.error
     if confidence_detail:
@@ -276,6 +278,10 @@ def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,
             crop_key = element_image_key(kb_id, doc_id, element_id)
             store.put(crop_key, crop, "image/png")
             meta = {"caption": region.caption} if region.caption else {}
+            if region.context:
+                # kept so the export and the inspector can show WHY this
+                # figure is findable — the anchor is otherwise invisible
+                meta["context"] = region.context
 
             description, informative = "", False
             if (settings.figure_describe_enabled

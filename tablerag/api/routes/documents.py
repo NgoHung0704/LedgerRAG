@@ -303,6 +303,38 @@ def exclude_boilerplate(doc_id: uuid.UUID, body: BoilerplateExcludeRequest,
     return {"excluded": len(excluded)}
 
 
+@router.get("/documents/{doc_id}/export")
+def export_document_parse(doc_id: uuid.UUID) -> Response:
+    """Everything ingestion produced for this document, as plain text.
+
+    For showing a parse to someone who can act on it. It holds the raw forms —
+    a table's HTML as stored, its records as JSON, a figure's measured palette
+    — and above all the chunks exactly as indexed, because those are what a
+    question is matched against. A tidy summary of a bad parse is not evidence
+    of anything."""
+    from urllib.parse import quote
+
+    from tablerag.core.text_export import render
+
+    with session_scope() as s:
+        data = repo.document_export(s, doc_id)
+    if data is None:
+        raise HTTPException(404, "document not found")
+    document, elements = data
+    body = render(document, elements)
+
+    stem = (document["filename"] or "document").rsplit(".", 1)[0]
+    name = f"{stem} — parse.txt"
+    # the corpus is French, so the filename usually is not ASCII: give the
+    # plain form for old clients and the encoded one for everyone else
+    ascii_name = name.encode("ascii", "replace").decode()
+    return Response(
+        content=body, media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition":
+                 f'attachment; filename="{ascii_name}"; '
+                 f"filename*=UTF-8''{quote(name)}"})
+
+
 @router.get("/documents/{doc_id}/original")
 def get_original_document(doc_id: uuid.UUID) -> Response:
     """Serve the original source PDF so the parse can be compared against it at

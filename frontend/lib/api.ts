@@ -260,6 +260,11 @@ export const bulkReprocessDocs = (kbId: string, docIds: string[]) =>
 export const pageImageUrl = (docId: string, page: number) =>
   `${API_URL}/api/documents/${docId}/pages/${page}/image`;
 
+/** Everything ingestion produced for a document, as plain text — the raw
+ * HTML, records and chunks, for showing a parse to someone who can act on it. */
+export const documentExportUrl = (docId: string) =>
+  `${API_URL}/api/documents/${docId}/export`;
+
 export const documentOriginalUrl = (docId: string) =>
   `${API_URL}/api/documents/${docId}/original`;
 

@@ -11,6 +11,7 @@ import {
   Combine,
   Eraser,
   ExternalLink,
+  FileDown,
   FileText,
   Image as ImageIcon,
   Pencil,
@@ -32,6 +33,7 @@ import {
   convertElementToText,
   deleteElement,
   deletePage,
+  documentExportUrl,
   documentOriginalUrl,
   getDocumentView,
   getElement,
@@ -183,6 +185,14 @@ export default function DocPage({ params }: { params: { docId: string } }) {
             >
               <Eraser size={13} /> Detect boilerplate
             </button>
+            <a
+              href={documentExportUrl(doc.id)}
+              download
+              title="Everything ingestion produced, as plain text: the stored HTML, the records, and the chunks exactly as indexed."
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
+            >
+              <FileDown size={13} /> Export parse
+            </a>
             <a
               href={documentOriginalUrl(doc.id)}
               target="_blank"
