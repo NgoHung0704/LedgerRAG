@@ -23,7 +23,7 @@ sys.path.insert(0, str(QA))
 from run_eval_qa import _norm  # noqa: E402
 
 DATASETS = sorted(QA.glob("*.jsonl"))
-TYPES = {"table", "text", "factual", "trap"}
+TYPES = {"table", "text", "factual", "trap", "figure"}
 # UTF-8 bytes decoded as latin-1/cp1252: "é" -> "Ã©", "€" -> "â¬". A whole
 # dataset arrived like this once; the questions reach the API as garbage
 # French and no expected string can ever match.
@@ -70,6 +70,18 @@ def test_expectations_are_well_formed(path):
         where = f"{path.name} {item['id']}"
         assert item["type"] in TYPES, f"{where}: unknown type {item['type']!r}"
         expected = item.get("expected_answer_contains", [])
+
+        if item["type"] == "figure":
+            # a retrieval question: the assistant is not asked to read the
+            # picture, so there is no content to expect — only a source, and a
+            # page, because "the right document" is not the same as "the right
+            # chart" in a fourteen-page booklet
+            assert not expected, (
+                f"{where}: a figure question grades retrieval, not content — "
+                "expected_answer_contains is never read")
+            assert item.get("expected_doc"), f"{where}: no expected_doc"
+            assert item.get("expected_page"), f"{where}: no expected_page"
+            continue
 
         if item["type"] == "trap":
             # traps pass on refusal / no citation / verifier warning; an

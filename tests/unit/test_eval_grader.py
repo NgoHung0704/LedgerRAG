@@ -191,3 +191,49 @@ def test_n_existe_pas_can_be_a_claim_rather_than_a_refusal():
 ])
 def test_n_existe_pas_is_still_a_refusal_when_it_is_about_the_sources(answer):
     assert is_refusal(_norm(answer))
+
+
+# --- figures: a retrieval question, not a reading one ---------------------
+
+FIGURES = [
+    {"filename": "EPSENS TRANSITION CLIMAT - 810571.pdf", "page": 1},
+    {"filename": "EPSENS TRANSITION CLIMAT - 810571.pdf", "page": 2},
+    {"filename": "Livret Epargne Salariale EPSENS 2021.pdf", "page": 13},
+]
+ITEM = {"type": "figure", "expected_doc": "EPSENS TRANSITION CLIMAT - 810571",
+        "expected_page": 2}
+
+
+def test_a_figure_passes_when_its_page_was_retrieved():
+    """HR does not want the chart read; it wants the right chart put in front
+    of a human. So the only thing graded is whether it was retrieved."""
+    ok, detail = grade(ITEM, "Voir le graphique page 2.", FIGURES, None)
+    assert ok, detail
+
+
+def test_the_right_document_is_not_enough():
+    """A fourteen-page booklet holds two allocation grids that differ only by
+    risk profile. Citing the document says nothing about which one came back."""
+    ok, detail = grade({**ITEM, "expected_page": 3}, "…", FIGURES, None)
+    assert not ok
+    assert "pages cited from it: [1, 2]" in detail
+
+
+def test_what_the_answer_says_about_a_picture_is_not_graded():
+    """Grading the prose would push the pipeline back towards analysing
+    figures, which is the thing it was asked not to do. A refusal that still
+    surfaces the figure is a pass."""
+    refusal = ("Je ne peux pas lire les valeurs de ce graphique ; "
+               "reportez-vous à l'image ci-dessous.")
+    ok, _ = grade(ITEM, refusal, FIGURES, None)
+    assert ok
+
+
+def test_a_page_can_also_tighten_an_ordinary_question():
+    item = {"type": "factual", "expected_answer_contains": ["27,6"],
+            "expected_doc": "EPSENS TRANSITION CLIMAT - 810571",
+            "expected_page": 2}
+    assert grade(item, "Industries : 27,6 %.", FIGURES, None)[0]
+    ok, detail = grade({**item, "expected_page": 3}, "Industries : 27,6 %.",
+                       FIGURES, None)
+    assert not ok and "page 3" in detail

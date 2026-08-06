@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint
 
 up:
 	docker compose up -d --build
@@ -60,6 +60,16 @@ eval-accords:
 eval-convention:
 	python tests/eval/qa/run_eval_qa.py --kb $(KB) \
 		--questions tests/eval/qa/convention.jsonl $(ARGS)
+
+# ---- figure RETRIEVAL gate (needs the full live stack) ---------------------
+# The other half of eval-figures: that one scores how well a chart is
+# DESCRIBED, this one whether the right chart comes back when a question is
+# asked. Graded on the citation alone — the assistant is not asked to read a
+# figure, only to put it in front of a human.
+# Usage: make eval-visuals KB=<kb holding the EPSENS documents>
+eval-visuals:
+	python tests/eval/qa/run_eval_qa.py --kb $(KB) \
+		--questions tests/eval/qa/visuals.jsonl $(ARGS)
 
 # ---- figure-reading gate (needs a live parser endpoint) --------------------
 # Charts are the one thing with no text to fall back on. Scores three things:

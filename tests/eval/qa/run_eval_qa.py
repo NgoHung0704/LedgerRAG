@@ -158,6 +158,26 @@ def ask(api: str, kb_id: str, question: str) -> tuple[str, list[dict], dict | No
     return answer, citations, verification
 
 
+def cites(citations: list[dict], doc: str | None,
+          page: int | None) -> bool:
+    """Was this source actually used? Filename matches either way round (the
+    dataset may name it without its extension), and a page pins WHICH part."""
+    for citation in citations:
+        name = (citation.get("filename") or "").lower()
+        if doc and not (doc.lower() in name or name in doc.lower()):
+            continue
+        if page is not None and citation.get("page") != page:
+            continue
+        return True
+    return False
+
+
+def cited_pages(citations: list[dict], doc: str | None) -> list[int]:
+    return sorted({c.get("page") for c in citations
+                   if not doc or (doc.lower() in (c.get("filename") or "").lower())
+                   if c.get("page") is not None})
+
+
 def grade(item: dict, answer: str, citations: list[dict],
           verification: dict | None) -> tuple[bool, str]:
     # grade what the answer ASSERTS: dumped table rows are evidence the model
@@ -176,6 +196,19 @@ def grade(item: dict, answer: str, citations: list[dict],
             return True, "refused honestly"
         return False, "answered a trap without warning (review by hand)"
 
+    if item.get("type") == "figure":
+        # A chart, a diagram, a colour-coded scale. The assistant is NOT asked
+        # to read these — it is asked to put the right one in front of a human,
+        # who reads it. So the only thing graded is whether the right source
+        # was retrieved: what the answer says about a picture is not the job,
+        # and grading it would push the pipeline back towards analysing them.
+        page = item.get("expected_page")
+        if cites(citations, item.get("expected_doc"), page):
+            return True, f"retrieved (page {page})" if page else "retrieved"
+        seen = cited_pages(citations, item.get("expected_doc"))
+        return False, (f"page {page} of {item.get('expected_doc')} was not "
+                       f"retrieved; pages cited from it: {seen or 'none'}")
+
     # a hedged/refusing answer cannot also be a correct one, even if the
     # expected string appears somewhere in a pasted table
     marker = refusal_marker(claim)
@@ -191,11 +224,10 @@ def grade(item: dict, answer: str, citations: list[dict],
     if missing:
         return False, f"answer missing: {missing}"
     expected_doc = item.get("expected_doc")
-    if expected_doc and not any(
-            expected_doc.lower() in (c.get("filename") or "").lower()
-            or (c.get("filename") or "").lower() in expected_doc.lower()
-            for c in citations):
-        return False, f"expected source not cited: {expected_doc}"
+    expected_page = item.get("expected_page")
+    if expected_doc and not cites(citations, expected_doc, expected_page):
+        where = f" page {expected_page}" if expected_page else ""
+        return False, f"expected source not cited: {expected_doc}{where}"
     return True, "ok"
 
 
@@ -257,7 +289,9 @@ def main() -> None:
     exit_code = 0
     for qtype, oks in sorted(results.items()):
         rate = sum(oks) / len(oks)
-        target = 1.0 if qtype == "trap" else 0.95
+        # figures are a retrieval question, and retrieval is the harder half:
+        # 0.95 on a handful of them would be a coin toss dressed as a gate
+        target = {"trap": 1.0, "figure": 0.9}.get(qtype, 0.95)
         verdict = "PASS" if rate >= target else "FAIL"
         if verdict == "FAIL":
             exit_code = 1
