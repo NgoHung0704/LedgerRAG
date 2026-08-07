@@ -272,10 +272,20 @@ function RoleCard({
   };
 
   return (
-    <Card className="p-4">
+    <Card className="lift p-4">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-sunken text-ink-muted">
+          {/* the tile carries the role's health, so the card answers "is this
+              one working?" before you read a word of it */}
+          <div
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              role.provider === "disabled"
+                ? "bg-surface-sunken text-ink-subtle"
+                : role.ok
+                  ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300"
+                  : "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400"
+            }`}
+          >
             <Icon size={17} />
           </div>
           <div>
@@ -288,15 +298,15 @@ function RoleCard({
         </div>
         <span
           title={role.detail}
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-            role.ok
-              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-              : "bg-red-50 text-red-700 ring-1 ring-red-200"
-          }`}
+          className={`pill ${role.ok ? "pill-ok" : "pill-danger"} py-1`}
         >
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${role.ok ? "bg-emerald-500" : "bg-red-500"}`}
-          />
+          <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+            {/* a reachable endpoint is a live thing, and says so quietly */}
+            {role.ok && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-60" />
+            )}
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+          </span>
           {role.ok ? "healthy" : "unreachable"}
         </span>
       </div>
@@ -427,36 +437,36 @@ function PullBox({
   };
 
   return (
-    <div className="rounded-lg border border-line bg-slate-50/60 p-3 dark:bg-slate-800/40">
+    <div className="rounded-lg border border-line bg-surface-sunken p-3">
       <div className="mb-2 text-xs font-medium text-ink-muted">
         Install a new model on this endpoint
       </div>
       <div className="flex gap-2">
         <input
-          className={`${inputCls}bg-surface`}
+          className={inputCls}
           placeholder="e.g. qwen3-vl:8b-instruct"
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={pulling}
         />
         <Button
-          variant="secondary"
+          variant="tonal"
           onClick={pull}
-          disabled={pulling || !name.trim()}
+          disabled={!name.trim()}
+          loading={pulling}
+          icon={<Download size={14} />}
           className="shrink-0"
         >
-          {pulling ? <Spinner size={14} /> : <Download size={14} />}
           Pull
         </Button>
       </div>
       {(status || percent !== null) && (
-        <div className="mt-2">
+        <div className="mt-2.5">
           {percent !== null && (
-            <div className="mb-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
-              <div
-                className="h-full rounded-full bg-indigo-500 transition-all"
-                style={{ width: `${percent}%` }}
-              />
+            // the sweep runs while bytes are still arriving, and stops when
+            // they stop — a download that has stalled should look stalled
+            <div className={`progress mb-1.5 ${pulling ? "is-live" : ""}`}>
+              <i style={{ width: `${percent}%` }} />
             </div>
           )}
           <div className="text-[11px] text-ink-muted">

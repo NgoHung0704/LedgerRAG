@@ -211,15 +211,18 @@ export default function ElementEditor({
         {/* header: title + tabs + close */}
         <div className="flex items-center gap-3 border-b border-line px-4 py-2.5">
           <h3 className="text-sm font-semibold">Edit parsed element</h3>
-          <div className="flex gap-1">
+          {/* a segmented control on a track, so the tabs read as one choice
+              rather than four loose buttons */}
+          <div className="flex gap-0.5 rounded-lg bg-surface-sunken p-0.5">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                aria-pressed={tab === t.id}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.97] ${
                   tab === t.id
-                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
-                    : "text-ink-muted hover:bg-surface-sunken"
+                    ? "bg-surface text-indigo-700 shadow-sm dark:text-indigo-300"
+                    : "text-ink-muted hover:text-ink"
                 }`}
               >
                 {t.label}

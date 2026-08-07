@@ -180,17 +180,23 @@ export default function KbSettings({
           />
 
           <label className="mt-3 flex items-center gap-2.5 text-sm text-ink">
+            {/* a real switch: announced as one, and its knob slides on a
+                transform rather than animating `left` */}
             <button
               type="button"
+              role="switch"
+              aria-checked={verify}
               onClick={() => setVerify((v) => !v)}
-              className={`relative h-5 w-9 rounded-full transition-colors ${
+              className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
                 verify ? "bg-indigo-600" : "bg-line-strong"
               }`}
             >
               <span
-                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${
-                  verify ? "left-4" : "left-0.5"
+                aria-hidden="true"
+                className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                  verify ? "translate-x-4" : "translate-x-0"
                 }`}
+                style={{ transitionTimingFunction: "cubic-bezier(.2,.9,.25,1)" }}
               />
             </button>
             <span className="inline-flex items-center gap-1">

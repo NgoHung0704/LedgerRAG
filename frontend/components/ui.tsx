@@ -9,18 +9,30 @@ export function Button({
   children,
   variant = "primary",
   size = "md",
+  icon,
+  loading = false,
   className = "",
+  disabled,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
-  size?: "sm" | "md";
+  variant?: "primary" | "secondary" | "tonal" | "ghost" | "danger";
+  size?: "xs" | "sm" | "md";
+  /** Leading glyph. While `loading` it becomes a spinner, so no caller has to
+   *  write the `busy ? <Spinner/> : <Icon/>` ternary again. */
+  icon?: React.ReactNode;
+  loading?: boolean;
 }) {
   const styles = {
     // disabled dims the whole button rather than just lightening its fill, so
     // it reads as "not available yet" instead of as a different kind of button
     primary: "bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-45",
     secondary:
-      "border border-line-strong bg-surface text-ink hover:bg-surface-sunken disabled:opacity-50",
+      "border border-line-strong bg-surface text-ink hover:border-indigo-400 hover:bg-surface-sunken hover:text-indigo-700 disabled:opacity-50 dark:hover:text-indigo-300",
+    // The missing middle. Without it, every action that mattered but wasn't THE
+    // action was an outline on white, which reads as switched off — the main
+    // reason the toolbars looked unfinished.
+    tonal:
+      "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60",
     ghost: "text-ink-muted hover:bg-surface-sunken hover:text-ink disabled:opacity-50",
     // destructive actions read as destructive before they are pressed, rather
     // than being a secondary button with the label doing all the warning
@@ -29,18 +41,31 @@ export function Button({
   }[variant];
   // min-h keeps every button a comfortable target even when a caller trims the
   // padding to fit a toolbar
-  const sizes = { sm: "min-h-8 px-2.5 py-1 text-xs", md: "min-h-9 px-3.5 py-2 text-sm" }[size];
+  const sizes = {
+    xs: "min-h-7 gap-1 px-2 py-1 text-[11.5px]",
+    sm: "min-h-8 px-2.5 py-1 text-xs",
+    md: "min-h-9 px-3.5 py-2 text-sm",
+  }[size];
   return (
     <button
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       // the press is a real 3% squash: a control should feel like it took the
       // input, not just repaint afterwards
       className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100 ${sizes} ${styles} ${className}`}
       {...props}
     >
+      {loading ? <Spinner size={13} /> : icon}
       {children}
     </button>
   );
 }
+
+/** The secondary button's look, for the few actions that are genuinely links —
+ *  a download, a new tab — and have to stay anchors to behave like ones. Keeps
+ *  them from drifting away from the buttons they sit next to. */
+export const linkButtonCls =
+  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2.5 py-1 text-xs font-medium text-ink transition-[background-color,border-color,color,transform] duration-150 hover:border-indigo-400 hover:bg-surface-sunken hover:text-indigo-700 active:scale-[0.97] dark:hover:text-indigo-300";
 
 /** An icon-only control. `label` is mandatory: without it the button is silent
  *  to a screen reader and unlabelled on hover, which is the single most common

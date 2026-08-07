@@ -48,7 +48,7 @@ import {
   type ElementView,
   type RereadMode,
 } from "@/lib/api";
-import { Button, Card, Spinner, StatusPill } from "@/components/ui";
+import { Button, Card, Spinner, StatusPill, linkButtonCls } from "@/components/ui";
 import { confirm } from "@/components/confirm";
 
 /** Document Inspector: everything ingestion produced, element by element.
@@ -219,33 +219,40 @@ export default function DocPage({ params }: { params: { docId: string } }) {
           )}
           <div className="ml-auto flex items-center gap-2">
             {picked.size > 0 && (
-              <button
+              // the one action the current selection is FOR, so it carries the
+              // accent while the standing tools beside it stay outlined
+              <Button
+                size="sm"
+                variant="primary"
                 onClick={joinPicked}
-                disabled={picked.size < 2 || joining}
+                disabled={picked.size < 2}
+                loading={joining}
+                icon={<Combine size={13} />}
+                className="rise"
                 title={
                   picked.size < 2
                     ? "Pick a second table to join this one with"
                     : "Read the picked tables again as one table, in document order"
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-500 dark:bg-indigo-950/50 dark:text-indigo-300"
               >
-                {joining ? <Spinner size={13} /> : <Combine size={13} />}
                 {joining
                   ? "joining…"
                   : `Join ${picked.size} table${picked.size === 1 ? "" : "s"}`}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<Eraser size={13} />}
               onClick={() => setScanning(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
             >
-              <Eraser size={13} /> Detect boilerplate
-            </button>
+              Detect boilerplate
+            </Button>
             <a
               href={documentExportUrl(doc.id)}
               download
               title="Everything ingestion produced, as plain text: the stored HTML, the records, and the chunks exactly as indexed."
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
+              className={linkButtonCls}
             >
               <FileDown size={13} /> Export parse
             </a>
@@ -253,7 +260,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
               href={documentOriginalUrl(doc.id)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
+              className={linkButtonCls}
             >
               <ExternalLink size={13} /> Open original document
             </a>
@@ -719,42 +726,48 @@ ${r.findings}` : ""),
             </div>
           )}
           {element.type === "table" && (
-            <button
+            <Button
+              size="xs"
+              variant="tonal"
               onClick={recheck}
-              disabled={rechecking}
+              loading={rechecking}
+              icon={<ScanSearch size={12} />}
               title="Parse this table again at double the resolution, with the text-layer grid as a hint, and read it twice so the two reads can be compared. You review the result before it replaces anything."
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
             >
-              {rechecking ? <Spinner size={11} /> : <ScanSearch size={12} />}
               {rechecking ? "re-parsing…" : "double-check"}
-            </button>
+            </Button>
           )}
           {element.type === "table" && (
-            <button
+            <Button
+              size="xs"
+              variant="ghost"
               onClick={splitTable}
-              disabled={splitting}
+              loading={splitting}
+              icon={<SplitSquareVertical size={12} />}
               title="Detection sometimes draws one box around two tables printed one under another. Read as one, their rows share a set of records and a question about the first can be answered from a row of the second."
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
             >
-              {splitting ? <Spinner size={11} /> : <SplitSquareVertical size={12} />}
               {splitting ? "splitting…" : "two tables"}
-            </button>
+            </Button>
           )}
           {element.type === "table" && (
-            <button
+            <Button
+              size="xs"
+              variant="ghost"
               onClick={convertToText}
-              disabled={converting}
+              loading={converting}
+              icon={<TableCellsMerge size={12} />}
               title="Detection sometimes fires on prose laid out in columns. This drops the grid and records and keeps the cells' words as text."
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
             >
-              {converting ? <Spinner size={11} /> : <TableCellsMerge size={12} />}
               {converting ? "converting…" : "not a table"}
-            </button>
+            </Button>
           )}
           {element.undo_steps > 0 && (
-            <button
+            <Button
+              size="xs"
+              variant="ghost"
               onClick={undo}
-              disabled={undoing}
+              loading={undoing}
+              icon={<Undo2 size={12} />}
               title={
                 `Put this element back the way it was before the last edit ` +
                 `(${element.undo_steps} step${
@@ -762,37 +775,43 @@ ${r.findings}` : ""),
                 } kept). Reprocessing the document also undoes it, but re-runs ` +
                 `the whole file and drops every other correction made to it.`
               }
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
             >
-              {undoing ? <Spinner size={11} /> : <Undo2 size={12} />}
               {undoing ? "undoing…" : `undo (${element.undo_steps})`}
-            </button>
+            </Button>
           )}
           {element.type !== "figure" && (
-            <button
+            <Button
+              size="xs"
+              variant="tonal"
+              icon={<Pencil size={12} />}
               onClick={() => {
                 setProposed(undefined);
                 setEditing(true);
               }}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-500"
             >
-              <Pencil size={12} /> edit
-            </button>
+              edit
+            </Button>
           )}
-          <button
+          <Button
+            size="xs"
+            variant="ghost"
             onClick={remove}
-            disabled={removing}
+            loading={removing}
+            icon={<Trash2 size={12} />}
+            className="hover:!bg-red-50 hover:!text-red-700 dark:hover:!bg-red-950/40 dark:hover:!text-red-400"
             title="Drop this element, its chunks, records and vectors. Reprocessing the document brings it back."
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-subtle hover:text-red-600 disabled:opacity-50"
           >
-            {removing ? <Spinner size={11} /> : <Trash2 size={12} />} delete
-          </button>
-          <button
+            delete
+          </Button>
+          <Button
+            size="xs"
+            variant="ghost"
+            icon={<ImageIcon size={12} />}
+            aria-pressed={showOriginal}
             onClick={() => setShowOriginal((v) => !v)}
-            className="text-[11px] font-medium text-ink-muted hover:text-ink"
           >
             {showOriginal ? "hide original" : "show original"}
-          </button>
+          </Button>
         </div>
       </div>
 
