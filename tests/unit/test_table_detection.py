@@ -62,7 +62,9 @@ def test_a_wrapped_header_is_folded_back_into_one_cell():
             ["Devis détaillé et accepté", "", "", "✓"]]
     repaired = repair_grid(grid)
     assert len(repaired) == 2
-    assert repaired[0][1] == ("Justificatifs à fournir à notre demande en cas "
+    # and the header lands in the column that holds the row labels — see
+    # test_a_column_holding_only_a_header_belongs_to_its_neighbour
+    assert repaired[0][0] == ("Justificatifs à fournir à notre demande en cas "
                               "de traitement via ou hors NOEMIE")
     assert repaired[1][0] == "Devis détaillé et accepté"
 
@@ -76,4 +78,34 @@ def test_a_sparse_data_row_is_never_swallowed():
     grid = [["Justificatif", "Optique", "Dentaire"],
             ["Facture détaillée", "✓", "✓"],
             ["Ordonnance médicale", "✓", ""]]
+    assert repair_grid(grid) == grid
+
+
+def test_a_column_holding_only_a_header_belongs_to_its_neighbour():
+    """The fault that put the row labels and the column headers in DIFFERENT
+    columns: "Justificatifs à fournir à notre demande…" sat alone in column 1
+    while every row label sat in column 0 under an empty header, so the
+    rendered table had a wide dead column between the two.
+
+    Measured over both corpus documents: every genuine column has at least one
+    filled data cell, without exception, and the four that do not are all a
+    header split off its own column."""
+    from tablerag.ingestion.layout import repair_grid
+
+    grid = [["", "Justificatifs à fournir", "Dentaire", "Optique"],
+            ["Devis détaillé et accepté", "", "✓", "✓"],
+            ["Bilan visuel", "", "", "✓"]]
+    repaired = repair_grid(grid)
+    assert repaired[0] == ["Justificatifs à fournir", "Dentaire", "Optique"]
+    assert repaired[1] == ["Devis détaillé et accepté", "✓", "✓"]
+
+
+def test_a_sparse_real_column_is_not_merged_away():
+    """One tick in eight rows is still a column. Only a column with NO data at
+    all is a split header."""
+    from tablerag.ingestion.layout import repair_grid
+
+    grid = [["", "Maternité", "Adoption"],
+            ["Livret de famille", "✓", ""],
+            ["Jugement d'adoption", "", "✓"]]
     assert repair_grid(grid) == grid

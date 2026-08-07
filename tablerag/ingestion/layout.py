@@ -212,7 +212,25 @@ def repair_grid(grid: list[list]) -> list[list]:
         for j in cells:
             header[j] = f"{header[j]} {row[j]}".strip()
         folded += 1
-    return [header, *grid[folded:]]
+    grid = [header, *grid[folded:]]
+
+    # A COLUMN HOLDING A HEADER AND NOTHING ELSE is the neighbouring column's
+    # header, split off by a phantom boundary. This is what put the row labels
+    # and the column headers in different columns: "Justificatifs à fournir à
+    # notre demande…" sat alone in column 1 while every row label sat in column
+    # 0 under an empty header. Measured over both corpus documents — every
+    # genuine column has at least one filled data cell, without exception, and
+    # the four that do not are all of this kind.
+    for j in range(len(grid[0]) - 1, 0, -1):
+        head_j = str(grid[0][j] or "").strip()
+        if not head_j or str(grid[0][j - 1] or "").strip():
+            continue
+        if any(str(row[j] or "").strip() for row in grid[1:]):
+            continue                       # a real column, however sparse
+        grid[0][j - 1] = head_j
+        for row in grid:
+            del row[j]
+    return grid
 
 
 def sentence_cell_ratio(grid: list[list]) -> float:
