@@ -186,8 +186,11 @@ export default function AssistantForm({
             (confirmingDelete ? (
               <div className="flex items-center gap-2 text-xs text-red-700 dark:text-red-300">
                 Delete this assistant and its conversations?
-                <button
+                <Button
                   type="button"
+                  size="xs"
+                  variant="destructive"
+                  loading={busy}
                   onClick={async () => {
                     setBusy(true);
                     try {
@@ -197,27 +200,29 @@ export default function AssistantForm({
                       setBusy(false);
                     }
                   }}
-                  disabled={busy}
-                  className="rounded-lg bg-red-600 px-2.5 py-1 font-medium text-white hover:bg-red-700 disabled:bg-red-300"
                 >
                   Delete
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="xs"
+                  variant="ghost"
                   onClick={() => setConfirmingDelete(false)}
-                  className="text-ink-muted hover:text-ink"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             ) : (
-              <button
+              <Button
                 type="button"
+                size="xs"
+                variant="ghost"
                 onClick={() => setConfirmingDelete(true)}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+                icon={<Trash2 size={13} />}
+                className="!text-red-700 hover:!bg-red-50 dark:!text-red-400 dark:hover:!bg-red-950/40"
               >
-                <Trash2 size={13} /> Delete assistant
-              </button>
+                Delete assistant
+              </Button>
             ))}
           <div className="ml-auto flex gap-2">
             <Button type="button" variant="secondary" onClick={onClose}>

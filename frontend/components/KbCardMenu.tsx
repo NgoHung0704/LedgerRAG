@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical, Settings2, Trash2 } from "lucide-react";
 import { deleteKb, type KB } from "@/lib/api";
-import { Spinner } from "@/components/ui";
+import { Button } from "@/components/ui";
 
 // Per-card actions on the Knowledge Bases list: open settings, or delete.
 // Sits over the card (a sibling of the card's Link, not nested in it) so its
@@ -83,22 +83,25 @@ export default function KbCardMenu({
                 undone.
               </div>
               <div className="mt-2.5 flex justify-end gap-1.5">
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant="ghost"
                   onClick={() => setConfirming(false)}
                   disabled={deleting}
-                  className="rounded px-2.5 py-1.5 text-[12px] font-medium text-ink-muted hover:bg-surface-sunken"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant="destructive"
                   onClick={remove}
-                  disabled={deleting}
-                  className="inline-flex items-center gap-1.5 rounded bg-red-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-red-700 disabled:bg-red-300"
+                  loading={deleting}
+                  icon={<Trash2 size={12} />}
                 >
-                  {deleting ? <Spinner size={12} /> : <Trash2 size={12} />} Delete
-                </button>
+                  Delete
+                </Button>
               </div>
             </div>
           )}

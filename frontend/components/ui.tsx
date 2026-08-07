@@ -15,7 +15,7 @@ export function Button({
   disabled,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "tonal" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "tonal" | "ghost" | "danger" | "destructive";
   size?: "xs" | "sm" | "md";
   /** Leading glyph. While `loading` it becomes a spinner, so no caller has to
    *  write the `busy ? <Spinner/> : <Icon/>` ternary again. */
@@ -38,6 +38,8 @@ export function Button({
     // than being a secondary button with the label doing all the warning
     danger:
       "border border-red-300 bg-surface text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/70 dark:text-red-400 dark:hover:bg-red-950/40",
+    // the last press of a confirmation, where the outline is no longer enough
+    destructive: "bg-red-600 text-white hover:bg-red-500 disabled:opacity-45",
   }[variant];
   // min-h keeps every button a comfortable target even when a caller trims the
   // padding to fit a toolbar

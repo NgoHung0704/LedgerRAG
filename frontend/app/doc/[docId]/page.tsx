@@ -918,20 +918,19 @@ ${r.findings}` : ""),
               }
             />
             {(element.text_preview.length >= 600 || element.chunk_count > 1) && (
-              <button
+              <Button
+                size="xs"
+                variant="ghost"
+                className="mt-1.5 !text-indigo-700 dark:!text-indigo-300"
+                loading={detailBusy}
+                aria-expanded={showFullText}
                 onClick={async () => {
                   if (!showFullText) await ensureDetail();
                   setShowFullText((v) => !v);
                 }}
-                disabled={detailBusy}
-                className="mt-1.5 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
               >
-                {showFullText
-                  ? "Show less"
-                  : detailBusy
-                    ? "Loading…"
-                    : "Show full text"}
-              </button>
+                {showFullText ? "Show less" : detailBusy ? "Loading…" : "Show full text"}
+              </Button>
             )}
           </div>
         )}
@@ -1007,20 +1006,23 @@ ${r.findings}` : ""),
                 />
                 {element.table.records_count >
                   element.table.records_preview.length && (
-                  <button
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="mt-1.5 !text-indigo-700 dark:!text-indigo-300"
+                    loading={detailBusy}
+                    aria-expanded={showAllRecords}
                     onClick={async () => {
                       if (!showAllRecords) await ensureDetail();
                       setShowAllRecords((v) => !v);
                     }}
-                    disabled={detailBusy}
-                    className="mt-1.5 text-[11px] font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
                   >
                     {showAllRecords
                       ? "Show fewer"
                       : detailBusy
                         ? "Loading…"
                         : `Show all ${element.table.records_count} records`}
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

@@ -232,7 +232,7 @@ export default function ElementEditor({
           <button
             onClick={() => setAssistantOpen((v) => !v)}
             title="Ask the model to change the content you are editing. It rearranges what is there — it never adds figures — and you apply the result yourself."
-            className={`ml-auto inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
               assistantOpen
                 ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
                 : "text-ink-muted hover:bg-surface-sunken"
@@ -244,7 +244,7 @@ export default function ElementEditor({
             onClick={() => setShowOriginal((v) => !v)}
             aria-pressed={showOriginal}
             title="Show the original crop from the document beside the editor"
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
               showOriginal
                 ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
                 : "text-ink-muted hover:bg-surface-sunken"
@@ -268,7 +268,7 @@ export default function ElementEditor({
           <button
             onClick={onClose}
             aria-label="Close editor"
-            className="rounded-lg p-1 text-ink-subtle transition-colors hover:bg-surface-sunken hover:text-ink-muted"
+            className="rounded-lg p-1.5 text-ink-subtle transition-[background-color,color,transform] duration-150 hover:bg-surface-sunken hover:text-ink active:scale-95"
           >
             <X size={18} />
           </button>
@@ -321,7 +321,7 @@ export default function ElementEditor({
                           onClick={() => setShowOriginal(false)}
                           title="Hide the original and give the width to the source and preview"
                           aria-label="Hide the original"
-                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-ink-subtle transition-colors hover:bg-surface-sunken hover:text-ink"
+                          className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-ink-subtle transition-[background-color,color,transform] duration-150 hover:bg-surface-sunken hover:text-ink active:scale-95"
                         >
                           <X size={12} aria-hidden="true" /> hide
                         </button>

@@ -165,12 +165,14 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
         {/* conversations */}
         <aside className="hidden min-h-0 flex-col rounded-xl border border-line bg-surface lg:flex">
           <div className="border-b border-line p-2">
-            <button
+            <Button
+              size="sm"
               onClick={newConversation}
-              className="flex w-full items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-500"
+              icon={<Plus size={14} />}
+              className="w-full"
             >
-              <Plus size={14} /> New conversation
-            </button>
+              New conversation
+            </Button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
             {conversations.length === 0 ? (
@@ -205,19 +207,23 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
                       {new Date(c.updated_at).toLocaleDateString()}
                     </span>
                   </button>
+                  {/* focus-visible, not just group-hover: these were invisible
+                      to anyone arriving by keyboard */}
                   <button
                     onClick={() => rename(c)}
                     title="Rename"
-                    className="shrink-0 rounded p-1 text-ink-faint opacity-0 hover:text-indigo-600 group-hover:opacity-100"
+                    aria-label={`Rename "${c.title}"`}
+                    className="relative shrink-0 rounded p-1.5 text-ink-subtle opacity-0 transition-[opacity,color,transform] duration-150 after:absolute after:-inset-1 after:content-[''] hover:text-indigo-600 active:scale-95 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:text-indigo-300"
                   >
-                    <Pencil size={12} />
+                    <Pencil size={12} aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => removeConversation(c.session_id)}
                     title="Delete"
-                    className="shrink-0 rounded p-1 text-ink-faint opacity-0 hover:text-red-600 group-hover:opacity-100"
+                    aria-label={`Delete "${c.title}"`}
+                    className="relative shrink-0 rounded p-1.5 text-ink-subtle opacity-0 transition-[opacity,color,transform] duration-150 after:absolute after:-inset-1 after:content-[''] hover:text-red-600 active:scale-95 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:text-red-400"
                   >
-                    <Trash2 size={12} />
+                    <Trash2 size={12} aria-hidden="true" />
                   </button>
                 </div>
               ))

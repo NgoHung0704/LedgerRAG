@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Settings2, Trash2, Check, ShieldCheck, Sparkles } from "lucide-react";
 import { updateKb, deleteKb, suggestDescription, type KB } from "@/lib/api";
 import CopyButton from "@/components/CopyButton";
-import { Spinner } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 
 // The single place to edit a KB after creation: name, description (what the
 // router reads to pick this KB — SPEC Phase 5), number locale, verification,
@@ -106,13 +106,16 @@ export default function KbSettings({
 
   return (
     <div className="relative" ref={ref}>
-      <button
+      <Button
+        size="sm"
+        variant="secondary"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        icon={<Settings2 size={14} />}
         title="Knowledge base settings"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[12px] font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
       >
-        <Settings2 size={14} /> Settings
-      </button>
+        Settings
+      </Button>
 
       {open && (
         <div className="absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] rounded-xl border border-line bg-surface p-3.5 shadow-lg">
@@ -129,16 +132,17 @@ export default function KbSettings({
             <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
               Description
             </label>
-            <button
-              type="button"
+            <Button
+              size="xs"
+              variant="tonal"
               onClick={suggest}
-              disabled={suggesting || saving}
+              disabled={saving}
+              loading={suggesting}
+              icon={<Sparkles size={11} />}
               title="Draft from this KB's documents"
-              className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-950"
             >
-              {suggesting ? <Spinner size={11} /> : <Sparkles size={11} />}
               Suggest
-            </button>
+            </Button>
           </div>
           <textarea
             value={description}
@@ -208,13 +212,15 @@ export default function KbSettings({
           {error && <div className="mt-2 text-xs text-red-600">{error}</div>}
 
           <div className="mt-3.5 flex justify-end">
-            <button
+            <Button
+              size="sm"
               onClick={save}
-              disabled={!dirty || saving || !name.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-indigo-500 disabled:bg-indigo-300"
+              disabled={!dirty || !name.trim()}
+              loading={saving}
+              icon={<Check size={13} />}
             >
-              {saving ? <Spinner size={13} /> : <Check size={13} />} Save changes
-            </button>
+              Save changes
+            </Button>
           </div>
 
           {/* the id is what the API and the eval gates are addressed by, and
@@ -237,12 +243,15 @@ export default function KbSettings({
 
           <div className="mt-3 border-t border-line pt-3">
             {!confirming ? (
-              <button
+              <Button
+                size="xs"
+                variant="ghost"
                 onClick={() => setConfirming(true)}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+                icon={<Trash2 size={13} />}
+                className="!text-red-700 hover:!bg-red-50 dark:!text-red-400 dark:hover:!bg-red-950/40"
               >
-                <Trash2 size={13} /> Delete this knowledge base
-              </button>
+                Delete this knowledge base
+              </Button>
             ) : (
               <div className="rounded-lg bg-red-50 p-2.5 dark:bg-red-950/40">
                 <div className="text-[12px] text-red-700 dark:text-red-300">
@@ -250,21 +259,23 @@ export default function KbSettings({
                   its documents, vectors and chat history? This cannot be undone.
                 </div>
                 <div className="mt-2 flex justify-end gap-1.5">
-                  <button
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={() => setConfirming(false)}
                     disabled={deleting}
-                    className="rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-ink-muted hover:bg-surface"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
                     onClick={remove}
-                    disabled={deleting}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-red-700 disabled:bg-red-300"
+                    loading={deleting}
+                    icon={<Trash2 size={13} />}
                   >
-                    {deleting ? <Spinner size={13} /> : <Trash2 size={13} />}
                     Delete permanently
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, CornerDownLeft, Sparkles } from "lucide-react";
 import { assistElementEdit, type AssistTurn } from "@/lib/api";
-import { Spinner } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 
 type Turn = AssistTurn & { proposal?: string | null };
 
@@ -89,13 +89,15 @@ export default function EditAssistant({
                   {t.content}
                 </div>
                 {t.proposal && (
-                  <button
-                    type="button"
+                  <Button
+                    size="xs"
+                    variant="tonal"
+                    className="mt-1"
                     onClick={() => onApply(t.proposal as string)}
-                    className="mt-1 inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300"
+                    icon={<Check size={11} />}
                   >
-                    <Check size={11} /> Apply to the {format} pane
-                  </button>
+                    Apply to the {format} pane
+                  </Button>
                 )}
               </div>
             ),
@@ -126,9 +128,10 @@ export default function EditAssistant({
           <button
             type="submit"
             disabled={busy || !input.trim()}
-            className="rounded-md bg-indigo-600 p-1.5 text-white hover:bg-indigo-500 disabled:bg-indigo-300"
+            aria-label="Send instruction"
+            className="shrink-0 rounded-md bg-indigo-600 p-1.5 text-white transition-[background-color,transform] duration-150 active:scale-[0.97] hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100"
           >
-            <CornerDownLeft size={14} />
+            <CornerDownLeft size={14} aria-hidden="true" />
           </button>
         </form>
       </div>
