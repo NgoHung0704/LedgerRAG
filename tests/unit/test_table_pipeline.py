@@ -655,3 +655,56 @@ def test_html_is_trustworthy_covers_flagged_text_layer_tables():
     # nothing to summarize
     assert not html_is_trustworthy(None, from_grid=True, error=None)
     assert not html_is_trustworthy("", from_grid=True, error=None)
+
+
+# --- a tick matrix carries its answer in the tick ---------------------------
+
+def test_a_tick_column_becomes_a_metric_not_a_dimension():
+    """A justificatif matrix holds nothing but ticks, so no column parses as a
+    number, so every column was filed as a DIMENSION with metrics left empty —
+    the record model inverted, the same way the percentage columns were. But a
+    tick IS the measurement: "do I need a devis for optique" is answered by its
+    presence."""
+    from tablerag.ingestion.table_pipeline import records_from_grid
+
+    grid = [["Justificatif", "Hospitalisation", "Dentaire", "Optique"],
+            ["Devis détaillé et accepté", "", "✓", "✓"],
+            ["Justificatif chambre particulière", "✓", "", ""]]
+    devis, chambre = records_from_grid(grid, "fr")
+
+    assert devis["dimensions"] == {"justificatif": "Devis détaillé et accepté"}
+    assert devis["metrics"] == {"hospitalisation": None, "dentaire": 1.0,
+                                "optique": 1.0}
+    assert devis["raw_values"]["dentaire"] == "✓"
+    assert chambre["metrics"]["hospitalisation"] == 1.0
+
+
+def test_the_absence_of_a_tick_is_an_answer_too():
+    """"No devis is needed for maternité" is a fact of the table, not a missing
+    value, so the key is present and None rather than absent.
+
+    A column with no tick ANYWHERE is a different thing and never reaches here:
+    layout.repair_grid drops a column that is empty in every row."""
+    from tablerag.ingestion.table_pipeline import records_from_grid
+
+    grid = [["Justificatif", "Maternité"],
+            ["Devis détaillé", ""],
+            ["Livret de famille", "✓"]]
+    devis, livret = records_from_grid(grid, "fr")
+    assert devis["metrics"] == {"maternité": None}
+    assert livret["metrics"] == {"maternité": 1.0}
+
+
+@pytest.mark.parametrize("cells,is_marks", [
+    (["✓", "", "✓"], True),
+    (["×", "×"], True),
+    (["✓", "oui", "✓"], False),      # one prose cell and it is not a tick column
+    (["A", "B", "C"], False),        # grades, not ticks
+    (["", "", ""], False),           # nothing to go on
+])
+def test_only_a_closed_set_of_characters_counts_as_a_tick(cells, is_marks):
+    """Accepting any single character would turn a column of initials or
+    grades into a boolean."""
+    from tablerag.ingestion.table_pipeline import is_mark_column
+
+    assert is_mark_column(cells) is is_marks

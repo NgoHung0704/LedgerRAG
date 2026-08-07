@@ -116,6 +116,28 @@ def grid_records_are_derivable(grid: list[list[str | None]] | None) -> bool:
     return all(len(row) <= len(header) for row in grid[1:])
 
 
+# what a tick looks like. Deliberately a closed set: any single character
+# would turn a column of initials or grades into a boolean.
+_MARKS = frozenset("✓✔✗✘×xX•●■□☑√")
+
+
+def is_mark_column(cells) -> bool:
+    """Is this column a YES/NO carried by a tick?
+
+    A justificatif matrix holds nothing but ticks, so no column parses as a
+    number, so every column was filed as a DIMENSION with metrics left empty —
+    the record model inverted, exactly as the percentage columns were. But a
+    tick IS the measurement here: "do I need a devis for optique" is answered
+    by its presence.
+
+    Every non-empty cell must be a lone mark. One prose cell and the column is
+    not a tick column, whatever else is in it."""
+    filled = [str(c).strip() for c in cells if c is not None and str(c).strip()]
+    if not filled:
+        return False
+    return all(len(cell) == 1 and cell in _MARKS for cell in filled)
+
+
 def records_from_grid(grid: list[list[str | None]],
                       locale: str | None) -> list[dict]:
     """Simple path: header row + data rows. Columns whose values mostly parse
@@ -138,12 +160,23 @@ def records_from_grid(grid: list[list[str | None]],
     if len(numeric_cols) == len(header):  # keep at least one dimension
         numeric_cols.discard(0)
 
+    mark_cols = {col for col in range(len(header))
+                 if col not in numeric_cols and is_mark_column(
+                     [row[col] for row in data if col < len(row)])}
+    if len(mark_cols) == len(header):
+        mark_cols.discard(0)
+
     records = []
     for row in data:
         dimensions, metrics, raw_values = {}, {}, {}
         for col, key in enumerate(keys):
             raw = str(row[col]).strip() if col < len(row) and row[col] else ""
-            if col in numeric_cols:
+            if col in mark_cols:
+                # a tick is a YES, and the absence of one is a NO — the answer
+                # a reader is looking for
+                metrics[key] = 1.0 if raw else None
+                raw_values[key] = raw
+            elif col in numeric_cols:
                 parsed = parse_number(raw, locale) if raw else None
                 metrics[key] = parsed.value if parsed else None
                 raw_values[key] = raw
