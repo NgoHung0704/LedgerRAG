@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 
 from tablerag.core.auth import User, current_user
@@ -11,6 +11,7 @@ from tablerag.core.schemas import (
     BulkDeleteRequest,
     DocumentOut,
 )
+from tablerag.api.caching import stored_image
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 from tablerag.ingestion.convert import (
@@ -238,9 +239,13 @@ def get_document_elements(doc_id: uuid.UUID) -> dict:
 
 
 @router.get("/documents/{doc_id}/pages/{page}/image")
-def get_page_image(doc_id: uuid.UUID, page: int) -> Response:
+def get_page_image(doc_id: uuid.UUID, page: int, request: Request) -> Response:
     """Serve the stored page render — the citation click-through target
-    (principle #3: answer -> source page image must always be reachable)."""
+    (principle #3: answer -> source page image must always be reachable).
+
+    Same URL, changing content: reprocessing rewrites every page render in
+    place, so it is served like the crop — always revalidate, and an ETag so
+    revalidating an unchanged page costs nothing."""
     with session_scope() as s:
         doc = repo.get_document(s, doc_id)
         if doc is None:
@@ -250,7 +255,8 @@ def get_page_image(doc_id: uuid.UUID, page: int) -> Response:
     store = get_object_store()
     if not store.exists(key):
         raise HTTPException(404, "page image not found")
-    return Response(content=store.get(key), media_type="image/png")
+    return stored_image(store.get(key),
+                        request.headers.get("if-none-match"))
 
 
 @router.post("/documents/{doc_id}/boilerplate-scan",

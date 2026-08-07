@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -15,6 +15,7 @@ from tablerag.core.schemas import (
     ElementAssistRequest,
     ElementEdit,
 )
+from tablerag.api.caching import stored_image
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 from tablerag.storage.object_store import get_object_store
@@ -329,7 +330,18 @@ def mark_element_unusable(element_id: uuid.UUID) -> dict:
 
 
 @router.get("/{element_id}/image")
-def get_element_image(element_id: uuid.UUID) -> Response:
+def get_element_image(element_id: uuid.UUID, request: Request) -> Response:
+    """The crop, which is the authority a reviewer reads the parse against.
+
+    Its URL never changes but its CONTENT does: splitting a table rewrites the
+    first part's crop in place, and so do joining, undo and reprocessing. With
+    no cache headers a browser reuses the old picture heuristically, so a table
+    cut in two went on showing the uncut image — the parse had changed and the
+    evidence beside it had not, which is the one thing this image exists to
+    prevent.
+
+    no-cache is not "do not cache": it is "always ask". The ETag makes asking
+    free — an unchanged crop comes back as a 304 with no body."""
     with session_scope() as s:
         from tablerag.storage.orm import Element
 
@@ -340,4 +352,5 @@ def get_element_image(element_id: uuid.UUID) -> Response:
     store = get_object_store()
     if not store.exists(key):
         raise HTTPException(404, "crop image not found")
-    return Response(content=store.get(key), media_type="image/png")
+    return stored_image(store.get(key),
+                        request.headers.get("if-none-match"))
