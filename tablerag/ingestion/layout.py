@@ -151,6 +151,11 @@ _TABLE_STRATEGIES = ("lines_strict", "lines", "text")
 # 606-character cell). Real tables here run to tens of characters a cell.
 _LAYOUT_MAX_FILL = 0.25
 _LAYOUT_MAX_CELL_CHARS = 400
+# cells ending like a sentence. Measured over every grid the ruled strategies
+# return on a health-insurance notice: the seven real tables scored 0.00-0.05,
+# the six prose-in-a-box ones 0.17-1.00. There is a wide gap and this sits in
+# it — no real table on the corpus comes near.
+_LAYOUT_MAX_SENTENCE_CELLS = 0.10
 
 
 def grid_fill_ratio(grid: list[list]) -> float:
@@ -158,6 +163,19 @@ def grid_fill_ratio(grid: list[list]) -> float:
     if not cells:
         return 0.0
     return sum(1 for c in cells if c is not None and str(c).strip()) / len(cells)
+
+
+def sentence_cell_ratio(grid: list[list]) -> float:
+    """Share of filled cells that end the way a SENTENCE ends.
+
+    A table cell ends with a name, a number, a unit, a footnote marker — never
+    with a full stop. Prose set inside a bordered box does, and that is what
+    the ruled strategies keep returning: the lexicon, the definitions, the
+    exclusions list, "NE SONT PAS REMBOURSÉS :" and its bullets."""
+    cells = [str(c).strip() for row in grid for c in row if c and str(c).strip()]
+    if not cells:
+        return 0.0
+    return sum(1 for c in cells if c.endswith((".", ",", ";"))) / len(cells)
 
 
 def looks_like_page_layout(grid: list[list]) -> bool:
@@ -181,7 +199,8 @@ def looks_like_page_layout(grid: list[list]) -> bool:
     if not filled:
         return True
     return (grid_fill_ratio(grid) < _LAYOUT_MAX_FILL
-            or max(len(cell) for cell in filled) > _LAYOUT_MAX_CELL_CHARS)
+            or max(len(cell) for cell in filled) > _LAYOUT_MAX_CELL_CHARS
+            or sentence_cell_ratio(grid) > _LAYOUT_MAX_SENTENCE_CELLS)
 
 
 def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
