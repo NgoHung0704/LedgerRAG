@@ -394,6 +394,15 @@ export const mergeElementTables = (ids: string[]) =>
     body: JSON.stringify({ ids }),
   }).then((r) => jsonOrThrow<ElementDetail & { reason: string }>(r));
 
+/** Draw repeated values as one merged cell, or as one cell per row. Display
+ * only: records come from a forward-filled grid, so every row already carries
+ * its own value whichever way the HTML is written. */
+export const setElementRowMerging = (elementId: string, merged: boolean) =>
+  fetch(
+    `${API_URL}/api/elements/${elementId}/row-merging?merged=${merged}`,
+    { method: "POST" },
+  ).then((r) => jsonOrThrow<ElementDetail>(r));
+
 /** Put an element back the way it was before its last edit, and re-index.
  * Reprocessing the document undoes anything, but re-runs the whole file and
  * discards every other correction made to it. */

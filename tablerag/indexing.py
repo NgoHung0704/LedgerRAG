@@ -120,6 +120,45 @@ def convert_table_to_text(element_id: uuid.UUID) -> bool:
     return True
 
 
+def set_row_merging(element_id: uuid.UUID, merged: bool) -> str | None:
+    """Show repeated values as one merged cell, or as one cell per row.
+
+    A guarantee table prints "300 %BRSS" once against two kinds of care, and
+    collapsing that into a rowspan is what the page looks like. But it is not
+    always what a reader wants: a merged cell is harder to scan across, harder
+    to copy a single row out of, and it hides how many rows a value covers.
+
+    This is a DISPLAY change and nothing more. Records are built from a
+    forward-filled grid, so every row already carries its own value whichever
+    way the HTML is written — nothing is re-indexed and no answer moves. The
+    reading is round-tripped through the same expander the answering context
+    uses, so the two can never disagree about what the table says.
+
+    Returns the new HTML, or None when there is no table to change."""
+    from tablerag.core.table_text import html_to_grid
+    from tablerag.ingestion.html_tables import collapse_vertical_merges
+    from tablerag.ingestion.table_pipeline import _grid_to_html
+
+    with session_scope() as s:
+        table = s.get(TableElement, element_id)
+        if table is None or not table.html:
+            return None
+        grid = html_to_grid(table.html)
+        if not grid:
+            return None
+        html = _grid_to_html(grid)
+        if merged:
+            html = collapse_vertical_merges(html) or html
+        if html == table.html:
+            return html                       # already the way it was asked for
+        # undo covers it like any other change to stored content; needs_review
+        # is left alone, because how a table is DRAWN says nothing about
+        # whether its parse was checked
+        repo.snapshot_element(s, element_id, "row-merging")
+        table.html = html
+    return html
+
+
 def _drop_crops(keys: list[str], keep: str | None = None) -> None:
     from tablerag.storage.object_store import get_object_store
 

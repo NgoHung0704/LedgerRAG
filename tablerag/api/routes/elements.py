@@ -279,6 +279,26 @@ async def merge_element_tables(body: MergeRequest) -> dict:
     return detail
 
 
+@router.post("/{element_id}/row-merging")
+async def set_element_row_merging(element_id: uuid.UUID,
+                                  merged: bool = True) -> dict:
+    """Draw repeated values as one merged cell, or as one cell per row.
+
+    Display only: records come from a forward-filled grid, so every row already
+    carries its own value whichever way the HTML is written. Nothing is
+    re-indexed and no answer changes — which is why this does not clear the
+    review flag either."""
+    from tablerag import indexing
+
+    html = await asyncio.to_thread(indexing.set_row_merging, element_id, merged)
+    if html is None:
+        raise HTTPException(404, "element not found, or it has no table")
+    with session_scope() as s:
+        detail = repo.get_element_detail(s, element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    return detail
+
+
 @router.post("/{element_id}/convert-to-text")
 async def convert_element_to_text(element_id: uuid.UUID) -> dict:
     """"This is not a table": demote a wrongly detected table to plain text.

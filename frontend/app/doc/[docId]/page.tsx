@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Pencil,
   RefreshCw,
+  Rows3,
   ScanSearch,
   ScanText,
   SplitSquareVertical,
@@ -40,6 +41,7 @@ import {
   markElementUnusable,
   recheckElement,
   rereadElement,
+  setElementRowMerging,
   mergeElementTables,
   splitElementTable,
   undoElementEdit,
@@ -401,6 +403,7 @@ function ElementCard({
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
   const [splitting, setSplitting] = useState(false);
+  const [unmerging, setUnmerging] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -477,6 +480,31 @@ ${r.findings}` : ""),
     } catch (e) {
       setReviewError(String(e));
       setRemoving(false);
+    }
+  };
+
+  // a value printed once against several rows is drawn as a merged cell,
+  // which is what the page looks like — but a merged cell is harder to scan
+  // across and hides how many rows it covers, so it is the reviewer's choice
+  const rowsMerged = /rowspan=/i.test(element.table?.html ?? "");
+
+  const toggleRowMerging = async () => {
+    setUnmerging(true);
+    setReviewError(null);
+    setNotice(null);
+    try {
+      const result = await setElementRowMerging(element.id, !rowsMerged);
+      setNotice(
+        rowsMerged
+          ? "Merged rows split — each row now carries its own value."
+          : "Repeated values merged.",
+      );
+      onChanged();
+      setDetail(result);
+    } catch (e) {
+      setReviewError(String(e).replace(/^Error:\s*/, ""));
+    } finally {
+      setUnmerging(false);
     }
   };
 
@@ -735,6 +763,22 @@ ${r.findings}` : ""),
               title="Parse this table again at double the resolution, with the text-layer grid as a hint, and read it twice so the two reads can be compared. You review the result before it replaces anything."
             >
               {rechecking ? "re-parsing…" : "double-check"}
+            </Button>
+          )}
+          {element.type === "table" && (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={toggleRowMerging}
+              loading={unmerging}
+              icon={<Rows3 size={12} />}
+              title="A value printed once against several rows is drawn as one merged cell — what the page looks like. Split it and every row carries its own value, which is easier to scan across and to copy one row out of. Display only: the records already hold a value per row either way."
+            >
+              {unmerging
+                ? "redrawing…"
+                : rowsMerged
+                  ? "split merged rows"
+                  : "merge repeated rows"}
             </Button>
           )}
           {element.type === "table" && (
