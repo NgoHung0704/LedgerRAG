@@ -268,13 +268,13 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   Clear
                 </Button>
                 <Button
-                  variant="secondary"
+                  variant="tonal"
                   size="sm"
-                  disabled={bulkBusy}
+                  loading={bulkBusy}
+                  icon={<RefreshCw size={13} />}
                   onClick={reprocessSelected}
                   title="Re-run ingestion from the original files. Useful after a batch of failures, or to pick up a parsing change."
                 >
-                  {bulkBusy ? <Spinner size={13} /> : <RefreshCw size={13} />}
                   Reprocess
                 </Button>
                 <Button

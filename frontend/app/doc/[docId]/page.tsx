@@ -242,7 +242,7 @@ export default function DocPage({ params }: { params: { docId: string } }) {
             )}
             <Button
               size="sm"
-              variant="secondary"
+              variant="tonal"
               icon={<Eraser size={13} />}
               onClick={() => setScanning(true)}
             >
@@ -687,7 +687,7 @@ ${r.findings}` : ""),
                     className="fixed inset-0 z-10"
                     onClick={() => setRereadMenu(false)}
                   />
-                  <div className="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-line bg-surface p-1.5 shadow-md">
+                  <div className="pop absolute right-0 z-20 mt-1 w-72 origin-top-right rounded-lg border border-line bg-surface p-1.5 shadow-lift">
                     {(
                       [
                         {
@@ -881,16 +881,16 @@ ${r.findings}` : ""),
               Review this parse against the original image, then decide:
             </span>
             <Button
-              variant="secondary"
-              className="!py-1.5 text-xs"
+              size="sm"
+              variant="tonal"
               disabled={reviewBusy}
               onClick={() => review("approve")}
             >
               Approve — parse is correct
             </Button>
             <Button
-              variant="secondary"
-              className="!py-1.5 text-xs !text-red-600"
+              size="sm"
+              variant="danger"
               disabled={reviewBusy}
               onClick={() => review("unusable")}
             >

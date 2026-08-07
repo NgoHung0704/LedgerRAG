@@ -56,7 +56,7 @@ export default function KbCardMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-60 rounded-lg border border-line bg-surface p-1.5 shadow-md">
+        <div className="pop absolute right-0 z-20 mt-1 w-60 origin-top-right rounded-lg border border-line bg-surface p-1.5 shadow-lift">
           {!confirming ? (
             <>
               <button

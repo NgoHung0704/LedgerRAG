@@ -108,7 +108,7 @@ export default function KbSettings({
     <div className="relative" ref={ref}>
       <Button
         size="sm"
-        variant="secondary"
+        variant="tonal"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         icon={<Settings2 size={14} />}
@@ -118,7 +118,7 @@ export default function KbSettings({
       </Button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] rounded-xl border border-line bg-surface p-3.5 shadow-lg">
+        <div className="pop absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] origin-top-right rounded-xl border border-line bg-surface p-3.5 shadow-lift">
           <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
             Name
           </label>

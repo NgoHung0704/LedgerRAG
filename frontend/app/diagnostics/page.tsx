@@ -145,12 +145,12 @@ function PageCard({
         <div className="ml-auto flex items-center gap-2">
           {isScan && (
             <Button
-              variant="secondary"
-              className="!py-1 text-xs"
-              disabled={vlmBusy}
+              size="sm"
+              variant="tonal"
+              loading={vlmBusy}
+              icon={<Eye size={13} />}
               onClick={onRunVlm}
             >
-              {vlmBusy ? <Spinner size={13} /> : <Eye size={13} />}
               VLM detect
             </Button>
           )}

@@ -155,8 +155,12 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="secondary" onClick={() => setEditing(true)}>
-            <Settings2 size={14} /> Settings
+          <Button
+            variant="tonal"
+            icon={<Settings2 size={14} />}
+            onClick={() => setEditing(true)}
+          >
+            Settings
           </Button>
         </div>
       </div>

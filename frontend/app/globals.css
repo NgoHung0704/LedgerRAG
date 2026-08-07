@@ -189,6 +189,24 @@
   animation: rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 
+/* A panel that opens from a button should look like it came OUT of it. The
+   easing overshoots 1.0 and settles back — the difference between a balloon
+   inflating and a box fading in. Pair with an `origin-*` utility so it grows
+   from the corner nearest the control that opened it. */
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop {
+  animation: pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
 /* A list arrives as a sequence rather than all at once. Capped at six steps:
    past that the last card is waiting on the animation instead of the data. */
 .stagger > * {

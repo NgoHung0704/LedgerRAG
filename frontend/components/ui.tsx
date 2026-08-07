@@ -28,11 +28,11 @@ export function Button({
     primary: "bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-45",
     secondary:
       "border border-line-strong bg-surface text-ink hover:border-indigo-400 hover:bg-surface-sunken hover:text-indigo-700 disabled:opacity-50 dark:hover:text-indigo-300",
-    // The missing middle. Without it, every action that mattered but wasn't THE
-    // action was an outline on white, which reads as switched off — the main
-    // reason the toolbars looked unfinished.
+    // The default for a tool you reach for often. An outline on white reads as
+    // switched off; a tint reads as available. The ring gives it an edge so it
+    // still sits ON the surface rather than staining it.
     tonal:
-      "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60",
+      "bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-200/80 hover:bg-indigo-100 hover:ring-indigo-300 disabled:opacity-50 dark:bg-indigo-950/60 dark:text-indigo-300 dark:ring-indigo-800/70 dark:hover:bg-indigo-900/60 dark:hover:ring-indigo-700",
     ghost: "text-ink-muted hover:bg-surface-sunken hover:text-ink disabled:opacity-50",
     // destructive actions read as destructive before they are pressed, rather
     // than being a secondary button with the label doing all the warning
@@ -67,7 +67,7 @@ export function Button({
  *  a download, a new tab — and have to stay anchors to behave like ones. Keeps
  *  them from drifting away from the buttons they sit next to. */
 export const linkButtonCls =
-  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2.5 py-1 text-xs font-medium text-ink transition-[background-color,border-color,color,transform] duration-150 hover:border-indigo-400 hover:bg-surface-sunken hover:text-indigo-700 active:scale-[0.97] dark:hover:text-indigo-300";
+  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200/80 transition-[background-color,box-shadow,transform] duration-150 hover:bg-indigo-100 hover:ring-indigo-300 active:scale-[0.97] dark:bg-indigo-950/60 dark:text-indigo-300 dark:ring-indigo-800/70 dark:hover:bg-indigo-900/60";
 
 /** An icon-only control. `label` is mandatory: without it the button is silent
  *  to a screen reader and unlabelled on hover, which is the single most common

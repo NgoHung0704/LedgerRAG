@@ -59,19 +59,19 @@ export default function ChatScopeSelector({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2.5 py-1 text-[12px] font-medium text-ink transition-[background-color,border-color,color,transform] duration-150 hover:border-indigo-400 hover:bg-surface-sunken active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
+        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-[12px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200/80 transition-[background-color,box-shadow,transform] duration-150 hover:bg-indigo-100 hover:ring-indigo-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:ring-indigo-800/70 dark:hover:bg-indigo-900/60"
       >
-        <Sparkles size={13} className="text-indigo-500" aria-hidden="true" />
-        <span className="text-ink-subtle">Search in:</span> {summary}
+        <Sparkles size={13} aria-hidden="true" />
+        <span className="opacity-70">Search in:</span> {summary}
         <ChevronDown
           size={13}
           aria-hidden="true"
-          className={`text-ink-subtle transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`opacity-70 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
 
       {open && (
-        <div className="absolute bottom-full z-20 mb-1.5 w-80 rounded-xl border border-line bg-surface p-1.5 shadow-lg">
+        <div className="pop absolute bottom-full z-20 mb-1.5 w-80 origin-bottom-left rounded-xl border border-line bg-surface p-1.5 shadow-lift">
           {kbId && (
             <Option
               icon={<Database size={15} />}

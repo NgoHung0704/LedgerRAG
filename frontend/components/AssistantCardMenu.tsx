@@ -57,7 +57,7 @@ export default function AssistantCardMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-line bg-surface p-1.5 shadow-lift"
+          className="pop absolute right-0 z-20 mt-1 w-56 origin-top-right rounded-lg border border-line bg-surface p-1.5 shadow-lift"
         >
           <button
             type="button"
