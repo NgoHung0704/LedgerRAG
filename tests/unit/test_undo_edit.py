@@ -239,30 +239,54 @@ def test_every_way_a_split_can_end_says_which_one_it_was(monkeypatch):
 
 # --- joining a table detection cut in two ---------------------------------
 
-def test_the_next_table_in_reading_order_is_the_one_joined(db_session, table):
-    """No picker: a table is joined with the one after it, same page or across
-    the page break. Reading order is (page, top edge), not insertion order."""
-    from tablerag.indexing import _next_table
+def test_the_chosen_tables_are_joined_in_reading_order(db_session, table):
+    """Which tables to join is the reviewer's decision — it used to be "the
+    next one in reading order", which nobody could see, so nobody could tell
+    what they were about to get.
+
+    But the ORDER is still reading order, not click order: a stitched crop must
+    run down the document however the selection was made."""
+    from tablerag.indexing import _tables_to_join
 
     doc_id = db_session.get(Element, table.id).doc_id
     later = repo.add_element(db_session, doc_id, page=2, bbox=[0, 50, 1, 60],
                              type_="table", crop_image_path="p2.png")
-    # inserted last but sits ABOVE the page-2 table, so it comes first
     middle = repo.add_element(db_session, doc_id, page=1, bbox=[0, 90, 1, 99],
                               type_="table", crop_image_path="mid.png")
     db_session.flush()
 
-    first, second = _next_table(table.id)
-    assert (first["id"], second["id"]) == (table.id, middle.id)
-    assert _next_table(middle.id)[1]["id"] == later.id
-    assert _next_table(later.id) is None      # nothing after the last one
+    parts, refusal = _tables_to_join([later.id, table.id, middle.id])
+    assert refusal is None
+    assert [p["id"] for p in parts] == [table.id, middle.id, later.id]
 
 
-def test_a_text_element_has_nothing_to_join(db_session, table, monkeypatch):
+def test_one_table_is_not_a_join(db_session, table):
+    from tablerag.indexing import _tables_to_join
+
+    parts, refusal = _tables_to_join([table.id])
+    assert parts is None and "at least two" in refusal
+
+
+def test_only_tables_can_be_joined(db_session, table):
+    from tablerag.indexing import _tables_to_join
+
     doc_id = db_session.get(Element, table.id).doc_id
     text = repo.add_element(db_session, doc_id, page=1, bbox=[0, 0, 1, 1],
                             type_="text", crop_image_path="t.png")
     db_session.flush()
-    from tablerag.indexing import _next_table
+    parts, refusal = _tables_to_join([table.id, text.id])
+    assert parts is None and "only tables" in refusal
 
-    assert _next_table(text.id) is None
+
+def test_tables_from_two_documents_are_not_joined(db_session, table):
+    """Stitching them would invent a table that exists in neither file."""
+    from tablerag.indexing import _tables_to_join
+
+    kb = repo.create_kb(db_session, "other")
+    other_doc = repo.create_document(db_session, kb.id, "b.pdf", "k2")
+    stranger = repo.add_element(db_session, other_doc.id, page=1,
+                                bbox=[0, 0, 1, 1], type_="table",
+                                crop_image_path="b.png")
+    db_session.flush()
+    parts, refusal = _tables_to_join([table.id, stranger.id])
+    assert parts is None and "same document" in refusal

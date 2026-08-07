@@ -40,7 +40,7 @@ import {
   markElementUnusable,
   recheckElement,
   rereadElement,
-  mergeElementTable,
+  mergeElementTables,
   splitElementTable,
   undoElementEdit,
   type DocumentView,
@@ -64,6 +64,11 @@ export default function DocPage({ params }: { params: { docId: string } }) {
   // WHICH one on a page holding a dozen
   const [target, setTarget] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
+  // tables the reviewer has picked to join. Which ones is their decision: this
+  // used to join with "the next table in reading order", which nobody could
+  // see, so nobody could tell what they were about to get.
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [joining, setJoining] = useState(false);
   const jumped = useRef(false);
 
   const removePage = async (page: number) => {
@@ -85,6 +90,40 @@ export default function DocPage({ params }: { params: { docId: string } }) {
       setError(String(e));
     } finally {
       setDeletingPage(null);
+    }
+  };
+
+  const togglePick = (id: string) =>
+    setPicked((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+
+  const joinPicked = async () => {
+    const ids = Array.from(picked);
+    if (
+      !(await confirm({
+        title: `Join ${ids.length} tables into one?`,
+        message:
+          "They are read again together as a single table, in document order. " +
+          "The first one keeps its identity and undo restores it; the others " +
+          "come back only by reprocessing the document.",
+        confirmLabel: "Join",
+        danger: false,
+      }))
+    )
+      return;
+    setJoining(true);
+    setError(null);
+    try {
+      await mergeElementTables(ids);
+      setPicked(new Set());
+      await refresh();
+    } catch (e) {
+      setError(String(e).replace(/^Error:\s*/, ""));
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -179,6 +218,23 @@ export default function DocPage({ params }: { params: { docId: string } }) {
             </span>
           )}
           <div className="ml-auto flex items-center gap-2">
+            {picked.size > 0 && (
+              <button
+                onClick={joinPicked}
+                disabled={picked.size < 2 || joining}
+                title={
+                  picked.size < 2
+                    ? "Pick a second table to join this one with"
+                    : "Read the picked tables again as one table, in document order"
+                }
+                className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-500 dark:bg-indigo-950/50 dark:text-indigo-300"
+              >
+                {joining ? <Spinner size={13} /> : <Combine size={13} />}
+                {joining
+                  ? "joining…"
+                  : `Join ${picked.size} table${picked.size === 1 ? "" : "s"}`}
+              </button>
+            )}
             <button
               onClick={() => setScanning(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:border-indigo-300 hover:text-indigo-700 dark:hover:border-indigo-500"
@@ -284,6 +340,8 @@ export default function DocPage({ params }: { params: { docId: string } }) {
                     key={element.id}
                     element={element}
                     highlighted={target === element.id}
+                    picked={picked.has(element.id)}
+                    onPick={() => togglePick(element.id)}
                     onChanged={refresh}
                   />
                 ))}
@@ -305,11 +363,16 @@ function ElementCard({
   element,
   onChanged,
   highlighted = false,
+  picked = false,
+  onPick,
 }: {
   element: ElementView;
   onChanged: () => void;
   /** this is the element a Review link pointed at */
   highlighted?: boolean;
+  /** picked for joining with other tables */
+  picked?: boolean;
+  onPick?: () => void;
 }) {
   const { icon: Icon, label } = TYPE_META[element.type];
   const [showOriginal, setShowOriginal] = useState(
@@ -331,7 +394,6 @@ function ElementCard({
   const [rereadMenu, setRereadMenu] = useState(false);
   const [converting, setConverting] = useState(false);
   const [splitting, setSplitting] = useState(false);
-  const [merging, setMerging] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -408,35 +470,6 @@ ${r.findings}` : ""),
     } catch (e) {
       setReviewError(String(e));
       setRemoving(false);
-    }
-  };
-
-  const mergeTable = async () => {
-    if (
-      !(await confirm({
-        title: "Is the next table part of this one?",
-        message:
-          "The two regions are read again as one table. Detection splits a " +
-          "table wherever its ruling stops, and left apart half its rows " +
-          "answer for the whole. Undo restores this table; the other element " +
-          "comes back only by reprocessing the document.",
-        confirmLabel: "Join",
-        danger: false,
-      }))
-    )
-      return;
-    setMerging(true);
-    setReviewError(null);
-    setNotice(null);
-    try {
-      const result = await mergeElementTable(element.id);
-      setNotice(`Joined — ${result.reason}.`);
-      onChanged();
-      setDetail(result);
-    } catch (e) {
-      setReviewError(String(e).replace(/^Error:\s*/, ""));
-    } finally {
-      setMerging(false);
     }
   };
 
@@ -570,6 +603,19 @@ ${r.findings}` : ""),
       }`}
     >
       <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-line bg-surface-sunken px-4 py-2">
+        {element.type === "table" && onPick && (
+          <label
+            title="Pick this table to join it with another"
+            className="inline-flex cursor-pointer items-center"
+          >
+            <input
+              type="checkbox"
+              checked={picked}
+              onChange={onPick}
+              className="h-3.5 w-3.5 cursor-pointer accent-indigo-600"
+            />
+          </label>
+        )}
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink">
           <Icon size={14} /> {label}
         </span>
@@ -681,17 +727,6 @@ ${r.findings}` : ""),
             >
               {rechecking ? <Spinner size={11} /> : <ScanSearch size={12} />}
               {rechecking ? "re-parsing…" : "double-check"}
-            </button>
-          )}
-          {element.type === "table" && (
-            <button
-              onClick={mergeTable}
-              disabled={merging}
-              title="Detection splits a table wherever its ruling stops. This reads it together with the NEXT table — same page or across the page break — as one."
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
-            >
-              {merging ? <Spinner size={11} /> : <Combine size={12} />}
-              {merging ? "joining…" : "one table"}
             </button>
           )}
           {element.type === "table" && (
