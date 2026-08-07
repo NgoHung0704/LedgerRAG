@@ -165,6 +165,56 @@ def grid_fill_ratio(grid: list[list]) -> float:
     return sum(1 for c in cells if c is not None and str(c).strip()) / len(cells)
 
 
+def _filled(row) -> set[int]:
+    return {j for j, c in enumerate(row) if c is not None and str(c).strip()}
+
+
+def repair_grid(grid: list[list]) -> list[list]:
+    """Fix two faults find_tables makes, before anything else sees the grid.
+
+    The grid is not just the simple parser's input — it is handed to the VLM
+    as evidence, and the VLM reproduces it faithfully. So a broken grid becomes
+    a broken table however it is parsed. Both faults were read off the
+    justificatif matrices of a health-insurance notice, whose rendered HTML had
+    the row labels and the column headers in DIFFERENT columns.
+
+    A COLUMN THAT IS EMPTY EVERYWHERE is a phantom boundary — the detector
+    found a gutter where there is no column. It carries nothing, so dropping it
+    cannot lose anything.
+
+    A HEADER CELL THAT WRAPS becomes one row per line: "Justificatifs à fournir
+    à notre" / "demande en cas de" / "traitement via ou hors" / "NOEMIE" came
+    back as four rows, three of them holding a single cell and nine blanks.
+    They are folded back into the header.
+
+    The fold is bounded by the row LABEL, which is what makes it safe: only
+    rows before the first one with content in column 0 are considered, and only
+    when their filled columns are a subset of the header's. A sparse data row
+    like "Ordonnance médicale" has a label, so it is never swallowed.
+    """
+    if not grid:
+        return grid
+    width = max(len(row) for row in grid)
+    keep = [j for j in range(width)
+            if any(str(row[j] or "").strip() for row in grid if j < len(row))]
+    if not keep:
+        return grid
+    grid = [[row[j] if j < len(row) else None for j in keep] for row in grid]
+
+    if len(grid) < 2:
+        return grid
+    header, folded = list(grid[0]), 1
+    while folded < len(grid):
+        row = grid[folded]
+        cells = _filled(row)
+        if not cells or 0 in cells or not cells <= _filled(header):
+            break
+        for j in cells:
+            header[j] = f"{header[j]} {row[j]}".strip()
+        folded += 1
+    return [header, *grid[folded:]]
+
+
 def sentence_cell_ratio(grid: list[list]) -> float:
     """Share of filled cells that end the way a SENTENCE ends.
 
@@ -235,7 +285,7 @@ def diagnose_page_tables(page: fitz.Page) -> dict:
             continue
         items = []
         for t in tables:
-            grid = t.extract()
+            grid = repair_grid(t.extract())
             items.append({
                 "bbox": [round(x, 1) for x in t.bbox],
                 "rows": len(grid),
@@ -316,7 +366,7 @@ def detect_tables(page: fitz.Page) -> list[tuple]:
                 continue
             line_candidates.append(
                 (len(grid) * n_cols, rect.get_area(), priority, rect))
-            line_payloads.append((table, grid))
+            line_payloads.append((table, repair_grid(grid)))
 
     found = [line_payloads[i] for i in resolve_by_quality(line_candidates)]
     rects = [fitz.Rect(table.bbox) for table, _ in found]
@@ -332,7 +382,7 @@ def detect_tables(page: fitz.Page) -> list[tuple]:
             continue
         rect = fitz.Rect(table.bbox)
         if accept_table(rect, grid, "text", rects):
-            found.append((table, grid))
+            found.append((table, repair_grid(grid)))
             rects.append(rect)
 
     found.sort(key=lambda pair: (pair[0].bbox[1], pair[0].bbox[0]))

@@ -36,3 +36,44 @@ def test_the_guarantee_table_is_still_a_table():
          ["Prothèses dentaires remboursées par la Sécurité sociale", "430 %BRSS"],
          ["Orthodontie remboursée - par semestre et par bénéficiaire (5)",
           "400 %BRSS"]])
+
+
+# --- the grid handed to the VLM must not already be broken -----------------
+
+def test_a_column_empty_everywhere_is_a_phantom_boundary():
+    from tablerag.ingestion.layout import repair_grid
+
+    grid = [["Poste", "", "Montant"], ["Optique", "", "100 €"]]
+    assert repair_grid(grid) == [["Poste", "Montant"], ["Optique", "100 €"]]
+
+
+def test_a_wrapped_header_is_folded_back_into_one_cell():
+    """find_tables emits one row per LINE of a header that wraps. The grid is
+    handed to the VLM as evidence and the VLM reproduces it faithfully, so the
+    rendered table had its row labels and its column headers in DIFFERENT
+    columns. Measured on a justificatif matrix: 12x10 became 9x9 and the header
+    came back whole."""
+    from tablerag.ingestion.layout import repair_grid
+
+    grid = [["", "Justificatifs à fournir à notre", "Hospitalisation", "Dentaire"],
+            ["", "demande en cas de", "", ""],
+            ["", "traitement via ou hors", "", ""],
+            ["", "NOEMIE", "", ""],
+            ["Devis détaillé et accepté", "", "", "✓"]]
+    repaired = repair_grid(grid)
+    assert len(repaired) == 2
+    assert repaired[0][1] == ("Justificatifs à fournir à notre demande en cas "
+                              "de traitement via ou hors NOEMIE")
+    assert repaired[1][0] == "Devis détaillé et accepté"
+
+
+def test_a_sparse_data_row_is_never_swallowed():
+    """The fold is bounded by the row LABEL, and that is what makes it safe:
+    "Ordonnance médicale" fills one cell of nine, but it has a label, so it is
+    a row of its own."""
+    from tablerag.ingestion.layout import repair_grid
+
+    grid = [["Justificatif", "Optique", "Dentaire"],
+            ["Facture détaillée", "✓", "✓"],
+            ["Ordonnance médicale", "✓", ""]]
+    assert repair_grid(grid) == grid
