@@ -8,11 +8,13 @@ import {
   Maximize2,
   Minimize2,
   Sparkles,
+  Table2,
   Wand2,
   X,
 } from "lucide-react";
 import { Portal } from "@/components/ui";
 import {
+  convertElementToTable,
   deriveFromHtml,
   editElement,
   elementImageUrl,
@@ -61,6 +63,7 @@ export default function ElementEditor({
   const [busy, setBusy] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [deriving, setDeriving] = useState(false);
+  const [promoting, setPromoting] = useState(false);
   const [derived, setDerived] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // A proposal asks you to judge a re-reading against what is actually printed,
@@ -189,6 +192,31 @@ export default function ElementEditor({
       setError(String(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  // A page laid out as a grid extracts as flattened prose, and the VLM re-read
+  // turns it back into a markdown table — which could only ever be saved as
+  // TEXT, so a table just recovered stayed unsearchable as one.
+  const looksLikeTable =
+    detail?.type === "text" &&
+    (/^\s*\|.*\|/m.test(text) || /<table[\s>]/i.test(text));
+
+  const promoteToTable = async () => {
+    setError(null);
+    setPromoting(true);
+    try {
+      const result = await convertElementToTable(elementId, text);
+      setDetail(result);
+      setHtml(result.table?.html ?? "");
+      setSummary(result.table?.summary ?? "");
+      setRecordsJson(JSON.stringify(result.table?.records ?? [], null, 2));
+      setTab("html");
+      onSaved();
+    } catch (e) {
+      setError(String(e).replace(/^Error:\s*/, ""));
+    } finally {
+      setPromoting(false);
     }
   };
 
@@ -340,7 +368,18 @@ export default function ElementEditor({
                   <Pane
                     label={`Source · ${tab}`}
                     action={
-                      tab === "html" && isTable ? (
+                      tab === "text" && looksLikeTable ? (
+                        <button
+                          type="button"
+                          onClick={promoteToTable}
+                          disabled={promoting}
+                          title="Read this markdown or HTML table into a real table element: display HTML, records for exact lookup, and a routing summary. Undo puts the text back."
+                          className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300"
+                        >
+                          {promoting ? <Spinner size={11} /> : <Table2 size={11} />}
+                          {promoting ? "converting…" : "this is a table"}
+                        </button>
+                      ) : tab === "html" && isTable ? (
                         <button
                           type="button"
                           onClick={derive}

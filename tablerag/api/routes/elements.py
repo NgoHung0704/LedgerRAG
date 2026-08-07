@@ -279,6 +279,35 @@ async def merge_element_tables(body: MergeRequest) -> dict:
     return detail
 
 
+class ToTableRequest(BaseModel):
+    source: str
+
+
+@router.post("/{element_id}/to-table")
+async def convert_element_to_table(element_id: uuid.UUID,
+                                   body: ToTableRequest) -> dict:
+    """"This text is a table": promote it, from markdown or HTML.
+
+    The inverse of convert-to-text. A page laid out as a grid extracts as
+    flattened prose and the VLM re-read turns it back into a markdown table —
+    which could only be saved as TEXT, so a table just recovered stayed
+    unsearchable as one, with no records and no routing summary.
+
+    The source is what is open in the editor, unsaved, so it travels with the
+    request. Undo puts the text back."""
+    from tablerag import indexing
+
+    rows, reason = await indexing.convert_text_to_table(element_id, body.source)
+    if rows is None:
+        raise HTTPException(409, f"Not converted: {reason}")
+    await indexing.reindex_element(element_id)
+    with session_scope() as s:
+        detail = repo.get_element_detail(s, element_id)
+    detail["crop_url"] = f"/api/elements/{element_id}/image"
+    detail["reason"] = reason
+    return detail
+
+
 @router.post("/{element_id}/row-merging")
 async def set_element_row_merging(element_id: uuid.UUID,
                                   merged: bool = True) -> dict:

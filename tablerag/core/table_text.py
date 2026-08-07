@@ -120,6 +120,38 @@ def flatten_table_for_context(html: str | None) -> str:
     return "\n".join(lines)
 
 
+_MD_RULE = re.compile(r"^[\s|:\-]+$")
+
+
+def markdown_table_to_grid(text: str | None) -> list[list[str]] | None:
+    """A pipe table as a rectangular grid, or None when there is no table.
+
+    Only the pipe lines are read, so a re-read that produced a heading, a table
+    and a closing sentence yields the table and drops the prose around it —
+    which is what someone pressing "this is a table" is asking for.
+
+    Short rows are padded rather than refused: a hand-written table often omits
+    the trailing empty cells, and losing the row would lose a fact."""
+    rows: list[list[str]] = []
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if "|" not in line:
+            continue
+        if "-" in line and _MD_RULE.match(line):
+            continue                       # the |---|---| rule under the header
+        cells = line.split("|")
+        if cells and not cells[0].strip():
+            cells = cells[1:]
+        if cells and not cells[-1].strip():
+            cells = cells[:-1]
+        if cells:
+            rows.append([c.strip() for c in cells])
+    if len(rows) < 2:
+        return None
+    width = max(len(row) for row in rows)
+    return [row + [""] * (width - len(row)) for row in rows]
+
+
 def html_to_grid(html: str | None) -> list[list[str]] | None:
     """A table's HTML as a rectangular grid of cell texts, every merged cell
     EXPANDED to each position it covers (see flatten_table_for_context for why

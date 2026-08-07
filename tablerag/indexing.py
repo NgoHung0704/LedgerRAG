@@ -120,6 +120,80 @@ def convert_table_to_text(element_id: uuid.UUID) -> bool:
     return True
 
 
+async def convert_text_to_table(element_id: uuid.UUID, source: str):
+    """Promote a text element to a real table, from markdown or HTML.
+
+    The inverse of convert_table_to_text, and the missing half of it. A page
+    laid out as a grid comes out of extraction as flattened prose; the VLM
+    re-read turns it back into a markdown table, but until now that markdown
+    could only be saved as TEXT — so a table the reviewer had just recovered
+    stayed unsearchable as a table, with no records and no routing summary.
+
+    The source is what is open in the editor, unsaved, so it travels with the
+    request. Records and summary are built the ordinary way from the grid, so a
+    table made here is indexed exactly like one detected at ingest.
+
+    Returns (rows, reason); rows is None when nothing was converted."""
+    from tablerag.core.table_text import html_to_grid, markdown_table_to_grid
+    from tablerag.ingestion.table_pipeline import (
+        grid_display_html,
+        records_from_grid,
+        summarize_table,
+    )
+
+    exists, locale = await asyncio.to_thread(_element_locale, element_id)
+    if not exists:
+        return None, "element not found"
+    grid = (html_to_grid(source) if "<table" in (source or "").lower()
+            else markdown_table_to_grid(source))
+    if not grid or len(grid) < 2 or len(grid[0]) < 2:
+        return None, ("no table was found in this content — a markdown pipe "
+                      "table or an HTML <table> is needed, with a header row "
+                      "and at least one row under it")
+
+    html = grid_display_html(grid)
+    try:
+        records = records_from_grid(grid, locale)
+    except Exception:  # noqa: BLE001 — hand-written content can be anything
+        records = []
+    summary = await summarize_table(html, locale)
+    ok = await asyncio.to_thread(_write_text_to_table, element_id, html,
+                                 records, summary, len(grid), len(grid[0]))
+    if not ok:
+        return None, "this element is not a text element"
+    return len(grid) - 1, (f"converted into a table of {len(grid) - 1} rows "
+                           f"and {len(grid[0])} columns")
+
+
+def _write_text_to_table(element_id: uuid.UUID, html: str, records: list,
+                         summary: str | None, rows: int, cols: int) -> bool:
+    with session_scope() as s:
+        element = s.get(Element, element_id)
+        if element is None or element.type != "text":
+            return False
+        # undo puts the text back: the snapshot holds it, and restoring a text
+        # element re-chunks from it
+        repo.snapshot_element(s, element_id, "convert-to-table")
+        # its chunks go: a table is retrieved through its records and its
+        # summary, and leaving them would index the same content twice
+        for chunk in list(element.chunks):
+            s.delete(chunk)
+        s.flush()
+        element.type = "table"
+        element.needs_review = False
+        element.meta = {**(element.meta or {}), "edited": True,
+                        "converted_from": "text"}
+        repo.add_table_element(s, element_id, html or None, summary or None,
+                               rows, cols, "manual")
+        if records:
+            repo.add_records(s, element_id, [
+                {**r, "text_repr": build_text_repr(
+                    r.get("dimensions", {}), r.get("metrics", {}),
+                    r.get("raw_values", {}))}
+                for r in records])
+    return True
+
+
 def set_row_merging(element_id: uuid.UUID, merged: bool) -> str | None:
     """Show repeated values as one merged cell, or as one cell per row.
 

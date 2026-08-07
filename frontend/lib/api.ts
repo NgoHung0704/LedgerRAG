@@ -394,6 +394,15 @@ export const mergeElementTables = (ids: string[]) =>
     body: JSON.stringify({ ids }),
   }).then((r) => jsonOrThrow<ElementDetail & { reason: string }>(r));
 
+/** "This text is a table": promote it, from markdown or HTML. The source is
+ * what is open in the editor, unsaved, so it travels with the request. */
+export const convertElementToTable = (elementId: string, source: string) =>
+  fetch(`${API_URL}/api/elements/${elementId}/to-table`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ source }),
+  }).then((r) => jsonOrThrow<ElementDetail & { reason: string }>(r));
+
 /** Draw repeated values as one merged cell, or as one cell per row. Display
  * only: records come from a forward-filled grid, so every row already carries
  * its own value whichever way the HTML is written. */
