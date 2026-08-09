@@ -35,3 +35,6 @@ spike/out/
 Thumbs.db
 .idea/
 .vscode/
+
+# git worktrees created for isolated task execution
+.claude/worktrees/
