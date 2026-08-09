@@ -123,13 +123,35 @@ These are the exact shapes guards and UI both rely on. Localized string is writt
 
 The repo has no CI. `pytest tests/unit` passes (843 tests); `ruff check` fails with 6 pre-existing errors. CI cannot gate a red command, so the errors get fixed first.
 
+**The lint gate is not reproducible until it is pinned.** `pyproject.toml`
+declares `ruff>=0.4` with no `[tool.ruff.lint] select`, so the effective rule
+set moves with the installed version: ruff **0.15.20** (the developer's venv)
+reports **6** errors, ruff **0.16.2** (what a fresh `pip install` fetches
+today) reports **162**. Twenty of those 162 are `B008` firing on
+`user: User = Depends(current_user)` — FastAPI's standard idiom, so the newer
+default set is wrong for this repo rather than the repo being wrong. Pin
+first, then fix the six.
+
 **Files:**
-- Modify: `tablerag/ingestion/tasks.py:32`, `tablerag/query/steps/rerank.py:17`, `tests/unit/test_layout_detection.py:4`, `tests/unit/test_layout_detection.py:127`, `tests/unit/test_rerank.py:7`, `tests/unit/test_review_queue.py:4`
+- Modify: `pyproject.toml`, `tablerag/ingestion/tasks.py:32`, `tablerag/query/steps/rerank.py:17`, `tests/unit/test_layout_detection.py:4`, `tests/unit/test_layout_detection.py:127`, `tests/unit/test_rerank.py:7`, `tests/unit/test_review_queue.py:4`
 - Create: `.github/workflows/ci.yml`
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: a `python-gates` CI job that later tasks extend; a green `ruff check tablerag tests spike`.
+- Produces: a `python-gates` CI job that later tasks extend; a green `ruff check tablerag tests spike` that means the same thing on every machine.
+
+- [ ] **Step 0: Pin the linter so the gate means one thing everywhere**
+
+In `pyproject.toml`, change the `dev` extra's `"ruff>=0.4"` to
+`"ruff==0.15.20"`, then reinstall so the local venv matches what CI will get:
+
+```powershell
+& ".\.venv\Scripts\python.exe" -m pip install --quiet -e ".[dev]"
+& ".\.venv\Scripts\python.exe" -m ruff --version
+```
+
+Expected: `ruff 0.15.20`. Without this step the CI lint job fails on 162
+findings that have nothing to do with this work.
 
 - [ ] **Step 1: Confirm the failure before fixing it**
 
@@ -398,7 +420,7 @@ def test_every_declared_path_exists():
   },
   "actions": {
     "close":         { "vi": "Đóng", "en": "Close" },
-    "switchLanguage":{ "vi": "English", "en": "Tiếng Việt" },
+    "switchLanguage":{ "vi": "English", "en": "Vietnamese" },
     "openOnGitHub":  { "vi": "Mở trên GitHub", "en": "Open on GitHub" },
     "showTextVersion": { "vi": "Bản văn bản của sơ đồ",
                          "en": "Text version of the diagram" }
@@ -408,6 +430,8 @@ def test_every_declared_path_exists():
     "phaseFilter":  { "vi": "Lọc theo giai đoạn", "en": "Filter by phase" },
     "languageSwitch": { "vi": "Chuyển sang tiếng Anh",
                         "en": "Switch to Vietnamese" },
+    "_note_language_names": { "vi": "Nhãn nút đổi ngôn ngữ gọi tên ngôn ngữ đích bằng ngôn ngữ đang hiển thị, không phải bằng chính nó — nếu không, chuỗi en sẽ chứa chữ tiếng Việt và vi phạm chính guard G8.",
+                              "en": "The language-switch label names the target language in the language currently on screen, not in itself — otherwise the en string would carry Vietnamese letters and break guard G8." },
     "systemMap":    { "vi": "Sơ đồ hệ thống, bấm vào một cạnh để xem hợp đồng",
                       "en": "System map; activate an edge to see its contract" }
   },
@@ -1408,8 +1432,9 @@ export function parseRoute(hash: string): Route {
     lang: lang === "en" ? "en" : "vi",
     view: (["map", "grid", "c", "machine"].includes(view) ? view : "map") as View,
     id: id ?? null,
-    sub: subKind && subId ? { kind: subKind as Sub extends null ? never
-      : "edge" | "fn" | "excerpt", id: subId } : null,
+    sub: subKind && subId
+      ? { kind: subKind as "edge" | "fn" | "excerpt", id: subId }
+      : null,
     phase,
   };
 }
@@ -1477,9 +1502,30 @@ export function navigate(next: Route): void {
 ```ts
 import ui from "../content/ui.json";
 import nodes from "../content/nodes.json";
-// … one import per content file
-export const content = { ui, nodes, /* … */ };
+import edges from "../content/edges.json";
+import ownership from "../content/ownership.json";
+import phases from "../content/phases.json";
+import components from "../content/components.json";
+import machines from "../content/machines.json";
+
+// 21 detail files, keyed by component id. Globbed rather than imported one
+// by one so adding a component is a content change, not a code change —
+// which is the whole premise of the guards.
+const details = import.meta.glob("../content/components/*.json",
+                                 { eager: true, import: "default" });
+
+export const componentDetails: Record<string, ComponentDetail> =
+  Object.fromEntries(Object.entries(details).map(([path, value]) =>
+    [path.split("/").pop()!.replace(/\.json$/, ""), value as ComponentDetail]));
+
+export const content = {
+  ui, nodes, edges, ownership, phases, components, machines, componentDetails,
+};
 ```
+
+**`content.componentDetails[id]` is the only way to read a Layer 3 file.**
+Every task that touches detail content uses this accessor — never a raw
+path key.
 
 `i18n.ts` resolves a localized value; **it never contains a string**:
 
@@ -1551,11 +1597,11 @@ git commit -m "docs-site: the shell — one Escape owner, hash routes, and no st
 ### Task 10: Layer 1 — the map, its lanes, and its text version
 
 **Files:**
-- Create: `docs-site/src/svg/layout.ts`, `docs-site/src/svg/wrap.ts`, `docs-site/src/views/SystemMap.tsx`, `docs-site/src/views/ContractPanel.tsx`, `docs-site/src/views/DiagramText.tsx`, `docs-site/tests/svg.test.ts`, `docs-site/tests/map.test.tsx`
+- Create: `docs-site/src/svg/layout.ts`, `docs-site/src/views/SystemMap.tsx`, `docs-site/src/views/ContractPanel.tsx`, `docs-site/src/views/DiagramText.tsx`, `docs-site/tests/svg.test.ts`, `docs-site/tests/map.test.tsx`
 
 **Interfaces:**
 - Consumes: `content.nodes`, `content.edges`, `pick`, `navigate`.
-- Produces: `wrapLabel(text, maxChars) -> string[]`, `laneOffsets(count) -> number[]`, `columnGap(maxLanes) -> number`.
+- Produces, all from `src/svg/layout.ts`: `wrapLabel(text, maxChars) -> string[]`, `boxHeight(lines) -> number`, `nodeHeight(node) -> number`, `laneOffsets(count) -> number[]`, `columnGap(maxLanes) -> number`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1563,7 +1609,7 @@ git commit -m "docs-site: the shell — one Escape owner, hash routes, and no st
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { wrapLabel, boxHeight, laneOffsets, columnGap } from "../src/svg/layout";
+import { wrapLabel, boxHeight, nodeHeight, laneOffsets, columnGap } from "../src/svg/layout";
 import { content } from "../src/content";
 import { pick } from "../src/i18n";
 
@@ -1692,7 +1738,17 @@ export function laneOffsets(count: number): number[] {
 /** A column gap must fit the lines crossing it. Five will not live in 40px. */
 export const columnGap = (maxLanes: number): number =>
   Math.max(160, maxLanes * LANE_PITCH + 80);
+
+/** A node is sized for the LONGER language, so switching never overflows it. */
+export const nodeHeight = (node: { label: { vi: string; en: string } }): number =>
+  Math.max(boxHeight(wrapLabel(node.label.vi, LABEL_CHARS)),
+           boxHeight(wrapLabel(node.label.en, LABEL_CHARS)));
+
+export const LABEL_CHARS = 18;
 ```
+
+`svg.test.ts` imports `nodeHeight` alongside the rest; the test that sizes
+every node for the longer language is checking exactly this function.
 
 - [ ] **Step 4: Implement `SystemMap.tsx`**
 
@@ -1861,7 +1917,7 @@ describe("layer 3", () => {
   it("shows every function the content declares, with its file and line", () => {
     const id = content.components.components[0].id;
     render(<ComponentDetail id={id} lang="vi" />);
-    const detail = (content as any)[`components/${id}.json`];
+    const detail = content.componentDetails[id];
     detail.functions.forEach((fn: any) => {
       expect(screen.getByText(fn.decl)).toBeTruthy();
       expect(screen.getByText(`${fn.file}:${fn.line}`)).toBeTruthy();
