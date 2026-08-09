@@ -4,7 +4,6 @@ honest degradation to retrieval order."""
 import json
 import uuid
 
-import pytest
 
 from tablerag.query.pipeline import QueryContext
 from tablerag.query.steps import rerank as rerank_mod

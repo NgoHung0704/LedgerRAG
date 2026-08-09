@@ -28,7 +28,7 @@ dependencies = [
 dev = [
     "pytest>=8.2",
     "pytest-asyncio>=0.23",
-    "ruff>=0.4",
+    "ruff==0.15.20",
 ]
 # MCP server (tablerag.mcp.server): exposes KBs to Claude Desktop / Cursor /
 # Claude Code. Runs on the machine with the MCP client, wraps the HTTP API —

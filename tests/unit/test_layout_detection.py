@@ -1,12 +1,13 @@
 """Multi-table detection: accept/dedup logic + a real two-table PDF page."""
 
 import fitz
-import pytest
 
 from tablerag.ingestion.layout import (
     accept_table,
     analyze_document,
     detect_tables,
+    duplicates_table_text,
+    grid_cell_texts,
     grid_fill_ratio,
 )
 
@@ -123,8 +124,6 @@ def test_detect_tables_returns_empty_on_prose_page():
 
 
 # --- table text must not be indexed twice (run 6: text copy outranked it) ---
-
-from tablerag.ingestion.layout import duplicates_table_text, grid_cell_texts
 
 BAREME_GRID = [["Groupe d'emplois", "Classe d'emploi", ""],
                ["A", "1", "21 700"], ["A", "2", "21 850"],
