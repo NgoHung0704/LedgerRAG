@@ -46,6 +46,12 @@ include = ["tablerag*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# The docs guards import `tests.unit.docs_guard_lib`, and there is no
+# tests/__init__.py to make that a package on its own. `python -m pytest`
+# happens to work because -m puts the CWD on sys.path; bare `pytest` — what
+# CI runs — does not, so the guards were green here and red on the runner.
+# Say it explicitly instead of depending on how pytest was launched.
+pythonpath = ["."]
 markers = [
     "integration: requires the full docker-compose stack (deselect with '-m \"not integration\"')",
 ]
