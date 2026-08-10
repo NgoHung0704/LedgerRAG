@@ -1,0 +1,39 @@
+{
+  "siteTitle": { "vi": "Kiến trúc LedgerRAG", "en": "LedgerRAG architecture" },
+  "nav": {
+    "map":      { "vi": "Bản đồ hệ thống", "en": "System map" },
+    "grid":     { "vi": "Component", "en": "Components" },
+    "machines": { "vi": "Dây chuyền", "en": "Assembly lines" }
+  },
+  "actions": {
+    "close":         { "vi": "Đóng", "en": "Close" },
+    "switchLanguage":{ "vi": "English", "en": "Vietnamese" },
+    "openOnGitHub":  { "vi": "Mở trên GitHub", "en": "Open on GitHub" },
+    "showTextVersion": { "vi": "Bản văn bản của sơ đồ",
+                         "en": "Text version of the diagram" }
+  },
+  "aria": {
+    "closePanel":   { "vi": "Đóng bảng chi tiết", "en": "Close detail panel" },
+    "phaseFilter":  { "vi": "Lọc theo giai đoạn", "en": "Filter by phase" },
+    "languageSwitch": { "vi": "Chuyển sang tiếng Anh",
+                        "en": "Switch to Vietnamese" },
+    "_note_language_names": { "vi": "Nhãn nút đổi ngôn ngữ gọi tên ngôn ngữ đích bằng ngôn ngữ đang hiển thị, không phải bằng chính nó — nếu không, chuỗi en sẽ chứa chữ tiếng Việt và vi phạm chính guard G8.",
+                              "en": "The language-switch label names the target language in the language currently on screen, not in itself — otherwise the en string would carry Vietnamese letters and break guard G8." },
+    "systemMap":    { "vi": "Sơ đồ hệ thống, bấm vào một cạnh để xem hợp đồng",
+                      "en": "System map; activate an edge to see its contract" }
+  },
+  "empty": {
+    "noPhaseMatch": { "vi": "Không có component nào thuộc giai đoạn này",
+                      "en": "No component belongs to this phase" }
+  },
+  "labels": {
+    "owns":    { "vi": "Sở hữu", "en": "Owns" },
+    "writes":  { "vi": "Ghi", "en": "Writes" },
+    "reads":   { "vi": "Đọc", "en": "Reads" },
+    "debt":    { "vi": "Còn nợ", "en": "Outstanding" },
+    "why":     { "vi": "Vì sao viết thế này", "en": "Why it is written this way" },
+    "creates":   { "vi": "tạo ra", "en": "creates" },
+    "modifies":  { "vi": "sửa", "en": "modifies" },
+    "traverses": { "vi": "chạy qua", "en": "runs through" }
+  }
+}
