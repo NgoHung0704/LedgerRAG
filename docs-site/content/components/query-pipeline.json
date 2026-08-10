@@ -1,0 +1,179 @@
+{
+  "id": "query-pipeline",
+  "functions": [
+    {
+      "name": "default_pipeline",
+      "decl": "def default_pipeline(verify: bool | None = None, *,",
+      "file": "tablerag/query/pipeline.py",
+      "line": 122,
+      "note": {
+        "vi": "Lắp sáu bước theo đúng thứ tự; đổi triển khai từng bước là đổi ở đây.",
+        "en": "Assembles the six steps in order; swapping an implementation happens here."
+      }
+    },
+    {
+      "name": "QueryContext",
+      "decl": "class QueryContext:",
+      "file": "tablerag/query/pipeline.py",
+      "line": 44,
+      "note": {
+        "vi": "Chiếc hộp đi qua cả sáu bước — mỗi bước đọc nó, thêm vào, trả lại.",
+        "en": "The box that travels through all six steps - each one reads it, adds to it, hands it on."
+      }
+    },
+    {
+      "name": "Step",
+      "decl": "class Step(Protocol):",
+      "file": "tablerag/query/pipeline.py",
+      "line": 83,
+      "note": {
+        "vi": "Hợp đồng của một bước: async run(ctx) trả về ctx. Chỉ có thế.",
+        "en": "A step's whole contract: async run(ctx) returning ctx. Nothing else."
+      }
+    },
+    {
+      "name": "SourceBlock",
+      "decl": "class SourceBlock:",
+      "file": "tablerag/query/pipeline.py",
+      "line": 22,
+      "note": {
+        "vi": "Một khối nguồn kèm xuất xứ — thứ mà trích dẫn bấm ngược về.",
+        "en": "One source block with its provenance - what a citation clicks back to."
+      }
+    },
+    {
+      "name": "QueryPipeline",
+      "decl": "class QueryPipeline:",
+      "file": "tablerag/query/pipeline.py",
+      "line": 87,
+      "note": {
+        "vi": "Chạy chuỗi bước, và là chỗ duy nhất biết thứ tự.",
+        "en": "Runs the chain, and is the only place that knows the order."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "q",
+        "label": {
+          "vi": "Câu hỏi",
+          "en": "The question"
+        }
+      },
+      {
+        "id": "router",
+        "label": {
+          "vi": "Router",
+          "en": "Router"
+        }
+      },
+      {
+        "id": "retrieve",
+        "label": {
+          "vi": "Retrieve",
+          "en": "Retrieve"
+        }
+      },
+      {
+        "id": "rerank",
+        "label": {
+          "vi": "Rerank",
+          "en": "Rerank"
+        }
+      },
+      {
+        "id": "assemble",
+        "label": {
+          "vi": "AssembleContext",
+          "en": "AssembleContext"
+        }
+      },
+      {
+        "id": "generate",
+        "label": {
+          "vi": "Generate",
+          "en": "Generate"
+        }
+      },
+      {
+        "id": "verify",
+        "label": {
+          "vi": "Verify",
+          "en": "Verify"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "q",
+        "to": "router"
+      },
+      {
+        "from": "router",
+        "to": "retrieve"
+      },
+      {
+        "from": "retrieve",
+        "to": "rerank"
+      },
+      {
+        "from": "rerank",
+        "to": "assemble"
+      },
+      {
+        "from": "assemble",
+        "to": "generate"
+      },
+      {
+        "from": "generate",
+        "to": "verify"
+      },
+      {
+        "from": "verify",
+        "to": "x-answer"
+      }
+    ],
+    "gates": [],
+    "exits": [
+      {
+        "id": "x-answer",
+        "label": {
+          "vi": "Câu trả lời có trích dẫn",
+          "en": "A cited answer"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Toàn bộ hợp đồng của một bước, gói gọn trong bốn dòng.",
+        "en": "A step's entire contract, in four lines."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/query/pipeline.py",
+        "from": 83,
+        "to": 86,
+        "code": "class Step(Protocol):\n    async def run(self, ctx: QueryContext) -> QueryContext: ...\n\n"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Phase 1 đã cắm sẵn bản no-op vào đúng vị trí cuối cùng, nên Phase 4 và 5 chỉ việc thay ruột chứ không phải đổi khung.",
+        "en": "Phase 1 plugs no-op implementations into their final slots, so Phases 4 and 5 swap the insides rather than the frame."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/pipeline.py",
+        "from": 6,
+        "to": 6,
+        "anchor": "SingleKBRouter (no-op), PassthroughRerank, Verify(disabled). Phase 4/5 swap"
+      }
+    }
+  ],
+  "debts": []
+}

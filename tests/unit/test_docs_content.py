@@ -12,6 +12,7 @@ from tests.unit.docs_guard_lib import (
     CONTENT,
     REPO_ROOT,
     citations,
+    file_lines,
     load,
     load_all,
     load_components,
@@ -225,3 +226,46 @@ def test_edges_connect_declared_nodes_and_every_node_is_connected():
     assert not stranded, (
         f"node(s) {stranded} are on the map but no edge reaches them — "
         f"either wire them up or take them off")
+
+
+def test_every_component_has_exactly_one_detail_file():
+    listed = {c["id"] for c in load("components.json")["components"]}
+    detail = {name.split("/")[1][:-5]
+              for name in load_components() if name.startswith("components/")}
+    assert listed == detail, (
+        f"components without a detail file: {sorted(listed - detail)}; "
+        f"detail files with no component: {sorted(detail - listed)}")
+
+
+def test_detail_file_id_matches_its_filename():
+    for name, data in load_components().items():
+        if not name.startswith("components/"):
+            continue
+        assert data["id"] == name.split("/")[1][:-5],             f"{name} declares id {data['id']!r}"
+
+
+def test_function_declarations_sit_on_the_line_they_claim():
+    for name, data in load_components().items():
+        for fn in data.get("functions", []):
+            whole = norm((REPO_ROOT / fn["file"]).read_text(encoding="utf-8"))
+            assert whole.count(fn["decl"]) == 1, (
+                f"{name}: {fn['decl']!r} occurs {whole.count(fn['decl'])} "
+                f"times in {fn['file']} — extend it until it is unique")
+            line = file_lines(fn["file"])[fn["line"] - 1]
+            assert fn["decl"] in line, (
+                f"{name}: {fn['file']}:{fn['line']} is {line.strip()!r}, "
+                f"not {fn['decl']!r}. Run `make docs-relink`.")
+            assert fn["name"] in fn["decl"],                 f"{name}: function name {fn['name']!r} is not in its declaration"
+
+
+def test_flow_diagrams_are_internally_connected():
+    for name, data in load_components().items():
+        flow = data.get("flow")
+        if not flow:
+            continue
+        ids = ({n["id"] for n in flow["nodes"]}
+               | {g["id"] for g in flow.get("gates", [])}
+               | {x["id"] for x in flow.get("exits", [])})
+        for edge in flow["edges"]:
+            for end in ("from", "to"):
+                assert edge[end] in ids,                     f"{name}: flow edge points at unknown step {edge[end]!r}"

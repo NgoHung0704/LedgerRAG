@@ -1,0 +1,194 @@
+{
+  "id": "index-write",
+  "functions": [
+    {
+      "name": "chunk_text",
+      "decl": "def chunk_text(text: str, target_tokens: int = 500,",
+      "file": "tablerag/ingestion/chunking.py",
+      "line": 49,
+      "note": {
+        "vi": "Cắt theo đoạn văn, chồng lấn khoảng 10%, tất định và không phụ thuộc gì.",
+        "en": "Cuts by paragraph with about 10% overlap, deterministic and dependency-free."
+      }
+    },
+    {
+      "name": "apply_element_edit",
+      "decl": "def apply_element_edit(element_id: uuid.UUID, *, text: str | None = None,",
+      "file": "tablerag/indexing.py",
+      "line": 62,
+      "note": {
+        "vi": "Áp chỉnh sửa tay vào Postgres rồi dựng lại vector của riêng element đó.",
+        "en": "Applies a hand edit in Postgres and rebuilds that element's vectors alone."
+      }
+    },
+    {
+      "name": "reindex_element",
+      "decl": "async def reindex_element(element_id: uuid.UUID) -> None:",
+      "file": "tablerag/indexing.py",
+      "line": 848,
+      "note": {
+        "vi": "Dựng lại chunk, bản ghi và vector cho một element.",
+        "en": "Rebuilds the chunks, records and vectors for one element."
+      }
+    },
+    {
+      "name": "undo_element_edit",
+      "decl": "def undo_element_edit(element_id: uuid.UUID) -> str | None:",
+      "file": "tablerag/indexing.py",
+      "line": 245,
+      "note": {
+        "vi": "Lấy lại lần sửa cuối của một element mà không đụng tới các chỉnh sửa khác.",
+        "en": "Takes back one element's last save without touching any other correction."
+      }
+    },
+    {
+      "name": "split_table",
+      "decl": "async def split_table(element_id: uuid.UUID) -> int | None:",
+      "file": "tablerag/indexing.py",
+      "line": 621,
+      "note": {
+        "vi": "\"Đây là hai bảng\": mỗi phần được render lại từ PDF và có bbox, crop riêng.",
+        "en": "\"These are two tables\": each part is re-rendered from the PDF with its own bbox and crop."
+      }
+    },
+    {
+      "name": "run",
+      "decl": "async def run() -> None:",
+      "file": "tablerag/scripts/reindex_all.py",
+      "line": 102,
+      "note": {
+        "vi": "Migration Phase 4: dựng lại collection theo schema hybrid và embed lại tất cả từ Postgres.",
+        "en": "The Phase 4 migration: recreate the collections with the hybrid schema and re-embed everything from Postgres."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "edit",
+        "label": {
+          "vi": "Một chỉnh sửa đã lưu",
+          "en": "A saved correction"
+        }
+      },
+      {
+        "id": "pg",
+        "label": {
+          "vi": "Ghi Postgres",
+          "en": "Write Postgres"
+        }
+      },
+      {
+        "id": "chunk",
+        "label": {
+          "vi": "Cắt lại chunk",
+          "en": "Re-chunk"
+        }
+      },
+      {
+        "id": "embed",
+        "label": {
+          "vi": "Sinh vector",
+          "en": "Embed"
+        }
+      },
+      {
+        "id": "qdrant",
+        "label": {
+          "vi": "Ghi Qdrant",
+          "en": "Write Qdrant"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "edit",
+        "to": "pg"
+      },
+      {
+        "from": "pg",
+        "to": "chunk"
+      },
+      {
+        "from": "chunk",
+        "to": "embed"
+      },
+      {
+        "from": "embed",
+        "to": "qdrant"
+      },
+      {
+        "from": "qdrant",
+        "to": "x-live"
+      }
+    ],
+    "gates": [],
+    "exits": [
+      {
+        "id": "x-live",
+        "label": {
+          "vi": "Câu trả lời tiếp theo dùng bản đã sửa",
+          "en": "The next answer uses the corrected parse"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Migration chỉ dựng lại vector, không parse lại — sự thật đã parse nằm ở Postgres.",
+        "en": "The migration rebuilds only the vectors and never re-parses - the parsed truth lives in Postgres."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/scripts/reindex_all.py",
+        "from": 102,
+        "to": 109,
+        "code": "async def run() -> None:\n    setup_logging()\n    store = get_vector_store()\n    jobs = _collect_jobs()\n    logger.info(\"reindex: %d vectors to rebuild\", len(jobs))\n\n    logger.info(\"recreating collections with hybrid (dense+sparse) schema...\")\n    store.recreate_collections()"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Module này nằm ở top level chứ không trong ingestion/ hay query/, để API dùng được mà không phá vỡ sự cô lập giữa hai pipeline.",
+        "en": "This module sits at top level rather than inside ingestion/ or query/, so the API can use it without breaking the isolation between the two pipelines."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/indexing.py",
+        "from": 7,
+        "to": 7,
+        "anchor": "use it without importing either pipeline — ingestion↔query isolation"
+      }
+    },
+    {
+      "text": {
+        "vi": "Không parse lại: sự thật đã parse nằm ở Postgres, chỉ vector cần dựng lại.",
+        "en": "No re-parsing: the parsed truth lives in Postgres and only the vectors need rebuilding."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/scripts/reindex_all.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "(storage is the contract) means the parsed truth lives in Postgres and only"
+      }
+    }
+  ],
+  "debts": [
+    {
+      "text": {
+        "vi": "Muốn bật truy hồi lai ở một nơi triển khai đã có dữ liệu thì phải chạy migration này.",
+        "en": "Turning on hybrid retrieval on a deployment that already holds data requires running this migration."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 22,
+        "to": 22,
+        "anchor": "`reindex_all` migration, point the reranker role at a `/rerank` endpoint"
+      }
+    }
+  ]
+}

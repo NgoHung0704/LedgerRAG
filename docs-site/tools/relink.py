@@ -72,6 +72,21 @@ def relink_anchor(cite: dict) -> tuple[bool, str]:
     return True, f"narrowed to {cite['from']}-{cite['to']}"
 
 
+def relink_decl(fn: dict) -> tuple[bool, str]:
+    """Layer 3 function entries: {decl, file, line}. Same rule as an anchor —
+    a line that merely moved is arithmetic; a declaration that changed is not."""
+    lines = file_lines(fn["file"])
+    if fn["decl"] in lines[fn["line"] - 1]:
+        return False, "ok"
+    hits = [i + 1 for i, line in enumerate(lines) if fn["decl"] in line]
+    if len(hits) != 1:
+        return False, (
+            f"REFUSED {fn['file']}:{fn['line']} — {fn['decl']!r} has "
+            f"{len(hits)} matches; the declaration itself changed.")
+    fn["line"] = hits[0]
+    return True, f"moved to line {fn['line']}"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
@@ -89,6 +104,8 @@ def main() -> int:
                     moved, msg = relink_excerpt(node)
                 elif node.get("kind") == "anchor":
                     moved, msg = relink_anchor(node)
+                elif "decl" in node and "line" in node and "file" in node:
+                    moved, msg = relink_decl(node)
                 else:
                     moved, msg = False, "ok"
                 if moved:

@@ -1,0 +1,98 @@
+{
+  "id": "fe-ops-surfaces",
+  "functions": [
+    {
+      "name": "ModelsPage",
+      "decl": "export default function ModelsPage() {",
+      "file": "frontend/app/models/page.tsx",
+      "line": 54,
+      "note": {
+        "vi": "Đổi endpoint và model của từng vai trò lúc chạy, và kéo model mới về.",
+        "en": "Repoints each role's endpoint and model at runtime, and pulls new models."
+      }
+    },
+    {
+      "name": "AuditPage",
+      "decl": "export default function AuditPage() {",
+      "file": "frontend/app/audit/page.tsx",
+      "line": 20,
+      "note": {
+        "vi": "Nhật ký kiểm toán GDPR, mới nhất trước, chỉ admin xem được.",
+        "en": "The GDPR audit log, most recent first, visible to admins only."
+      }
+    },
+    {
+      "name": "DiagnosticsPage",
+      "decl": "export default function DiagnosticsPage() {",
+      "file": "frontend/app/diagnostics/page.tsx",
+      "line": 15,
+      "note": {
+        "vi": "Soi nhận diện bảng trên một PDF mà không ingest nó — tệp được phân tích trong bộ nhớ rồi bỏ.",
+        "en": "Inspects table detection on a PDF without ingesting it - the file is analysed in memory and discarded."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "ops",
+        "label": {
+          "vi": "Màn hình vận hành",
+          "en": "An operator screen"
+        }
+      },
+      {
+        "id": "models",
+        "label": {
+          "vi": "Cấu hình vai trò model",
+          "en": "Model role configuration"
+        }
+      },
+      {
+        "id": "audit",
+        "label": {
+          "vi": "Nhật ký kiểm toán",
+          "en": "The audit log"
+        }
+      },
+      {
+        "id": "diag",
+        "label": {
+          "vi": "Chẩn đoán nhận diện bảng",
+          "en": "Table-detection diagnostics"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "ops",
+        "to": "models"
+      },
+      {
+        "from": "ops",
+        "to": "audit"
+      },
+      {
+        "from": "ops",
+        "to": "diag"
+      },
+      {
+        "from": "models",
+        "to": "x-live"
+      }
+    ],
+    "gates": [],
+    "exits": [
+      {
+        "id": "x-live",
+        "label": {
+          "vi": "API và worker nhận ngay, không khởi động lại",
+          "en": "The API and the worker pick it up with no restart"
+        }
+      }
+    ]
+  },
+  "excerpts": [],
+  "why": [],
+  "debts": []
+}

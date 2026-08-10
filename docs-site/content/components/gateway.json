@@ -1,0 +1,219 @@
+{
+  "id": "gateway",
+  "functions": [
+    {
+      "name": "create_app",
+      "decl": "def create_app() -> FastAPI:",
+      "file": "tablerag/api/main.py",
+      "line": 34,
+      "note": {
+        "vi": "Dựng ứng dụng: gắn router, middleware xác thực, CORS. Không có logic nghiệp vụ.",
+        "en": "Builds the app: routers, the authentication middleware, CORS. No business logic."
+      }
+    },
+    {
+      "name": "lifespan",
+      "decl": "async def lifespan(app: FastAPI):",
+      "file": "tablerag/api/main.py",
+      "line": 21,
+      "note": {
+        "vi": "Khởi tạo schema và kết nối khi tiến trình lên, dọn khi xuống.",
+        "en": "Creates the schema and the connections when the process starts, and tears them down."
+      }
+    },
+    {
+      "name": "resolve_user",
+      "decl": "def resolve_user(request: Request) -> User | None:",
+      "file": "tablerag/core/auth.py",
+      "line": 40,
+      "note": {
+        "vi": "Đọc danh tính từ header proxy. Ở chế độ disabled thì mọi người là cùng một admin ngầm, dành cho dev.",
+        "en": "Reads the identity from the proxy header. In disabled mode everyone is the same implicit admin, for development."
+      }
+    },
+    {
+      "name": "auth_middleware",
+      "decl": "async def auth_middleware(request: Request, call_next):",
+      "file": "tablerag/core/auth.py",
+      "line": 72,
+      "note": {
+        "vi": "Chặn mọi đường trừ các đường mở. Đây là chỗ 401 xảy ra, không phải trong từng route.",
+        "en": "Gates every path but the open ones. This is where a 401 happens, not inside each route."
+      }
+    },
+    {
+      "name": "require_admin",
+      "decl": "def require_admin(user: User = Depends(current_user)) -> User:",
+      "file": "tablerag/core/auth.py",
+      "line": 66,
+      "note": {
+        "vi": "Phân quyền theo route: có danh tính chưa đủ, phải nằm trong danh sách admin.",
+        "en": "Per-route authorization: having an identity is not enough, the user must be in the admin list."
+      }
+    },
+    {
+      "name": "stored_image",
+      "decl": "def stored_image(content: bytes, if_none_match: str | None) -> Response:",
+      "file": "tablerag/api/caching.py",
+      "line": 24,
+      "note": {
+        "vi": "Phục vụ ảnh đã lưu với no-cache và ETag: URL không đổi nhưng nội dung thì có.",
+        "en": "Serves a stored image with no-cache and an ETag: the URL never changes but the content does."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "req",
+        "label": {
+          "vi": "Request tới",
+          "en": "Request arrives"
+        }
+      },
+      {
+        "id": "resolve",
+        "label": {
+          "vi": "Đọc header danh tính",
+          "en": "Resolve the identity header"
+        }
+      },
+      {
+        "id": "route",
+        "label": {
+          "vi": "Chuyển tới route",
+          "en": "Dispatch to the route"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "req",
+        "to": "resolve"
+      },
+      {
+        "from": "resolve",
+        "to": "g-open"
+      },
+      {
+        "from": "g-open",
+        "to": "route",
+        "label": {
+          "vi": "đường mở, hoặc đã có danh tính",
+          "en": "open path, or an identity was presented"
+        }
+      },
+      {
+        "from": "g-open",
+        "to": "x401",
+        "label": {
+          "vi": "không có danh tính",
+          "en": "no identity"
+        }
+      },
+      {
+        "from": "route",
+        "to": "g-admin"
+      },
+      {
+        "from": "g-admin",
+        "to": "x-ok",
+        "label": {
+          "vi": "được phép",
+          "en": "allowed"
+        }
+      },
+      {
+        "from": "g-admin",
+        "to": "x403",
+        "label": {
+          "vi": "cần admin",
+          "en": "admin required"
+        }
+      }
+    ],
+    "gates": [
+      {
+        "id": "g-open",
+        "label": {
+          "vi": "Đường này có mở không?",
+          "en": "Is this path open?"
+        }
+      },
+      {
+        "id": "g-admin",
+        "label": {
+          "vi": "Route này có đòi admin không?",
+          "en": "Does this route require admin?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x401",
+        "label": {
+          "vi": "401 chưa xác thực",
+          "en": "401 not authenticated"
+        }
+      },
+      {
+        "id": "x403",
+        "label": {
+          "vi": "403 cần quyền admin",
+          "en": "403 admin role required"
+        }
+      },
+      {
+        "id": "x-ok",
+        "label": {
+          "vi": "Vào handler",
+          "en": "Into the handler"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Toàn bộ phần phân quyền admin — bốn dòng, ở đúng một chỗ.",
+        "en": "The whole of admin authorization - four lines, in exactly one place."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/core/auth.py",
+        "from": 66,
+        "to": 69,
+        "code": "def require_admin(user: User = Depends(current_user)) -> User:\n    if not user.is_admin:\n        raise HTTPException(403, \"admin role required\")\n    return user"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Tin một header chỉ an toàn khi API chỉ với tới được qua proxy. Hở cổng 8000 ra mạng không tin cậy thì ai cũng tự xưng admin được.",
+        "en": "Trusting a header is safe only while the API is reachable through the proxy alone. Publish port 8000 to an untrusted network and anyone can call themselves admin."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/auth.py",
+        "from": 9,
+        "to": 9,
+        "anchor": "exclusively through the proxy. If the API port is exposed directly"
+      }
+    },
+    {
+      "text": {
+        "vi": "Health phải mở, nếu không health check của proxy sẽ chết cùng lúc với thứ nó đang giám sát.",
+        "en": "Health must stay open, otherwise the proxy's health check dies at the same moment as the thing it is watching."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/auth.py",
+        "from": 23,
+        "to": 23,
+        "anchor": "open paths: health for load balancers, docs/schema for developers"
+      }
+    }
+  ],
+  "debts": []
+}

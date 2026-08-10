@@ -1,0 +1,243 @@
+{
+  "id": "query-answer",
+  "functions": [
+    {
+      "name": "build_condense_prompt",
+      "decl": "def build_condense_prompt(history: list[tuple[str, str]], question: str) -> str:",
+      "file": "tablerag/query/steps/condense.py",
+      "line": 44,
+      "note": {
+        "vi": "Gộp mấy lượt gần nhất thành một câu hỏi tự đứng được, trước khi định tuyến.",
+        "en": "Folds the recent turns into one self-contained question, before routing."
+      }
+    },
+    {
+      "name": "classify_smalltalk",
+      "decl": "def classify_smalltalk(question: str) -> SmallTalkMatch | None:",
+      "file": "tablerag/query/steps/smalltalk.py",
+      "line": 151,
+      "note": {
+        "vi": "Nhận ra lời chào để trả lời như lời chào, không phải như một lần tìm thất bại.",
+        "en": "Recognises a greeting so it is answered as a greeting, not as a failed search."
+      }
+    },
+    {
+      "name": "AssembleContext",
+      "decl": "class AssembleContext:",
+      "file": "tablerag/query/steps/assemble.py",
+      "line": 38,
+      "note": {
+        "vi": "Một hit vào bản ghi thì kéo về CẢ bảng cha, không bao giờ một dòng lẻ.",
+        "en": "A record hit pulls in the WHOLE parent table, never a lone row."
+      }
+    },
+    {
+      "name": "build_system_prompt",
+      "decl": "def build_system_prompt(extra_instructions: str = \"\", identity: str = \"\",",
+      "file": "tablerag/query/steps/generate.py",
+      "line": 97,
+      "note": {
+        "vi": "System prompt mã hoá triết lý: chỉ trả lời từ nguồn, chép số y nguyên, trả lời bằng ngôn ngữ người hỏi.",
+        "en": "The system prompt encodes the philosophy: answer only from sources, copy numbers exactly, reply in the asker's language."
+      }
+    },
+    {
+      "name": "build_context_block",
+      "decl": "def build_context_block(ctx: QueryContext) -> str:",
+      "file": "tablerag/query/steps/generate.py",
+      "line": 131,
+      "note": {
+        "vi": "Dựng khối ngữ cảnh có xuất xứ, để trích dẫn bấm ngược về được.",
+        "en": "Builds the context block with provenance, so a citation can click back."
+      }
+    },
+    {
+      "name": "GenerateAnswer",
+      "decl": "class GenerateAnswer:",
+      "file": "tablerag/query/steps/generate.py",
+      "line": 153,
+      "note": {
+        "vi": "Chảy câu trả lời về theo SSE ngay khi model sinh ra.",
+        "en": "Streams the answer back over SSE as the model produces it."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "q",
+        "label": {
+          "vi": "Câu hỏi",
+          "en": "The question"
+        }
+      },
+      {
+        "id": "condense",
+        "label": {
+          "vi": "Cô đọng lịch sử",
+          "en": "Condense the history"
+        }
+      },
+      {
+        "id": "assemble",
+        "label": {
+          "vi": "Lắp ngữ cảnh",
+          "en": "Assemble the context"
+        }
+      },
+      {
+        "id": "generate",
+        "label": {
+          "vi": "Sinh câu trả lời",
+          "en": "Generate"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "q",
+        "to": "g-small"
+      },
+      {
+        "from": "g-small",
+        "to": "x-greet",
+        "label": {
+          "vi": "là lời chào",
+          "en": "it is small talk"
+        }
+      },
+      {
+        "from": "g-small",
+        "to": "condense",
+        "label": {
+          "vi": "là câu hỏi tài liệu",
+          "en": "it is a document question"
+        }
+      },
+      {
+        "from": "condense",
+        "to": "assemble"
+      },
+      {
+        "from": "assemble",
+        "to": "g-src"
+      },
+      {
+        "from": "g-src",
+        "to": "generate",
+        "label": {
+          "vi": "có nguồn",
+          "en": "sources exist"
+        }
+      },
+      {
+        "from": "g-src",
+        "to": "x-none",
+        "label": {
+          "vi": "không có nguồn",
+          "en": "no sources"
+        }
+      },
+      {
+        "from": "generate",
+        "to": "x-answer"
+      }
+    ],
+    "gates": [
+      {
+        "id": "g-small",
+        "label": {
+          "vi": "Đây có phải câu hỏi về tài liệu không?",
+          "en": "Is this a question about the documents?"
+        }
+      },
+      {
+        "id": "g-src",
+        "label": {
+          "vi": "Có nguồn nào để trả lời không?",
+          "en": "Is there any source to answer from?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-greet",
+        "label": {
+          "vi": "Trả lời chào hỏi, không tìm kiếm",
+          "en": "Answered as a greeting, with no search"
+        }
+      },
+      {
+        "id": "x-none",
+        "label": {
+          "vi": "Nói thẳng là không tìm thấy",
+          "en": "Says plainly that nothing was found"
+        }
+      },
+      {
+        "id": "x-answer",
+        "label": {
+          "vi": "Câu trả lời có trích dẫn",
+          "en": "A cited answer"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Lời chào không cần một lượt định tuyến, một lần embed và ba lần tìm vector.",
+        "en": "A greeting does not need a routing call, an embedding and three vector searches."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/query/steps/smalltalk.py",
+        "from": 151,
+        "to": 156,
+        "code": "def classify_smalltalk(question: str) -> SmallTalkMatch | None:\n    \"\"\"A conversational message, or None when it must go to retrieval.\n\n    Conservative by construction: only a short message whose EVERY word is in\n    the closed conversational vocabulary (or a whole-message capability\n    question) qualifies. A digit or any content word means retrieval.\"\"\""
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Câu hỏi nối tiếp là một mảnh vụn; truy hồi và định tuyến chỉ nhìn text nên mảnh vụn sẽ tìm nhầm bảng hoặc nhầm KB.",
+        "en": "A follow-up is a fragment; retrieval and routing act on the text alone, so a fragment retrieves the wrong table or routes to the wrong knowledge base."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/condense.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "fragment. Retrieval and routing act on the text alone, so the fragment"
+      }
+    },
+    {
+      "text": {
+        "vi": "Không bao giờ đưa một bản ghi lẻ vào ngữ cảnh: một dòng tách khỏi bảng của nó đọc thế nào cũng được.",
+        "en": "A lone record never enters the context: a row torn out of its table can be read to mean anything."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/assemble.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "never a lone record (SPEC Phase 2 §6), deduped per table element"
+      }
+    },
+    {
+      "text": {
+        "vi": "Đẩy lời chào qua toàn bộ pipeline vừa chậm vừa trả về \"không tìm thấy đoạn nào phù hợp\", nghe như một lời từ chối.",
+        "en": "Running a greeting through the whole pipeline is slow and answers \"no relevant passages were found\", which reads as a rebuff."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/smalltalk.py",
+        "from": 6,
+        "to": 6,
+        "anchor": "— slow, and rude to a user who just said hello"
+      }
+    }
+  ],
+  "debts": []
+}

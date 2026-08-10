@@ -1,0 +1,142 @@
+{
+  "id": "fe-shell",
+  "functions": [
+    {
+      "name": "AppShell",
+      "decl": "export default function AppShell({ children }: { children: React.ReactNode }) {",
+      "file": "frontend/components/AppShell.tsx",
+      "line": 12,
+      "note": {
+        "vi": "Khung chung của mọi màn hình.",
+        "en": "The frame every screen sits in."
+      }
+    },
+    {
+      "name": "Sidebar",
+      "decl": "export default function Sidebar({",
+      "file": "frontend/components/Sidebar.tsx",
+      "line": 33,
+      "note": {
+        "vi": "Điều hướng chính, và là nơi thấy được mình đang ở đâu.",
+        "en": "The main navigation, and where you see where you are."
+      }
+    },
+    {
+      "name": "useDialog",
+      "decl": "export function useDialog(onClose: () => void) {",
+      "file": "frontend/components/ui.tsx",
+      "line": 210,
+      "note": {
+        "vi": "Một chỗ duy nhất lo bẫy focus và phím Escape cho mọi hộp thoại.",
+        "en": "One place that owns focus trapping and the Escape key for every dialog."
+      }
+    },
+    {
+      "name": "Modal",
+      "decl": "export function Modal({",
+      "file": "frontend/components/ui.tsx",
+      "line": 277,
+      "note": {
+        "vi": "Hộp thoại dùng chung, dựng trên useDialog.",
+        "en": "The shared dialog, built on useDialog."
+      }
+    },
+    {
+      "name": "confirm",
+      "decl": "export function confirm(options: ConfirmOptions): Promise<boolean> {",
+      "file": "frontend/components/confirm.tsx",
+      "line": 27,
+      "note": {
+        "vi": "Hỏi xác nhận bằng chính hệ thống điều khiển của sản phẩm, không dùng window.confirm.",
+        "en": "Asks for confirmation with the product's own controls rather than window.confirm."
+      }
+    },
+    {
+      "name": "getKbs",
+      "decl": "export const getKbs = () =>",
+      "file": "frontend/lib/api.ts",
+      "line": 205,
+      "note": {
+        "vi": "Ví dụ của lớp gọi API: mọi lời gọi đều đi qua một chỗ.",
+        "en": "An example of the API layer: every call goes through one place."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "route",
+        "label": {
+          "vi": "Một route Next.js",
+          "en": "A Next.js route"
+        }
+      },
+      {
+        "id": "shell",
+        "label": {
+          "vi": "AppShell",
+          "en": "AppShell"
+        }
+      },
+      {
+        "id": "page",
+        "label": {
+          "vi": "Nội dung màn hình",
+          "en": "The screen's content"
+        }
+      },
+      {
+        "id": "api",
+        "label": {
+          "vi": "lib/api.ts",
+          "en": "lib/api.ts"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "route",
+        "to": "shell"
+      },
+      {
+        "from": "shell",
+        "to": "page"
+      },
+      {
+        "from": "page",
+        "to": "api"
+      },
+      {
+        "from": "api",
+        "to": "x-api"
+      }
+    ],
+    "gates": [],
+    "exits": [
+      {
+        "id": "x-api",
+        "label": {
+          "vi": "HTTP tới API",
+          "en": "HTTP to the API"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Escape có đúng một người sở hữu, nên không có hai lớp cùng đóng.",
+        "en": "Escape has exactly one owner, so two layers never close at once."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "frontend/components/ui.tsx",
+        "from": 210,
+        "to": 219,
+        "code": "export function useDialog(onClose: () => void) {\n  const ref = useRef<HTMLDivElement>(null);\n  // Captured during render, which is BEFORE React commits an `autoFocus` — by\n  // the time the effect below runs, activeElement is already the focused field\n  // inside the dialog, and restoring to that on close would drop focus to the\n  // body.\n  const [opener] = useState<HTMLElement | null>(() =>\n    typeof document === \"undefined\"\n      ? null\n      : (document.activeElement as HTMLElement | null),"
+      }
+    }
+  ],
+  "why": [],
+  "debts": []
+}

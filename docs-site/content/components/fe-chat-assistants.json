@@ -1,0 +1,123 @@
+{
+  "id": "fe-chat-assistants",
+  "functions": [
+    {
+      "name": "ChatPanel",
+      "decl": "export default function ChatPanel({",
+      "file": "frontend/components/ChatPanel.tsx",
+      "line": 53,
+      "note": {
+        "vi": "Câu trả lời chảy về theo SSE kèm trích dẫn bấm được về ảnh trang.",
+        "en": "The answer streams in over SSE with citations that click back to the page image."
+      }
+    },
+    {
+      "name": "ChatScopeSelector",
+      "decl": "export default function ChatScopeSelector({",
+      "file": "frontend/components/ChatScopeSelector.tsx",
+      "line": 14,
+      "note": {
+        "vi": "Chọn phạm vi KB, hoặc để router tự chọn.",
+        "en": "Choose the knowledge-base scope, or leave it to the router."
+      }
+    },
+    {
+      "name": "AssistantForm",
+      "decl": "export default function AssistantForm({",
+      "file": "frontend/components/AssistantForm.tsx",
+      "line": 11,
+      "note": {
+        "vi": "Một trợ lý gói sẵn phạm vi KB và chỉ dẫn riêng.",
+        "en": "An assistant packages a knowledge-base scope and its own instructions."
+      }
+    },
+    {
+      "name": "AssistantCardMenu",
+      "decl": "export default function AssistantCardMenu({",
+      "file": "frontend/components/AssistantCardMenu.tsx",
+      "line": 14,
+      "note": {
+        "vi": "Các hành động trên một trợ lý, kèm xác nhận cho việc phá huỷ.",
+        "en": "The actions on an assistant, with confirmation for the destructive ones."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "ask",
+        "label": {
+          "vi": "Gõ câu hỏi",
+          "en": "Type the question"
+        }
+      },
+      {
+        "id": "scope",
+        "label": {
+          "vi": "Phạm vi KB",
+          "en": "The knowledge-base scope"
+        }
+      },
+      {
+        "id": "stream",
+        "label": {
+          "vi": "Nhận luồng SSE",
+          "en": "Receive the SSE stream"
+        }
+      },
+      {
+        "id": "cite",
+        "label": {
+          "vi": "Bấm vào trích dẫn",
+          "en": "Click a citation"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "ask",
+        "to": "scope"
+      },
+      {
+        "from": "scope",
+        "to": "stream"
+      },
+      {
+        "from": "stream",
+        "to": "cite"
+      },
+      {
+        "from": "cite",
+        "to": "x-image"
+      },
+      {
+        "from": "stream",
+        "to": "x-badge",
+        "label": {
+          "vi": "có số chưa kiểm chứng được",
+          "en": "a number could not be verified"
+        }
+      }
+    ],
+    "gates": [],
+    "exits": [
+      {
+        "id": "x-image",
+        "label": {
+          "vi": "Ảnh trang gốc",
+          "en": "The original page image"
+        }
+      },
+      {
+        "id": "x-badge",
+        "label": {
+          "vi": "Badge cảnh báo trên câu trả lời",
+          "en": "A warning badge on the answer"
+        }
+      }
+    ]
+  },
+  "excerpts": [],
+  "why": [],
+  "debts": []
+}

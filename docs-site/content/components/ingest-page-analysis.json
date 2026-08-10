@@ -1,0 +1,256 @@
+{
+  "id": "ingest-page-analysis",
+  "functions": [
+    {
+      "name": "extract_pages",
+      "decl": "def extract_pages(pdf_bytes: bytes, dpi: int = 120,",
+      "file": "tablerag/ingestion/extract.py",
+      "line": 30,
+      "note": {
+        "vi": "Rút text từng trang và render PNG cho mọi trang, kể cả trang có text layer.",
+        "en": "Extracts the text per page and renders a PNG for every page, text layer or not."
+      }
+    },
+    {
+      "name": "analyze_page",
+      "decl": "def analyze_page(page: fitz.Page, dpi: int, min_chars: int,",
+      "file": "tablerag/ingestion/layout.py",
+      "line": 753,
+      "note": {
+        "vi": "Chia một trang thành vùng text, bảng, hình.",
+        "en": "Splits one page into text, table and figure regions."
+      }
+    },
+    {
+      "name": "accept_table",
+      "decl": "def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,",
+      "file": "tablerag/ingestion/layout.py",
+      "line": 274,
+      "note": {
+        "vi": "Quyết định một lưới find_tables có thật là bảng hay chỉ là văn bản chia cột.",
+        "en": "Decides whether a find_tables grid is really a table or just column-laid-out prose."
+      }
+    },
+    {
+      "name": "repair_grid",
+      "decl": "def repair_grid(grid: list[list]) -> list[list]:",
+      "file": "tablerag/ingestion/layout.py",
+      "line": 172,
+      "note": {
+        "vi": "Vá lưới trước khi VLM chép lại lỗi của nó.",
+        "en": "Repairs the grid before the VLM copies its faults."
+      }
+    },
+    {
+      "name": "merge_cross_page_tables",
+      "decl": "def merge_cross_page_tables(pages: list[PageLayout]) -> None:",
+      "file": "tablerag/ingestion/layout.py",
+      "line": 982,
+      "note": {
+        "vi": "Nối bảng bị cắt qua trang, để nửa số dòng không trả lời thay cả bảng.",
+        "en": "Joins a table cut across pages, so half its rows do not answer for the whole."
+      }
+    },
+    {
+      "name": "detect_table_regions",
+      "decl": "async def detect_table_regions(image_png: bytes) -> list[Box]:",
+      "file": "tablerag/ingestion/region_detect.py",
+      "line": 141,
+      "note": {
+        "vi": "Trang scan không có text layer thì hỏi thẳng VLM vùng bảng nằm đâu.",
+        "en": "On a scan with no text layer, the VLM is asked where the tables are."
+      }
+    },
+    {
+      "name": "detect_boilerplate",
+      "decl": "def detect_boilerplate(elements: list[BoilerElement]) -> list[Candidate]:",
+      "file": "tablerag/ingestion/boilerplate.py",
+      "line": 60,
+      "note": {
+        "vi": "Header/footer lặp lại ở cùng vị trí lề — tín hiệu chính xác cao, dòng duy nhất không bao giờ bị gắn cờ.",
+        "en": "Headers and footers repeated at a consistent margin - a high-precision signal, and a unique line is never flagged."
+      }
+    },
+    {
+      "name": "ocr_page",
+      "decl": "async def ocr_page(image_png: bytes) -> tuple[str, bool]:",
+      "file": "tablerag/ingestion/ocr.py",
+      "line": 266,
+      "note": {
+        "vi": "Đọc trang scan bằng chính VLM parser, kèm dòng cuối cho biết trang có bảng hay không.",
+        "en": "Reads a scanned page with the same parser VLM, with a last line saying whether the page holds tables."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "page",
+        "label": {
+          "vi": "Một trang",
+          "en": "One page"
+        }
+      },
+      {
+        "id": "text",
+        "label": {
+          "vi": "Rút text layer",
+          "en": "Extract the text layer"
+        }
+      },
+      {
+        "id": "find",
+        "label": {
+          "vi": "find_tables",
+          "en": "find_tables"
+        }
+      },
+      {
+        "id": "vlm",
+        "label": {
+          "vi": "VLM tìm vùng bảng",
+          "en": "VLM region detection"
+        }
+      },
+      {
+        "id": "regions",
+        "label": {
+          "vi": "Vùng đã chấp nhận",
+          "en": "Accepted regions"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "page",
+        "to": "text"
+      },
+      {
+        "from": "text",
+        "to": "g-layer"
+      },
+      {
+        "from": "g-layer",
+        "to": "find",
+        "label": {
+          "vi": "có text layer",
+          "en": "a text layer exists"
+        }
+      },
+      {
+        "from": "g-layer",
+        "to": "vlm",
+        "label": {
+          "vi": "trang scan",
+          "en": "a scanned page"
+        }
+      },
+      {
+        "from": "find",
+        "to": "g-accept"
+      },
+      {
+        "from": "vlm",
+        "to": "regions"
+      },
+      {
+        "from": "g-accept",
+        "to": "regions",
+        "label": {
+          "vi": "đúng là bảng",
+          "en": "really a table"
+        }
+      },
+      {
+        "from": "g-accept",
+        "to": "x-text",
+        "label": {
+          "vi": "chỉ là văn bản chia cột",
+          "en": "just column-laid-out prose"
+        }
+      }
+    ],
+    "gates": [
+      {
+        "id": "g-layer",
+        "label": {
+          "vi": "Trang này có text layer không?",
+          "en": "Does this page have a text layer?"
+        }
+      },
+      {
+        "id": "g-accept",
+        "label": {
+          "vi": "Lưới này có phải bảng không?",
+          "en": "Is this grid a table?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-text",
+        "label": {
+          "vi": "Coi như văn bản thường",
+          "en": "Treated as ordinary text"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Chữ ký của một hàm thuần: không I/O, nên chạy lại được và kiểm thử được.",
+        "en": "The signature of a pure function: no I/O, so it can be rerun and unit-tested."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/ingestion/boilerplate.py",
+        "from": 60,
+        "to": 65,
+        "code": "def detect_boilerplate(elements: list[BoilerElement]) -> list[Candidate]:\n    \"\"\"Running headers/footers and page numbers among the given TEXT elements.\n\n    A group repeating on >= max(2, ceil(0.5 * n_pages)) distinct pages, with its\n    occurrences predominantly in the top or bottom band, is flagged. Page-number\n    patterns at a margin are flagged independently. Deduped, ordered by page.\"\"\""
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Mọi trang đều được render ảnh, kể cả trang có text — vì nguyên tắc số 3 đòi element nào cũng có ảnh nguồn.",
+        "en": "Every page is rendered, text layer or not, because principle 3 requires every element to have a source image."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/extract.py",
+        "from": 6,
+        "to": 6,
+        "anchor": "crop image that principle #3 requires every element to have"
+      }
+    },
+    {
+      "text": {
+        "vi": "Cố tình lệch khỏi mặc định PP-Structure của SPEC: với trang có text layer, find_tables rẻ hơn và cho luôn nội dung lưới.",
+        "en": "A deliberate deviation from the spec's PP-Structure default: on a page with a text layer, find_tables is cheaper and hands over the grid content as well."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/layout.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "even cheaper than PP-Structure, needs zero extra dependencies"
+      }
+    },
+    {
+      "text": {
+        "vi": "Chỉ lặp lại nguyên văn ở vị trí nhất quán mới bị gắn cờ, nên nội dung thân bài không bị cắt nhầm.",
+        "en": "Only verbatim repetition at a consistent position is flagged, so body content is never cut by mistake."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/boilerplate.py",
+        "from": 6,
+        "to": 6,
+        "anchor": "position — a unique line is never flagged"
+      }
+    }
+  ],
+  "debts": []
+}
