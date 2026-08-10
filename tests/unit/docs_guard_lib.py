@@ -81,6 +81,30 @@ def slice_text(rel: str, start: int, end: int) -> str:
     return "\n".join(file_lines(rel)[start - 1:end])
 
 
+SOURCE_GLOBS = (
+    ("tablerag", "**/*.py"),
+    ("frontend/app", "**/*.ts"), ("frontend/app", "**/*.tsx"),
+    ("frontend/components", "**/*.ts"), ("frontend/components", "**/*.tsx"),
+    ("frontend/lib", "**/*.ts"), ("frontend/lib", "**/*.tsx"),
+)
+
+
+def source_modules() -> set[str]:
+    """Every module the page is required to account for.
+
+    Scope agreed in the spec: tablerag/ + frontend/{app,components,lib}.
+    Build output and caches are excluded by anchoring on those three
+    frontend subdirectories rather than on frontend/ itself.
+    """
+    found: set[str] = set()
+    for base, pattern in SOURCE_GLOBS:
+        for path in (REPO_ROOT / base).glob(pattern):
+            if "__pycache__" in path.parts or "node_modules" in path.parts:
+                continue
+            found.add(path.relative_to(REPO_ROOT).as_posix())
+    return found
+
+
 def source_stores() -> set[tuple[str, str]]:
     """('postgres', tablename) for every ORM model, plus ('qdrant', collection).
 

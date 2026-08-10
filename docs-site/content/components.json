@@ -1,0 +1,1006 @@
+{
+  "components": [
+    {
+      "id": "gateway",
+      "group": "api",
+      "label": {
+        "vi": "Cổng vào",
+        "en": "Gateway"
+      },
+      "summary": {
+        "vi": "Dựng ứng dụng FastAPI, gắn middleware xác thực và các header cache. Không có logic nghiệp vụ nào ở đây — chỉ là cửa.",
+        "en": "Builds the FastAPI app and wires the authentication middleware and cache headers. No business logic lives here - it is the door."
+      },
+      "modules": [
+        "tablerag/__init__.py",
+        "tablerag/api/__init__.py",
+        "tablerag/api/main.py",
+        "tablerag/api/caching.py",
+        "tablerag/core/auth.py",
+        "tablerag/api/routes/__init__.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "http-contracts",
+      "group": "api",
+      "label": {
+        "vi": "Hợp đồng HTTP",
+        "en": "HTTP contracts"
+      },
+      "summary": {
+        "vi": "61 endpoint là toàn bộ bề mặt công khai. Mỗi endpoint nói rõ ai được gọi, gửi gì, nhận gì, hỏng thì trả mã nào.",
+        "en": "The 61 endpoints are the entire public surface. Each one states who may call it, what goes in, what comes back and which code it fails with."
+      },
+      "modules": [
+        "tablerag/api/routes/assistants.py",
+        "tablerag/api/routes/chat.py",
+        "tablerag/api/routes/diagnostics.py",
+        "tablerag/api/routes/documents.py",
+        "tablerag/api/routes/elements.py",
+        "tablerag/api/routes/health.py",
+        "tablerag/api/routes/kb.py",
+        "tablerag/api/routes/me.py",
+        "tablerag/api/routes/models.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p2",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        },
+        {
+          "id": "p3",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 468,
+            "to": 468,
+            "anchor": "PHASE 3 — Confidence & honest failure"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "traverses",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ingest-intake",
+      "group": "ingestion",
+      "label": {
+        "vi": "Tiếp nhận tài liệu",
+        "en": "Document intake"
+      },
+      "summary": {
+        "vi": "Nhận PDF từ endpoint tải lên hoặc từ thư mục nạp, chuyển định dạng, và chạy ingestion idempotent theo từng tài liệu.",
+        "en": "Takes a PDF from the upload endpoint or the watched directory, converts it, and runs ingestion idempotently per document."
+      },
+      "modules": [
+        "tablerag/ingestion/__init__.py",
+        "tablerag/ingestion/consumer.py",
+        "tablerag/ingestion/worker.py",
+        "tablerag/ingestion/tasks.py",
+        "tablerag/ingestion/convert.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ingest-page-analysis",
+      "group": "ingestion",
+      "label": {
+        "vi": "Phân tích trang",
+        "en": "Page analysis"
+      },
+      "summary": {
+        "vi": "Đọc từng trang: bố cục, vùng bảng, boilerplate lặp lại, OCR khi cần, và render ảnh trang để mọi trích dẫn sau này bấm ngược về được.",
+        "en": "Reads each page: layout, table regions, repeated boilerplate, OCR where needed, and the page render every later citation clicks back to."
+      },
+      "modules": [
+        "tablerag/ingestion/extract.py",
+        "tablerag/ingestion/layout.py",
+        "tablerag/ingestion/region_detect.py",
+        "tablerag/ingestion/boilerplate.py",
+        "tablerag/ingestion/ocr.py",
+        "tablerag/ingestion/imaging.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p2",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ingest-tables",
+      "group": "ingestion",
+      "label": {
+        "vi": "Sub-pipeline bảng",
+        "en": "Table sub-pipeline"
+      },
+      "summary": {
+        "vi": "Moat của sản phẩm: mỗi bảng giữ đồng thời ba biểu diễn — ảnh crop gốc, lưới HTML dựng lại, và bản ghi dimensions/metrics.",
+        "en": "The product's moat: every table is kept in three representations at once - the original crop, the reconstructed HTML grid, and dimensions/metrics records."
+      },
+      "modules": [
+        "tablerag/ingestion/table_pipeline.py",
+        "tablerag/ingestion/html_tables.py",
+        "tablerag/core/table_text.py",
+        "tablerag/models/table_parsing.py"
+      ],
+      "phases": [
+        {
+          "id": "p2",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        },
+        {
+          "id": "p3",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 468,
+            "to": 468,
+            "anchor": "PHASE 3 — Confidence & honest failure"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ingest-figures",
+      "group": "ingestion",
+      "label": {
+        "vi": "Hình và biểu đồ",
+        "en": "Figures and charts"
+      },
+      "summary": {
+        "vi": "Nhận ra một hình là biểu đồ và đo bảng màu của nó, để phần mô tả không phải đoán màu nào ứng với chuỗi nào.",
+        "en": "Recognises when a figure is a chart and measures its palette, so the description does not have to guess which colour is which series."
+      },
+      "modules": [
+        "tablerag/ingestion/chart_check.py",
+        "tablerag/ingestion/palette.py"
+      ],
+      "phases": [
+        {
+          "id": "p2",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ingest-confidence",
+      "group": "ingestion",
+      "label": {
+        "vi": "Tín hiệu tin cậy",
+        "en": "Confidence signals"
+      },
+      "summary": {
+        "vi": "Ba tín hiệu — cấu trúc, đọc hai lần, số học — quyết định một bảng có bị gắn cờ cần người duyệt hay không. Đây là chỗ 'thất bại trung thực' thành mã.",
+        "en": "Three signals - structural, double-read, arithmetic - decide whether a table is flagged for review. This is where honest failure becomes code."
+      },
+      "modules": [
+        "tablerag/ingestion/confidence.py"
+      ],
+      "phases": [
+        {
+          "id": "p3",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 468,
+            "to": 468,
+            "anchor": "PHASE 3 — Confidence & honest failure"
+          }
+        }
+      ]
+    },
+    {
+      "id": "index-write",
+      "group": "ingestion",
+      "label": {
+        "vi": "Chunk và ghi chỉ mục",
+        "en": "Chunking and index write"
+      },
+      "summary": {
+        "vi": "Cắt chunk, sinh vector, và ghi vào cả Postgres lẫn Qdrant. Cũng là nơi chứa migration reindex_all mà Phase 4 đòi hỏi.",
+        "en": "Cuts the chunks, produces the vectors and writes both Postgres and Qdrant. It also holds the reindex_all migration Phase 4 requires."
+      },
+      "modules": [
+        "tablerag/ingestion/chunking.py",
+        "tablerag/indexing.py",
+        "tablerag/scripts/reindex_all.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p2",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        }
+      ]
+    },
+    {
+      "id": "query-pipeline",
+      "group": "query",
+      "label": {
+        "vi": "Khung pipeline truy vấn",
+        "en": "Query pipeline frame"
+      },
+      "summary": {
+        "vi": "Sáu bước cố định: Router → Retrieve → Rerank → AssembleContext → Generate → Verify. Khung này có từ Phase 1 và không đổi; chỉ ruột từng bước đổi.",
+        "en": "Six fixed steps: Router, Retrieve, Rerank, AssembleContext, Generate, Verify. The frame ships in Phase 1 and never changes; only the insides of the steps do."
+      },
+      "modules": [
+        "tablerag/query/__init__.py",
+        "tablerag/query/pipeline.py",
+        "tablerag/query/steps/__init__.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "traverses",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "traverses",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "query-route-retrieve",
+      "group": "query",
+      "label": {
+        "vi": "Định tuyến và truy hồi",
+        "en": "Routing and retrieval"
+      },
+      "summary": {
+        "vi": "Chọn KB nào để tìm, rồi tìm bằng dense cộng sparse hợp nhất RRF, rồi rerank. Khi router hỏng nó suy biến về tìm TẤT CẢ, không bao giờ tìm rỗng.",
+        "en": "Picks which knowledge bases to search, retrieves with dense plus sparse fused by RRF, then reranks. When the router fails it degrades to searching ALL, never to searching none."
+      },
+      "modules": [
+        "tablerag/query/steps/router.py",
+        "tablerag/query/steps/retrieve.py",
+        "tablerag/query/steps/rerank.py",
+        "tablerag/core/sparse.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "query-answer",
+      "group": "query",
+      "label": {
+        "vi": "Dựng ngữ cảnh và sinh câu trả lời",
+        "en": "Context and answer generation"
+      },
+      "summary": {
+        "vi": "Cô đọng lịch sử hội thoại, lắp ngữ cảnh kèm nguồn, sinh câu trả lời có trích dẫn — và tách riêng đường nói chuyện phiếm để nó không đi tìm tài liệu.",
+        "en": "Condenses the history, assembles the context with its sources, and generates a cited answer - with small talk split off so it never goes looking for documents."
+      },
+      "modules": [
+        "tablerag/query/steps/condense.py",
+        "tablerag/query/steps/assemble.py",
+        "tablerag/query/steps/generate.py",
+        "tablerag/query/steps/smalltalk.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        }
+      ]
+    },
+    {
+      "id": "query-verify",
+      "group": "query",
+      "label": {
+        "vi": "Kiểm chứng câu trả lời",
+        "en": "Answer verification"
+      },
+      "summary": {
+        "vi": "Mọi con số trong câu trả lời phải tìm lại được trong nguồn, có nhận diện định dạng số theo locale và một danh sách trắng phép tính. Không tìm thấy thì gắn cờ.",
+        "en": "Every number in the answer must be found again in the sources, with locale-aware number parsing and an arithmetic whitelist. What cannot be found gets flagged."
+      },
+      "modules": [
+        "tablerag/query/steps/verify.py",
+        "tablerag/query/verification.py",
+        "tablerag/core/numbers.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        }
+      ]
+    },
+    {
+      "id": "models-providers",
+      "group": "platform",
+      "label": {
+        "vi": "Vai trò model và provider",
+        "en": "Model roles and providers"
+      },
+      "summary": {
+        "vi": "Bốn vai trò trừu tượng sau một interface duy nhất. Đổi model là đổi cấu hình, không phải sửa code — đó là ràng buộc C3.",
+        "en": "Four abstract roles behind a single interface. Swapping a model is a configuration change, not a code change - that is constraint C3."
+      },
+      "modules": [
+        "tablerag/models/__init__.py",
+        "tablerag/models/base.py",
+        "tablerag/models/ollama.py",
+        "tablerag/models/openai_compat.py",
+        "tablerag/models/registry.py",
+        "tablerag/models/edit_assist.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p2",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        }
+      ]
+    },
+    {
+      "id": "storage-layer",
+      "group": "platform",
+      "label": {
+        "vi": "Tầng lưu trữ",
+        "en": "Storage layer"
+      },
+      "summary": {
+        "vi": "Hợp đồng duy nhất giữa hai pipeline. ingestion/ và query/ không bao giờ import nhau; chúng chỉ gặp nhau ở Postgres, Qdrant và object store.",
+        "en": "The only contract between the two pipelines. ingestion/ and query/ never import each other; they meet in Postgres, Qdrant and the object store alone."
+      },
+      "modules": [
+        "tablerag/storage/__init__.py",
+        "tablerag/storage/db.py",
+        "tablerag/storage/orm.py",
+        "tablerag/storage/repositories.py",
+        "tablerag/storage/qdrant.py",
+        "tablerag/storage/object_store.py"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p2",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "traverses",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        }
+      ]
+    },
+    {
+      "id": "core-config",
+      "group": "platform",
+      "label": {
+        "vi": "Cấu hình và lược đồ lõi",
+        "en": "Core configuration and schemas"
+      },
+      "summary": {
+        "vi": "Cấu hình bằng pydantic-settings, lược đồ dùng chung, log, hàng đợi. Giá trị mặc định của vai trò parser chính là kết quả chiến dịch đo Phase 0.",
+        "en": "pydantic-settings configuration, the shared schemas, logging and the queue. The parser role's default is the outcome of the Phase 0 campaign."
+      },
+      "modules": [
+        "tablerag/core/__init__.py",
+        "tablerag/core/config.py",
+        "tablerag/core/logging.py",
+        "tablerag/core/queue.py",
+        "tablerag/core/schemas.py",
+        "tablerag/core/text_export.py"
+      ],
+      "phases": [
+        {
+          "id": "p0",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": ".env.example",
+            "from": 36,
+            "to": 36,
+            "anchor": "(spike campaign finding)"
+          }
+        },
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mcp-and-ops",
+      "group": "platform",
+      "label": {
+        "vi": "MCP và công cụ vận hành",
+        "en": "MCP and operator tooling"
+      },
+      "summary": {
+        "vi": "Mở KB ra cho MCP client, và các script gỡ rối. MCP luôn đi qua HTTP API, không bao giờ chạm thẳng vào kho dữ liệu.",
+        "en": "Exposes the knowledge bases to MCP clients, plus the debugging scripts. MCP always goes through the HTTP API and never touches a store directly."
+      },
+      "modules": [
+        "tablerag/mcp/__init__.py",
+        "tablerag/mcp/client.py",
+        "tablerag/mcp/server.py",
+        "tablerag/scripts/__init__.py",
+        "tablerag/scripts/debug_context.py"
+      ],
+      "phases": [
+        {
+          "id": "p4",
+          "relation": "traverses",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-shell",
+      "group": "frontend",
+      "label": {
+        "vi": "Vỏ giao diện",
+        "en": "Interface shell"
+      },
+      "summary": {
+        "vi": "Bố cục, điều hướng, bộ điều khiển dùng chung và lớp gọi API. Mọi màn hình khác dựng trên đúng bộ này.",
+        "en": "Layout, navigation, the shared controls and the API layer. Every other screen is built out of exactly these."
+      },
+      "modules": [
+        "frontend/app/layout.tsx",
+        "frontend/components/AppShell.tsx",
+        "frontend/components/Sidebar.tsx",
+        "frontend/components/ui.tsx",
+        "frontend/components/ThemeToggle.tsx",
+        "frontend/components/confirm.tsx",
+        "frontend/components/CopyButton.tsx",
+        "frontend/lib/api.ts",
+        "frontend/lib/clipboard.ts"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-kb-documents",
+      "group": "frontend",
+      "label": {
+        "vi": "Màn hình KB và tài liệu",
+        "en": "Knowledge base and document screens"
+      },
+      "summary": {
+        "vi": "Tạo KB, tải tài liệu lên và theo dõi tới trạng thái done, cùng hàng đợi duyệt ở mức KB để người không phải kỹ sư cũng thấy việc cần làm.",
+        "en": "Create a knowledge base, upload documents and watch them reach done, plus the KB-level review queue that shows a non-engineer what needs attention."
+      },
+      "modules": [
+        "frontend/app/page.tsx",
+        "frontend/app/kb/[id]/page.tsx",
+        "frontend/components/DocumentsPanel.tsx",
+        "frontend/components/KbSettings.tsx",
+        "frontend/components/KbDescription.tsx",
+        "frontend/components/KbCardMenu.tsx",
+        "frontend/components/ReviewPanel.tsx"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p3",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 468,
+            "to": 468,
+            "anchor": "PHASE 3 — Confidence & honest failure"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-inspector-editor",
+      "group": "frontend",
+      "label": {
+        "vi": "Trình soi và sửa bản parse",
+        "en": "Parse inspector and editor"
+      },
+      "summary": {
+        "vi": "Nơi con người đối chiếu bản parse với ảnh crop rồi sửa: tách, gộp, hạ cấp, đọc lại. Ảnh gốc luôn nằm cạnh, vì nó mới là thẩm quyền.",
+        "en": "Where a human reads the parse against its crop and corrects it: split, merge, demote, reread. The original image is always beside it, because that is the authority."
+      },
+      "modules": [
+        "frontend/app/doc/[docId]/page.tsx",
+        "frontend/components/ElementEditor.tsx",
+        "frontend/components/RecordsTable.tsx",
+        "frontend/components/BoilerplatePanel.tsx",
+        "frontend/components/EditAssistant.tsx",
+        "frontend/components/SourceModal.tsx"
+      ],
+      "phases": [
+        {
+          "id": "p2",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        },
+        {
+          "id": "p3",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 468,
+            "to": 468,
+            "anchor": "PHASE 3 — Confidence & honest failure"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-chat-assistants",
+      "group": "frontend",
+      "label": {
+        "vi": "Chat và trợ lý",
+        "en": "Chat and assistants"
+      },
+      "summary": {
+        "vi": "Hỏi và nhận câu trả lời chảy về kèm trích dẫn bấm được, chọn phạm vi KB, và thấy router đã chọn KB nào.",
+        "en": "Ask, and watch the answer stream back with clickable citations, choose the knowledge-base scope, and see which ones the router picked."
+      },
+      "modules": [
+        "frontend/app/ask/page.tsx",
+        "frontend/app/assistants/page.tsx",
+        "frontend/app/assistants/[id]/page.tsx",
+        "frontend/components/ChatPanel.tsx",
+        "frontend/components/ChatScopeSelector.tsx",
+        "frontend/components/AssistantForm.tsx",
+        "frontend/components/AssistantCardMenu.tsx"
+      ],
+      "phases": [
+        {
+          "id": "p1",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 305,
+            "to": 305,
+            "anchor": "PHASE 1 — Skeleton"
+          }
+        },
+        {
+          "id": "p4",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 524,
+            "to": 524,
+            "anchor": "PHASE 4 — Retrieval"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "modifies",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-ops-surfaces",
+      "group": "frontend",
+      "label": {
+        "vi": "Màn hình vận hành",
+        "en": "Operator screens"
+      },
+      "summary": {
+        "vi": "Cấu hình model lúc chạy, nhật ký kiểm toán GDPR, và công cụ chẩn đoán nhận diện bảng — ba màn hình dành cho người vận hành chứ không phải người hỏi.",
+        "en": "Runtime model configuration, the GDPR audit log, and the table-detection diagnostic - three screens for the operator rather than the asker."
+      },
+      "modules": [
+        "frontend/app/models/page.tsx",
+        "frontend/app/audit/page.tsx",
+        "frontend/app/diagnostics/page.tsx"
+      ],
+      "phases": [
+        {
+          "id": "p2",
+          "relation": "traverses",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 379,
+            "to": 379,
+            "anchor": "PHASE 2 — Table sub-pipeline"
+          }
+        },
+        {
+          "id": "p5",
+          "relation": "creates",
+          "cite": {
+            "kind": "anchor",
+            "file": "SPEC.md",
+            "from": 583,
+            "to": 583,
+            "anchor": "PHASE 5 — Multi-KB, router"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -14,9 +14,11 @@ from tests.unit.docs_guard_lib import (
     citations,
     load,
     load_all,
+    load_components,
     norm,
     slice_text,
     source_endpoints,
+    source_modules,
     source_stores,
     walk,
 )
@@ -142,3 +144,84 @@ def test_every_store_says_who_writes_it():
     assert not invented, (
         "ownership rows for stores that do not exist: "
         + ", ".join(f"{s}:{n}" for s, n in invented))
+
+
+def documented_modules() -> set[str]:
+    """Modules named by a COMPONENT file — nothing else counts.
+
+    Deliberately not `load_all()`: if a module merely appearing in
+    phases.json counted, a file a ticket happens to mention would pass as
+    documented while nobody had written a line about it.
+    """
+    out: set[str] = set()
+    for name, data in load_components().items():
+        for component in data.get("components", []):
+            out.update(component.get("modules", []))
+    return out
+
+
+def test_every_source_module_appears_in_a_component():
+    missing = sorted(source_modules() - documented_modules())
+    assert not missing, (
+        f"{len(missing)} module(s) belong to no component — add a new file "
+        f"without writing about it and this is what goes red:\n  "
+        + "\n  ".join(missing))
+
+
+def test_components_do_not_claim_modules_that_do_not_exist():
+    invented = sorted(documented_modules() - source_modules())
+    assert not invented, "components claim non-existent modules:\n  " + \
+        "\n  ".join(invented)
+
+
+def test_component_ids_are_unique():
+    ids = [c["id"] for c in load("components.json")["components"]]
+    assert len(ids) == len(set(ids)),         f"duplicate component id(s): {sorted({i for i in ids if ids.count(i) > 1})}"
+
+
+def test_every_phase_reference_resolves():
+    phases = {p["id"] for p in load("phases.json")["phases"]}
+    for component in load("components.json")["components"]:
+        for rel in component["phases"]:
+            assert rel["id"] in phases, (
+                f"component {component['id']} references unknown phase "
+                f"{rel['id']}")
+            assert rel["relation"] in ("creates", "modifies", "traverses"), (
+                f"component {component['id']} uses unknown relation "
+                f"{rel['relation']!r}")
+
+
+def test_every_phase_is_owned_by_something():
+    """The reverse direction. `traverses` does not count: a phase whose only
+    tie to the code is 'the request passes through here' owns nothing, and
+    would vanish from the diagram the moment anyone filtered by it."""
+    owned = {rel["id"]
+             for component in load("components.json")["components"]
+             for rel in component["phases"]
+             if rel["relation"] in ("creates", "modifies")}
+    orphans = sorted({p["id"] for p in load("phases.json")["phases"]} - owned)
+    assert not orphans, (
+        f"phase(s) {orphans} are created or modified by no component — "
+        f"filtering by them would light up nothing")
+
+
+def test_ownership_rows_name_real_components():
+    ids = {c["id"] for c in load("components.json")["components"]}
+    for row in load("ownership.json")["rows"]:
+        for who in [row["owner"], *row["writers"], *row["readers"]]:
+            assert who in ids, (
+                f"ownership row {row['store']}:{row['name']} names unknown "
+                f"component {who!r}")
+
+
+def test_edges_connect_declared_nodes_and_every_node_is_connected():
+    ids = {n["id"] for n in load("nodes.json")["nodes"]}
+    touched: set[str] = set()
+    for edge in load("edges.json")["edges"]:
+        for end in ("from", "to"):
+            assert edge[end] in ids,                 f"edge {edge['id']} points at unknown node {edge[end]!r}"
+            touched.add(edge[end])
+    stranded = sorted(ids - touched)
+    assert not stranded, (
+        f"node(s) {stranded} are on the map but no edge reaches them — "
+        f"either wire them up or take them off")

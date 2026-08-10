@@ -2707,6 +2707,237 @@
         "to": 129,
         "anchor": "celery -A tablerag.ingestion.worker worker"
       }
+    },
+    {
+      "id": "api-postgres",
+      "from": "api",
+      "to": "postgres",
+      "label": {
+        "vi": "Đọc ghi cấu trúc",
+        "en": "Reads and writes the structure"
+      },
+      "summary": {
+        "vi": "API đọc KB, tài liệu, element và hội thoại qua đúng một tầng repository — không câu SQL nào nằm trong route.",
+        "en": "The API reads knowledge bases, documents, elements and conversations through one repository layer - no SQL lives in a route."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/db.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "Engine/session management (sync SQLAlchemy; model calls are async httpx)."
+      }
+    },
+    {
+      "id": "worker-postgres",
+      "from": "worker",
+      "to": "postgres",
+      "label": {
+        "vi": "Ghi kết quả parse",
+        "en": "Writes the parse"
+      },
+      "summary": {
+        "vi": "Worker ghi element, bản ghi bảng và chunk. Nó không bao giờ import query/ — hai pipeline chỉ gặp nhau ở đây.",
+        "en": "The worker writes elements, table records and chunks. It never imports query/ - the two pipelines meet only here."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 27,
+        "to": 27,
+        "anchor": "The storage layer is the only contract."
+      }
+    },
+    {
+      "id": "api-qdrant",
+      "from": "api",
+      "to": "qdrant",
+      "label": {
+        "vi": "Tìm vector, và dọn khi xoá",
+        "en": "Searches, and purges on delete"
+      },
+      "summary": {
+        "vi": "Truy hồi đọc cả ba collection. Khi xoá tài liệu hay KB, vector bị dọn TRƯỚC cascade Postgres.",
+        "en": "Retrieval reads all three collections. On deleting a document or a knowledge base the vectors are purged BEFORE the Postgres cascade."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "Three collections from day one (SPEC §3.2)"
+      }
+    },
+    {
+      "id": "worker-qdrant",
+      "from": "worker",
+      "to": "qdrant",
+      "label": {
+        "vi": "Ghi vector",
+        "en": "Writes the vectors"
+      },
+      "summary": {
+        "vi": "Mỗi điểm mang kèm kb_id, doc_id, element_id để lọc payload và để truy nguyên — vector không có nguồn thì vô dụng.",
+        "en": "Every point carries kb_id, doc_id and element_id for payload filtering and for provenance - a vector with no source is useless."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "for payload filtering and"
+      }
+    },
+    {
+      "id": "api-minio",
+      "from": "api",
+      "to": "minio",
+      "label": {
+        "vi": "Phục vụ ảnh gốc",
+        "en": "Serves the original images"
+      },
+      "summary": {
+        "vi": "Ảnh crop, ảnh render trang và PDF gốc — đường bấm ngược từ câu trả lời về tận trang giấy.",
+        "en": "Crops, page renders and the original PDF - the path from an answer back to the page itself."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/object_store.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "Object storage for original PDFs and crop images."
+      }
+    },
+    {
+      "id": "worker-minio",
+      "from": "worker",
+      "to": "minio",
+      "label": {
+        "vi": "Lưu ảnh lúc ingest",
+        "en": "Stores the images at ingest"
+      },
+      "summary": {
+        "vi": "Ảnh gốc được lưu ngay lúc tải lên, trước khi parse — nếu parse sai thì vẫn còn nguyên bản để đối chiếu.",
+        "en": "The original is stored at upload time, before any parsing - so when a parse is wrong the original is still there to read it against."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/object_store.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "Two backends behind one interface: MinIO (default in docker-compose)"
+      }
+    },
+    {
+      "id": "worker-parser",
+      "from": "worker",
+      "to": "parser",
+      "label": {
+        "vi": "Đọc bảng và trang scan",
+        "en": "Reads tables and scanned pages"
+      },
+      "summary": {
+        "vi": "Trang scan không phải ca đặc biệt: cũng là ảnh chất lượng thấp hơn đưa vào đúng VLM đó.",
+        "en": "A scanned page is not a special case: it is lower-quality image input to the same VLM."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/ocr.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "Scanned-page OCR via the parser VLM"
+      }
+    },
+    {
+      "id": "worker-embedder",
+      "from": "worker",
+      "to": "embedder",
+      "label": {
+        "vi": "Sinh vector lúc index",
+        "en": "Embeds at index time"
+      },
+      "summary": {
+        "vi": "Sửa tay một element thì vector của riêng nó được dựng lại — nếu không, câu trả lời vẫn trích bản parse cũ.",
+        "en": "Correcting one element by hand rebuilds that element's vectors - otherwise answers keep quoting the stale parse."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/indexing.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "reach retrieval — otherwise answers keep quoting the stale parse."
+      }
+    },
+    {
+      "id": "api-embedder",
+      "from": "api",
+      "to": "embedder",
+      "label": {
+        "vi": "Sinh vector cho câu hỏi",
+        "en": "Embeds the question"
+      },
+      "summary": {
+        "vi": "Truy hồi lai: dense bắt ý, sparse bắt token hiếm mà dense làm mờ — mã sản phẩm, tên riêng, \"T1 2013\".",
+        "en": "Hybrid retrieval: dense catches the meaning, sparse catches the rare tokens dense blurs - product codes, proper names, \"T1 2013\"."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/retrieve.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "Sparse lexical matching catches the rare tokens dense embeddings blur"
+      }
+    },
+    {
+      "id": "api-chat",
+      "from": "api",
+      "to": "chat",
+      "label": {
+        "vi": "Sinh câu trả lời",
+        "en": "Generates the answer"
+      },
+      "summary": {
+        "vi": "System prompt mã hoá triết lý sản phẩm: chỉ trả lời từ nguồn, trích dẫn mọi thứ, chép số y nguyên, và không bao giờ khẳng định số từ nguồn bị gắn cờ.",
+        "en": "The system prompt encodes the product philosophy: answer only from sources, cite everything, copy numbers exactly, and never assert a figure from a flagged source."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/generate.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "The system prompt encodes the product philosophy"
+      }
+    },
+    {
+      "id": "api-reranker",
+      "from": "api",
+      "to": "reranker",
+      "label": {
+        "vi": "Xếp lại thứ tự ứng viên",
+        "en": "Reorders the candidates"
+      },
+      "summary": {
+        "vi": "Vai trò này mặc định tắt, và khi bật mà không gọi được thì suy biến y hệt lúc tắt thay vì làm hỏng cả truy vấn.",
+        "en": "The role is disabled by default, and when enabled but unreachable it degrades exactly as if it were off rather than failing the query."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/rerank.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "The role is disabled by default"
+      }
     }
   ]
 }
