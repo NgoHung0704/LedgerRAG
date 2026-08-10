@@ -1,0 +1,252 @@
+{
+  "id": "ingest-tables",
+  "functions": [
+    {
+      "name": "parse_table_region",
+      "decl": "async def parse_table_region(crop_png: bytes, grid: list[list[str | None]] | None,",
+      "file": "tablerag/ingestion/table_pipeline.py",
+      "line": 223,
+      "note": {
+        "vi": "Một vùng bảng vào, ba biểu diễn ra.",
+        "en": "One table region in, three representations out."
+      }
+    },
+    {
+      "name": "records_from_grid",
+      "decl": "def records_from_grid(grid: list[list[str | None]],",
+      "file": "tablerag/ingestion/table_pipeline.py",
+      "line": 141,
+      "note": {
+        "vi": "Dựng bản ghi dimensions/metrics tất định từ lưới, không nhờ model.",
+        "en": "Builds the dimensions/metrics records deterministically from the grid, with no model involved."
+      }
+    },
+    {
+      "name": "build_text_repr",
+      "decl": "def build_text_repr(dimensions: dict, metrics: dict, raw_values: dict) -> str:",
+      "file": "tablerag/ingestion/table_pipeline.py",
+      "line": 49,
+      "note": {
+        "vi": "Dạng text của một bản ghi — chính là thứ được index và đem đối chiếu với câu hỏi.",
+        "en": "The text form of a record - the very thing that gets indexed and matched against a question."
+      }
+    },
+    {
+      "name": "summarize_table",
+      "decl": "async def summarize_table(html: str, locale: str | None = None,",
+      "file": "tablerag/ingestion/table_pipeline.py",
+      "line": 329,
+      "note": {
+        "vi": "Một hai câu mô tả bảng, để router tìm được bảng trước khi tìm dòng.",
+        "en": "One or two sentences about the table, so the router finds the table before the row."
+      }
+    },
+    {
+      "name": "run_table_parse",
+      "decl": "async def run_table_parse(chat: ChatFn, image: bytes, ctx: TableCtx) -> TableParse:",
+      "file": "tablerag/models/table_parsing.py",
+      "line": 540,
+      "note": {
+        "vi": "Hợp đồng parse dùng chung: prompt, kiểm tra, thử lại — provider chỉ lo phần truyền tải.",
+        "en": "The shared parse contract: prompt, validation, retry - a provider supplies only the transport."
+      }
+    },
+    {
+      "name": "forward_fill_grid",
+      "decl": "def forward_fill_grid(grid: list[list[str | None]]) -> list[list[str | None]]:",
+      "file": "tablerag/models/table_parsing.py",
+      "line": 186,
+      "note": {
+        "vi": "Điền xuôi nhãn nhóm để mọi dòng bị gộp đều mang nhãn của nó.",
+        "en": "Forward-fills the group label so every spanned row carries its own."
+      }
+    },
+    {
+      "name": "collapse_vertical_merges",
+      "decl": "def collapse_vertical_merges(html: str | None) -> str | None:",
+      "file": "tablerag/ingestion/html_tables.py",
+      "line": 93,
+      "note": {
+        "vi": "Gộp lại các ô lặp thành rowspan để bảng hiển thị giống bản gốc.",
+        "en": "Collapses repeated cells back into rowspans so the rendered table matches the original."
+      }
+    },
+    {
+      "name": "flatten_table_for_context",
+      "decl": "def flatten_table_for_context(html: str | None) -> str:",
+      "file": "tablerag/core/table_text.py",
+      "line": 93,
+      "note": {
+        "vi": "Trải bảng thành text cho ngữ cảnh model — nằm ở core vì cả hai pipeline đều cần.",
+        "en": "Flattens a table into text for the model context - it lives in core because both pipelines need it."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "region",
+        "label": {
+          "vi": "Vùng bảng",
+          "en": "A table region"
+        }
+      },
+      {
+        "id": "hint",
+        "label": {
+          "vi": "Lưới text-layer làm gợi ý",
+          "en": "The text-layer grid as a hint"
+        }
+      },
+      {
+        "id": "vlm",
+        "label": {
+          "vi": "VLM đọc bảng",
+          "en": "The VLM reads the table"
+        }
+      },
+      {
+        "id": "validate",
+        "label": {
+          "vi": "Kiểm tra hợp đồng",
+          "en": "Validate against the contract"
+        }
+      },
+      {
+        "id": "retry",
+        "label": {
+          "vi": "Gọi lại có nêu tên lỗi",
+          "en": "Asked again, naming the fault"
+        }
+      },
+      {
+        "id": "three",
+        "label": {
+          "vi": "Ba biểu diễn",
+          "en": "The three representations"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "region",
+        "to": "hint"
+      },
+      {
+        "from": "hint",
+        "to": "vlm"
+      },
+      {
+        "from": "vlm",
+        "to": "validate"
+      },
+      {
+        "from": "validate",
+        "to": "g-ok"
+      },
+      {
+        "from": "g-ok",
+        "to": "three",
+        "label": {
+          "vi": "hợp lệ",
+          "en": "valid"
+        }
+      },
+      {
+        "from": "g-ok",
+        "to": "retry",
+        "label": {
+          "vi": "sai hợp đồng",
+          "en": "breaks the contract"
+        }
+      },
+      {
+        "from": "retry",
+        "to": "vlm",
+        "label": {
+          "vi": "gọi lại có nêu tên lỗi",
+          "en": "asked again, naming the fault"
+        }
+      },
+      {
+        "from": "three",
+        "to": "x-out"
+      }
+    ],
+    "gates": [
+      {
+        "id": "g-ok",
+        "label": {
+          "vi": "Kết quả có đúng hợp đồng không?",
+          "en": "Does the result satisfy the contract?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-out",
+        "label": {
+          "vi": "html + records + summary",
+          "en": "html + records + summary"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Dạng text của một bản ghi — đây là chuỗi thật sự đi vào chỉ mục.",
+        "en": "A record's text form - this is the string that actually enters the index."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/ingestion/table_pipeline.py",
+        "from": 49,
+        "to": 58,
+        "code": "def build_text_repr(dimensions: dict, metrics: dict, raw_values: dict) -> str:\n    \"\"\"The embedded string, e.g.\n    'zone: Afrique | pays: Algérie | segment: Citadine | chiffre_affaires: 7 462 639'\n\n    Dimensions carry their column name, not just their value. Dropping the name\n    made a row read as a list of anonymous values ('37 à 39 | 11 | F | …'):\n    the model could guess which one was a class or a group, but the unlabelled\n    first value was unusable, so when asked for a \"cotation\" it went looking in\n    another table and returned a salary instead. Naming the column also puts\n    the header word into the embedded/lexical text, so a question that uses it"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Ba biểu diễn tồn tại song song: hiển thị, tra số chính xác, và định tuyến ngữ nghĩa. Bỏ cái nào cũng mất một khả năng.",
+        "en": "The three representations exist side by side: display, exact lookup, and semantic routing. Drop any one and a capability goes with it."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/table_pipeline.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "`records`  — dimensions/metrics/raw_values + text_repr, for exact lookup"
+      }
+    },
+    {
+      "text": {
+        "vi": "Hàm này nằm ở core chứ không ở ingestion, vì query cũng cần nó mà hai pipeline không được import nhau.",
+        "en": "These live in core rather than in ingestion, because query needs them too and the two pipelines may never import each other."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/table_text.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "and query needs them to build model context, but the two pipelines must never"
+      }
+    },
+    {
+      "text": {
+        "vi": "Điền xuôi làm bản ghi đầy đủ; gộp lại chỉ để hiển thị. Dữ liệu và cách vẽ được tách hẳn.",
+        "en": "Forward-filling makes the records complete; collapsing is only for display. The data and the drawing are kept apart."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/html_tables.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "The grid-hint forward-fills merged row labels so the RECORDS are complete"
+      }
+    }
+  ],
+  "debts": []
+}

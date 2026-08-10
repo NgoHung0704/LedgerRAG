@@ -14,7 +14,6 @@ import asyncio
 import logging
 import uuid
 
-from tablerag.core.config import get_settings
 from tablerag.models.registry import RoleDisabled, effective_config, get_provider
 from tablerag.query.pipeline import QueryContext
 

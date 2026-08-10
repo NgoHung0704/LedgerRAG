@@ -38,3 +38,10 @@ Thumbs.db
 
 # git worktrees created for isolated task execution
 .claude/worktrees/
+
+# docs-site (the architecture page). Its package-lock.json IS tracked —
+# `npm ci` in CI requires a committed lockfile, and the `frontend/` rule
+# above deliberately only covers the product app.
+docs-site/node_modules/
+# screenshots from `node tools/shots.mjs` — evidence for a review, not source
+docs-site/shots/

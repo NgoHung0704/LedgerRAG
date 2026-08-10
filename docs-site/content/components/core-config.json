@@ -1,0 +1,152 @@
+{
+  "id": "core-config",
+  "functions": [
+    {
+      "name": "Settings",
+      "decl": "class Settings(BaseSettings):",
+      "file": "tablerag/core/config.py",
+      "line": 75,
+      "note": {
+        "vi": "Toàn bộ cấu hình nền tảng, đọc từ biến môi trường tiền tố LEDGERRAG_.",
+        "en": "The whole platform configuration, read from LEDGERRAG_-prefixed environment variables."
+      }
+    },
+    {
+      "name": "ModelsConfig",
+      "decl": "class ModelsConfig(BaseModel):",
+      "file": "tablerag/core/config.py",
+      "line": 34,
+      "note": {
+        "vi": "Bốn vai trò trừu tượng; không có tên model nào được hardcode ở đây.",
+        "en": "The four abstract roles; no model name is hardcoded here."
+      }
+    },
+    {
+      "name": "get_settings",
+      "decl": "def get_settings() -> Settings:",
+      "file": "tablerag/core/config.py",
+      "line": 192,
+      "note": {
+        "vi": "Cấu hình được cache, và mọi thứ khác đọc qua đây.",
+        "en": "The configuration, cached, and everything else reads it through here."
+      }
+    },
+    {
+      "name": "KBOut",
+      "decl": "class KBOut(BaseModel):",
+      "file": "tablerag/core/schemas.py",
+      "line": 49,
+      "note": {
+        "vi": "Hình dạng KB mà API trả về — hợp đồng với frontend.",
+        "en": "The knowledge-base shape the API returns - the contract with the frontend."
+      }
+    },
+    {
+      "name": "render",
+      "decl": "def render(document: dict, elements: list[dict]) -> str:",
+      "file": "tablerag/core/text_export.py",
+      "line": 52,
+      "note": {
+        "vi": "Bản parse dạng text để đưa cho người có thể hành động dựa trên nó.",
+        "en": "The parse as text, for showing to someone who can act on it."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "env",
+        "label": {
+          "vi": "Biến môi trường và .env",
+          "en": "Environment variables and .env"
+        }
+      },
+      {
+        "id": "settings",
+        "label": {
+          "vi": "Settings",
+          "en": "Settings"
+        }
+      },
+      {
+        "id": "db",
+        "label": {
+          "vi": "Ghi đè trong app_setting",
+          "en": "The app_setting override"
+        }
+      },
+      {
+        "id": "eff",
+        "label": {
+          "vi": "Cấu hình có hiệu lực",
+          "en": "The effective configuration"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "env",
+        "to": "settings"
+      },
+      {
+        "from": "settings",
+        "to": "eff"
+      },
+      {
+        "from": "db",
+        "to": "eff",
+        "label": {
+          "vi": "phủ lên phần nền",
+          "en": "overlaid on the base"
+        }
+      }
+    ],
+    "gates": [],
+    "exits": []
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Bốn vai trò, và không một tên model nào nằm trong code.",
+        "en": "Four roles, and not one model name living in the code."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/core/config.py",
+        "from": 34,
+        "to": 41,
+        "code": "class ModelsConfig(BaseModel):\n    parser: EndpointConfig = EndpointConfig(\n        provider=\"ollama\", base_url=\"http://localhost:11434\",\n        model_name=\"qwen3-vl:8b-instruct\")\n    embedder: EndpointConfig = EndpointConfig(\n        provider=\"ollama\", base_url=\"http://localhost:11434\", model_name=\"bge-m3\")\n    chat: EndpointConfig = EndpointConfig(\n        provider=\"ollama\", base_url=\"http://localhost:11434\", model_name=\"mistral:latest\")"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Ràng buộc C3: nền tảng độc lập với model và phần cứng; người triển khai ánh xạ từng vai trò tới một endpoint cụ thể.",
+        "en": "Constraint C3: the platform is model- and hardware-agnostic; the deploying engineer maps each role to a concrete endpoint."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/config.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "engineer maps each to a concrete endpoint via environment variables"
+      }
+    }
+  ],
+  "debts": [
+    {
+      "text": {
+        "vi": "Với qwen3-vl phải dùng tag -instruct: tag mặc định là model thinking và trả về rỗng. Đây là phát hiện của chiến dịch Phase 0.",
+        "en": "For qwen3-vl the -instruct tag is required: the default tag is a thinking model that returns empty output. This is a Phase 0 campaign finding."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": ".env.example",
+        "from": 36,
+        "to": 36,
+        "anchor": "(spike campaign finding)"
+      }
+    }
+  ]
+}

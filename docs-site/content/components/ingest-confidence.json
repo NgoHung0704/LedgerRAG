@@ -1,0 +1,189 @@
+{
+  "id": "ingest-confidence",
+  "functions": [
+    {
+      "name": "assess",
+      "decl": "def assess(html: str, records: list[dict],",
+      "file": "tablerag/ingestion/confidence.py",
+      "line": 204,
+      "note": {
+        "vi": "Tổng hợp ba tín hiệu thành một quyết định: có cần người duyệt hay không.",
+        "en": "Folds the three signals into one decision: does a human need to look?"
+      }
+    },
+    {
+      "name": "structural_consistency",
+      "decl": "def structural_consistency(html: str, records: list[dict]) -> tuple[float, dict] | None:",
+      "file": "tablerag/ingestion/confidence.py",
+      "line": 71,
+      "note": {
+        "vi": "Số ô mà HTML ngụ ý có khớp với số ô thật không.",
+        "en": "Whether the cell count the HTML implies matches the cells that are there."
+      }
+    },
+    {
+      "name": "double_read_agreement",
+      "decl": "def double_read_agreement(first: list[dict], second: list[dict],",
+      "file": "tablerag/ingestion/confidence.py",
+      "line": 118,
+      "note": {
+        "vi": "Đọc hai lần rồi so — bất đồng là dấu hiệu bản parse không đáng tin.",
+        "en": "Two reads compared - disagreement is the sign that a parse cannot be trusted."
+      }
+    },
+    {
+      "name": "arithmetic_check",
+      "decl": "def arithmetic_check(records: list[dict]) -> tuple[float, dict] | None:",
+      "file": "tablerag/ingestion/confidence.py",
+      "line": 158,
+      "note": {
+        "vi": "Cột tổng có thật sự bằng tổng các dòng không.",
+        "en": "Whether a total column really is the sum of its rows."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "table",
+        "label": {
+          "vi": "Một bảng đã parse",
+          "en": "A parsed table"
+        }
+      },
+      {
+        "id": "s1",
+        "label": {
+          "vi": "Nhất quán cấu trúc",
+          "en": "Structural consistency"
+        }
+      },
+      {
+        "id": "s2",
+        "label": {
+          "vi": "Đồng thuận hai lần đọc",
+          "en": "Double-read agreement"
+        }
+      },
+      {
+        "id": "s3",
+        "label": {
+          "vi": "Kiểm tra số học",
+          "en": "Arithmetic check"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "table",
+        "to": "s1"
+      },
+      {
+        "from": "table",
+        "to": "s2"
+      },
+      {
+        "from": "table",
+        "to": "s3"
+      },
+      {
+        "from": "s1",
+        "to": "g"
+      },
+      {
+        "from": "s2",
+        "to": "g"
+      },
+      {
+        "from": "s3",
+        "to": "g"
+      },
+      {
+        "from": "g",
+        "to": "x-ok",
+        "label": {
+          "vi": "mọi tín hiệu đều ổn",
+          "en": "every signal is clean"
+        }
+      },
+      {
+        "from": "g",
+        "to": "x-review",
+        "label": {
+          "vi": "có tín hiệu xấu",
+          "en": "a signal is bad"
+        }
+      }
+    ],
+    "gates": [
+      {
+        "id": "g",
+        "label": {
+          "vi": "Có tín hiệu nào nói bản parse này sai không?",
+          "en": "Does any signal say this parse is wrong?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-ok",
+        "label": {
+          "vi": "Dùng bình thường",
+          "en": "Used normally"
+        }
+      },
+      {
+        "id": "x-review",
+        "label": {
+          "vi": "Vào hàng đợi duyệt, câu trả lời không khẳng định số từ nó",
+          "en": "Into the review queue; answers assert no number from it"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Tín hiệu thứ ba: bảng tự mâu thuẫn với chính nó.",
+        "en": "The third signal: the table contradicting itself."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/ingestion/confidence.py",
+        "from": 158,
+        "to": 165,
+        "code": "def arithmetic_check(records: list[dict]) -> tuple[float, dict] | None:\n    \"\"\"Verify Total rows/columns against the sum of their components.\n    Returns None when the table has no detectable totals.\"\"\"\n    normalized = [\n        ({k: _norm(v) for k, v in r.get(\"dimensions\", {}).items()},\n         r.get(\"metrics\", {}))\n        for r in records\n    ]"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Lúc chạy không có đáp án đúng, nên độ tin cậy chỉ suy được từ tính nhất quán nội tại — đó là lý do có ba tín hiệu độc lập chứ không phải một.",
+        "en": "At runtime there is no ground truth, so confidence can only be inferred from internal consistency - which is why there are three independent signals rather than one."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/confidence.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "No ground truth exists at runtime, so confidence is inferred from internal"
+      }
+    }
+  ],
+  "debts": [
+    {
+      "text": {
+        "vi": "Recall tự động trên các lỗi đọc có hệ thống vốn dĩ thấp: một model nhỏ không tự phát hiện được lỗi mà nó tự tin.",
+        "en": "Auto-recall on systematic misreads is fundamentally low: a single small model cannot self-detect the errors it is confident about."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 21,
+        "to": 21,
+        "anchor": "≥90% recall DoD is not achievable on this hardware"
+      }
+    }
+  ]
+}

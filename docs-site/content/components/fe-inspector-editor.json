@@ -1,0 +1,149 @@
+{
+  "id": "fe-inspector-editor",
+  "functions": [
+    {
+      "name": "ElementEditor",
+      "decl": "export default function ElementEditor({",
+      "file": "frontend/components/ElementEditor.tsx",
+      "line": 46,
+      "note": {
+        "vi": "Sửa một element với ảnh crop luôn nằm cạnh — ảnh mới là thẩm quyền.",
+        "en": "Edits one element with its crop beside it - the image is the authority."
+      }
+    },
+    {
+      "name": "RecordsTable",
+      "decl": "export default function RecordsTable({ records }: { records: LooseRecord[] }) {",
+      "file": "frontend/components/RecordsTable.tsx",
+      "line": 13,
+      "note": {
+        "vi": "Xem chính các bản ghi dimensions/metrics mà câu trả lời sẽ trích số từ đó.",
+        "en": "Shows the very dimensions/metrics records an answer will quote numbers from."
+      }
+    },
+    {
+      "name": "SourceModal",
+      "decl": "export default function SourceModal({",
+      "file": "frontend/components/SourceModal.tsx",
+      "line": 25,
+      "note": {
+        "vi": "Mở ảnh trang gốc từ một trích dẫn.",
+        "en": "Opens the original page image from a citation."
+      }
+    },
+    {
+      "name": "BoilerplatePanel",
+      "decl": "export default function BoilerplatePanel({",
+      "file": "frontend/components/BoilerplatePanel.tsx",
+      "line": 16,
+      "note": {
+        "vi": "Duyệt các ứng viên header/footer trước khi loại chúng khỏi truy hồi.",
+        "en": "Reviews the header and footer candidates before excluding them from retrieval."
+      }
+    },
+    {
+      "name": "EditAssistant",
+      "decl": "export default function EditAssistant({",
+      "file": "frontend/components/EditAssistant.tsx",
+      "line": 14,
+      "note": {
+        "vi": "Trợ lý sửa nội dung; kết quả là đề xuất, người duyệt tự áp dụng.",
+        "en": "The editing assistant; its output is a proposal the reviewer applies."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "open",
+        "label": {
+          "vi": "Mở một element",
+          "en": "Open an element"
+        }
+      },
+      {
+        "id": "compare",
+        "label": {
+          "vi": "So bản parse với ảnh crop",
+          "en": "Compare the parse with the crop"
+        }
+      },
+      {
+        "id": "act",
+        "label": {
+          "vi": "Sửa, tách, gộp, hạ cấp",
+          "en": "Edit, split, merge, demote"
+        }
+      },
+      {
+        "id": "save",
+        "label": {
+          "vi": "Lưu và index lại",
+          "en": "Save and re-index"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "open",
+        "to": "compare"
+      },
+      {
+        "from": "compare",
+        "to": "g"
+      },
+      {
+        "from": "g",
+        "to": "act",
+        "label": {
+          "vi": "bản parse sai",
+          "en": "the parse is wrong"
+        }
+      },
+      {
+        "from": "g",
+        "to": "x-approve",
+        "label": {
+          "vi": "bản parse đúng",
+          "en": "the parse is right"
+        }
+      },
+      {
+        "from": "act",
+        "to": "save"
+      },
+      {
+        "from": "save",
+        "to": "x-live"
+      }
+    ],
+    "gates": [
+      {
+        "id": "g",
+        "label": {
+          "vi": "Bản parse có khớp ảnh không?",
+          "en": "Does the parse match the image?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-approve",
+        "label": {
+          "vi": "Duyệt, xoá cờ cần xem lại",
+          "en": "Approved, the review flag is cleared"
+        }
+      },
+      {
+        "id": "x-live",
+        "label": {
+          "vi": "Câu trả lời tiếp theo dùng bản đã sửa",
+          "en": "The next answer uses the correction"
+        }
+      }
+    ]
+  },
+  "excerpts": [],
+  "why": [],
+  "debts": []
+}

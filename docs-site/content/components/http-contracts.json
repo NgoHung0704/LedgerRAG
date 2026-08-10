@@ -1,0 +1,242 @@
+{
+  "id": "http-contracts",
+  "functions": [
+    {
+      "name": "create_kb",
+      "decl": "def create_kb(body: KBCreate) -> KBOut:",
+      "file": "tablerag/api/routes/kb.py",
+      "line": 32,
+      "note": {
+        "vi": "Tạo KB — đơn vị cô lập của sản phẩm.",
+        "en": "Creates a knowledge base - the product's unit of isolation."
+      }
+    },
+    {
+      "name": "upload_document",
+      "decl": "async def upload_document(kb_id: uuid.UUID, file: UploadFile,",
+      "file": "tablerag/api/routes/documents.py",
+      "line": 36,
+      "note": {
+        "vi": "Trả 202 ngay và đẩy việc vào hàng đợi; không parse trong request.",
+        "en": "Answers 202 immediately and queues the work; nothing is parsed inside the request."
+      }
+    },
+    {
+      "name": "bulk_delete_documents",
+      "decl": "def bulk_delete_documents(kb_id: uuid.UUID, body: BulkDeleteRequest) -> dict:",
+      "file": "tablerag/api/routes/documents.py",
+      "line": 146,
+      "note": {
+        "vi": "Gộp lô: một lần xoá vector MatchAny mỗi collection thay vì N vòng round-trip.",
+        "en": "Batched: one MatchAny vector delete per collection instead of N round-trips."
+      }
+    },
+    {
+      "name": "reread_element",
+      "decl": "async def reread_element(element_id: uuid.UUID, mode: str = \"structure\") -> dict:",
+      "file": "tablerag/api/routes/elements.py",
+      "line": 98,
+      "note": {
+        "vi": "Trả về ĐỀ XUẤT chứ không ghi — người duyệt so với ảnh gốc rồi mới lưu.",
+        "en": "Returns a PROPOSAL and writes nothing - the reviewer compares it with the original image first."
+      }
+    },
+    {
+      "name": "merge_element_tables",
+      "decl": "async def merge_element_tables(body: MergeRequest) -> dict:",
+      "file": "tablerag/api/routes/elements.py",
+      "line": 249,
+      "note": {
+        "vi": "Gộp đúng những bảng người duyệt chọn, không đoán \"bảng kế tiếp\".",
+        "en": "Merges exactly the tables the reviewer chose, with no guessing at \"the next one\"."
+      }
+    },
+    {
+      "name": "chat_multi",
+      "decl": "async def chat_multi(body: MultiChatRequest,",
+      "file": "tablerag/api/routes/chat.py",
+      "line": 119,
+      "note": {
+        "vi": "Chat nhiều KB: router chọn, hoặc người dùng ghim tay đè lên.",
+        "en": "Multi-KB chat: the router picks, or the user pins the scope over it."
+      }
+    },
+    {
+      "name": "update_role",
+      "decl": "async def update_role(role: str, body: ModelRoleUpdate,",
+      "file": "tablerag/api/routes/models.py",
+      "line": 69,
+      "note": {
+        "vi": "Đổi endpoint của một vai trò model lúc chạy — ràng buộc C3 thành thao tác.",
+        "en": "Repoints a model role at runtime - constraint C3 as an action."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "req",
+        "label": {
+          "vi": "Request đã xác thực",
+          "en": "Authenticated request"
+        }
+      },
+      {
+        "id": "validate",
+        "label": {
+          "vi": "Kiểm tra body và tham số",
+          "en": "Validate body and parameters"
+        }
+      },
+      {
+        "id": "work",
+        "label": {
+          "vi": "Gọi repository hoặc xếp hàng",
+          "en": "Call a repository, or queue the work"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "req",
+        "to": "validate"
+      },
+      {
+        "from": "validate",
+        "to": "g-found"
+      },
+      {
+        "from": "g-found",
+        "to": "work",
+        "label": {
+          "vi": "tìm thấy",
+          "en": "found"
+        }
+      },
+      {
+        "from": "g-found",
+        "to": "x404",
+        "label": {
+          "vi": "không tồn tại",
+          "en": "does not exist"
+        }
+      },
+      {
+        "from": "work",
+        "to": "g-conflict"
+      },
+      {
+        "from": "g-conflict",
+        "to": "x-ok",
+        "label": {
+          "vi": "trạng thái cho phép",
+          "en": "state allows it"
+        }
+      },
+      {
+        "from": "g-conflict",
+        "to": "x409",
+        "label": {
+          "vi": "đang chạy dở",
+          "en": "already in flight"
+        }
+      }
+    ],
+    "gates": [
+      {
+        "id": "g-found",
+        "label": {
+          "vi": "Đối tượng có tồn tại không?",
+          "en": "Does the object exist?"
+        }
+      },
+      {
+        "id": "g-conflict",
+        "label": {
+          "vi": "Trạng thái hiện tại có cho phép không?",
+          "en": "Does the current state allow it?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x404",
+        "label": {
+          "vi": "404 không tìm thấy",
+          "en": "404 not found"
+        }
+      },
+      {
+        "id": "x409",
+        "label": {
+          "vi": "409 xung đột",
+          "en": "409 conflict"
+        }
+      },
+      {
+        "id": "x-ok",
+        "label": {
+          "vi": "2xx kèm kết quả",
+          "en": "2xx with the result"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Kho ngoài bị dọn TRƯỚC cascade Postgres — thứ tự này là nội dung, không phải hình thức.",
+        "en": "The external stores are purged BEFORE the Postgres cascade - that order is the substance, not a formality."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/api/routes/kb.py",
+        "from": 138,
+        "to": 143,
+        "code": "def delete_kb(kb_id: uuid.UUID, user: User = Depends(current_user)) -> Response:\n    \"\"\"Delete a KB and everything it owns — vectors, files, documents, chat\n    history. External stores are purged BEFORE the Postgres cascade, so a later\n    failure can't leave orphaned vectors serving answers from a deleted KB.\"\"\"\n    from tablerag.storage.object_store import get_object_store, kb_prefix\n    from tablerag.storage.qdrant import get_vector_store"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Streaming có từ ngày đầu vì lắp thêm về sau rất đau; nó ở trong bộ khung chứ không phải phần thêm.",
+        "en": "Streaming ships on day one because retrofitting it later is painful; it is in the skeleton rather than bolted on."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/api/routes/chat.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "SSE streaming from day one (SPEC Phase 1 — retrofitting"
+      }
+    },
+    {
+      "text": {
+        "vi": "Mỗi element phải bấm ngược về được tới ảnh crop rồi tới trang PDF — đó là nguyên tắc số 3.",
+        "en": "Every element must click through to its crop and then to the PDF page - that is principle 3."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/api/routes/elements.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "the citation click-through target"
+      }
+    },
+    {
+      "text": {
+        "vi": "Trợ lý THAM CHIẾU tới KB chứ không sở hữu tài liệu, nên sự cô lập giữa các KB vẫn nguyên vẹn.",
+        "en": "An assistant REFERENCES knowledge bases and never owns documents, so KB isolation stays intact."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/api/routes/assistants.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "isolation — the founding idea — is untouched and one corpus can back several"
+      }
+    }
+  ],
+  "debts": []
+}

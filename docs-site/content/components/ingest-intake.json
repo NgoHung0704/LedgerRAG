@@ -1,0 +1,228 @@
+{
+  "id": "ingest-intake",
+  "functions": [
+    {
+      "name": "process_document",
+      "decl": "def process_document(self, doc_id_str: str) -> None:",
+      "file": "tablerag/ingestion/tasks.py",
+      "line": 380,
+      "note": {
+        "vi": "Điểm vào của ingestion. Idempotent theo doc_id: chạy lại xoá kết quả cũ trước.",
+        "en": "The ingestion entry point. Idempotent by doc_id: a rerun deletes the previous output first."
+      }
+    },
+    {
+      "name": "_ingest_page",
+      "decl": "def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,",
+      "file": "tablerag/ingestion/tasks.py",
+      "line": 184,
+      "note": {
+        "vi": "Một trang: bố cục, vùng, bảng, hình, confidence, chunk.",
+        "en": "One page: layout, regions, tables, figures, confidence, chunks."
+      }
+    },
+    {
+      "name": "html_is_trustworthy",
+      "decl": "def html_is_trustworthy(html: str | None, from_grid: bool,",
+      "file": "tablerag/ingestion/tasks.py",
+      "line": 88,
+      "note": {
+        "vi": "Quyết định có tin lưới từ text-layer hay phải nhờ VLM đọc lại.",
+        "en": "Decides whether the text-layer grid can be trusted or the VLM has to read it."
+      }
+    },
+    {
+      "name": "to_pdf",
+      "decl": "def to_pdf(data: bytes, filename: str, timeout: int = 180) -> bytes:",
+      "file": "tablerag/ingestion/convert.py",
+      "line": 82,
+      "note": {
+        "vi": "Office sang PDF bằng LibreOffice trước khi ingest, để mọi thứ sau đó không đổi.",
+        "en": "Office to PDF through LibreOffice before ingestion, so nothing downstream changes."
+      }
+    },
+    {
+      "name": "process_once",
+      "decl": "def process_once(root: Path, stability_secs: float,",
+      "file": "tablerag/ingestion/consumer.py",
+      "line": 135,
+      "note": {
+        "vi": "Một vòng quét thư mục nạp: tìm PDF ổn định, tạo KB nếu thiếu, xếp hàng, lưu trữ.",
+        "en": "One sweep of the consume directory: find stable PDFs, create the KB if missing, queue, archive."
+      }
+    },
+    {
+      "name": "is_stable",
+      "decl": "def is_stable(path: Path, min_age_secs: float, now: float | None = None) -> bool:",
+      "file": "tablerag/ingestion/consumer.py",
+      "line": 68,
+      "note": {
+        "vi": "Chờ tệp ngừng lớn lên rồi mới nạp — nếu không sẽ nạp một PDF đang copy dở.",
+        "en": "Waits for the file to stop growing before ingesting - otherwise it ingests a half-copied PDF."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "in",
+        "label": {
+          "vi": "PDF hoặc file Office",
+          "en": "A PDF or an Office file"
+        }
+      },
+      {
+        "id": "convert",
+        "label": {
+          "vi": "Chuyển sang PDF nếu cần",
+          "en": "Convert to PDF if needed"
+        }
+      },
+      {
+        "id": "purge",
+        "label": {
+          "vi": "Xoá kết quả lần trước",
+          "en": "Delete the previous output"
+        }
+      },
+      {
+        "id": "pages",
+        "label": {
+          "vi": "Chạy từng trang",
+          "en": "Run page by page"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "in",
+        "to": "convert"
+      },
+      {
+        "from": "convert",
+        "to": "purge"
+      },
+      {
+        "from": "purge",
+        "to": "pages"
+      },
+      {
+        "from": "pages",
+        "to": "g-fail"
+      },
+      {
+        "from": "g-fail",
+        "to": "x-done",
+        "label": {
+          "vi": "mọi trang xong",
+          "en": "every page finished"
+        }
+      },
+      {
+        "from": "g-fail",
+        "to": "x-retry",
+        "label": {
+          "vi": "lỗi tạm thời",
+          "en": "a transient error"
+        }
+      },
+      {
+        "from": "g-fail",
+        "to": "x-failed",
+        "label": {
+          "vi": "lỗi vĩnh viễn",
+          "en": "a permanent error"
+        }
+      }
+    ],
+    "gates": [
+      {
+        "id": "g-fail",
+        "label": {
+          "vi": "Lỗi này thử lại được không?",
+          "en": "Is this error worth retrying?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-done",
+        "label": {
+          "vi": "done",
+          "en": "done"
+        }
+      },
+      {
+        "id": "x-retry",
+        "label": {
+          "vi": "Xếp lại hàng đợi",
+          "en": "Back on the queue"
+        }
+      },
+      {
+        "id": "x-failed",
+        "label": {
+          "vi": "failed",
+          "en": "failed"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Một tệp đang được copy vào thì chưa phải là tệp.",
+        "en": "A file still being copied in is not yet a file."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/ingestion/consumer.py",
+        "from": 68,
+        "to": 75,
+        "code": "def is_stable(path: Path, min_age_secs: float, now: float | None = None) -> bool:\n    \"\"\"True when the file hasn't been modified for at least `min_age_secs` — a\n    guard against grabbing a file mid-copy.\"\"\"\n    now = time.time() if now is None else now\n    try:\n        return (now - path.stat().st_mtime) >= min_age_secs\n    except OSError:\n        return False"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Worker bị giết giữa chừng rồi việc được giao lại sẽ không sinh bản trùng, vì chạy lại luôn dọn trước.",
+        "en": "A worker killed mid-job and redelivered never produces duplicates, because a rerun always purges first."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/tasks.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "Idempotent by doc_id (SPEC Phase 1): reprocessing first deletes the doc's"
+      }
+    },
+    {
+      "text": {
+        "vi": "Đi vòng qua PDF chứ không đọc XML gốc, vì nguyên tắc số 3 đòi mọi element phải có ảnh của nơi nó sinh ra.",
+        "en": "It goes through PDF rather than reading the native XML, because principle 3 demands every element have an image of where it came from."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/convert.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "trace back to a stored image of where it came from"
+      }
+    },
+    {
+      "text": {
+        "vi": "Vòng lặp polling đơn giản, cố tình không thêm phụ thuộc theo dõi filesystem.",
+        "en": "A plain polling loop, deliberately taking on no filesystem-watch dependency."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/consumer.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "Celery Beat, no filesystem-watch dependency"
+      }
+    }
+  ],
+  "debts": []
+}

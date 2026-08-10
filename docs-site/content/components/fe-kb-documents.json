@@ -1,0 +1,164 @@
+{
+  "id": "fe-kb-documents",
+  "functions": [
+    {
+      "name": "DocumentsPanel",
+      "decl": "export default function DocumentsPanel({ kbId }: { kbId: string }) {",
+      "file": "frontend/components/DocumentsPanel.tsx",
+      "line": 34,
+      "note": {
+        "vi": "Tải lên, theo dõi trạng thái tới done, chọn nhiều để xoá hoặc chạy lại.",
+        "en": "Upload, watch the status reach done, select many to delete or reprocess."
+      }
+    },
+    {
+      "name": "KbSettings",
+      "decl": "export default function KbSettings({",
+      "file": "frontend/components/KbSettings.tsx",
+      "line": 14,
+      "note": {
+        "vi": "Locale, mức kiểm chứng, tên — những thứ đổi được sau khi tạo.",
+        "en": "Locale, verification level, name - what can change after creation."
+      }
+    },
+    {
+      "name": "KbDescription",
+      "decl": "export default function KbDescription({ kb }: { kb: KB }) {",
+      "file": "frontend/components/KbDescription.tsx",
+      "line": 8,
+      "note": {
+        "vi": "Mô tả KB, thứ duy nhất router đọc để định tuyến.",
+        "en": "The knowledge-base description, the only thing the router reads."
+      }
+    },
+    {
+      "name": "ReviewPanel",
+      "decl": "export default function ReviewPanel({",
+      "file": "frontend/components/ReviewPanel.tsx",
+      "line": 12,
+      "note": {
+        "vi": "Hàng đợi duyệt ở mức KB, để người không phải kỹ sư cũng thấy việc cần làm.",
+        "en": "The KB-level review queue, so a non-engineer sees what needs doing."
+      }
+    },
+    {
+      "name": "KbCardMenu",
+      "decl": "export default function KbCardMenu({",
+      "file": "frontend/components/KbCardMenu.tsx",
+      "line": 12,
+      "note": {
+        "vi": "Các hành động phá huỷ đều đi qua hộp xác nhận dùng chung.",
+        "en": "Every destructive action goes through the shared confirmation dialog."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "kb",
+        "label": {
+          "vi": "Màn hình KB",
+          "en": "The knowledge-base screen"
+        }
+      },
+      {
+        "id": "upload",
+        "label": {
+          "vi": "Tải PDF lên",
+          "en": "Upload a PDF"
+        }
+      },
+      {
+        "id": "poll",
+        "label": {
+          "vi": "Theo dõi trạng thái",
+          "en": "Poll the status"
+        }
+      },
+      {
+        "id": "review",
+        "label": {
+          "vi": "Hàng đợi duyệt",
+          "en": "The review queue"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "kb",
+        "to": "upload"
+      },
+      {
+        "from": "upload",
+        "to": "poll"
+      },
+      {
+        "from": "poll",
+        "to": "g"
+      },
+      {
+        "from": "g",
+        "to": "x-done",
+        "label": {
+          "vi": "done",
+          "en": "done"
+        }
+      },
+      {
+        "from": "g",
+        "to": "review",
+        "label": {
+          "vi": "có element bị gắn cờ",
+          "en": "some elements were flagged"
+        }
+      },
+      {
+        "from": "g",
+        "to": "x-failed",
+        "label": {
+          "vi": "failed",
+          "en": "failed"
+        }
+      },
+      {
+        "from": "review",
+        "to": "x-fixed"
+      }
+    ],
+    "gates": [
+      {
+        "id": "g",
+        "label": {
+          "vi": "Ingestion kết thúc thế nào?",
+          "en": "How did ingestion end?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-done",
+        "label": {
+          "vi": "Sẵn sàng hỏi",
+          "en": "Ready to be asked"
+        }
+      },
+      {
+        "id": "x-failed",
+        "label": {
+          "vi": "Hỏng, xem lý do",
+          "en": "Failed, with a reason to read"
+        }
+      },
+      {
+        "id": "x-fixed",
+        "label": {
+          "vi": "Đã duyệt xong",
+          "en": "Reviewed"
+        }
+      }
+    ]
+  },
+  "excerpts": [],
+  "why": [],
+  "debts": []
+}

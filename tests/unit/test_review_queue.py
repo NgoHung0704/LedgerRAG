@@ -1,7 +1,6 @@
 """Phase 5: the KB-level review queue surfaces flagged, still-usable elements
 newest-doc-first, and drops anything marked unusable."""
 
-import uuid
 
 from tablerag.storage import repositories as repo
 

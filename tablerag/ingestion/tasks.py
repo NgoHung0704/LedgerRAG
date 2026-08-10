@@ -29,7 +29,7 @@ from tablerag.ingestion.chart_check import index_verdict, read_numbers
 from tablerag.ingestion.ocr import describe_figure, guess_language, ocr_page
 from tablerag.ingestion.palette import describe_palette, raster_palette
 from tablerag.ingestion.table_pipeline import parse_table_region, summarize_table
-from tablerag.models.base import ModelProvider, TableCtx, Vector
+from tablerag.models.base import ModelProvider, Vector
 from tablerag.models.registry import get_provider
 from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope

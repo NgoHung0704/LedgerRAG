@@ -1,0 +1,194 @@
+{
+  "id": "query-verify",
+  "functions": [
+    {
+      "name": "Verify",
+      "decl": "class Verify:",
+      "file": "tablerag/query/steps/verify.py",
+      "line": 16,
+      "note": {
+        "vi": "Ô cắm có từ Phase 1 dưới dạng no-op; Phase 4 điền vào. Tắt thì không có tác dụng phụ nào.",
+        "en": "The slot has existed since Phase 1 as a no-op; Phase 4 fills it. Disabled, it has zero side effects."
+      }
+    },
+    {
+      "name": "verify_answer",
+      "decl": "def verify_answer(answer: str, source_texts: list[str],",
+      "file": "tablerag/query/verification.py",
+      "line": 99,
+      "note": {
+        "vi": "Mọi con số trong câu trả lời phải tìm lại được trong ngữ cảnh đã truy hồi.",
+        "en": "Every number in the answer must be found again in the retrieved context."
+      }
+    },
+    {
+      "name": "extract_numbers",
+      "decl": "def extract_numbers(text: str, locale: str | None) -> list[tuple[str, float]]:",
+      "file": "tablerag/query/verification.py",
+      "line": 64,
+      "note": {
+        "vi": "Rút số ra khỏi câu trả lời, có nhận diện định dạng theo locale.",
+        "en": "Pulls the numbers out of the answer, locale-aware."
+      }
+    },
+    {
+      "name": "_derivable",
+      "decl": "def _derivable(target: float, values: list[float]) -> bool:",
+      "file": "tablerag/query/verification.py",
+      "line": 78,
+      "note": {
+        "vi": "Danh sách trắng phép tính: một con số suy ra được từ nguồn thì không bị coi là bịa.",
+        "en": "The arithmetic whitelist: a number derivable from the sources is not an invention."
+      }
+    },
+    {
+      "name": "parse_number",
+      "decl": "def parse_number(raw: str, locale: str | None = None) -> ParsedNumber | None:",
+      "file": "tablerag/core/numbers.py",
+      "line": 137,
+      "note": {
+        "vi": "Locale khai báo luôn thắng; chỉ khi không khai báo mới suy đoán, và suy đoán rất dè dặt.",
+        "en": "The declared locale always wins; inference only happens when none is given, and it is deliberately conservative."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "ans",
+        "label": {
+          "vi": "Câu trả lời đã sinh",
+          "en": "The generated answer"
+        }
+      },
+      {
+        "id": "nums",
+        "label": {
+          "vi": "Rút số trong câu trả lời",
+          "en": "Extract the answer's numbers"
+        }
+      },
+      {
+        "id": "ctx",
+        "label": {
+          "vi": "Rút số trong ngữ cảnh",
+          "en": "Extract the context's numbers"
+        }
+      },
+      {
+        "id": "match",
+        "label": {
+          "vi": "Đối chiếu",
+          "en": "Match them"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "ans",
+        "to": "nums"
+      },
+      {
+        "from": "ans",
+        "to": "ctx"
+      },
+      {
+        "from": "nums",
+        "to": "match"
+      },
+      {
+        "from": "ctx",
+        "to": "match"
+      },
+      {
+        "from": "match",
+        "to": "g"
+      },
+      {
+        "from": "g",
+        "to": "x-ok",
+        "label": {
+          "vi": "tìm thấy, hoặc suy ra được",
+          "en": "found, or derivable"
+        }
+      },
+      {
+        "from": "g",
+        "to": "x-flag",
+        "label": {
+          "vi": "không tìm thấy",
+          "en": "not found"
+        }
+      }
+    ],
+    "gates": [
+      {
+        "id": "g",
+        "label": {
+          "vi": "Con số này có trong nguồn không?",
+          "en": "Is this number in the sources?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-ok",
+        "label": {
+          "vi": "Trả lời như bình thường",
+          "en": "Answered normally"
+        }
+      },
+      {
+        "id": "x-flag",
+        "label": {
+          "vi": "Gắn cờ chưa kiểm chứng được, hiển thị badge",
+          "en": "Flagged as unverified, shown with a badge"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Chuỗi gốc không bao giờ bị sửa — cái gốc luôn còn để đối chiếu.",
+        "en": "The raw string is never modified - the original always remains to check against."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/core/numbers.py",
+        "from": 137,
+        "to": 144,
+        "code": "def parse_number(raw: str, locale: str | None = None) -> ParsedNumber | None:\n    \"\"\"Parse one printed number. `locale` should come from KB/document config;\n    pass None only when genuinely unknown (inference is conservative).\"\"\"\n    if raw is None:\n        return None\n    s = _normalize_spaces(str(raw))\n    if not s:\n        return None"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Đây là mắt xích cuối của lời hứa \"không bao giờ có một con số không nguồn\".",
+        "en": "This is the last link of the promise that there is never a number without a source."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/verification.py",
+        "from": 2,
+        "to": 2,
+        "anchor": "number without a source\"."
+      }
+    },
+    {
+      "text": {
+        "vi": "\"1,234\" một mình có thể là 1234 hoặc 1.234; khi thật sự không quyết được thì đánh dấu mơ hồ chứ không đoán bừa.",
+        "en": "\"1,234\" alone could be 1234 or 1.234; when it genuinely cannot be decided the result is marked ambiguous rather than guessed."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/numbers.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "and marks its result `ambiguous` when the string genuinely can't be decided"
+      }
+    }
+  ],
+  "debts": []
+}

@@ -1,0 +1,301 @@
+{
+  "id": "query-route-retrieve",
+  "functions": [
+    {
+      "name": "SingleKBRouter",
+      "decl": "class SingleKBRouter:",
+      "file": "tablerag/query/steps/router.py",
+      "line": 32,
+      "note": {
+        "vi": "Router của Phase 1: đúng một KB, không gọi model.",
+        "en": "The Phase 1 router: exactly one knowledge base, no model call."
+      }
+    },
+    {
+      "name": "LLMRouter",
+      "decl": "class LLMRouter:",
+      "file": "tablerag/query/steps/router.py",
+      "line": 89,
+      "note": {
+        "vi": "Router Phase 5: đọc mô tả từng KB, chọn được nhiều, hỏng thì suy biến về tất cả.",
+        "en": "The Phase 5 router: reads each KB description, may select several, and on failure degrades to all."
+      }
+    },
+    {
+      "name": "parse_router_choice",
+      "decl": "def parse_router_choice(text: str, n: int) -> list[int]:",
+      "file": "tablerag/query/steps/router.py",
+      "line": 63,
+      "note": {
+        "vi": "Đọc lựa chọn của model một cách chịu lỗi — model trả rác cũng không được làm chết truy vấn.",
+        "en": "Reads the model's choice forgivingly - a garbled reply may not kill the query."
+      }
+    },
+    {
+      "name": "Retrieve",
+      "decl": "class Retrieve:",
+      "file": "tablerag/query/steps/retrieve.py",
+      "line": 17,
+      "note": {
+        "vi": "Dense cộng sparse, hợp nhất RRF trên cả ba collection.",
+        "en": "Dense plus sparse, fused with RRF across all three collections."
+      }
+    },
+    {
+      "name": "Rerank",
+      "decl": "class Rerank:",
+      "file": "tablerag/query/steps/rerank.py",
+      "line": 49,
+      "note": {
+        "vi": "Xếp lại bằng cross-encoder khi vai trò reranker bật được.",
+        "en": "Reorders with the cross-encoder when the reranker role is available."
+      }
+    },
+    {
+      "name": "diversify_by_document",
+      "decl": "def diversify_by_document(hits: list, k: int) -> list:",
+      "file": "tablerag/query/steps/rerank.py",
+      "line": 23,
+      "note": {
+        "vi": "Cho mỗi tài liệu khối tốt nhất của nó trước, để một tài liệu dài không chiếm hết đầu ngữ cảnh.",
+        "en": "Gives each document its best block first, so one long document cannot own the head of the context."
+      }
+    },
+    {
+      "name": "sparse_vector",
+      "decl": "def sparse_vector(text: str) -> tuple[list[int], list[float]]:",
+      "file": "tablerag/core/sparse.py",
+      "line": 48,
+      "note": {
+        "vi": "Vector sparse tính tại chỗ bằng Python thuần — không dựng thêm máy chủ suy luận nào.",
+        "en": "The sparse vector computed here in pure Python - no extra inference server is stood up."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "q",
+        "label": {
+          "vi": "Câu hỏi",
+          "en": "The question"
+        }
+      },
+      {
+        "id": "route",
+        "label": {
+          "vi": "Chọn KB",
+          "en": "Choose the knowledge bases"
+        }
+      },
+      {
+        "id": "dense",
+        "label": {
+          "vi": "Tìm dense",
+          "en": "Dense search"
+        }
+      },
+      {
+        "id": "sparse",
+        "label": {
+          "vi": "Tìm sparse",
+          "en": "Sparse search"
+        }
+      },
+      {
+        "id": "rrf",
+        "label": {
+          "vi": "Hợp nhất RRF",
+          "en": "RRF fusion"
+        }
+      },
+      {
+        "id": "rank",
+        "label": {
+          "vi": "Xếp lại",
+          "en": "Reorder"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "q",
+        "to": "route"
+      },
+      {
+        "from": "route",
+        "to": "g-route"
+      },
+      {
+        "from": "g-route",
+        "to": "dense",
+        "label": {
+          "vi": "chọn được KB",
+          "en": "knowledge bases chosen"
+        }
+      },
+      {
+        "from": "g-route",
+        "to": "all",
+        "label": {
+          "vi": "router hỏng",
+          "en": "the router failed"
+        }
+      },
+      {
+        "from": "all",
+        "to": "dense",
+        "label": {
+          "vi": "tìm TẤT CẢ KB",
+          "en": "search ALL knowledge bases"
+        }
+      },
+      {
+        "from": "route",
+        "to": "sparse"
+      },
+      {
+        "from": "dense",
+        "to": "rrf"
+      },
+      {
+        "from": "sparse",
+        "to": "rrf"
+      },
+      {
+        "from": "rrf",
+        "to": "g-rerank"
+      },
+      {
+        "from": "g-rerank",
+        "to": "rank",
+        "label": {
+          "vi": "reranker gọi được",
+          "en": "the reranker answers"
+        }
+      },
+      {
+        "from": "g-rerank",
+        "to": "x-fallback",
+        "label": {
+          "vi": "tắt hoặc không với tới được",
+          "en": "off, or unreachable"
+        }
+      },
+      {
+        "from": "rank",
+        "to": "x-ranked"
+      }
+    ],
+    "gates": [
+      {
+        "id": "g-route",
+        "label": {
+          "vi": "Router có chọn được KB nào không?",
+          "en": "Did the router pick any knowledge base?"
+        }
+      },
+      {
+        "id": "g-rerank",
+        "label": {
+          "vi": "Vai trò reranker có dùng được không?",
+          "en": "Is the reranker role usable?"
+        }
+      }
+    ],
+    "exits": [
+      {
+        "id": "x-ranked",
+        "label": {
+          "vi": "Ứng viên đã xếp hạng",
+          "en": "The ranked candidates"
+        }
+      },
+      {
+        "id": "x-fallback",
+        "label": {
+          "vi": "Thứ tự dự phòng đa dạng theo tài liệu",
+          "en": "The document-diversified fallback ordering"
+        }
+      },
+      {
+        "id": "all",
+        "label": {
+          "vi": "Suy biến về tìm tất cả",
+          "en": "Degrade to searching all"
+        }
+      }
+    ]
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Router Phase 1 nằm sẵn ở đúng vị trí cuối cùng của nó.",
+        "en": "The Phase 1 router, already sitting in its final slot."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/query/steps/router.py",
+        "from": 32,
+        "to": 38,
+        "code": "class SingleKBRouter:\n    async def run(self, ctx: QueryContext) -> QueryContext:\n        ctx.routed_kb_ids = [ctx.kb_id]\n        ctx.routing = {\"mode\": \"single\", \"kb_ids\": [str(ctx.kb_id)]}\n        return ctx\n\n"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Cô lập KB và định tuyến là ý tưởng nền của sản phẩm, không phải một tính năng thêm vào.",
+        "en": "KB isolation plus routing is the product's founding idea, not a feature added on top."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/router.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "KB isolation + routing is the product's founding idea"
+      }
+    },
+    {
+      "text": {
+        "vi": "Thay router được dễ vì mọi thứ phía sau vốn đã lọc theo routed_kb_ids.",
+        "en": "Swapping the router was plug-in only because everything downstream already filters on routed_kb_ids."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/router.py",
+        "from": 6,
+        "to": 6,
+        "anchor": "downstream already filters by `routed_kb_ids`"
+      }
+    },
+    {
+      "text": {
+        "vi": "Không dựng thêm máy chủ suy luận chỉ để khớp từ khoá: vector sparse tính bằng Python thuần trên CPU.",
+        "en": "No extra inference server just for lexical matching: the sparse vectors are computed in pure Python on the CPU."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/sparse.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "would violate the \"one-command self-host\" story"
+      }
+    }
+  ],
+  "debts": [
+    {
+      "text": {
+        "vi": "Hai thang lương cùng hình dạng trong một tài liệu: tóm tắt tự động mơ hồ không phân biệt nổi. Đây là ca khó của truy hồi.",
+        "en": "Two same-shaped pay scales in one document: vague auto-summaries cannot tell them apart. A retrieval hard case."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 22,
+        "to": 22,
+        "anchor": "One documented miss (a1)"
+      }
+    }
+  ]
+}

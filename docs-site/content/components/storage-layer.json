@@ -1,0 +1,200 @@
+{
+  "id": "storage-layer",
+  "functions": [
+    {
+      "name": "session_scope",
+      "decl": "def session_scope() -> Iterator[Session]:",
+      "file": "tablerag/storage/db.py",
+      "line": 37,
+      "note": {
+        "vi": "Một session, một giao dịch, đóng đúng chỗ.",
+        "en": "One session, one transaction, closed in the right place."
+      }
+    },
+    {
+      "name": "add_element",
+      "decl": "def add_element(s: Session, doc_id: uuid.UUID, page: int, bbox: list[float],",
+      "file": "tablerag/storage/repositories.py",
+      "line": 208,
+      "note": {
+        "vi": "Đường duy nhất để ingestion ghi một element.",
+        "en": "The only way ingestion writes an element."
+      }
+    },
+    {
+      "name": "get_chunk_contexts",
+      "decl": "def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkContext]:",
+      "file": "tablerag/storage/repositories.py",
+      "line": 269,
+      "note": {
+        "vi": "Đường duy nhất để query hydrate một hit thành nguồn có xuất xứ.",
+        "en": "The only way query hydrates a hit into a source with provenance."
+      }
+    },
+    {
+      "name": "snapshot_element",
+      "decl": "def snapshot_element(s: Session, element_id: uuid.UUID, action: str) -> None:",
+      "file": "tablerag/storage/repositories.py",
+      "line": 405,
+      "note": {
+        "vi": "Chụp lại element trước khi sửa, để lấy lại được đúng một lần sửa.",
+        "en": "Snapshots an element before an edit, so exactly one edit can be taken back."
+      }
+    },
+    {
+      "name": "VectorStore",
+      "decl": "class VectorStore:",
+      "file": "tablerag/storage/qdrant.py",
+      "line": 73,
+      "note": {
+        "vi": "Bọc Qdrant: ba collection, mỗi điểm mang kb_id, doc_id, element_id.",
+        "en": "The Qdrant wrapper: three collections, every point carrying kb_id, doc_id and element_id."
+      }
+    },
+    {
+      "name": "build_object_store",
+      "decl": "def build_object_store(cfg: ObjectStoreConfig) -> ObjectStore:",
+      "file": "tablerag/storage/object_store.py",
+      "line": 120,
+      "note": {
+        "vi": "Hai backend sau một interface: MinIO cho compose, filesystem cho máy lẻ.",
+        "en": "Two backends behind one interface: MinIO for compose, the filesystem for a single box."
+      }
+    }
+  ],
+  "flow": {
+    "nodes": [
+      {
+        "id": "ing",
+        "label": {
+          "vi": "ingestion/ ghi",
+          "en": "ingestion/ writes"
+        }
+      },
+      {
+        "id": "repo",
+        "label": {
+          "vi": "Hàm repository",
+          "en": "A repository function"
+        }
+      },
+      {
+        "id": "pg",
+        "label": {
+          "vi": "Postgres",
+          "en": "Postgres"
+        }
+      },
+      {
+        "id": "qd",
+        "label": {
+          "vi": "Qdrant",
+          "en": "Qdrant"
+        }
+      },
+      {
+        "id": "obj",
+        "label": {
+          "vi": "Object store",
+          "en": "Object store"
+        }
+      },
+      {
+        "id": "qry",
+        "label": {
+          "vi": "query/ đọc",
+          "en": "query/ reads"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "ing",
+        "to": "repo"
+      },
+      {
+        "from": "repo",
+        "to": "pg"
+      },
+      {
+        "from": "repo",
+        "to": "qd"
+      },
+      {
+        "from": "repo",
+        "to": "obj"
+      },
+      {
+        "from": "pg",
+        "to": "qry"
+      },
+      {
+        "from": "qd",
+        "to": "qry"
+      },
+      {
+        "from": "obj",
+        "to": "qry"
+      }
+    ],
+    "gates": [],
+    "exits": []
+  },
+  "excerpts": [
+    {
+      "caption": {
+        "vi": "Mọi lời gọi Postgres đều đi qua đúng khối này.",
+        "en": "Every Postgres call goes through exactly this block."
+      },
+      "cite": {
+        "kind": "excerpt",
+        "file": "tablerag/storage/db.py",
+        "from": 37,
+        "to": 46,
+        "code": "def session_scope() -> Iterator[Session]:\n    session = get_session_factory()()\n    try:\n        yield session\n        session.commit()\n    except Exception:\n        session.rollback()\n        raise\n    finally:\n        session.close()"
+      }
+    }
+  ],
+  "why": [
+    {
+      "text": {
+        "vi": "Nguyên tắc số 1: hai pipeline không bao giờ import nhau, và có một test kiến trúc canh chuyện đó.",
+        "en": "Principle 1: the two pipelines never import each other, and an architecture test stands watch over it."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/__init__.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "never import each other; they communicate only through `storage/` and share"
+      }
+    },
+    {
+      "text": {
+        "vi": "Mỗi điểm mang kb_id, doc_id, element_id để lọc payload và để truy nguyên — vector không nguồn thì vô nghĩa.",
+        "en": "Every point carries kb_id, doc_id and element_id for payload filtering and for provenance - a vector with no source means nothing."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "{kb_id, doc_id, element_id, (chunk_id | record_id)} for payload filtering and"
+      }
+    },
+    {
+      "text": {
+        "vi": "JSONB trên Postgres, JSON thường khi chạy SQLite, để test đơn vị không cần dựng dịch vụ.",
+        "en": "JSONB on Postgres, plain JSON on SQLite, so the unit tests need no services."
+      },
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "JSONB on Postgres with a plain-JSON fallback so unit tests can run on SQLite"
+      }
+    }
+  ],
+  "debts": []
+}

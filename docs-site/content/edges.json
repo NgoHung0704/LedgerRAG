@@ -1,0 +1,2943 @@
+{
+  "edges": [
+    {
+      "id": "fe-api-kb",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "KB",
+        "en": "Knowledge bases"
+      },
+      "summary": {
+        "vi": "Vòng đời một KB, cộng bản nháp mô tả và hàng đợi duyệt ở mức KB.",
+        "en": "The life of a knowledge base, plus the description draft and the KB-level review queue."
+      },
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/kbs",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Tên, locale và các thiết lập ban đầu của KB.",
+            "en": "The knowledge base's name, locale and initial settings."
+          },
+          "response": {
+            "vi": "KB vừa tạo, kèm id dùng cho mọi lời gọi sau.",
+            "en": "The knowledge base as created, with the id every later call uses."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 32,
+            "to": 32,
+            "anchor": "def create_kb(body: KBCreate) -> KBOut:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/kbs",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Không có tham số.",
+            "en": "No parameters."
+          },
+          "response": {
+            "vi": "Toàn bộ KB kèm số tài liệu, dùng cho bộ chọn phạm vi khi chat.",
+            "en": "Every knowledge base with its document count, feeding the chat scope picker."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 48,
+            "to": 48,
+            "anchor": "def list_kbs() -> list[KBOut]:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/kbs/{kb_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id của KB trên đường dẫn.",
+            "en": "The knowledge base id on the path."
+          },
+          "response": {
+            "vi": "Một KB, gồm mô tả mà router đọc để định tuyến.",
+            "en": "One knowledge base, including the description the router reads."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 161,
+            "to": 161,
+            "anchor": "def get_kb(kb_id: uuid.UUID) -> KBOut:"
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/kbs/{kb_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Các trường cần đổi: locale, mức kiểm chứng, tên, mô tả.",
+            "en": "The fields to change: locale, verification level, name, description."
+          },
+          "response": {
+            "vi": "KB sau khi sửa.",
+            "en": "The knowledge base after the change."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 66,
+            "to": 66,
+            "anchor": "def update_kb(kb_id: uuid.UUID, body: KBUpdate) -> KBOut:"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/kbs/{kb_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id của KB cần xoá.",
+            "en": "The id of the knowledge base to delete."
+          },
+          "response": {
+            "vi": "204 không nội dung. Vector và file bị xoá TRƯỚC cascade Postgres, để một lỗi muộn không bỏ lại vector mồ côi vẫn trả lời được.",
+            "en": "204 with no body. Vectors and files are purged BEFORE the Postgres cascade, so a late failure cannot leave orphaned vectors still answering."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 138,
+            "to": 138,
+            "anchor": "def delete_kb(kb_id: uuid.UUID, user: User = Depends(current_user)) -> Response:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/kbs/{kb_id}/suggest-description",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id của KB; nội dung lấy từ vài tài liệu đầu tiên.",
+            "en": "The knowledge base id; the content comes from its first documents."
+          },
+          "response": {
+            "vi": "Bản nháp mô tả để người dùng duyệt rồi tự lưu bằng PATCH — mô tả yếu làm router mù.",
+            "en": "A draft description for the user to review and save with PATCH - a weak description blinds the router."
+          },
+          "errors": [
+            {
+              "code": "400",
+              "meaning": {
+                "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
+                "en": "The request is malformed, or a precondition is unmet."
+              }
+            },
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 94,
+            "to": 94,
+            "anchor": "async def suggest_description(kb_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/kbs/{kb_id}/needs-review",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id của KB.",
+            "en": "The knowledge base id."
+          },
+          "response": {
+            "vi": "Hàng đợi duyệt ở mức KB: những element parser tự nhận là không chắc.",
+            "en": "The KB-level review queue: the elements the parser flagged as unsure."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 124,
+            "to": 124,
+            "anchor": "def needs_review(kb_id: uuid.UUID) -> dict:"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-documents",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Tài liệu",
+        "en": "Documents"
+      },
+      "summary": {
+        "vi": "Tải lên, chạy lại, xoá, và mọi đường dẫn tới bằng chứng gốc: ảnh trang, PDF gốc, bản xuất parse.",
+        "en": "Upload, reprocess, delete, and every path back to the original evidence: page images, the source PDF, the parse export."
+      },
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/kbs/{kb_id}/documents",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "multipart với một tệp PDF.",
+            "en": "A multipart body carrying one PDF."
+          },
+          "response": {
+            "vi": "202 kèm bản ghi tài liệu ở trạng thái đang xử lý; việc thật chạy ở worker.",
+            "en": "202 with the document record in a pending state; the real work runs in the worker."
+          },
+          "errors": [
+            {
+              "code": "400",
+              "meaning": {
+                "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
+                "en": "The request is malformed, or a precondition is unmet."
+              }
+            },
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            },
+            {
+              "code": "413",
+              "meaning": {
+                "vi": "Tệp vượt quá giới hạn kích thước cho phép.",
+                "en": "The file exceeds the permitted size limit."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 36,
+            "to": 36,
+            "anchor": "async def upload_document(kb_id: uuid.UUID, file: UploadFile,"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/kbs/{kb_id}/documents",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id của KB.",
+            "en": "The knowledge base id."
+          },
+          "response": {
+            "vi": "Tài liệu của KB kèm trạng thái ingestion để giao diện theo dõi.",
+            "en": "The KB's documents with their ingestion status for the interface to track."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 68,
+            "to": 68,
+            "anchor": "def list_documents(kb_id: uuid.UUID) -> list[DocumentOut]:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/documents/{doc_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu.",
+            "en": "The document id."
+          },
+          "response": {
+            "vi": "Một tài liệu kèm trạng thái và thống kê.",
+            "en": "One document with its status and counts."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 77,
+            "to": 77,
+            "anchor": "def get_document(doc_id: uuid.UUID) -> DocumentOut:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/documents/{doc_id}/reprocess",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu.",
+            "en": "The document id."
+          },
+          "response": {
+            "vi": "Tài liệu được đưa lại vào hàng đợi; 409 nếu nó đang chạy dở.",
+            "en": "The document is queued again; 409 when one is already in flight."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            },
+            {
+              "code": "409",
+              "meaning": {
+                "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
+                "en": "Conflicts with the object's current state."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 102,
+            "to": 102,
+            "anchor": "def reprocess_document(doc_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/documents/{doc_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu.",
+            "en": "The document id."
+          },
+          "response": {
+            "vi": "204: gỡ khỏi cả ba kho — vector, file, Postgres.",
+            "en": "204: removed from all three stores - vectors, files, Postgres."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 138,
+            "to": 138,
+            "anchor": "def delete_document(doc_id: uuid.UUID) -> Response:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/kbs/{kb_id}/documents/bulk-delete",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Danh sách id tài liệu; chỉ tài liệu thuộc KB này bị đụng tới.",
+            "en": "A list of document ids; only documents belonging to this KB are touched."
+          },
+          "response": {
+            "vi": "Số tài liệu đã xoá. Gộp lô chứ không lặp từng cái: một lần xoá vector theo MatchAny cho mỗi collection, tránh việc trình duyệt huỷ request.",
+            "en": "How many were deleted. Batched, not per-document: one MatchAny vector delete per collection, which is what stops the browser aborting the fetch."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 146,
+            "to": 146,
+            "anchor": "def bulk_delete_documents(kb_id: uuid.UUID, body: BulkDeleteRequest) -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/kbs/{kb_id}/documents/bulk-reprocess",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Danh sách id tài liệu cần chạy lại.",
+            "en": "A list of document ids to run again."
+          },
+          "response": {
+            "vi": "Số tài liệu đã xếp hàng; cái nào đang chạy dở thì bỏ qua chứ không xếp hai lần.",
+            "en": "How many were queued; one already in flight is skipped rather than queued twice."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 173,
+            "to": 173,
+            "anchor": "def bulk_reprocess_documents(kb_id: uuid.UUID, body: BulkDeleteRequest,"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/documents/{doc_id}/pages/{page}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu và số trang.",
+            "en": "The document id and the page number."
+          },
+          "response": {
+            "vi": "Element, chunk, record và vector của trang biến mất; FILE GỐC và ảnh render trang thì ở lại, nên chạy lại ingestion là trang quay về nguyên vẹn.",
+            "en": "The page's elements, chunks, records and vectors go; the ORIGINAL file and the page render stay, so reprocessing brings the page back untouched."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 195,
+            "to": 195,
+            "anchor": "def delete_page(doc_id: uuid.UUID, page: int,"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/documents/{doc_id}/elements",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu.",
+            "en": "The document id."
+          },
+          "response": {
+            "vi": "Toàn bộ những gì ingestion tạo ra: từng element với ba dạng biểu diễn của bảng và liên kết tới ảnh crop.",
+            "en": "Everything ingestion produced: each element with the three table representations and links to its crop image."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 227,
+            "to": 227,
+            "anchor": "def get_document_elements(doc_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/documents/{doc_id}/pages/{page}/image",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu và số trang.",
+            "en": "The document id and the page number."
+          },
+          "response": {
+            "vi": "Ảnh render của trang — đích bấm ngược của mọi trích dẫn. Cùng URL nhưng nội dung đổi khi chạy lại, nên luôn revalidate kèm ETag.",
+            "en": "The stored page render - the click-through target of every citation. The URL never changes but the content does on reprocessing, so it always revalidates, with an ETag to make that free."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 242,
+            "to": 242,
+            "anchor": "def get_page_image(doc_id: uuid.UUID, page: int, request: Request) -> Response:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/documents/{doc_id}/boilerplate-scan",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu.",
+            "en": "The document id."
+          },
+          "response": {
+            "vi": "Chỉ đọc: các ứng viên header/footer/số trang lặp lại. Không đổi gì — người duyệt xác nhận trước.",
+            "en": "Read-only: the running header, footer and page-number candidates. Nothing changes - the reviewer confirms first."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 264,
+            "to": 264,
+            "anchor": "def scan_boilerplate(doc_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/documents/{doc_id}/boilerplate-exclude",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Danh sách element đã được xác nhận là boilerplate.",
+            "en": "The elements confirmed as boilerplate."
+          },
+          "response": {
+            "vi": "Vector của chúng bị gỡ khỏi truy hồi; element và ảnh vẫn còn.",
+            "en": "Their vectors leave retrieval; the element and its image stay."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 287,
+            "to": 287,
+            "anchor": "def exclude_boilerplate(doc_id: uuid.UUID, body: BoilerplateExcludeRequest,"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/documents/{doc_id}/export",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu.",
+            "en": "The document id."
+          },
+          "response": {
+            "vi": "Bản parse dạng văn bản thuần, giữ nguyên dạng thô và nhất là các chunk đúng như đã index — bản tóm tắt gọn gàng của một parse sai không chứng minh gì.",
+            "en": "The parse as plain text, holding the raw forms and above all the chunks exactly as indexed - a tidy summary of a bad parse is evidence of nothing."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 313,
+            "to": 313,
+            "anchor": "def export_document_parse(doc_id: uuid.UUID) -> Response:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/documents/{doc_id}/original",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id tài liệu.",
+            "en": "The document id."
+          },
+          "response": {
+            "vi": "Chính tệp PDF gốc, để đối chiếu bản parse ở độ trung thực đầy đủ.",
+            "en": "The original PDF itself, so the parse can be compared against it at full fidelity."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/documents.py",
+            "from": 345,
+            "to": 345,
+            "anchor": "def get_original_document(doc_id: uuid.UUID) -> Response:"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-elements",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Element và duyệt lại",
+        "en": "Elements and review"
+      },
+      "summary": {
+        "vi": "Nơi con người sửa được máy: tách, gộp, đọc lại, hạ cấp, duyệt. Phần lớn trả về ĐỀ XUẤT chứ không tự ghi.",
+        "en": "Where a human corrects the machine: split, merge, reread, demote, approve. Most of these return a PROPOSAL rather than writing."
+      },
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/elements/{element_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "Một element đã parse, kèm mọi dạng biểu diễn của nó.",
+            "en": "One parsed element with every representation it carries."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 27,
+            "to": 27,
+            "anchor": "def get_element(element_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/elements/{element_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Nội dung đã sửa tay.",
+            "en": "The hand-corrected content."
+          },
+          "response": {
+            "vi": "Element được lưu rồi index lại, nên câu trả lời dùng đúng dữ liệu đã sửa.",
+            "en": "The element is saved and re-indexed, so answers use the corrected data."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 37,
+            "to": 37,
+            "anchor": "async def edit_element(element_id: uuid.UUID, body: ElementEdit) -> dict:"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/elements/{element_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "204: chunk, record và vector đi theo. Tệp gốc không bị đụng, nên chạy lại ingestion là nó quay về.",
+            "en": "204: its chunks, records and vectors go with it. The original file is untouched, so reprocessing brings it back."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 57,
+            "to": 57,
+            "anchor": "def delete_element(element_id: uuid.UUID) -> Response:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/undo",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "Trả element về trạng thái trước lần sửa cuối rồi index lại — lấy lại MỘT element mà không huỷ mọi chỉnh sửa khác trong tài liệu.",
+            "en": "Puts the element back as it was before the last save and re-indexes - it takes back ONE element without discarding every other correction."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 77,
+            "to": 77,
+            "anchor": "async def undo_element_edit(element_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/reread",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element và mode đọc lại.",
+            "en": "The element id and the reread mode."
+          },
+          "response": {
+            "vi": "Một ĐỀ XUẤT, không ghi gì: VLM đọc lại cả TRANG, người duyệt so với ảnh gốc rồi mới lưu qua đường sửa element thông thường.",
+            "en": "A PROPOSAL that writes nothing: the VLM re-reads the whole PAGE and the reviewer compares it with the original image before saving it the ordinary way."
+          },
+          "errors": [
+            {
+              "code": "400",
+              "meaning": {
+                "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
+                "en": "The request is malformed, or a precondition is unmet."
+              }
+            },
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            },
+            {
+              "code": "502",
+              "meaning": {
+                "vi": "Endpoint model phía sau không trả lời được.",
+                "en": "The upstream model endpoint could not answer."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 98,
+            "to": 98,
+            "anchor": "async def reread_element(element_id: uuid.UUID, mode: str = \"structure\") -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/assist",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Nội dung đang mở trong trình soạn, chưa lưu nên đi kèm request.",
+            "en": "The content open in the editor, unsaved, so it travels with the request."
+          },
+          "response": {
+            "vi": "Trả lời của trợ lý và, khi có thay đổi, toàn bộ nội dung mới dưới dạng đề xuất. Nó được phép sắp xếp lại nhưng không bao giờ thêm dữ kiện.",
+            "en": "The assistant's reply and, when it changed something, the complete new content as a proposal. It may rearrange but never adds facts."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            },
+            {
+              "code": "502",
+              "meaning": {
+                "vi": "Endpoint model phía sau không trả lời được.",
+                "en": "The upstream model endpoint could not answer."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 145,
+            "to": 145,
+            "anchor": "async def assist_element_edit(element_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/derive",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "HTML đang được sửa trong trình soạn.",
+            "en": "The HTML being edited."
+          },
+          "response": {
+            "vi": "Record được dựng lại tất định từ HTML và summary sinh lại; nếu không, lưới đúng trên màn hình mà câu trả lời vẫn trích số từ parse cũ.",
+            "en": "Records are re-derived deterministically from the HTML and the summary is regenerated; otherwise the grid is right on screen while answers still quote numbers from the old parse."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 178,
+            "to": 178,
+            "anchor": "async def derive_element_records(element_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/recheck",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "Đề xuất: vùng bảng được render lại ở gấp đôi DPI lúc ingest, lấy lưới text-layer làm gợi ý, đọc hai lần để chấm điểm đồng thuận trước khi lưu.",
+            "en": "A proposal: the region is re-rendered at double the ingest DPI, the text-layer grid is used as a hint, and the table is read twice so the agreement is visible before saving."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 196,
+            "to": 196,
+            "anchor": "async def recheck_element(element_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/split",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "\"Đây là hai bảng\": model chỉ được hỏi ĐƯỜNG CẮT ở đâu, mỗi phần sau đó render lại từ PDF và parse qua đúng hợp đồng cũ, có bbox và crop riêng.",
+            "en": "\"These are two tables\": the model is asked only WHERE the seam is; each part is re-rendered from the PDF and parsed through the ordinary contract, with its own bbox and crop."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "409",
+              "meaning": {
+                "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
+                "en": "Conflicts with the object's current state."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 214,
+            "to": 214,
+            "anchor": "async def split_element_table(element_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/merge",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Danh sách bảng do người duyệt chọn — không còn đoán \"bảng kế tiếp\".",
+            "en": "The tables the reviewer chose - no more guessing at \"the next one\"."
+          },
+          "response": {
+            "vi": "\"Đây là một bảng\": cái đầu theo thứ tự đọc giữ danh tính, undo khôi phục nội dung cũ của nó, các cái còn lại biến mất tới khi chạy lại tài liệu.",
+            "en": "\"These are one table\": the first in reading order keeps its identity, undo restores its previous content, and the others are gone until the document is reprocessed."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            },
+            {
+              "code": "409",
+              "meaning": {
+                "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
+                "en": "Conflicts with the object's current state."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 249,
+            "to": 249,
+            "anchor": "async def merge_element_tables(body: MergeRequest) -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/to-table",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Markdown hoặc HTML đang mở trong trình soạn.",
+            "en": "The markdown or HTML open in the editor."
+          },
+          "response": {
+            "vi": "\"Đoạn text này là bảng\": nâng lại thành bảng, nếu không thì một bảng vừa cứu được vẫn nằm đó dưới dạng TEXT, không record, không summary định tuyến.",
+            "en": "\"This text is a table\": promotes it back, otherwise a table just recovered stays TEXT - unsearchable as a table, with no records and no routing summary."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "409",
+              "meaning": {
+                "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
+                "en": "Conflicts with the object's current state."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 287,
+            "to": 287,
+            "anchor": "async def convert_element_to_table(element_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/row-merging",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Cờ merged bật hay tắt.",
+            "en": "The merged flag, on or off."
+          },
+          "response": {
+            "vi": "Chỉ đổi cách hiển thị: record vốn dựng từ lưới đã forward-fill nên không index lại, không câu trả lời nào đổi, và cờ cần duyệt cũng không được xoá.",
+            "en": "Display only: records come from a forward-filled grid, so nothing is re-indexed, no answer changes, and the review flag is not cleared either."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 312,
+            "to": 312,
+            "anchor": "async def set_element_row_merging(element_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/convert-to-text",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "\"Đây không phải bảng\": chính chữ trong các ô thành text của element (không bịa gì), record và lưới bỏ đi, ảnh crop ở lại nên vẫn truy nguyên được.",
+            "en": "\"This is not a table\": the cells' own words become the element's text (nothing invented), the records and grid go away, and the crop stays so provenance is intact."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 332,
+            "to": 332,
+            "anchor": "async def convert_element_to_text(element_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/approve",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "Người duyệt xác nhận bản parse: xoá cờ needs_review, câu trả lời dùng bảng này trở lại bình thường.",
+            "en": "The reviewer confirmed the parse: the needs_review flag is cleared and answers using this table return to normal."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 353,
+            "to": 353,
+            "anchor": "def approve_element(element_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/elements/{element_id}/unusable",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "Người duyệt bác bản parse: record rời khỏi truy hồi, ảnh gốc ở lại làm đường lui trung thực.",
+            "en": "The reviewer rejected the parse: the records leave retrieval and the original image stays for the honest fallback."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 366,
+            "to": 366,
+            "anchor": "def mark_element_unusable(element_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/elements/{element_id}/image",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id element.",
+            "en": "The element id."
+          },
+          "response": {
+            "vi": "Ảnh crop — thẩm quyền mà người duyệt đối chiếu. URL không đổi nhưng nội dung thì có, nên no-cache nghĩa là \"luôn hỏi lại\", và ETag làm việc hỏi đó miễn phí.",
+            "en": "The crop - the authority the reviewer reads the parse against. Its URL never changes but its content does, so no-cache means \"always ask\", and the ETag makes asking free."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/elements.py",
+            "from": 382,
+            "to": 382,
+            "anchor": "def get_element_image(element_id: uuid.UUID, request: Request) -> Response:"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-chat",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Chat",
+        "en": "Chat"
+      },
+      "summary": {
+        "vi": "Ba đường hỏi, cùng một hợp đồng SSE, cùng một bộ cờ thất bại trung thực.",
+        "en": "Three ways to ask, one SSE contract, one set of honest-failure flags."
+      },
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/kbs/{kb_id}/chat",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Câu hỏi, trong phạm vi đúng một KB.",
+            "en": "The question, scoped to exactly one knowledge base."
+          },
+          "response": {
+            "vi": "Luồng SSE: câu trả lời chảy về kèm trích dẫn mức trang và các cờ thất bại trung thực.",
+            "en": "An SSE stream: the answer arrives with page-level citations and the honest-failure flags."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/chat.py",
+            "from": 50,
+            "to": 50,
+            "anchor": "async def chat(kb_id: uuid.UUID, body: ChatRequest,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/chat",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Câu hỏi, kèm kb_ids nếu người dùng muốn ghim tay đè lên router.",
+            "en": "The question, plus kb_ids when the user pins the scope over the router."
+          },
+          "response": {
+            "vi": "Cùng hợp đồng SSE, thêm trường routing trên sự kiện done cho biết router đã chọn KB nào.",
+            "en": "The same SSE contract plus a routing field on the done event naming which knowledge bases the router picked."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/chat.py",
+            "from": 119,
+            "to": 119,
+            "anchor": "async def chat_multi(body: MultiChatRequest,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/messages/{message_id}/feedback",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Ngón cái lên hoặc xuống cho một câu trả lời.",
+            "en": "A thumbs up or down on one answer."
+          },
+          "response": {
+            "vi": "Ghi nhận phản hồi: câu bị chê chính là câu đáng đưa vào bộ eval.",
+            "en": "The feedback is recorded: a thumbs-down answer is exactly the question worth adding to the eval set."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/chat.py",
+            "from": 26,
+            "to": 26,
+            "anchor": "async def message_feedback(message_id: uuid.UUID, body: FeedbackRequest) -> dict:"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-assistants",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Trợ lý và hội thoại",
+        "en": "Assistants and conversations"
+      },
+      "summary": {
+        "vi": "Trợ lý gói sẵn phạm vi KB và chỉ dẫn; hội thoại lưu lại để phát lại được.",
+        "en": "An assistant packages a KB scope and its instructions; conversations are saved so they can be replayed."
+      },
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/assistants",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Không có tham số.",
+            "en": "No parameters."
+          },
+          "response": {
+            "vi": "Mọi trợ lý đã cấu hình.",
+            "en": "Every configured assistant."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 52,
+            "to": 52,
+            "anchor": "def list_assistants() -> list[AssistantOut]:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/assistants",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Tên, các KB thuộc phạm vi, và chỉ dẫn riêng.",
+            "en": "A name, the knowledge bases in its scope, and its own instructions."
+          },
+          "response": {
+            "vi": "201 kèm trợ lý vừa tạo.",
+            "en": "201 with the assistant as created."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 58,
+            "to": 58,
+            "anchor": "def create_assistant(body: AssistantCreate,"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/assistants/{assistant_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id trợ lý.",
+            "en": "The assistant id."
+          },
+          "response": {
+            "vi": "Một trợ lý kèm phạm vi và chỉ dẫn.",
+            "en": "One assistant with its scope and instructions."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 75,
+            "to": 75,
+            "anchor": "def get_assistant(assistant_id: uuid.UUID) -> AssistantOut:"
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/assistants/{assistant_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Các trường cần đổi.",
+            "en": "The fields to change."
+          },
+          "response": {
+            "vi": "Trợ lý sau khi sửa.",
+            "en": "The assistant after the change."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 84,
+            "to": 84,
+            "anchor": "def update_assistant(assistant_id: uuid.UUID, body: AssistantUpdate,"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/assistants/{assistant_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id trợ lý.",
+            "en": "The assistant id."
+          },
+          "response": {
+            "vi": "204 không nội dung.",
+            "en": "204 with no body."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 112,
+            "to": 112,
+            "anchor": "def delete_assistant(assistant_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/assistants/{assistant_id}/chat",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Câu hỏi gửi cho một trợ lý.",
+            "en": "A question put to one assistant."
+          },
+          "response": {
+            "vi": "Cùng hợp đồng SSE: các KB của trợ lý là toàn bộ không gian tìm, chỉ dẫn của nó định hình câu trả lời, và luồng hội thoại được lưu dưới nó.",
+            "en": "The same SSE contract: the assistant's knowledge bases are the whole search space, its instructions shape the answer, and the thread is saved under it."
+          },
+          "errors": [
+            {
+              "code": "400",
+              "meaning": {
+                "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
+                "en": "The request is malformed, or a precondition is unmet."
+              }
+            },
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 129,
+            "to": 129,
+            "anchor": "async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/assistants/{assistant_id}/conversations",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id trợ lý.",
+            "en": "The assistant id."
+          },
+          "response": {
+            "vi": "Các luồng hội thoại đã lưu của trợ lý đó.",
+            "en": "That assistant's saved threads."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 241,
+            "to": 241,
+            "anchor": "def list_conversations(assistant_id: uuid.UUID) -> list[ConversationOut]:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/conversations/{session_id}/messages",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id phiên.",
+            "en": "The session id."
+          },
+          "response": {
+            "vi": "Phát lại một luồng đã lưu với đủ mọi thứ để vẽ lại y như cũ.",
+            "en": "Replays a saved thread with everything needed to re-render it."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 249,
+            "to": 249,
+            "anchor": "def conversation_messages(session_id: uuid.UUID) -> dict:"
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/conversations/{session_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Tên mới cho luồng.",
+            "en": "The thread's new name."
+          },
+          "response": {
+            "vi": "Luồng sau khi đổi tên.",
+            "en": "The thread after the rename."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 261,
+            "to": 261,
+            "anchor": "def rename_conversation(session_id: uuid.UUID,"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/conversations/{session_id}",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Id phiên.",
+            "en": "The session id."
+          },
+          "response": {
+            "vi": "204 không nội dung.",
+            "en": "204 with no body."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 273,
+            "to": 273,
+            "anchor": "def delete_conversation(session_id: uuid.UUID) -> Response:"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-models",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Cấu hình model",
+        "en": "Model configuration"
+      },
+      "summary": {
+        "vi": "Ràng buộc C3 thành giao diện: đổi endpoint và model lúc chạy, không hardcode, không khởi động lại.",
+        "en": "Constraint C3 turned into a screen: endpoints and models change at runtime, nothing hardcoded, no restart."
+      },
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/models",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Không có tham số.",
+            "en": "No parameters."
+          },
+          "response": {
+            "vi": "Bốn vai trò trừu tượng — parser, embedder, chat, reranker — với endpoint và model đang gắn vào từng vai.",
+            "en": "The four abstract roles - parser, embedder, chat, reranker - with the endpoint and model currently bound to each."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/models.py",
+            "from": 55,
+            "to": 55,
+            "anchor": "async def list_roles() -> list[ModelRoleInfo]:"
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/api/models/{role}",
+          "auth": {
+            "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+          },
+          "request": {
+            "vi": "Provider, base_url, model_name cho một vai trò.",
+            "en": "The provider, base_url and model_name for one role."
+          },
+          "response": {
+            "vi": "Ghi đè được lưu trong Postgres và cả API lẫn worker nhận ngay, không cần khởi động lại — đó là điều làm ràng buộc C3 thành sự thật.",
+            "en": "The override is stored in Postgres and picked up by both the API and the worker without a restart - which is what makes constraint C3 true."
+          },
+          "errors": [
+            {
+              "code": "400",
+              "meaning": {
+                "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
+                "en": "The request is malformed, or a precondition is unmet."
+              }
+            },
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "403",
+              "meaning": {
+                "vi": "Có danh tính, nhưng không phải admin.",
+                "en": "Identity present, but not an admin."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/models.py",
+            "from": 69,
+            "to": 69,
+            "anchor": "async def update_role(role: str, body: ModelRoleUpdate,"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/models/{role}/available",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Tên vai trò.",
+            "en": "The role name."
+          },
+          "response": {
+            "vi": "Model đã cài trên máy chủ Ollama của vai đó; rỗng với provider khác.",
+            "en": "The models installed on that role's Ollama server; empty for other providers."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "502",
+              "meaning": {
+                "vi": "Endpoint model phía sau không trả lời được.",
+                "en": "The upstream model endpoint could not answer."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/models.py",
+            "from": 96,
+            "to": 96,
+            "anchor": "async def available_models(role: str) -> list[OllamaModel]:"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/api/models/{role}/pull",
+          "auth": {
+            "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+          },
+          "request": {
+            "vi": "Tên model cần kéo về.",
+            "en": "The model to pull."
+          },
+          "response": {
+            "vi": "Luồng SSE tiến độ tải về máy chủ Ollama của vai trò đó.",
+            "en": "An SSE stream of pull progress onto that role's Ollama server."
+          },
+          "errors": [
+            {
+              "code": "400",
+              "meaning": {
+                "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
+                "en": "The request is malformed, or a precondition is unmet."
+              }
+            },
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "403",
+              "meaning": {
+                "vi": "Có danh tính, nhưng không phải admin.",
+                "en": "Identity present, but not an admin."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/models.py",
+            "from": 117,
+            "to": 117,
+            "anchor": "async def pull_model(role: str, body: PullRequest,"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-me",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Danh tính, thiết lập, kiểm toán",
+        "en": "Identity, settings, audit"
+      },
+      "summary": {
+        "vi": "Ai đang đăng nhập, persona chat toàn cục, và vết kiểm toán GDPR.",
+        "en": "Who is signed in, the global chat persona, and the GDPR audit trail."
+      },
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/me",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Không có tham số; danh tính lấy từ header proxy.",
+            "en": "No parameters; the identity comes from the proxy header."
+          },
+          "response": {
+            "vi": "Người dùng hiện tại và cờ admin — giao diện dựa vào đây để ẩn/hiện các hành động chỉ dành cho admin.",
+            "en": "The current user and the admin flag - the interface uses it to show or hide the admin-only actions."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/me.py",
+            "from": 18,
+            "to": 18,
+            "anchor": "def me(user: User = Depends(current_user)) -> dict:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/settings/chat-instructions",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Không có tham số.",
+            "en": "No parameters."
+          },
+          "response": {
+            "vi": "Persona chat toàn cục: trợ lý là ai, cộng phần hướng dẫn nối vào mọi system prompt. Ai đọc cũng được; chỉ admin sửa được.",
+            "en": "The global chat persona: who the assistant is, plus the guidance appended to every system prompt. Any user may read it; only admins may change it."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/me.py",
+            "from": 24,
+            "to": 24,
+            "anchor": "def get_chat_instructions(_user: User = Depends(current_user)) -> ChatInstructions:"
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/api/settings/chat-instructions",
+          "auth": {
+            "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+          },
+          "request": {
+            "vi": "Persona và hướng dẫn mới.",
+            "en": "The new persona and guidance."
+          },
+          "response": {
+            "vi": "Persona sau khi lưu; để trống phần danh tính là quay về mô tả mặc định.",
+            "en": "The persona as saved; an empty identity falls back to the built-in description."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "403",
+              "meaning": {
+                "vi": "Có danh tính, nhưng không phải admin.",
+                "en": "Identity present, but not an admin."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/me.py",
+            "from": 35,
+            "to": 35,
+            "anchor": "def put_chat_instructions(body: ChatInstructions,"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/audit",
+          "auth": {
+            "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+          },
+          "request": {
+            "vi": "Giới hạn số dòng, mặc định 200.",
+            "en": "A row limit, 200 by default."
+          },
+          "response": {
+            "vi": "Vết kiểm toán GDPR, mới nhất trước: ai đã tải lên, đã hỏi, đã đổi cấu hình model.",
+            "en": "The GDPR accountability trail, most recent first: who uploaded, who queried, who changed the model configuration."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "403",
+              "meaning": {
+                "vi": "Có danh tính, nhưng không phải admin.",
+                "en": "Identity present, but not an admin."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/me.py",
+            "from": 50,
+            "to": 50,
+            "anchor": "async def audit(limit: int = 200, _admin=Depends(require_admin)) -> dict:"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-health",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Sức khoẻ",
+        "en": "Health"
+      },
+      "summary": {
+        "vi": "Hai đường mở duy nhất, vì health check phải gọi được trước khi có ai đăng nhập.",
+        "en": "The only two open paths, because a health check must work before anyone has signed in."
+      },
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/health",
+          "auth": {
+            "vi": "Mở, không cần xác thực — health là đường mà load balancer và preflight phải gọi được.",
+            "en": "Open, unauthenticated - health is the path a load balancer and the preflight script must be able to call."
+          },
+          "request": {
+            "vi": "Không có tham số.",
+            "en": "No parameters."
+          },
+          "response": {
+            "vi": "Nhịp sống của tiến trình. Đây là một trong những đường mở — chặn nó là health check của proxy chết.",
+            "en": "The process's liveness. This is one of the open paths - gate it and the proxy's health check dies."
+          },
+          "errors": [],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/health.py",
+            "from": 12,
+            "to": 12,
+            "anchor": "async def health() -> dict:"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/api/health/models",
+          "auth": {
+            "vi": "Mở, không cần xác thực — health là đường mà load balancer và preflight phải gọi được.",
+            "en": "Open, unauthenticated - health is the path a load balancer and the preflight script must be able to call."
+          },
+          "request": {
+            "vi": "Không có tham số.",
+            "en": "No parameters."
+          },
+          "response": {
+            "vi": "Sức khoẻ endpoint theo từng vai trò model — góc nhìn preflight của người triển khai.",
+            "en": "Endpoint health per model role - the deployer's preflight view."
+          },
+          "errors": [],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/health.py",
+            "from": 17,
+            "to": 17,
+            "anchor": "async def models_health() -> list[RoleHealth]:"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fe-api-diagnostics",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Chẩn đoán",
+        "en": "Diagnostics"
+      },
+      "summary": {
+        "vi": "Một đường duy nhất để soi vì sao nhận diện bảng ra kết quả như vậy.",
+        "en": "A single path for inspecting why table detection produced what it did."
+      },
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/diagnostics/table-detection",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Một tệp PDF, kèm số trang tuỳ chọn để chạy nhận diện vùng bằng VLM.",
+            "en": "A PDF file, plus an optional page number for VLM region detection."
+          },
+          "response": {
+            "vi": "Bảng phân tích find_tables theo từng trang và từng chiến lược — công cụ để hiểu vì sao một bảng bị bỏ sót.",
+            "en": "The per-page, per-strategy find_tables breakdown - the tool for understanding why a table was missed."
+          },
+          "errors": [
+            {
+              "code": "400",
+              "meaning": {
+                "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
+                "en": "The request is malformed, or a precondition is unmet."
+              }
+            },
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "413",
+              "meaning": {
+                "vi": "Tệp vượt quá giới hạn kích thước cho phép.",
+                "en": "The file exceeds the permitted size limit."
+              }
+            },
+            {
+              "code": "502",
+              "meaning": {
+                "vi": "Endpoint model phía sau không trả lời được.",
+                "en": "The upstream model endpoint could not answer."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/diagnostics.py",
+            "from": 30,
+            "to": 30,
+            "anchor": "async def table_detection(file: UploadFile,"
+          }
+        }
+      ]
+    },
+    {
+      "id": "browser-frontend",
+      "from": "browser",
+      "to": "frontend",
+      "label": {
+        "vi": "Tải giao diện",
+        "en": "Loads the interface"
+      },
+      "summary": {
+        "vi": "Trình duyệt mở ứng dụng Next.js ở cổng 3000.",
+        "en": "The browser opens the Next.js app on port 3000."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 167,
+        "to": 167,
+        "anchor": "- \"3000:3000\""
+      }
+    },
+    {
+      "id": "browser-proxy",
+      "from": "browser",
+      "to": "proxy",
+      "label": {
+        "vi": "Đăng nhập SSO",
+        "en": "SSO sign-in"
+      },
+      "summary": {
+        "vi": "Trình duyệt xác thực với proxy; ứng dụng không bao giờ thấy mật khẩu.",
+        "en": "The browser authenticates against the proxy; the app never sees a password."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/auth.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "authenticates the user and forwards their identity in a header"
+      }
+    },
+    {
+      "id": "proxy-api",
+      "from": "proxy",
+      "to": "api",
+      "label": {
+        "vi": "Header danh tính",
+        "en": "Identity header"
+      },
+      "summary": {
+        "vi": "Proxy chuyển tên người dùng xuống bằng header. Tin header chỉ an toàn khi API chỉ nghe được qua proxy — hở cổng 8000 ra ngoài là ai cũng tự xưng admin được.",
+        "en": "The proxy forwards the username in a header. Trusting a header is safe ONLY while the API is reachable through the proxy alone - publish port 8000 and anyone can call themselves admin."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/auth.py",
+        "from": 9,
+        "to": 9,
+        "anchor": "If the API port is exposed directly, anyone can"
+      }
+    },
+    {
+      "id": "consume-dir-consumer",
+      "from": "consume-dir",
+      "to": "consumer",
+      "label": {
+        "vi": "Nạp theo thư mục",
+        "en": "Directory feed"
+      },
+      "summary": {
+        "vi": "PDF nằm trong thư mục con mang tên KB thì được nạp vào đúng KB đó; PDF ở thư mục gốc bị bỏ qua.",
+        "en": "A PDF inside a subfolder named after a knowledge base is ingested into it; a PDF in the root is ignored."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 142,
+        "to": 142,
+        "anchor": "in a subfolder named after the target KB; a PDF in the root is ignored"
+      }
+    },
+    {
+      "id": "consumer-redis",
+      "from": "consumer",
+      "to": "redis",
+      "label": {
+        "vi": "Xếp hàng ingestion",
+        "en": "Queues ingestion"
+      },
+      "summary": {
+        "vi": "Consumer tạo bản ghi tài liệu rồi đẩy việc vào cùng hàng đợi mà API dùng.",
+        "en": "The consumer creates the document record and pushes the work onto the same queue the API uses."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 146,
+        "to": 146,
+        "anchor": "python -m tablerag.ingestion.consumer"
+      }
+    },
+    {
+      "id": "mcp-client-server",
+      "from": "mcp-client",
+      "to": "mcp-server",
+      "label": {
+        "vi": "Giao thức MCP qua stdio",
+        "en": "MCP over stdio"
+      },
+      "summary": {
+        "vi": "Client MCP chạy server ngay trên máy mình và gọi hai công cụ: liệt kê KB, và hỏi một câu có trích dẫn.",
+        "en": "The MCP client runs the server locally and calls two tools: list the knowledge bases, and ask a cited question."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/mcp/server.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "LedgerRAG MCP server (stdio)."
+      }
+    },
+    {
+      "id": "mcp-server-api",
+      "from": "mcp-server",
+      "to": "api",
+      "label": {
+        "vi": "Chỉ đi qua HTTP API",
+        "en": "Through the HTTP API only"
+      },
+      "summary": {
+        "vi": "MCP server không bao giờ chạm thẳng vào Postgres hay Qdrant: ingestion, query và serving đều ở sau API — đúng nguyên tắc số 1.",
+        "en": "The MCP server never touches Postgres or Qdrant directly: ingestion, query and serving all stay behind the API - principle 1."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/mcp/client.py",
+        "from": 6,
+        "to": 6,
+        "anchor": "directly — ingestion↔query↔serving stay behind the API (principle #1)"
+      }
+    },
+    {
+      "id": "api-redis",
+      "from": "api",
+      "to": "redis",
+      "label": {
+        "vi": "Bỏ việc vào hàng đợi",
+        "en": "Enqueues the work"
+      },
+      "summary": {
+        "vi": "Tải lên trả về 202 ngay: việc thật nằm trong hàng đợi, worker lấy từng cái.",
+        "en": "Upload answers 202 straight away: the real work sits on the queue and the worker takes it one at a time."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 70,
+        "to": 70,
+        "anchor": "image: redis:7-alpine"
+      }
+    },
+    {
+      "id": "worker-redis",
+      "from": "worker",
+      "to": "redis",
+      "label": {
+        "vi": "Lấy việc ra",
+        "en": "Takes the work"
+      },
+      "summary": {
+        "vi": "Worker chạy một tài liệu tại một thời điểm — đó là thứ giữ cho một lô lớn không đè chết máy.",
+        "en": "The worker runs one document at a time - which is what keeps a large batch from overwhelming the box."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 129,
+        "to": 129,
+        "anchor": "celery -A tablerag.ingestion.worker worker"
+      }
+    },
+    {
+      "id": "api-postgres",
+      "from": "api",
+      "to": "postgres",
+      "label": {
+        "vi": "Đọc ghi cấu trúc",
+        "en": "Reads and writes the structure"
+      },
+      "summary": {
+        "vi": "API đọc KB, tài liệu, element và hội thoại qua đúng một tầng repository — không câu SQL nào nằm trong route.",
+        "en": "The API reads knowledge bases, documents, elements and conversations through one repository layer - no SQL lives in a route."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/db.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "Engine/session management (sync SQLAlchemy; model calls are async httpx)."
+      }
+    },
+    {
+      "id": "worker-postgres",
+      "from": "worker",
+      "to": "postgres",
+      "label": {
+        "vi": "Ghi kết quả parse",
+        "en": "Writes the parse"
+      },
+      "summary": {
+        "vi": "Worker ghi element, bản ghi bảng và chunk. Nó không bao giờ import query/ — hai pipeline chỉ gặp nhau ở đây.",
+        "en": "The worker writes elements, table records and chunks. It never imports query/ - the two pipelines meet only here."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 27,
+        "to": 27,
+        "anchor": "The storage layer is the only contract."
+      }
+    },
+    {
+      "id": "api-qdrant",
+      "from": "api",
+      "to": "qdrant",
+      "label": {
+        "vi": "Tìm vector, và dọn khi xoá",
+        "en": "Searches, and purges on delete"
+      },
+      "summary": {
+        "vi": "Truy hồi đọc cả ba collection. Khi xoá tài liệu hay KB, vector bị dọn TRƯỚC cascade Postgres.",
+        "en": "Retrieval reads all three collections. On deleting a document or a knowledge base the vectors are purged BEFORE the Postgres cascade."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "Three collections from day one (SPEC §3.2)"
+      }
+    },
+    {
+      "id": "worker-qdrant",
+      "from": "worker",
+      "to": "qdrant",
+      "label": {
+        "vi": "Ghi vector",
+        "en": "Writes the vectors"
+      },
+      "summary": {
+        "vi": "Mỗi điểm mang kèm kb_id, doc_id, element_id để lọc payload và để truy nguyên — vector không có nguồn thì vô dụng.",
+        "en": "Every point carries kb_id, doc_id and element_id for payload filtering and for provenance - a vector with no source is useless."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "for payload filtering and"
+      }
+    },
+    {
+      "id": "api-minio",
+      "from": "api",
+      "to": "minio",
+      "label": {
+        "vi": "Phục vụ ảnh gốc",
+        "en": "Serves the original images"
+      },
+      "summary": {
+        "vi": "Ảnh crop, ảnh render trang và PDF gốc — đường bấm ngược từ câu trả lời về tận trang giấy.",
+        "en": "Crops, page renders and the original PDF - the path from an answer back to the page itself."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/object_store.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "Object storage for original PDFs and crop images."
+      }
+    },
+    {
+      "id": "worker-minio",
+      "from": "worker",
+      "to": "minio",
+      "label": {
+        "vi": "Lưu ảnh lúc ingest",
+        "en": "Stores the images at ingest"
+      },
+      "summary": {
+        "vi": "Ảnh gốc được lưu ngay lúc tải lên, trước khi parse — nếu parse sai thì vẫn còn nguyên bản để đối chiếu.",
+        "en": "The original is stored at upload time, before any parsing - so when a parse is wrong the original is still there to read it against."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/object_store.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "Two backends behind one interface: MinIO (default in docker-compose)"
+      }
+    },
+    {
+      "id": "worker-parser",
+      "from": "worker",
+      "to": "parser",
+      "label": {
+        "vi": "Đọc bảng và trang scan",
+        "en": "Reads tables and scanned pages"
+      },
+      "summary": {
+        "vi": "Trang scan không phải ca đặc biệt: cũng là ảnh chất lượng thấp hơn đưa vào đúng VLM đó.",
+        "en": "A scanned page is not a special case: it is lower-quality image input to the same VLM."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/ingestion/ocr.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "Scanned-page OCR via the parser VLM"
+      }
+    },
+    {
+      "id": "worker-embedder",
+      "from": "worker",
+      "to": "embedder",
+      "label": {
+        "vi": "Sinh vector lúc index",
+        "en": "Embeds at index time"
+      },
+      "summary": {
+        "vi": "Sửa tay một element thì vector của riêng nó được dựng lại — nếu không, câu trả lời vẫn trích bản parse cũ.",
+        "en": "Correcting one element by hand rebuilds that element's vectors - otherwise answers keep quoting the stale parse."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/indexing.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "reach retrieval — otherwise answers keep quoting the stale parse."
+      }
+    },
+    {
+      "id": "api-embedder",
+      "from": "api",
+      "to": "embedder",
+      "label": {
+        "vi": "Sinh vector cho câu hỏi",
+        "en": "Embeds the question"
+      },
+      "summary": {
+        "vi": "Truy hồi lai: dense bắt ý, sparse bắt token hiếm mà dense làm mờ — mã sản phẩm, tên riêng, \"T1 2013\".",
+        "en": "Hybrid retrieval: dense catches the meaning, sparse catches the rare tokens dense blurs - product codes, proper names, \"T1 2013\"."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/retrieve.py",
+        "from": 4,
+        "to": 4,
+        "anchor": "Sparse lexical matching catches the rare tokens dense embeddings blur"
+      }
+    },
+    {
+      "id": "api-chat",
+      "from": "api",
+      "to": "chat",
+      "label": {
+        "vi": "Sinh câu trả lời",
+        "en": "Generates the answer"
+      },
+      "summary": {
+        "vi": "System prompt mã hoá triết lý sản phẩm: chỉ trả lời từ nguồn, trích dẫn mọi thứ, chép số y nguyên, và không bao giờ khẳng định số từ nguồn bị gắn cờ.",
+        "en": "The system prompt encodes the product philosophy: answer only from sources, cite everything, copy numbers exactly, and never assert a figure from a flagged source."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/generate.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "The system prompt encodes the product philosophy"
+      }
+    },
+    {
+      "id": "api-reranker",
+      "from": "api",
+      "to": "reranker",
+      "label": {
+        "vi": "Xếp lại thứ tự ứng viên",
+        "en": "Reorders the candidates"
+      },
+      "summary": {
+        "vi": "Vai trò này mặc định tắt, và khi bật mà không gọi được thì suy biến y hệt lúc tắt thay vì làm hỏng cả truy vấn.",
+        "en": "The role is disabled by default, and when enabled but unreachable it degrades exactly as if it were off rather than failing the query."
+      },
+      "operations": [],
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/query/steps/rerank.py",
+        "from": 5,
+        "to": 5,
+        "anchor": "The role is disabled by default"
+      }
+    }
+  ]
+}
