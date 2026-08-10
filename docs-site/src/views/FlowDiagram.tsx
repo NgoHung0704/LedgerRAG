@@ -2,11 +2,11 @@ import type { ComponentDetail } from "../content";
 import { pick } from "../i18n";
 import type { Lang } from "../route";
 import {
-  BOX_PADDING, LABEL_CHARS, LINE_HEIGHT, boxHeight, laneOffsets, wrapLabel,
+  BOX_PADDING, LABEL_CHARS, LINE_HEIGHT,
+  boxHeight, columnGap, laneOffsets, wrapLabel,
 } from "../svg/layout";
 
 const BOX_WIDTH = 190;
-const COL_GAP = 96;
 const ROW_GAP = 22;
 
 type Kind = "step" | "gate" | "exit";
@@ -25,6 +25,11 @@ export function FlowDiagram(
     { kind: "gate", items: flow.gates ?? [] },
     { kind: "exit", items: flow.exits ?? [] },
   ];
+
+  // The gap is measured from the number of lines that must cross it. Squeeze
+  // the lanes and two branch labels leaving the same gate land on top of
+  // each other — which is what the rendered page showed before this.
+  const COL_GAP = columnGap(flow.edges.length);
 
   const boxes: Box[] = [];
   let x = 16;
@@ -60,13 +65,19 @@ export function FlowDiagram(
           if (!from || !to) return null;
           const y1 = from.y + from.h / 2;
           const y2 = to.y + to.h / 2;
-          const turnX = from.x + from.w + COL_GAP / 2 + offsets[i] / 3;
+          const turnX = from.x + from.w + COL_GAP / 2 + offsets[i];
           const d = `M ${from.x + from.w} ${y1} H ${turnX} V ${y2} H ${to.x}`;
           return (
             <g key={`${edge.from}-${edge.to}-${i}`} className="flow-edge">
               <path data-flow-edge={`${edge.from}-${edge.to}`} d={d} />
               {edge.label ? (
-                <text x={turnX} y={(y1 + y2) / 2 - 4} textAnchor="middle">
+                // Turned along its own lane, for the same reason as the
+                // system map: flat labels in a shared gap overlap into a smear.
+                <text
+                  data-edge-label={`${edge.from}-${edge.to}-${i}`}
+                  x={turnX} y={(y1 + y2) / 2} textAnchor="middle"
+                  transform={`rotate(-90 ${turnX} ${(y1 + y2) / 2})`}
+                >
                   {pick(edge.label, lang)}
                 </text>
               ) : null}

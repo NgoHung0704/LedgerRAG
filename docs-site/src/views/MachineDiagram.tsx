@@ -2,14 +2,15 @@ import { content } from "../content";
 import { pick } from "../i18n";
 import type { Lang, Route } from "../route";
 import {
-  BOX_PADDING, LABEL_CHARS, LINE_HEIGHT, boxHeight, laneOffsets, wrapLabel,
+  BOX_PADDING, LABEL_CHARS, LINE_HEIGHT,
+  boxHeight, columnGap, laneOffsets, wrapLabel,
 } from "../svg/layout";
 import { DiagramText, type TextSection } from "./DiagramText";
 import { PhaseFilter } from "./PhaseFilter";
 
 const BOX_WIDTH = 200;
-const COL_GAP = 120;
 const ROW_GAP = 20;
+const INLET_GAP = 72;
 
 type Machine = (typeof content.machines.machines)[number];
 
@@ -46,11 +47,17 @@ export function MachineDiagram(
   const machine = content.machines.machines.find((m) => m.id === id)
     ?? content.machines.machines[0];
 
+  // Measured from the number of lines crossing it, so two branch labels
+  // leaving the same part cannot land on the same spot.
+  const COL_GAP = columnGap(machine.edges.length);
+
   const size = (label: { vi: string; en: string }) => Math.max(
     boxHeight(wrapLabel(label.vi, LABEL_CHARS)),
     boxHeight(wrapLabel(label.en, LABEL_CHARS)));
 
-  const partX = 16 + BOX_WIDTH + COL_GAP;
+  // No edge crosses the inlet gap — the inlet names what goes in, it is not
+  // wired to a part — so it gets a plain margin, not a lane-sized one.
+  const partX = 16 + BOX_WIDTH + INLET_GAP;
   let y = 16;
   const parts = machine.parts.map((part) => {
     const h = size(part.label);
@@ -126,13 +133,19 @@ export function MachineDiagram(
             if (!from || !to) return null;
             const y1 = from.y + from.h / 2;
             const y2 = to.y + to.h / 2;
-            const turnX = from.x + BOX_WIDTH + COL_GAP / 2 + offsets[i] / 2;
+            const turnX = from.x + BOX_WIDTH + COL_GAP / 2 + offsets[i];
             const d = `M ${from.x + BOX_WIDTH} ${y1} H ${turnX} V ${y2} H ${to.x}`;
             return (
               <g key={`${edge.from}-${edge.to}-${i}`} className="flow-edge">
                 <path data-machine-edge={`${edge.from}-${edge.to}`} d={d} />
                 {edge.label ? (
-                  <text x={turnX} y={(y1 + y2) / 2 - 4} textAnchor="middle">
+                  // Turned along its own lane — see SystemMap: a dozen flat
+                  // labels sharing one gap overlap into an unreadable smear.
+                  <text
+                    data-edge-label={`${edge.from}-${edge.to}-${i}`}
+                    x={turnX} y={(y1 + y2) / 2} textAnchor="middle"
+                    transform={`rotate(-90 ${turnX} ${(y1 + y2) / 2})`}
+                  >
                     {pick(edge.label, lang)}
                   </text>
                 ) : null}

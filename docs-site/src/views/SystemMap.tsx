@@ -197,10 +197,15 @@ export function SystemMap(
             >
               <path className="edge-hit" data-edge-hit={edge.id} d={d} />
               <path className="edge-line" data-edge={edge.id} d={d} />
+              {/* Along its own lane, not across the gap. Written flat, a
+                  dozen labels sharing one gap overlap into a smear: each is
+                  ~120px wide and the lanes are 24px apart. Turned, a label
+                  needs only the width of its own line. */}
               <text
                 className="edge-label"
                 data-edge-label={edge.id}
                 x={labelX} y={labelY} textAnchor="middle"
+                transform={`rotate(-90 ${labelX} ${labelY})`}
               >
                 {pick(edge.label, lang)}
               </text>
