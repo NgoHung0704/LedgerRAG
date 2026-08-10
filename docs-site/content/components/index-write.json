@@ -15,7 +15,7 @@
       "name": "apply_element_edit",
       "decl": "def apply_element_edit(element_id: uuid.UUID, *, text: str | None = None,",
       "file": "tablerag/indexing.py",
-      "line": 62,
+      "line": 79,
       "note": {
         "vi": "Áp chỉnh sửa tay vào Postgres rồi dựng lại vector của riêng element đó.",
         "en": "Applies a hand edit in Postgres and rebuilds that element's vectors alone."
@@ -25,7 +25,7 @@
       "name": "reindex_element",
       "decl": "async def reindex_element(element_id: uuid.UUID) -> None:",
       "file": "tablerag/indexing.py",
-      "line": 848,
+      "line": 873,
       "note": {
         "vi": "Dựng lại chunk, bản ghi và vector cho một element.",
         "en": "Rebuilds the chunks, records and vectors for one element."
@@ -35,7 +35,7 @@
       "name": "undo_element_edit",
       "decl": "def undo_element_edit(element_id: uuid.UUID) -> str | None:",
       "file": "tablerag/indexing.py",
-      "line": 245,
+      "line": 270,
       "note": {
         "vi": "Lấy lại lần sửa cuối của một element mà không đụng tới các chỉnh sửa khác.",
         "en": "Takes back one element's last save without touching any other correction."
@@ -45,7 +45,7 @@
       "name": "split_table",
       "decl": "async def split_table(element_id: uuid.UUID) -> int | None:",
       "file": "tablerag/indexing.py",
-      "line": 621,
+      "line": 646,
       "note": {
         "vi": "\"Đây là hai bảng\": mỗi phần được render lại từ PDF và có bbox, crop riêng.",
         "en": "\"These are two tables\": each part is re-rendered from the PDF with its own bbox and crop."

@@ -164,12 +164,22 @@ def raster_palette(png: bytes, locale: str | None = None, colours: int = 8
     return _tally(counted, locale)
 
 
-def describe_palette(palette: list[tuple[str, str, float]]) -> str:
-    """The palette as one line for a prompt and for the index."""
+def describe_palette(palette) -> str:
+    """The palette as one line for a prompt and for the index.
+
+    Takes the measured tuples OR the dicts they are stored as on the element,
+    so re-assembling a figure's indexed text after an edit produces the same
+    line ingestion wrote — one formatter, no chance of the two drifting."""
     if not palette:
         return ""
-    return ", ".join(f"{name} ({hexcode}, {share:.0%})"
-                     for name, hexcode, share in palette)
+    parts = []
+    for ink in palette:
+        if isinstance(ink, dict):
+            name, hexcode, share = ink["name"], ink["hex"], ink["share"]
+        else:
+            name, hexcode, share = ink
+        parts.append(f"{name} ({hexcode}, {share:.0%})")
+    return ", ".join(parts)
 
 
 def is_colour_coded(palette: list[tuple[str, str, float]]) -> bool:

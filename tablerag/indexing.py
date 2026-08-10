@@ -43,6 +43,23 @@ def _rechunk(s, element: Element, text: str) -> None:
     repo.add_chunks(s, element.id, [(c.text, c.token_count) for c in chunks])
 
 
+def figure_index_text(meta: dict | None) -> str:
+    """What goes into the index for a figure: its anchors, then its description.
+
+    Assembled the same way ingestion assembles it (tasks._ingest_page), from
+    the same formatter, so an edited figure is indexed exactly like a freshly
+    parsed one — a heading a reader would search with, the colours measured off
+    the drawing, and what the model saw."""
+    from tablerag.ingestion.palette import describe_palette
+
+    meta = meta or {}
+    anchors = [meta.get("context") or "", describe_palette(meta.get("palette"))]
+    parts = [a for a in anchors if a]
+    if meta.get("description"):
+        parts.append(meta["description"])
+    return "\n\n".join(parts)
+
+
 def _replace_records(s, element_id: uuid.UUID, records: list[dict]) -> None:
     for rec in list(s.get(TableElement, element_id).records):
         s.delete(rec)
@@ -72,6 +89,14 @@ def apply_element_edit(element_id: uuid.UUID, *, text: str | None = None,
         repo.snapshot_element(s, element_id, "edit")
         if text is not None and element.type == "text":
             _rechunk(s, element, text)
+        elif text is not None and element.type == "figure":
+            # a figure is edited by its DESCRIPTION, not by its indexed blob:
+            # what is indexed is the heading above it and its measured palette
+            # prefixed to that description, and a reviewer correcting what the
+            # model saw should not have to retype the anchors — or be able to
+            # lose them by deleting a line
+            element.meta = {**(element.meta or {}), "description": text}
+            _rechunk(s, element, figure_index_text(element.meta))
         table = s.get(TableElement, element_id)
         if table is not None:
             if html is not None:

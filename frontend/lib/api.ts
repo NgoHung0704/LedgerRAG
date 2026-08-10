@@ -72,6 +72,10 @@ export type ElementDetail = {
   filename: string;
   page: number;
   type: "text" | "table" | "figure";
+  /** everything ingestion recorded about this element. A figure's
+   *  `description` lives here — `text` below is the INDEXED blob, which is the
+   *  heading above it and its measured palette prefixed to that description. */
+  meta: Record<string, unknown> | null;
   confidence: number | null;
   needs_review: boolean;
   edited: boolean;

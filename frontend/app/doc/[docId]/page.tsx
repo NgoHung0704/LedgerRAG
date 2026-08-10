@@ -823,7 +823,7 @@ ${r.findings}` : ""),
               {undoing ? "undoing…" : `undo (${element.undo_steps})`}
             </Button>
           )}
-          {element.type !== "figure" && (
+          {(
             <Button
               size="xs"
               variant="tonal"

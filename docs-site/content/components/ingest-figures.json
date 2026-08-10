@@ -55,7 +55,7 @@
       "name": "is_colour_coded",
       "decl": "def is_colour_coded(palette: list[tuple[str, str, float]]) -> bool:",
       "file": "tablerag/ingestion/palette.py",
-      "line": 175,
+      "line": 185,
       "note": {
         "vi": "Nhận ra khi màu chính là thông tin, không phải trang trí.",
         "en": "Recognises when the colour is the information rather than decoration."
@@ -166,8 +166,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "tablerag/ingestion/palette.py",
-        "from": 175,
-        "to": 180,
+        "from": 185,
+        "to": 190,
         "code": "def is_colour_coded(palette: list[tuple[str, str, float]]) -> bool:\n    \"\"\"Does colour look like it is CARRYING something here?\n\n    Two or more inks on the page, counting GREY. Business charts code with\n    grey against one accent far more often than with a rainbow — the\n    factsheet's sector chart is exactly that, portfolio in turquoise against"
       }
     }

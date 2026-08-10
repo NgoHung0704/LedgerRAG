@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -55,6 +55,9 @@ export default function ElementEditor({
   proposed?: ElementProposal;
 }) {
   const [detail, setDetail] = useState<ElementDetail | null>(null);
+  // what the panes held when they were filled, so saving can tell an edited
+  // pane from one that was merely displayed
+  const loaded = useRef({ html: "", summary: "", records: "" });
   const [text, setText] = useState("");
   const [html, setHtml] = useState("");
   const [summary, setSummary] = useState("");
@@ -106,12 +109,26 @@ export default function ElementEditor({
     getElement(elementId)
       .then((d) => {
         setDetail(d);
-        setText(proposed?.text ?? d.text ?? "");
+        // a figure is edited by its DESCRIPTION. detail.text is the indexed
+        // blob — the heading above it and its measured palette prefixed to
+        // that description — and a reviewer correcting what the model saw
+        // should not have to retype the anchors, or be able to delete them
+        setText(
+          proposed?.text ??
+            (d.type === "figure"
+              ? ((d.meta?.description as string) ?? "")
+              : (d.text ?? "")),
+        );
         setHtml(proposed?.html ?? d.table?.html ?? "");
         setSummary(proposed?.summary ?? d.table?.summary ?? "");
-        setRecordsJson(
-          JSON.stringify(proposed?.records ?? d.table?.records ?? [], null, 2),
-        );
+        const loadedRecords = JSON.stringify(
+          proposed?.records ?? d.table?.records ?? [], null, 2);
+        setRecordsJson(loadedRecords);
+        loaded.current = {
+          html: proposed?.html ?? d.table?.html ?? "",
+          summary: proposed?.summary ?? d.table?.summary ?? "",
+          records: loadedRecords,
+        };
         // land on the pane the proposal is about
         setTab(proposed?.text ? "text" : d.table ? "html" : "text");
       })
@@ -125,7 +142,15 @@ export default function ElementEditor({
         { id: "records", label: "Records" },
         { id: "summary", label: "Summary" },
       ]
-    : [{ id: "text", label: "Text" }];
+    : [
+        {
+          id: "text",
+          // a figure has no text of its own: what is stored is a DESCRIPTION
+          // of a picture, and calling it "Text" invited it to be treated as
+          // something the page says
+          label: detail?.type === "figure" ? "Description" : "Text",
+        },
+      ];
 
   // live-parse the records JSON so the preview (and save) can flag errors early
   const records = useMemo<
@@ -172,7 +197,7 @@ export default function ElementEditor({
   const save = async () => {
     setError(null);
     const edit: ElementEdit = {};
-    if (detail?.type === "text") edit.text = text;
+    if (detail?.type === "text" || detail?.type === "figure") edit.text = text;
     if (detail?.table) {
       if (!records.ok) {
         setError(`Records JSON is invalid: ${records.error}`);
@@ -185,6 +210,20 @@ export default function ElementEditor({
     }
     setBusy(true);
     try {
+      // Correcting the HTML alone leaves answers quoting the OLD records, so
+      // saving rebuilds them from it. Only when the reviewer left the records
+      // and the summary alone: if they typed in those panes too, they meant
+      // what they typed and it is not ours to overwrite.
+      if (
+        detail?.table &&
+        html !== loaded.current.html &&
+        recordsJson === loaded.current.records &&
+        summary === loaded.current.summary
+      ) {
+        const rebuilt = await deriveFromHtml(elementId, html);
+        edit.records = rebuilt.records as ElementEdit["records"];
+        edit.summary = rebuilt.summary;
+      }
       await editElement(elementId, edit);
       onSaved();
       onClose();
