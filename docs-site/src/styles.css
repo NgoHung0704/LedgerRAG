@@ -1,0 +1,223 @@
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --ink: #14181f;
+  --muted: #5a6472;
+  --line: #d9d5cc;
+  --accent: #1f5c9e;
+  --debt: #9a3a1e;
+  --debt-bg: #fdf1ec;
+  --code-bg: #f3f1ec;
+  --service: #e8f0f9;
+  --store: #eef4ea;
+  --external: #f6f1e6;
+  --model: #f4ecf6;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgb(20 24 31 / 6%), 0 6px 20px rgb(20 24 31 / 5%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --surface: #191d24;
+    --ink: #e9ecf1;
+    --muted: #9aa4b2;
+    --line: #2b313b;
+    --accent: #79b0e8;
+    --debt: #f0a58a;
+    --debt-bg: #2a1c17;
+    --code-bg: #11141a;
+    --service: #1b2632;
+    --store: #1b2820;
+    --external: #2a2418;
+    --model: #251c2b;
+    --shadow: none;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+
+.app { max-width: 1400px; margin: 0 auto; padding: 0 20px 64px; }
+
+/* ---- top bar ---- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 14px 0; margin-bottom: 20px;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.site-title { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+.nav { display: flex; gap: 4px; margin-left: auto; }
+.nav-item, .lang-switch, .phase-chip, .machine-tab, .card-open, .close {
+  font: inherit; color: inherit; cursor: pointer;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 999px; padding: 6px 14px;
+}
+.nav-item:hover, .phase-chip:hover, .machine-tab:hover { background: var(--surface); }
+.nav-item[aria-current="page"] {
+  background: var(--accent); color: var(--surface); border-color: var(--accent);
+}
+.lang-switch { border-color: var(--line); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- diagrams ---- */
+.scroll-x { overflow-x: auto; padding-bottom: 8px; }
+svg.map, svg.flow, svg.machine {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); display: block;
+}
+
+.node { fill: var(--service); stroke: var(--line); }
+.node-store { fill: var(--store); }
+.node-external { fill: var(--external); }
+.node-model { fill: var(--model); }
+.node-label { font-size: 12.5px; fill: var(--ink); }
+
+.edge { cursor: pointer; }
+.edge-hit { fill: none; stroke: transparent; stroke-width: 16; }
+.edge-line { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.edge-label {
+  font-size: 11px; fill: var(--muted);
+  paint-order: stroke; stroke: var(--surface); stroke-width: 4px;
+}
+.edge:hover .edge-line, .edge:focus-visible .edge-line,
+.edge-open .edge-line { stroke: var(--accent); stroke-width: 2.5; }
+.edge:hover .edge-label, .edge-open .edge-label { fill: var(--accent); }
+
+.flow-box { fill: var(--service); stroke: var(--line); }
+.flow-gate { fill: var(--external); }
+.flow-exit { fill: var(--store); }
+.flow-inlet { fill: var(--model); }
+.flow-label { font-size: 12px; fill: var(--ink); }
+.flow-edge path { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.flow-edge text {
+  font-size: 10.5px; fill: var(--muted);
+  paint-order: stroke; stroke: var(--surface); stroke-width: 4px;
+}
+
+/* ---- the dimming lives on the wrapper ---------------------------------
+   Never on the element itself: two opacity rules on one element fight,
+   whereas a parent and a child multiply. */
+[data-dim-wrapper] { transition: opacity 160ms ease; }
+[data-dim-wrapper].dimmed { opacity: 0.28; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---- text version ---- */
+.diagram-text {
+  margin: 16px 0; padding: 12px 16px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.diagram-text summary { cursor: pointer; color: var(--accent); }
+.diagram-text h3 { font-size: 13px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); margin: 16px 0 6px; }
+.diagram-text ul { margin: 0; padding-left: 18px; }
+.diagram-text li { margin-bottom: 4px; }
+.dt-label { font-weight: 600; }
+.dt-detail { color: var(--muted); }
+.dt-detail::before { content: " — "; }
+
+/* ---- grid ---- */
+.phase-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.phase-chip, .machine-tab { border-color: var(--line); }
+.phase-chip[aria-pressed="true"], .machine-tab[aria-pressed="true"] {
+  background: var(--accent); color: var(--surface); border-color: var(--accent);
+}
+.machine-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+
+.grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.card {
+  height: 100%; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.card h3 { margin: 0 0 6px; font-size: 15px; }
+.card-open { padding: 0; color: var(--accent); font-weight: 650; }
+.card-summary { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
+.rel-list { list-style: none; margin: 0 0 10px; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px; }
+.rel { display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; padding: 3px 8px; border-radius: 999px;
+  background: var(--code-bg); }
+.rel-creates { box-shadow: inset 2px 0 0 var(--accent); }
+.rel-modifies { box-shadow: inset 2px 0 0 var(--debt); }
+.rel-kind { color: var(--muted); }
+.card-modules summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+.card-modules ul { margin: 6px 0 0; padding-left: 18px; font-size: 12px; }
+.empty { color: var(--muted); }
+
+/* ---- panels and detail ---- */
+.panel, .layer-detail {
+  margin: 18px 0; padding: 16px 18px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  animation: fade-in 140ms ease-out;
+}
+/* Entry only. There is no exit animation, so no half-dead panel can sit in a
+   stack and swallow the next Escape. */
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } }
+
+.panel-head, .detail-head {
+  display: flex; align-items: baseline; gap: 12px;
+  border-bottom: 1px solid var(--line); padding-bottom: 10px;
+}
+.panel-head h2, .detail-head h2 { margin: 0; font-size: 17px; }
+.close { margin-left: auto; border-color: var(--line); }
+.panel-summary, .detail-summary { color: var(--muted); }
+
+.ops { list-style: none; margin: 0; padding: 0; }
+.op { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.op-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.method { font-size: 11.5px; font-weight: 700; padding: 2px 8px;
+  border-radius: 5px; background: var(--code-bg); }
+.method-get { color: var(--accent); }
+.method-post, .method-put, .method-patch { color: #7a5300; }
+.method-delete { color: var(--debt); }
+.path { font-size: 13px; }
+.op-source, .fn-source, .citation { color: var(--accent); font-size: 12px; }
+.op-body { display: grid; grid-template-columns: max-content 1fr;
+  gap: 2px 14px; margin: 8px 0 0; font-size: 13.5px; }
+.op-body dt { color: var(--muted); }
+.op-body dd { margin: 0; }
+.errors { list-style: none; margin: 0; padding: 0; }
+.errors li { display: flex; gap: 8px; }
+
+.detail-functions ul, .cards { list-style: none; margin: 0; padding: 0; }
+.detail-functions li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.detail-functions p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+.decl { display: block; font-size: 13px; }
+.excerpt { margin: 14px 0; }
+.excerpt figcaption { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.excerpt pre { margin: 0 0 6px; padding: 12px 14px; overflow-x: auto;
+  background: var(--code-bg); border-radius: 8px; font-size: 12.5px; }
+.cards { display: grid; gap: 10px; }
+.why-card, .debt-card { padding: 12px 14px; border-radius: 8px;
+  background: var(--code-bg); }
+.debt-card { background: var(--debt-bg); box-shadow: inset 3px 0 0 var(--debt); }
+.why-card p, .debt-card p { margin: 0 0 6px; }
+
+/* ---- ownership ---- */
+.ownership { margin-top: 28px; }
+.ownership h2 { font-size: 16px; }
+.ownership table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.ownership th, .ownership td {
+  text-align: left; vertical-align: top; padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.ownership th { color: var(--muted); font-weight: 600; white-space: nowrap; }

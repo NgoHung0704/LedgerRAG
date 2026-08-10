@@ -305,3 +305,27 @@ def test_every_machine_part_is_reachable_from_the_inlet():
         assert not unreachable, (
             f"machine {machine['id']}: {unreachable} cannot be reached from "
             f"the inlet")
+
+
+SITE_SRC = REPO_ROOT / "docs-site" / "src"
+ATTR_LITERAL = re.compile(r'\b(aria-label|title|alt|placeholder)\s*=\s*"')
+JSX_TEXT = re.compile(r">\s*([^<>{}\n]*[A-Za-zÀ-ỹ][^<>{}]*)<")
+
+
+def test_no_reader_visible_string_lives_in_the_site_code():
+    """Content is in JSON so guards can check it in the repo's own language.
+    A label that slips into a .tsx escapes every check in this file."""
+    problems = []
+    for path in sorted(SITE_SRC.rglob("*.tsx")):
+        text = norm(path.read_text(encoding="utf-8"))
+        for i, line in enumerate(text.split("\n"), start=1):
+            if ATTR_LITERAL.search(line):
+                problems.append(
+                    f"{path.name}:{i} literal attribute: {line.strip()}")
+            for hit in JSX_TEXT.finditer(line):
+                problems.append(
+                    f"{path.name}:{i} literal text: {hit.group(1).strip()!r}")
+    assert not problems, (
+        "these strings must come from docs-site/content/:\n  "
+        + "\n  ".join(problems))
+

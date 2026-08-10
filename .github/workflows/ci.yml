@@ -24,3 +24,41 @@ jobs:
         run: ruff check tablerag tests spike
       - name: Unit tests and drift guards
         run: pytest tests/unit -q
+
+  # `needs: python-gates` is the point: a red guard means nothing reaches the
+  # web. The page may not outlive the truth of what it claims.
+  docs-site:
+    needs: python-gates
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: docs-site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Behaviour tests
+        run: npx vitest run
+      - name: Build
+        run: npx vite build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-site/dist
+
+  deploy:
+    needs: docs-site
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

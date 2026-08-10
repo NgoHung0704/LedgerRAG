@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
 
 up:
 	docker compose up -d --build
@@ -113,3 +113,10 @@ lint:
 # Refuses to touch a citation whose TEXT changed — that needs a human.
 docs-relink:
 	python docs-site/tools/relink.py --write
+
+# ---- docs site ------------------------------------------------------------
+docs-test:
+	cd docs-site && npx vitest run
+
+docs-build:
+	cd docs-site && npx vite build
