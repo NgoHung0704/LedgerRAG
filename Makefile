@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
 
 up:
 	docker compose up -d --build
@@ -78,6 +78,15 @@ eval-visuals:
 # Drop the documents named in figures.jsonl into tests/eval/figures/pdfs/.
 eval-figures:
 	python tests/eval/figures/run_eval_figures.py $(ARGS)
+
+# ---- trying a different parsing model (needs the candidate served) ---------
+# Runs both parser-facing gates against a candidate WITHOUT changing config,
+# so a swap is decided by what the model scores on OUR tables, not by the
+# benchmark shipped with it. Run --baseline first for the number to beat.
+#   make eval-parser ARGS="--baseline"
+#   make eval-parser ARGS="--at http://localhost:8010 --model PaddlePaddle/PaddleOCR-VL"
+eval-parser:
+	python scripts/eval_parser.py $(ARGS)
 
 # ---- Phase 5: routing gate (needs several KBs; scores router, not answers) --
 # Split the 3 sample PDFs into 3 KBs whose names contain CETIAT / Avenant /

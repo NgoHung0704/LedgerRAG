@@ -1,177 +1,344 @@
 {
   "nodes": [
     {
-      "id": "browser", "kind": "external", "column": 0,
-      "label": { "vi": "Trình duyệt", "en": "Browser" },
+      "id": "browser",
+      "kind": "external",
+      "column": 0,
+      "label": {
+        "vi": "Trình duyệt",
+        "en": "Browser"
+      },
       "summary": {
         "vi": "Người dùng cuối mở giao diện Next.js ở cổng 3000 và mọi thao tác đều bắt đầu từ đây.",
         "en": "The end user opens the Next.js interface on port 3000, and every action starts here."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 167, "to": 167,
-                "anchor": "- \"3000:3000\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 167,
+        "to": 167,
+        "anchor": "- \"3000:3000\""
+      }
     },
     {
-      "id": "proxy", "kind": "external", "column": 0,
-      "label": { "vi": "Reverse proxy / SSO", "en": "Reverse proxy / SSO" },
+      "id": "proxy",
+      "kind": "external",
+      "column": 0,
+      "label": {
+        "vi": "Reverse proxy / SSO",
+        "en": "Reverse proxy / SSO"
+      },
       "summary": {
         "vi": "Ứng dụng không giữ mật khẩu: proxy phía trước xác thực rồi chuyển danh tính qua header, nên API chỉ được phép nghe từ mạng của proxy.",
         "en": "The app holds no passwords: an upstream proxy authenticates and forwards the identity in a header, which is why the API may only listen on the proxy's network."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/core/auth.py", "from": 3, "to": 3,
-                "anchor": "An upstream proxy (Authelia, oauth2-proxy," }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/core/auth.py",
+        "from": 3,
+        "to": 3,
+        "anchor": "An upstream proxy (Authelia, oauth2-proxy,"
+      }
     },
     {
-      "id": "mcp-client", "kind": "external", "column": 0,
-      "label": { "vi": "MCP client", "en": "MCP client" },
+      "id": "mcp-client",
+      "kind": "external",
+      "column": 0,
+      "label": {
+        "vi": "MCP client",
+        "en": "MCP client"
+      },
       "summary": {
         "vi": "Claude Desktop, Cursor hoặc Claude Code gọi vào qua giao thức MCP thay vì qua giao diện web.",
         "en": "Claude Desktop, Cursor or Claude Code calls in over the MCP protocol instead of through the web interface."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/mcp/client.py", "from": 1, "to": 1,
-                "anchor": "HTTP client for the LedgerRAG API, used by the MCP server." }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/mcp/client.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "HTTP client for the LedgerRAG API, used by the MCP server."
+      }
     },
     {
-      "id": "consume-dir", "kind": "external", "column": 0,
-      "label": { "vi": "Thư mục nạp tự động", "en": "Watched consume directory" },
+      "id": "consume-dir",
+      "kind": "external",
+      "column": 0,
+      "label": {
+        "vi": "Thư mục nạp tự động",
+        "en": "Watched consume directory"
+      },
       "summary": {
         "vi": "Thả PDF vào ./consume/<tên KB>/ trên máy chủ là tài liệu tự chảy vào đúng KB, không cần bấm gì trên giao diện.",
         "en": "Dropping a PDF into ./consume/<KB name>/ on the host feeds the document into that knowledge base with nothing clicked in the interface."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 149, "to": 149,
-                "anchor": "LEDGERRAG_CONSUME_DIR: /consume" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 149,
+        "to": 149,
+        "anchor": "LEDGERRAG_CONSUME_DIR: /consume"
+      }
     },
-
     {
-      "id": "frontend", "kind": "service", "column": 1,
-      "label": { "vi": "Frontend Next.js", "en": "Next.js frontend" },
+      "id": "frontend",
+      "kind": "service",
+      "column": 1,
+      "label": {
+        "vi": "Frontend Next.js",
+        "en": "Next.js frontend"
+      },
       "summary": {
         "vi": "Quản lý KB, tải tài liệu và theo dõi trạng thái, chat có trích dẫn bấm ngược về ảnh trang gốc.",
         "en": "Knowledge-base management, upload with status tracking, and chat whose citations click back to the stored page image."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 162, "to": 162,
-                "anchor": "context: ./frontend" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 162,
+        "to": 162,
+        "anchor": "context: ./frontend"
+      }
     },
     {
-      "id": "api", "kind": "service", "column": 1,
-      "label": { "vi": "API FastAPI", "en": "FastAPI gateway" },
+      "id": "api",
+      "kind": "service",
+      "column": 1,
+      "label": {
+        "vi": "API FastAPI",
+        "en": "FastAPI gateway"
+      },
       "summary": {
         "vi": "Cổng vào duy nhất: 61 endpoint cho KB, tài liệu, element, chat SSE, cấu hình model và sức khoẻ hệ thống.",
         "en": "The single way in: 61 endpoints covering knowledge bases, documents, elements, SSE chat, model configuration and health."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 113, "to": 113,
-                "anchor": "- \"8000:8000\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 113,
+        "to": 113,
+        "anchor": "- \"8000:8000\""
+      }
     },
     {
-      "id": "worker", "kind": "service", "column": 1,
-      "label": { "vi": "Worker Celery", "en": "Celery worker" },
+      "id": "worker",
+      "kind": "service",
+      "column": 1,
+      "label": {
+        "vi": "Worker Celery",
+        "en": "Celery worker"
+      },
       "summary": {
         "vi": "Chạy ingestion tuần tự từng tài liệu: tách, chunk, embed, index — và idempotent theo từng doc.",
         "en": "Runs ingestion one document at a time: extract, chunk, embed, index - and idempotent per document."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 129, "to": 129,
-                "anchor": "celery -A tablerag.ingestion.worker worker" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 129,
+        "to": 129,
+        "anchor": "celery -A tablerag.ingestion.worker worker"
+      }
     },
     {
-      "id": "consumer", "kind": "service", "column": 1,
-      "label": { "vi": "Consumer thư mục", "en": "Directory consumer" },
+      "id": "consumer",
+      "kind": "service",
+      "column": 1,
+      "label": {
+        "vi": "Consumer thư mục",
+        "en": "Directory consumer"
+      },
       "summary": {
         "vi": "Theo dõi thư mục nạp, tạo KB nếu chưa có, đẩy tài liệu vào hàng đợi rồi chuyển file sang .processed.",
         "en": "Watches the consume directory, creates the knowledge base if it is missing, queues the document, then moves the file into .processed."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 146, "to": 146,
-                "anchor": "python -m tablerag.ingestion.consumer" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 146,
+        "to": 146,
+        "anchor": "python -m tablerag.ingestion.consumer"
+      }
     },
     {
-      "id": "mcp-server", "kind": "service", "column": 1,
-      "label": { "vi": "MCP server", "en": "MCP server" },
+      "id": "mcp-server",
+      "kind": "service",
+      "column": 1,
+      "label": {
+        "vi": "MCP server",
+        "en": "MCP server"
+      },
       "summary": {
         "vi": "Bọc HTTP API thành hai công cụ MCP — liệt kê KB và hỏi có trích dẫn — giữ nguyên tín hiệu thất bại trung thực.",
         "en": "Wraps the HTTP API as two MCP tools - list the knowledge bases, and ask a cited question - keeping the honest-failure signals intact."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/mcp/server.py", "from": 1, "to": 1,
-                "anchor": "LedgerRAG MCP server (stdio)." }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/mcp/server.py",
+        "from": 1,
+        "to": 1,
+        "anchor": "LedgerRAG MCP server (stdio)."
+      }
     },
-
     {
-      "id": "postgres", "kind": "store", "column": 2,
-      "label": { "vi": "Postgres", "en": "Postgres" },
+      "id": "postgres",
+      "kind": "store",
+      "column": 2,
+      "label": {
+        "vi": "Postgres",
+        "en": "Postgres"
+      },
       "summary": {
         "vi": "Nguồn sự thật về cấu trúc: KB, tài liệu, element, bản ghi dimensions/metrics, hội thoại và nhật ký kiểm toán.",
         "en": "The structural source of truth: knowledge bases, documents, elements, dimensions/metrics records, conversations and the audit log."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 55, "to": 55,
-                "anchor": "image: postgres:16-alpine" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 55,
+        "to": 55,
+        "anchor": "image: postgres:16-alpine"
+      }
     },
     {
-      "id": "redis", "kind": "store", "column": 2,
-      "label": { "vi": "Redis", "en": "Redis" },
+      "id": "redis",
+      "kind": "store",
+      "column": 2,
+      "label": {
+        "vi": "Redis",
+        "en": "Redis"
+      },
       "summary": {
         "vi": "Hàng đợi Celery: API bỏ việc ingestion vào đây, worker lấy ra từng việc một.",
         "en": "The Celery queue: the API drops ingestion work in here and the worker takes it out one job at a time."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 70, "to": 70,
-                "anchor": "image: redis:7-alpine" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 70,
+        "to": 70,
+        "anchor": "image: redis:7-alpine"
+      }
     },
     {
-      "id": "qdrant", "kind": "store", "column": 2,
-      "label": { "vi": "Qdrant", "en": "Qdrant" },
+      "id": "qdrant",
+      "kind": "store",
+      "column": 2,
+      "label": {
+        "vi": "Qdrant",
+        "en": "Qdrant"
+      },
       "summary": {
         "vi": "Vector store cho truy hồi dense, cộng thêm phần sparse của truy hồi lai từ Phase 4.",
         "en": "The vector store for dense retrieval, plus the sparse half of the Phase 4 hybrid."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 79, "to": 79,
-                "anchor": "image: qdrant/qdrant:v1.12.4" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 79,
+        "to": 79,
+        "anchor": "image: qdrant/qdrant:v1.12.4"
+      }
     },
     {
-      "id": "minio", "kind": "store", "column": 2,
-      "label": { "vi": "MinIO", "en": "MinIO" },
+      "id": "minio",
+      "kind": "store",
+      "column": 2,
+      "label": {
+        "vi": "MinIO",
+        "en": "MinIO"
+      },
       "summary": {
         "vi": "Object store giữ PDF gốc, ảnh render từng trang và ảnh crop của mỗi bảng — bằng chứng của nguyên tắc số 3.",
         "en": "The object store holding the original PDF, the per-page renders and every table crop - the evidence behind principle 3."
       },
-      "cite": { "kind": "anchor", "file": "docker-compose.yml", "from": 94, "to": 94,
-                "anchor": "image: minio/minio:RELEASE.2024-06-13T22-53-53Z" }
+      "cite": {
+        "kind": "anchor",
+        "file": "docker-compose.yml",
+        "from": 94,
+        "to": 94,
+        "anchor": "image: minio/minio:RELEASE.2024-06-13T22-53-53Z"
+      }
     },
-
     {
-      "id": "parser", "kind": "model", "column": 3,
-      "label": { "vi": "Vai trò parser (VLM)", "en": "Parser role (VLM)" },
+      "id": "parser",
+      "kind": "model",
+      "column": 3,
+      "label": {
+        "vi": "Vai trò parser (VLM)",
+        "en": "Parser role (VLM)"
+      },
       "summary": {
         "vi": "Đọc ảnh crop của bảng và trang scan; dùng tag -instruct vì tag mặc định là model thinking trả về rỗng.",
         "en": "Reads table crops and scanned pages; the -instruct tag is required because the default tag is a thinking model that returns empty output."
       },
-      "cite": { "kind": "anchor", "file": ".env.example", "from": 39, "to": 39,
-                "anchor": "LEDGERRAG_MODELS__PARSER__MODEL_NAME=qwen3-vl:8b-instruct" }
+      "cite": {
+        "kind": "anchor",
+        "file": ".env.example",
+        "from": 39,
+        "to": 39,
+        "anchor": "LEDGERRAG_MODELS__PARSER__MODEL_NAME=qwen3-vl:8b-instruct"
+      }
     },
     {
-      "id": "embedder", "kind": "model", "column": 3,
-      "label": { "vi": "Vai trò embedder", "en": "Embedder role" },
+      "id": "embedder",
+      "kind": "model",
+      "column": 3,
+      "label": {
+        "vi": "Vai trò embedder",
+        "en": "Embedder role"
+      },
       "summary": {
         "vi": "Sinh vector cho chunk lúc index và cho câu hỏi lúc truy vấn; số chiều phải khớp cấu hình.",
         "en": "Produces vectors for chunks at index time and for the question at query time; its dimension must match the configuration."
       },
-      "cite": { "kind": "anchor", "file": ".env.example", "from": 44, "to": 44,
-                "anchor": "LEDGERRAG_MODELS__EMBEDDER__MODEL_NAME=bge-m3" }
+      "cite": {
+        "kind": "anchor",
+        "file": ".env.example",
+        "from": 63,
+        "to": 63,
+        "anchor": "LEDGERRAG_MODELS__EMBEDDER__MODEL_NAME=bge-m3"
+      }
     },
     {
-      "id": "chat", "kind": "model", "column": 3,
-      "label": { "vi": "Vai trò chat (LLM)", "en": "Chat role (LLM)" },
+      "id": "chat",
+      "kind": "model",
+      "column": 3,
+      "label": {
+        "vi": "Vai trò chat (LLM)",
+        "en": "Chat role (LLM)"
+      },
       "summary": {
         "vi": "Sinh câu trả lời, tóm tắt và định tuyến nhiều KB; đây chính là cấu hình mà cổng chất lượng Phase 4 đã vượt qua.",
         "en": "Generates answers, summaries and multi-KB routing; this is the exact configuration the Phase 4 quality gate passed with."
       },
-      "cite": { "kind": "anchor", "file": ".env.example", "from": 54, "to": 54,
-                "anchor": "LEDGERRAG_MODELS__CHAT__MODEL_NAME=qwen2.5:14b" }
+      "cite": {
+        "kind": "anchor",
+        "file": ".env.example",
+        "from": 73,
+        "to": 73,
+        "anchor": "LEDGERRAG_MODELS__CHAT__MODEL_NAME=qwen2.5:14b"
+      }
     },
     {
-      "id": "reranker", "kind": "model", "column": 3,
-      "label": { "vi": "Vai trò reranker", "en": "Reranker role" },
+      "id": "reranker",
+      "kind": "model",
+      "column": 3,
+      "label": {
+        "vi": "Vai trò reranker",
+        "en": "Reranker role"
+      },
       "summary": {
         "vi": "Mặc định tắt: khi tắt thì suy biến về thứ tự dự phòng đa dạng theo tài liệu, chứ không im lặng trả kết quả tệ.",
         "en": "Disabled by default: when off it degrades to the document-diversified fallback ordering rather than silently returning worse results."
       },
-      "cite": { "kind": "anchor", "file": ".env.example", "from": 60, "to": 60,
-                "anchor": "LEDGERRAG_MODELS__RERANKER__PROVIDER=disabled" }
+      "cite": {
+        "kind": "anchor",
+        "file": ".env.example",
+        "from": 79,
+        "to": 79,
+        "anchor": "LEDGERRAG_MODELS__RERANKER__PROVIDER=disabled"
+      }
     }
   ]
 }
