@@ -81,6 +81,37 @@ def slice_text(rel: str, start: int, end: int) -> str:
     return "\n".join(file_lines(rel)[start - 1:end])
 
 
+def source_stores() -> set[tuple[str, str]]:
+    """('postgres', tablename) for every ORM model, plus ('qdrant', collection).
+
+    Read from the source rather than listed by hand: a table added without a
+    row in the ownership table is precisely the drift this catches.
+    """
+    found: set[tuple[str, str]] = set()
+
+    orm = ast.parse(norm((REPO_ROOT / "tablerag" / "storage" / "orm.py")
+                         .read_text(encoding="utf-8")))
+    for node in ast.walk(orm):
+        if not isinstance(node, ast.ClassDef):
+            continue
+        for stmt in node.body:
+            if (isinstance(stmt, ast.Assign)
+                    and any(getattr(t, "id", None) == "__tablename__"
+                            for t in stmt.targets)
+                    and isinstance(stmt.value, ast.Constant)):
+                found.add(("postgres", stmt.value.value))
+
+    qdrant = ast.parse(norm((REPO_ROOT / "tablerag" / "storage" / "qdrant.py")
+                            .read_text(encoding="utf-8")))
+    for node in qdrant.body:
+        if (isinstance(node, ast.Assign)
+                and any(getattr(t, "id", "").startswith("COLLECTION_")
+                        for t in node.targets)
+                and isinstance(node.value, ast.Constant)):
+            found.add(("qdrant", node.value.value))
+    return found
+
+
 def source_endpoints() -> set[tuple[str, str]]:
     """(METHOD, full path) for every FastAPI route in the API package.
 

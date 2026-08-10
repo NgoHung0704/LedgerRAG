@@ -17,6 +17,7 @@ from tests.unit.docs_guard_lib import (
     norm,
     slice_text,
     source_endpoints,
+    source_stores,
     walk,
 )
 
@@ -127,3 +128,17 @@ def test_every_endpoint_in_the_code_is_documented():
         "these endpoints exist but no edge documents them — a new endpoint "
         "without a contract is exactly the rot this page exists to prevent: "
         + ", ".join(f"{m} {p}" for m, p in undocumented))
+
+
+def test_every_store_says_who_writes_it():
+    rows = {(r["store"], r["name"]) for r in load("ownership.json")["rows"]}
+    missing = sorted(source_stores() - rows)
+    assert not missing, (
+        "no ownership row for: "
+        + ", ".join(f"{s}:{n}" for s, n in missing)
+        + " — a new store with no stated writer is the single thing new "
+          "developers get wrong most often")
+    invented = sorted(rows - source_stores())
+    assert not invented, (
+        "ownership rows for stores that do not exist: "
+        + ", ".join(f"{s}:{n}" for s, n in invented))
