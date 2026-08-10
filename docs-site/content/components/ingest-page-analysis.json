@@ -75,7 +75,7 @@
       "name": "ocr_page",
       "decl": "async def ocr_page(image_png: bytes) -> tuple[str, bool]:",
       "file": "tablerag/ingestion/ocr.py",
-      "line": 266,
+      "line": 283,
       "note": {
         "vi": "Đọc trang scan bằng chính VLM parser, kèm dòng cuối cho biết trang có bảng hay không.",
         "en": "Reads a scanned page with the same parser VLM, with a last line saying whether the page holds tables."

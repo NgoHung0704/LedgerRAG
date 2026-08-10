@@ -1126,8 +1126,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 145,
-            "to": 145,
+            "from": 150,
+            "to": 150,
             "anchor": "async def assist_element_edit(element_id: uuid.UUID,"
           }
         },
@@ -1165,8 +1165,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 178,
-            "to": 178,
+            "from": 183,
+            "to": 183,
             "anchor": "async def derive_element_records(element_id: uuid.UUID,"
           }
         },
@@ -1204,8 +1204,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 196,
-            "to": 196,
+            "from": 201,
+            "to": 201,
             "anchor": "async def recheck_element(element_id: uuid.UUID) -> dict:"
           }
         },
@@ -1243,8 +1243,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 214,
-            "to": 214,
+            "from": 219,
+            "to": 219,
             "anchor": "async def split_element_table(element_id: uuid.UUID) -> dict:"
           }
         },
@@ -1289,8 +1289,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 249,
-            "to": 249,
+            "from": 254,
+            "to": 254,
             "anchor": "async def merge_element_tables(body: MergeRequest) -> dict:"
           }
         },
@@ -1328,8 +1328,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 287,
-            "to": 287,
+            "from": 292,
+            "to": 292,
             "anchor": "async def convert_element_to_table(element_id: uuid.UUID,"
           }
         },
@@ -1367,8 +1367,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 312,
-            "to": 312,
+            "from": 317,
+            "to": 317,
             "anchor": "async def set_element_row_merging(element_id: uuid.UUID,"
           }
         },
@@ -1406,8 +1406,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 332,
-            "to": 332,
+            "from": 337,
+            "to": 337,
             "anchor": "async def convert_element_to_text(element_id: uuid.UUID) -> dict:"
           }
         },
@@ -1445,8 +1445,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 353,
-            "to": 353,
+            "from": 358,
+            "to": 358,
             "anchor": "def approve_element(element_id: uuid.UUID) -> dict:"
           }
         },
@@ -1484,8 +1484,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 366,
-            "to": 366,
+            "from": 371,
+            "to": 371,
             "anchor": "def mark_element_unusable(element_id: uuid.UUID) -> dict:"
           }
         },
@@ -1523,8 +1523,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/elements.py",
-            "from": 382,
-            "to": 382,
+            "from": 387,
+            "to": 387,
             "anchor": "def get_element_image(element_id: uuid.UUID, request: Request) -> Response:"
           }
         }

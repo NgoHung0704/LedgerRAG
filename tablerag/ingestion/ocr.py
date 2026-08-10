@@ -137,15 +137,25 @@ async def _transcribe(image_png: bytes, prompt: str) -> str:
     return "".join(parts).strip()
 
 
-async def reread_page(image_png: bytes, mode: str = "structure") -> str:
+async def reread_page(image_png: bytes, mode: str = "structure",
+                      locale: str | None = None) -> str:
     """Re-read a layout-heavy page: a structured transcription, an explanation
     of what it says, or both (see REREAD_MODES). Always proposed to a human for
     review — never written straight over the extracted text.
 
     Markdown, not HTML, on purpose: a text element's content is embedded for
     retrieval and rendered as markdown in answers, so tags would pollute the
-    vector and show up as literal `<table>` in the chat."""
-    return await _transcribe(image_png, REREAD_MODES[mode])
+    vector and show up as literal `<table>` in the chat.
+
+    The KB's declared language is imposed on what the model WRITES, and only on
+    that. A transcription copies the page — telling it to produce French from a
+    German page would be ordering a translation, which is the one thing every
+    prompt here forbids. So `structure` is left alone, and the explanation in
+    `summary` and `both` is what carries the language rule."""
+    prompt = REREAD_MODES[mode]
+    if mode in ("summary", "both"):
+        prompt += language_line(locale, "the explanation")
+    return await _transcribe(image_png, prompt)
 
 
 _LANGUAGES = {"fr": "French", "de": "German", "es": "Spanish", "it": "Italian",
@@ -192,7 +202,7 @@ def guess_language(text: str) -> str | None:
     return best
 
 
-def language_line(locale: str | None) -> str:
+def language_line(locale: str | None, what: str = "the description") -> str:
     """Which language to write in.
 
     Measured on the deployment box: every description of a FRENCH factsheet
@@ -200,13 +210,20 @@ def language_line(locale: str | None) -> str:
     titled « Répartition sectorielle ». The prompt said "the same language as
     its labels" and the model followed the prompt's own language instead.
     A description in the wrong language is nearly unfindable: the question and
-    the chunk share no words."""
+    the chunk share no words.
+
+    A DECLARED KB LANGUAGE IS BINDING. The model chooses for itself only when
+    the knowledge base declares nothing — that is the one case where there is
+    no better answer than the page's own words."""
     name = _LANGUAGES.get((locale or "").strip().lower()[:2])
     if name:
-        return (f"\n\nWrite the description in {name}. The document is in "
-                f"{name} and it will be searched in {name}.")
-    return ("\n\nWrite the description in the same language as the words "
-            "printed on the figure.")
+        return (f"\n\nWrite {what} in {name}. The knowledge base declares "
+                f"{name} and will be searched in {name}. Do this even if the "
+                f"page is in another language — but never translate what you "
+                f"are COPYING: quoted labels, values and proper names stay "
+                f"exactly as printed.")
+    return (f"\n\nWrite {what} in the same language as the words printed on "
+            f"the page.")
 
 
 async def describe_figure(image_png: bytes, caption: str | None = None,

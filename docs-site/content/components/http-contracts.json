@@ -45,7 +45,7 @@
       "name": "merge_element_tables",
       "decl": "async def merge_element_tables(body: MergeRequest) -> dict:",
       "file": "tablerag/api/routes/elements.py",
-      "line": 249,
+      "line": 254,
       "note": {
         "vi": "Gộp đúng những bảng người duyệt chọn, không đoán \"bảng kế tiếp\".",
         "en": "Merges exactly the tables the reviewer chose, with no guessing at \"the next one\"."

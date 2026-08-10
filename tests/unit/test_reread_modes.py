@@ -57,7 +57,11 @@ async def test_reread_page_uses_the_requested_prompt(monkeypatch):
     # one bound there — patching the registry would leave this module untouched
     monkeypatch.setattr("tablerag.ingestion.ocr.get_provider", lambda role: P())
     assert await reread_page(b"img", "summary") == "ok"
-    assert seen == [REREAD_MODES["summary"]]
+    # the mode's prompt is what is sent. It is no longer the WHOLE prompt: a KB
+    # that declares a language binds the explanation the model writes, and that
+    # rule is appended (see test_declared_language.py)
+    assert seen[0].startswith(REREAD_MODES["summary"])
+    assert len(seen) == 1
 
 
 async def test_unknown_mode_is_a_programming_error_not_a_silent_default():

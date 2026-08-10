@@ -135,7 +135,12 @@ async def reread_element(element_id: uuid.UUID, mode: str = "structure") -> dict
     # headings around the text to reconstruct what belongs with what
     page_png = await asyncio.to_thread(load)
     page_png = ensure_min_width(page_png, get_settings().vlm_min_image_width)
-    text = await reread_page(page_png, mode)
+    # the KB's declared language binds what the model WRITES here; it chooses
+    # for itself only when the KB declares nothing
+    from tablerag.indexing import _element_locale
+
+    _, locale = await asyncio.to_thread(_element_locale, element_id)
+    text = await reread_page(page_png, mode, locale)
     if not text:
         raise HTTPException(502, "the parser model returned nothing")
     return {"text": text, "mode": mode}
