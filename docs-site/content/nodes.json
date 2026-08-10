@@ -295,8 +295,8 @@
       "cite": {
         "kind": "anchor",
         "file": ".env.example",
-        "from": 63,
-        "to": 63,
+        "from": 68,
+        "to": 68,
         "anchor": "LEDGERRAG_MODELS__EMBEDDER__MODEL_NAME=bge-m3"
       }
     },
@@ -315,8 +315,8 @@
       "cite": {
         "kind": "anchor",
         "file": ".env.example",
-        "from": 73,
-        "to": 73,
+        "from": 78,
+        "to": 78,
         "anchor": "LEDGERRAG_MODELS__CHAT__MODEL_NAME=qwen2.5:14b"
       }
     },
@@ -335,8 +335,8 @@
       "cite": {
         "kind": "anchor",
         "file": ".env.example",
-        "from": 79,
-        "to": 79,
+        "from": 84,
+        "to": 84,
         "anchor": "LEDGERRAG_MODELS__RERANKER__PROVIDER=disabled"
       }
     }
