@@ -269,3 +269,39 @@ def test_flow_diagrams_are_internally_connected():
         for edge in flow["edges"]:
             for end in ("from", "to"):
                 assert edge[end] in ids,                     f"{name}: flow edge points at unknown step {edge[end]!r}"
+
+
+def test_machine_parts_name_real_components_and_phases():
+    components = {c["id"] for c in load("components.json")["components"]}
+    phases = {p["id"] for p in load("phases.json")["phases"]}
+    for machine in load("machines.json")["machines"]:
+        part_ids = {p["id"] for p in machine["parts"]}
+        exit_ids = {x["id"] for x in machine["exits"]}
+        for part in machine["parts"]:
+            assert part["component"] in components, (
+                f"machine {machine['id']}: part {part['id']} names unknown "
+                f"component {part['component']!r}")
+            for phase in part["phases"]:
+                assert phase in phases, (
+                    f"machine {machine['id']}: part {part['id']} names "
+                    f"unknown phase {phase!r}")
+        for edge in machine["edges"]:
+            for end in ("from", "to"):
+                assert edge[end] in part_ids | exit_ids, (
+                    f"machine {machine['id']}: edge points at unknown "
+                    f"part/exit {edge[end]!r}")
+
+
+def test_every_machine_part_is_reachable_from_the_inlet():
+    """A part nothing feeds is a drawing mistake, not a pipeline."""
+    for machine in load("machines.json")["machines"]:
+        parts = [p["id"] for p in machine["parts"]]
+        reached = {parts[0]}
+        for _ in parts:
+            for edge in machine["edges"]:
+                if edge["from"] in reached:
+                    reached.add(edge["to"])
+        unreachable = sorted(set(parts) - reached)
+        assert not unreachable, (
+            f"machine {machine['id']}: {unreachable} cannot be reached from "
+            f"the inlet")

@@ -1,0 +1,126 @@
+{
+  "machines": [
+    {
+      "id": "ingest",
+      "label": { "vi": "Dây chuyền nạp tài liệu", "en": "The ingestion line" },
+      "inlet": {
+        "label": {
+          "vi": "Một PDF — hoặc một tệp Office, được chuyển sang PDF trước để mọi thứ phía sau không đổi.",
+          "en": "A PDF - or an Office file, converted to PDF first so nothing downstream changes."
+        }
+      },
+      "parts": [
+        { "id": "convert", "component": "ingest-intake", "phases": ["p1", "p5"],
+          "label": { "vi": "Chuyển định dạng", "en": "Convert" } },
+        { "id": "extract", "component": "ingest-page-analysis", "phases": ["p1"],
+          "label": { "vi": "Rút text và render trang", "en": "Extract text, render pages" } },
+        { "id": "layout", "component": "ingest-page-analysis", "phases": ["p1", "p2"],
+          "label": { "vi": "Phân tích bố cục", "en": "Analyse the layout" } },
+        { "id": "regions", "component": "ingest-page-analysis", "phases": ["p2"],
+          "label": { "vi": "Khoanh vùng bảng", "en": "Find the table regions" } },
+        { "id": "tables", "component": "ingest-tables", "phases": ["p2"],
+          "label": { "vi": "Đọc bảng thành ba biểu diễn", "en": "Read tables into three representations" } },
+        { "id": "figures", "component": "ingest-figures", "phases": ["p2"],
+          "label": { "vi": "Đo biểu đồ và bảng màu", "en": "Measure charts and palettes" } },
+        { "id": "confidence", "component": "ingest-confidence", "phases": ["p3"],
+          "label": { "vi": "Chấm ba tín hiệu tin cậy", "en": "Score the three confidence signals" } },
+        { "id": "chunk", "component": "index-write", "phases": ["p1"],
+          "label": { "vi": "Cắt chunk", "en": "Chunk" } },
+        { "id": "embed", "component": "index-write", "phases": ["p1", "p4"],
+          "label": { "vi": "Sinh vector dense và sparse", "en": "Embed, dense and sparse" } },
+        { "id": "index", "component": "index-write", "phases": ["p1", "p2", "p4"],
+          "label": { "vi": "Ghi Postgres và Qdrant", "en": "Write Postgres and Qdrant" } }
+      ],
+      "exits": [
+        { "id": "done", "label": { "vi": "done — sẵn sàng để hỏi", "en": "done - ready to be asked" } },
+        { "id": "failed", "label": { "vi": "failed — kèm lý do đọc được", "en": "failed - with a reason to read" } },
+        { "id": "review", "label": {
+            "vi": "Hàng đợi duyệt — bảng vẫn nằm đó, nhưng câu trả lời không khẳng định số từ nó",
+            "en": "The review queue - the table stays, but no answer asserts a number from it" } }
+      ],
+      "edges": [
+        { "from": "convert", "to": "extract" },
+        { "from": "extract", "to": "layout" },
+        { "from": "layout", "to": "regions", "label": {
+            "vi": "trang có bảng", "en": "the page holds tables" } },
+        { "from": "layout", "to": "chunk", "label": {
+            "vi": "chỉ có văn bản", "en": "text only" } },
+        { "from": "regions", "to": "tables" },
+        { "from": "layout", "to": "figures", "label": {
+            "vi": "trang có hình", "en": "the page holds figures" } },
+        { "from": "tables", "to": "confidence" },
+        { "from": "figures", "to": "chunk" },
+        { "from": "confidence", "to": "chunk", "label": {
+            "vi": "mọi tín hiệu đều ổn", "en": "every signal is clean" } },
+        { "from": "confidence", "to": "review", "label": {
+            "vi": "một tín hiệu nói bản parse này sai", "en": "a signal says this parse is wrong" } },
+        { "from": "chunk", "to": "embed" },
+        { "from": "embed", "to": "index" },
+        { "from": "index", "to": "done" },
+        { "from": "index", "to": "failed", "label": {
+            "vi": "lỗi vĩnh viễn", "en": "a permanent error" } }
+      ]
+    },
+    {
+      "id": "query",
+      "label": { "vi": "Dây chuyền trả lời", "en": "The answering line" },
+      "inlet": {
+        "label": {
+          "vi": "Một câu hỏi — có thể là một mảnh vụn nối tiếp câu trước, nên nó được cô đọng thành câu tự đứng được trước khi đi tiếp.",
+          "en": "A question - possibly a fragment following on from the last one, so it is condensed into something self-contained before anything else."
+        }
+      },
+      "parts": [
+        { "id": "condense", "component": "query-answer", "phases": ["p1", "p4"],
+          "label": { "vi": "Cô đọng thành câu tự đứng", "en": "Condense into a standalone question" } },
+        { "id": "router", "component": "query-route-retrieve", "phases": ["p1", "p5"],
+          "label": { "vi": "Router chọn KB", "en": "The router picks the knowledge bases" } },
+        { "id": "retrieve", "component": "query-route-retrieve", "phases": ["p1", "p4"],
+          "label": { "vi": "Truy hồi lai, hợp nhất RRF", "en": "Hybrid retrieval, RRF fusion" } },
+        { "id": "rerank", "component": "query-route-retrieve", "phases": ["p1", "p4"],
+          "label": { "vi": "Xếp lại ứng viên", "en": "Reorder the candidates" } },
+        { "id": "assemble", "component": "query-answer", "phases": ["p1", "p2"],
+          "label": { "vi": "Lắp ngữ cảnh có xuất xứ", "en": "Assemble the context with provenance" } },
+        { "id": "generate", "component": "query-answer", "phases": ["p1", "p4"],
+          "label": { "vi": "Sinh câu trả lời, chảy về theo SSE", "en": "Generate, streamed over SSE" } },
+        { "id": "verify", "component": "query-verify", "phases": ["p1", "p4"],
+          "label": { "vi": "Kiểm chứng từng con số", "en": "Verify every number" } }
+      ],
+      "exits": [
+        { "id": "answered", "label": {
+            "vi": "Câu trả lời có trích dẫn bấm ngược về ảnh trang",
+            "en": "A cited answer that clicks back to the page image" } },
+        { "id": "refused", "label": {
+            "vi": "Nói thẳng là không tìm thấy — không bịa ra một câu trả lời",
+            "en": "Says plainly that nothing was found - rather than inventing one" } },
+        { "id": "flagged", "label": {
+            "vi": "Trả lời kèm cờ: có con số không tìm lại được trong nguồn",
+            "en": "Answered with a flag: a number could not be found again in the sources" } },
+        { "id": "smalltalk", "label": {
+            "vi": "Lời chào được trả lời như lời chào, không tìm kiếm gì",
+            "en": "A greeting answered as a greeting, with no search at all" } }
+      ],
+      "edges": [
+        { "from": "condense", "to": "smalltalk", "label": {
+            "vi": "không phải câu hỏi về tài liệu", "en": "not a question about the documents" } },
+        { "from": "condense", "to": "router" },
+        { "from": "router", "to": "retrieve", "label": {
+            "vi": "chọn được KB — hoặc router hỏng thì tìm TẤT CẢ, không bao giờ tìm rỗng",
+            "en": "knowledge bases chosen - or, when the router fails, search ALL of them, never none" } },
+        { "from": "retrieve", "to": "rerank" },
+        { "from": "rerank", "to": "assemble", "label": {
+            "vi": "reranker tắt hoặc không với tới được thì dùng thứ tự dự phòng đa dạng theo tài liệu",
+            "en": "with the reranker off or unreachable, the document-diversified fallback ordering is used" } },
+        { "from": "assemble", "to": "refused", "label": {
+            "vi": "không có nguồn nào", "en": "no source at all" } },
+        { "from": "assemble", "to": "generate" },
+        { "from": "generate", "to": "verify" },
+        { "from": "verify", "to": "answered", "label": {
+            "vi": "mọi con số đều tìm lại được, hoặc suy ra được",
+            "en": "every number was found again, or is derivable" } },
+        { "from": "verify", "to": "flagged", "label": {
+            "vi": "có con số không tìm lại được", "en": "a number could not be found again" } }
+      ]
+    }
+  ]
+}
