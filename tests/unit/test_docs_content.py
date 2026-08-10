@@ -12,9 +12,11 @@ from tests.unit.docs_guard_lib import (
     CONTENT,
     REPO_ROOT,
     citations,
+    load,
     load_all,
     norm,
     slice_text,
+    source_endpoints,
     walk,
 )
 
@@ -104,3 +106,24 @@ def test_anchors_sit_inside_their_declared_range():
             f"{cite['file']}:{cite['from']}-{cite['to']} any more — the range "
             f"has drifted onto other content. Run `make docs-relink`."
         )
+
+
+def content_endpoints() -> set[tuple[str, str]]:
+    return {(op["method"].upper(), op["path"])
+            for edge in load("edges.json")["edges"]
+            for op in edge.get("operations", [])}
+
+
+def test_documented_endpoints_exist_in_the_code():
+    missing = sorted(content_endpoints() - source_endpoints())
+    assert not missing, (
+        "edges.json documents endpoints that no route declares: "
+        + ", ".join(f"{m} {p}" for m, p in missing))
+
+
+def test_every_endpoint_in_the_code_is_documented():
+    undocumented = sorted(source_endpoints() - content_endpoints())
+    assert not undocumented, (
+        "these endpoints exist but no edge documents them — a new endpoint "
+        "without a contract is exactly the rot this page exists to prevent: "
+        + ", ".join(f"{m} {p}" for m, p in undocumented))

@@ -8,6 +8,7 @@ be worse than no relink at all.
 
 from __future__ import annotations
 
+import ast
 import json
 from pathlib import Path
 from typing import Any, Iterator
@@ -78,3 +79,37 @@ def file_lines(rel: str) -> list[str]:
 def slice_text(rel: str, start: int, end: int) -> str:
     """Lines [start..end], 1-indexed and inclusive, joined with \\n."""
     return "\n".join(file_lines(rel)[start - 1:end])
+
+
+def source_endpoints() -> set[tuple[str, str]]:
+    """(METHOD, full path) for every FastAPI route in the API package.
+
+    The full path is the APIRouter prefix plus the decorator path: the nine
+    route modules use five different prefixes, so reading the decorator alone
+    would document paths that do not exist.
+    """
+    found: set[tuple[str, str]] = set()
+    routes = REPO_ROOT / "tablerag" / "api" / "routes"
+    for path in sorted(routes.glob("*.py")):
+        tree = ast.parse(norm(path.read_text(encoding="utf-8")))
+        prefix = ""
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "APIRouter"):
+                for kw in node.keywords:
+                    if kw.arg == "prefix" and isinstance(kw.value, ast.Constant):
+                        prefix = kw.value.value
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            for deco in node.decorator_list:
+                if (isinstance(deco, ast.Call)
+                        and isinstance(deco.func, ast.Attribute)
+                        and deco.func.attr in
+                        ("get", "post", "put", "patch", "delete")
+                        and deco.args
+                        and isinstance(deco.args[0], ast.Constant)):
+                    found.add((deco.func.attr.upper(),
+                               prefix + deco.args[0].value))
+    return found
