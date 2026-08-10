@@ -8,7 +8,15 @@ tests/unit because that is the gate the repo already runs (`make test-unit`)
 
 import re
 
-from tests.unit.docs_guard_lib import CONTENT, REPO_ROOT, load_all, walk
+from tests.unit.docs_guard_lib import (
+    CONTENT,
+    REPO_ROOT,
+    citations,
+    load_all,
+    norm,
+    slice_text,
+    walk,
+)
 
 VN_LETTERS = re.compile(
     "[ăâđêôơưĂÂĐÊÔƠƯáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợ"
@@ -17,6 +25,8 @@ VN_LETTERS = re.compile(
 )
 
 VERBATIM_FIELDS = {"anchor", "code", "decl", "file"}
+
+MIN_ANCHOR = 12
 
 
 def test_every_content_file_parses():
@@ -56,4 +66,41 @@ def test_every_declared_path_exists():
         target = REPO_ROOT / node["file"]
         assert target.is_file(), (
             f"{path} points at {node['file']}, which does not exist"
+        )
+
+
+def test_embedded_code_matches_the_file_verbatim():
+    for path, cite in citations(load_all()):
+        if cite["kind"] != "excerpt":
+            continue
+        actual = slice_text(cite["file"], cite["from"], cite["to"])
+        assert actual == norm(cite["code"]), (
+            f"{path}: the excerpt no longer matches "
+            f"{cite['file']}:{cite['from']}-{cite['to']}.\n"
+            f"--- content says ---\n{norm(cite['code'])}\n"
+            f"--- file says ---\n{actual}\n"
+            f"If only the line numbers drifted, run `make docs-relink`."
+        )
+
+
+def test_anchors_sit_inside_their_declared_range():
+    for path, cite in citations(load_all()):
+        if cite["kind"] != "anchor":
+            continue
+        anchor = norm(cite["anchor"])
+        assert len(anchor) >= MIN_ANCHOR, (
+            f"{path}: anchor {anchor!r} is too short to mean anything; "
+            f"an anchor must be at least {MIN_ANCHOR} characters"
+        )
+        whole = norm((REPO_ROOT / cite["file"]).read_text(encoding="utf-8"))
+        assert whole.count(anchor) == 1, (
+            f"{path}: anchor {anchor!r} occurs {whole.count(anchor)} times in "
+            f"{cite['file']} — extend it until it is unique, otherwise "
+            f"nothing can tell which occurrence was meant"
+        )
+        window = slice_text(cite["file"], cite["from"], cite["to"])
+        assert anchor in window, (
+            f"{path}: anchor {anchor!r} is not inside "
+            f"{cite['file']}:{cite['from']}-{cite['to']} any more — the range "
+            f"has drifted onto other content. Run `make docs-relink`."
         )
