@@ -82,12 +82,15 @@ def test_no_groups_when_nothing_overlaps():
 
 
 def test_a_table_and_a_prose_chunk_never_land_in_the_same_group():
-    # identical vocabulary on purpose: only the kind check can separate these,
-    # so deleting it makes this test fail rather than leaving CI green
+    # the TEXT block must come first. With the table first, the two signature
+    # types (str for a table, frozenset for text) can never compare equal, so
+    # deleting the kind guard changes nothing and this test would pass against
+    # a module that has lost it. Text first puts the guard on the only path
+    # where it does work.
     words = "garantie optique niveau remboursement plafond monture verres"
-    blocks = [_table(SIBLING_A, "notice.pdf"), _text(words), _text(words)]
+    blocks = [_text(words), _table(SIBLING_A, "notice.pdf"), _text(words)]
     groups = group_overlapping(blocks)
-    assert groups == [[1, 2]]
+    assert groups == [[0, 2]]
 
 
 def test_grouping_is_pairwise_and_does_not_chain():
@@ -102,3 +105,10 @@ def test_grouping_is_pairwise_and_does_not_chain():
 def test_a_capitalised_accented_word_matches_its_lowercase_form():
     assert subject_signature("École maternelle") == \
            subject_signature("école maternelle")
+
+
+def test_the_feminine_form_of_a_boilerplate_word_is_filtered_too():
+    # "la présente notice" is as common as "le présent document"; a stopword
+    # list that knows only the masculine form leaks one on every page
+    assert "presente" not in subject_signature("La présente notice.")
+    assert "present" not in subject_signature("Le présent document.")
