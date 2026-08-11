@@ -377,6 +377,7 @@
         "tablerag/query/__init__.py",
         "tablerag/query/pipeline.py",
         "tablerag/query/overlap.py",
+        "tablerag/query/neighbours.py",
         "tablerag/query/steps/__init__.py"
       ],
       "phases": [

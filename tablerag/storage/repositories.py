@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
+if TYPE_CHECKING:
+    from tablerag.query.neighbours import NeighbourCandidate
 
 from tablerag.storage.orm import (
     AppSetting,
@@ -290,6 +294,24 @@ def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkCont
     }
     # preserve caller's (relevance) ordering
     return [by_id[cid] for cid in chunk_ids if cid in by_id]
+
+
+def get_page_elements(s: Session, doc_ids: list[uuid.UUID]
+                      ) -> list["NeighbourCandidate"]:
+    """Every element of these documents, as neighbour candidates.
+
+    Whole documents rather than a page window: reading order is only correct
+    when nothing is missing from it, and a document's element rows are small."""
+    from tablerag.query.neighbours import NeighbourCandidate
+
+    if not doc_ids:
+        return []
+    rows = s.query(Element).filter(Element.doc_id.in_(doc_ids)).all()
+    return [NeighbourCandidate(
+        element_id=row.id, doc_id=row.doc_id, page=row.page,
+        y=float((row.bbox or [0, 0, 0, 0])[1]),
+        x=float((row.bbox or [0, 0, 0, 0])[0]), type=row.type)
+        for row in rows]
 
 
 @dataclass

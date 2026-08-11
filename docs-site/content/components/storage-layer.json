@@ -15,7 +15,7 @@
       "name": "add_element",
       "decl": "def add_element(s: Session, doc_id: uuid.UUID, page: int, bbox: list[float],",
       "file": "tablerag/storage/repositories.py",
-      "line": 208,
+      "line": 212,
       "note": {
         "vi": "Đường duy nhất để ingestion ghi một element.",
         "en": "The only way ingestion writes an element."
@@ -25,7 +25,7 @@
       "name": "get_chunk_contexts",
       "decl": "def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkContext]:",
       "file": "tablerag/storage/repositories.py",
-      "line": 272,
+      "line": 276,
       "note": {
         "vi": "Đường duy nhất để query hydrate một hit thành nguồn có xuất xứ.",
         "en": "The only way query hydrates a hit into a source with provenance."
@@ -35,7 +35,7 @@
       "name": "snapshot_element",
       "decl": "def snapshot_element(s: Session, element_id: uuid.UUID, action: str) -> None:",
       "file": "tablerag/storage/repositories.py",
-      "line": 413,
+      "line": 435,
       "note": {
         "vi": "Chụp lại element trước khi sửa, để lấy lại được đúng một lần sửa.",
         "en": "Snapshots an element before an edit, so exactly one edit can be taken back."
