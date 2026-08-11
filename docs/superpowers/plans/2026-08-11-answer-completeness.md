@@ -58,7 +58,7 @@ Next.js 14 + Tailwind frontend.
 import uuid
 
 from tablerag.query.pipeline import SourceBlock
-from tablerag.query.steps.assemble import trim_to_budget
+from tablerag.query.steps.assemble import budget_chars, trim_to_budget
 
 
 def _block(content: str, expanded: bool = False) -> SourceBlock:
@@ -82,6 +82,25 @@ def test_expansions_are_sacrificed_before_primary_sources():
     kept, dropped = trim_to_budget([primary_a, primary_b, extra], 250)
     assert kept == [primary_a, primary_b]
     assert len(dropped) == 1
+
+
+def test_an_expanded_block_goes_before_a_lower_ranked_primary():
+    # the expanded one sits in the MIDDLE on purpose: with it last, a function
+    # that merely pops the tail passes this test without honouring `expanded`
+    top = _block("a" * 100)
+    extra = _block("b" * 100, expanded=True)
+    primary_low = _block("c" * 100)
+    kept, dropped = trim_to_budget([top, extra, primary_low], 250)
+    assert kept == [top, primary_low]
+    assert "(expanded)" in dropped[0]
+
+
+def test_budget_chars_leaves_room_for_the_prompt_and_the_answer():
+    class _Settings:
+        chat_num_ctx = 32768
+        context_reserve_tokens = 3000
+
+    assert budget_chars(_Settings()) == int((32768 - 3000) * 3.0)
 
 
 def test_the_top_ranked_source_is_never_dropped():
@@ -146,11 +165,16 @@ def trim_to_budget(blocks: list[SourceBlock], budget: int
                    ) -> tuple[list[SourceBlock], list[str]]:
     """Fit the sources into `budget` characters, sacrificing in a fixed order.
 
-    Blocks arrive in rank order with expanded neighbours last, so dropping from
-    the END gives exactly the order the design calls for: expansions first
-    (lowest rank first), then the lowest-ranked primary sources. The top-ranked
-    source is never dropped — if it alone exceeds the budget it is truncated,
-    because returning nothing is worse than returning a shortened best source.
+    The victim is the lowest-ranked EXPANDED block when there is one, and the
+    lowest-ranked primary source otherwise. That choice is made HERE rather than
+    inherited from the caller's ordering: "neighbours are sacrificed first" is
+    what this function promises, and a promise defended only by how another file
+    happens to sort its input is not defended at all. Surviving blocks keep
+    their original order, so citation numbering does not shift.
+
+    The top-ranked source is never dropped — if it alone exceeds the budget it
+    is truncated, because returning nothing is worse than returning a shortened
+    best source.
 
     Returns the kept blocks and a description of every sacrifice, so the caller
     can log what the user did not get to see.
@@ -162,7 +186,11 @@ def trim_to_budget(blocks: list[SourceBlock], budget: int
         return sum(len(b.content) for b in kept)
 
     while len(kept) > 1 and total() > budget:
-        gone = kept.pop()
+        # range starts at 1: index 0 is the top-ranked source and is structurally
+        # ineligible. (expanded, index) picks expanded over primary, and the
+        # lowest rank within whichever group is chosen.
+        victim = max(range(1, len(kept)), key=lambda i: (kept[i].expanded, i))
+        gone = kept.pop(victim)
         dropped.append(f"dropped {gone.kind} {gone.filename} p{gone.page}"
                        f"{' (expanded)' if gone.expanded else ''}")
     if kept and total() > budget:
