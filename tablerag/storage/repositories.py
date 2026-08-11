@@ -264,6 +264,9 @@ class ChunkContext:
     doc_id: uuid.UUID
     filename: str
     element_type: str = "text"  # 'figure' -> the text is a description
+    # the heading above this element, when ingestion recorded one — see
+    # overlap.period_of, which needs it to tell two look-alike sources apart
+    context: str = ""
 
 
 def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkContext]:
@@ -281,7 +284,8 @@ def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkCont
             page=element.page, crop_image_path=element.crop_image_path,
             confidence=element.confidence, needs_review=element.needs_review,
             doc_id=document.id, filename=document.filename,
-            element_type=element.type)
+            element_type=element.type,
+            context=(element.meta or {}).get("context", ""))
         for chunk, element, document in rows
     }
     # preserve caller's (relevance) ordering
@@ -303,6 +307,9 @@ class TableSource:
     crop_image_path: str
     confidence: float | None
     needs_review: bool
+    # the heading above this table, when ingestion recorded one — see
+    # overlap.period_of, which needs it to tell two look-alike sources apart
+    context: str = ""
 
 
 def get_table_sources(s: Session, element_ids: list[uuid.UUID]) -> list[TableSource]:
@@ -320,7 +327,8 @@ def get_table_sources(s: Session, element_ids: list[uuid.UUID]) -> list[TableSou
             filename=document.filename, page=element.page,
             html=table.html, summary=table.summary,
             crop_image_path=element.crop_image_path,
-            confidence=element.confidence, needs_review=element.needs_review)
+            confidence=element.confidence, needs_review=element.needs_review,
+            context=(element.meta or {}).get("context", ""))
         for table, element, document in rows
     }
     return [by_id[eid] for eid in element_ids if eid in by_id]

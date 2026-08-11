@@ -41,6 +41,9 @@ class SourceBlock:
     # pulled in because it neighbours a retrieved source, not because it was
     # retrieved. Kept separable so a reader can still see what search found.
     expanded: bool = False
+    # the heading printed above this element (Element.meta["context"]), which is
+    # often the only place a period or department is written down
+    context: str = ""
 
 
 @dataclass

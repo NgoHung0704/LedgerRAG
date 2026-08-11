@@ -8,12 +8,16 @@ in the user's language, whatever it is (constraint C2: no hardcoded locale).
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import AsyncIterator
 
 from tablerag.models.base import Msg
 from tablerag.models.registry import get_provider
+from tablerag.query.overlap import group_overlapping, overlap_note
 from tablerag.query.pipeline import QueryContext, SourceBlock
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """\
 You are a careful document assistant. Answer the user's question using ONLY \
@@ -93,18 +97,33 @@ only if the description presents that number as printed on the figure; never \
 present it as a value the document states.\
 """
 
+# Appended only when two or more sources were detected as covering the same
+# subject. Conditional for the same reason FIGURE_RULE is: a query with no
+# look-alikes must keep the answering prompt byte-identical to the measured
+# configuration.
+OVERLAP_RULE = """
+- Some sources are marked as covering THE SAME SUBJECT from different places. \
+Never merge them into a single statement. Give each version with its own \
+citation and say which document (and period, if stated) it comes from. If they \
+disagree, say plainly that they disagree. If the question does not name a \
+document or a period, do NOT choose one for the user — give both, attributed.\
+"""
+
 
 def build_system_prompt(extra_instructions: str = "", identity: str = "",
-                        has_figures: bool = False) -> str:
+                        has_figures: bool = False,
+                        has_overlap: bool = False) -> str:
     """The answering prompt: safety core, plus optional operator layers.
 
     An identity is prepended ONLY when the operator set one — with none, the
     prompt stays byte-identical to the measured configuration, so the eval
-    gates cannot move on an unrelated change. The figure rule is conditional
-    for the same reason."""
+    gates cannot move on an unrelated change. The figure rule and the overlap
+    rule are conditional for the same reason."""
     prompt = SYSTEM_PROMPT
     if has_figures:
         prompt += FIGURE_RULE
+    if has_overlap:
+        prompt += OVERLAP_RULE
     ident = (identity or "").strip()
     if ident:
         prompt = IDENTITY_HEADER.format(identity=ident) + prompt
@@ -159,14 +178,24 @@ class GenerateAnswer:
             ctx.answer = fallback
             yield fallback
             return
+        try:
+            groups = group_overlapping(ctx.sources)
+            note = overlap_note(ctx.sources, groups)
+        except Exception:  # noqa: BLE001 — an answer must survive this
+            logger.exception("overlap detection failed (non-fatal)")
+            groups, note = [], ""
+        context_block = build_context_block(ctx)
+        if note:
+            context_block = f"{note}\n\n{context_block}"
         messages = [
             Msg(role="system",
                 content=build_system_prompt(
                     ctx.extra_instructions, ctx.identity,
-                    has_figures=any(b.from_figure for b in ctx.sources))),
+                    has_figures=any(b.from_figure for b in ctx.sources),
+                    has_overlap=bool(groups))),
             Msg(role="user", content=(
                 f"{build_history_block(ctx)}"
-                f"Sources:\n\n{build_context_block(ctx)}\n\n"
+                f"Sources:\n\n{context_block}\n\n"
                 f"Question: {ctx.question}")),
         ]
         from tablerag.core.config import get_settings

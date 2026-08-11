@@ -110,3 +110,40 @@ def group_overlapping(blocks, threshold: float = 0.5) -> list[list[int]]:
             groups.append(group)
             used.update(group)
     return groups
+
+
+_YEAR = re.compile(r"\b(19|20)\d{2}\b")
+_QUARTER = re.compile(r"\b([TQ][1-4])\b", re.I)
+
+
+def period_of(filename: str, context: str) -> str | None:
+    """A year or a quarter, if one is written in the heading or the filename.
+
+    Nothing cleverer on purpose. This is the difference we can PROVE is there;
+    inferring a period from prose would be a guess presented as provenance."""
+    for text in (context, filename):
+        if match := _QUARTER.search(text or ""):
+            return match.group(1).upper()
+        if match := _YEAR.search(text or ""):
+            return match.group(0)
+    return None
+
+
+def overlap_note(blocks, groups: list[list[int]]) -> str:
+    """One line per group, naming what provably differs between its members."""
+    if not groups:
+        return ""
+    lines = []
+    for group in groups:
+        kind = blocks[group[0]].kind
+        lines.append(f"These sources are the same kind of {kind}, "
+                     f"from different places:")
+        for i in group:
+            block = blocks[i]
+            where = [block.filename, f"p{block.page}"]
+            if period := period_of(block.filename, block.context):
+                where.append(period)
+            if block.context:
+                where.append(f"« {block.context} »")
+            lines.append(f"  [{i + 1}] " + " · ".join(where))
+    return "\n".join(lines)

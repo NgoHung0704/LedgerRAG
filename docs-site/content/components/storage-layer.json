@@ -25,7 +25,7 @@
       "name": "get_chunk_contexts",
       "decl": "def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkContext]:",
       "file": "tablerag/storage/repositories.py",
-      "line": 269,
+      "line": 272,
       "note": {
         "vi": "Đường duy nhất để query hydrate một hit thành nguồn có xuất xứ.",
         "en": "The only way query hydrates a hit into a source with provenance."
@@ -35,7 +35,7 @@
       "name": "snapshot_element",
       "decl": "def snapshot_element(s: Session, element_id: uuid.UUID, action: str) -> None:",
       "file": "tablerag/storage/repositories.py",
-      "line": 405,
+      "line": 413,
       "note": {
         "vi": "Chụp lại element trước khi sửa, để lấy lại được đúng một lần sửa.",
         "en": "Snapshots an element before an edit, so exactly one edit can be taken back."

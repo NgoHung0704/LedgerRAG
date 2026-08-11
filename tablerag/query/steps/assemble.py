@@ -170,7 +170,7 @@ class AssembleContext:
             snippet=c.text[:SNIPPET_CHARS], score=scores.get(c.chunk_id, 0.0),
             crop_image_path=c.crop_image_path, confidence=c.confidence,
             needs_review=c.needs_review,
-            from_figure=c.element_type == "figure")
+            from_figure=c.element_type == "figure", context=c.context)
 
     @staticmethod
     def _table_block(t: TableSource, scores: dict,
@@ -197,7 +197,7 @@ class AssembleContext:
             element_id=t.element_id, content=content, snippet=snippet,
             score=scores.get(t.element_id, 0.0),
             crop_image_path=t.crop_image_path, confidence=t.confidence,
-            needs_review=t.needs_review)
+            needs_review=t.needs_review, context=t.context)
 
     @staticmethod
     def _fetch(chunk_ids: list[uuid.UUID], table_ids: list[uuid.UUID],
