@@ -27,19 +27,22 @@ import re
 import unicodedata
 
 # the words a French (and English) document repeats on every page: they say
-# nothing about which subject a passage covers
+# nothing about which subject a passage covers. Like the threshold below, this
+# list is a starting point measured on two documents, not a finished one — a
+# word that turns out to be boilerplate in the corpus belongs here.
 _STOPWORDS = frozenset("""
 au aux avec ce ces dans de des du elle en et eux il je la le les leur lui ma
 mais me meme mes moi mon ne nos notre nous on ou par pas pour qu que qui sa se
 ses son sur ta te tes toi ton tu un une vos votre vous est sont etre a ils
 plus tout tous toute toutes autre autres cas selon dont ainsi entre sans
-present presente document salarie salaries entreprise conformement dispositions
+present presenta cette cet leurs doit doivent peut peuvent aussi donc chaque remis
+document salarie salaries entreprise conformement dispositions
 the of and to in for is are be as by or an at this that with from it its on
 """.split())
 
 _TAG = re.compile(r"<[^>]+>")
 _HEADER_CELL = re.compile(r"<th\b[^>]*>(.*?)</th>", re.I | re.S)
-_WORD = re.compile(r"[a-zA-Zà-öø-ÿ]{3,}")
+_WORD = re.compile(r"[a-zA-ZÀ-ÖØ-öø-ÿ]{3,}")
 
 
 def _fold(text: str) -> str:
@@ -79,7 +82,12 @@ def group_overlapping(blocks, threshold: float = 0.5) -> list[list[int]]:
     """Indices of blocks covering the same subject, as groups of 2 or more.
 
     `threshold` is a starting value, NOT a measured one. It must be set from
-    the corpus before this is trusted — see the plan's measurement task."""
+    the corpus before this is trusted — see the plan's measurement task.
+    Grouping is greedy and pairwise, not transitive: a block joins the first
+    group it matches and is then spoken for. Chains where A matches B and B
+    matches C but A does not match C therefore yield only the first pair. That
+    is deliberate — a transitive closure over a fuzzy similarity drifts, and one
+    wrong link merges two unrelated subjects."""
     groups: list[list[int]] = []
     used: set[int] = set()
     signatures = [header_signature(b.content) if b.kind == "table"
