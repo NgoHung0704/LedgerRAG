@@ -1,7 +1,7 @@
 import uuid
 
 from tablerag.query.pipeline import SourceBlock
-from tablerag.query.steps.assemble import trim_to_budget
+from tablerag.query.steps.assemble import budget_chars, trim_to_budget
 
 
 def _block(content: str, expanded: bool = False) -> SourceBlock:
@@ -42,3 +42,22 @@ def test_truncation_happens_only_after_dropping_is_exhausted():
     kept, _ = trim_to_budget([keep, drop], 200)
     assert len(kept) == 1
     assert kept[0].content == "a" * 200  # untouched: dropping was enough
+
+
+def test_an_expanded_block_goes_before_a_lower_ranked_primary():
+    # the expanded one sits in the MIDDLE on purpose: with it last, a function
+    # that merely pops the tail passes this test without honouring `expanded`
+    top = _block("a" * 100)
+    extra = _block("b" * 100, expanded=True)
+    primary_low = _block("c" * 100)
+    kept, dropped = trim_to_budget([top, extra, primary_low], 250)
+    assert kept == [top, primary_low]
+    assert "(expanded)" in dropped[0]
+
+
+def test_budget_chars_leaves_room_for_the_prompt_and_the_answer():
+    class _Settings:
+        chat_num_ctx = 32768
+        context_reserve_tokens = 3000
+
+    assert budget_chars(_Settings()) == int((32768 - 3000) * 3.0)

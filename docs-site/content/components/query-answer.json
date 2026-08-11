@@ -25,7 +25,7 @@
       "name": "AssembleContext",
       "decl": "class AssembleContext:",
       "file": "tablerag/query/steps/assemble.py",
-      "line": 83,
+      "line": 92,
       "note": {
         "vi": "Một hit vào bản ghi thì kéo về CẢ bảng cha, không bao giờ một dòng lẻ.",
         "en": "A record hit pulls in the WHOLE parent table, never a lone row."

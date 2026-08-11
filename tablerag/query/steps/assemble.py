@@ -53,11 +53,16 @@ def trim_to_budget(blocks: list[SourceBlock], budget: int
                    ) -> tuple[list[SourceBlock], list[str]]:
     """Fit the sources into `budget` characters, sacrificing in a fixed order.
 
-    Blocks arrive in rank order with expanded neighbours last, so dropping from
-    the END gives exactly the order the design calls for: expansions first
-    (lowest rank first), then the lowest-ranked primary sources. The top-ranked
-    source is never dropped — if it alone exceeds the budget it is truncated,
-    because returning nothing is worse than returning a shortened best source.
+    The victim is the lowest-ranked EXPANDED block when there is one, and the
+    lowest-ranked primary source otherwise. That choice is made HERE rather than
+    inherited from the caller's ordering: "neighbours are sacrificed first" is
+    what this function promises, and a promise defended only by how another file
+    happens to sort its input is not defended at all. Surviving blocks keep
+    their original order, so citation numbering does not shift.
+
+    The top-ranked source is never dropped — if it alone exceeds the budget it
+    is truncated, because returning nothing is worse than returning a shortened
+    best source.
 
     Returns the kept blocks and a description of every sacrifice, so the caller
     can log what the user did not get to see.
@@ -69,7 +74,11 @@ def trim_to_budget(blocks: list[SourceBlock], budget: int
         return sum(len(b.content) for b in kept)
 
     while len(kept) > 1 and total() > budget:
-        gone = kept.pop()
+        # range starts at 1: index 0 is the top-ranked source and is structurally
+        # ineligible. (expanded, index) picks expanded over primary, and the
+        # lowest rank within whichever group is chosen.
+        victim = max(range(1, len(kept)), key=lambda i: (kept[i].expanded, i))
+        gone = kept.pop(victim)
         dropped.append(f"dropped {gone.kind} {gone.filename} p{gone.page}"
                        f"{' (expanded)' if gone.expanded else ''}")
     if kept and total() > budget:
