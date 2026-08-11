@@ -914,6 +914,11 @@ class ExpandNeighbours:
                 id=element_id, score=0.0,
                 payload={"element_id": str(element_id),
                          "doc_id": str(candidate.doc_id),
+                         # assemble routes on this: a table element hydrates to
+                         # its parent table, a text or figure element to its
+                         # chunks. Without it every expansion would be looked up
+                         # as a table and text neighbours would silently vanish.
+                         "element_type": candidate.type,
                          "_collection": "expanded", "_expanded": True}))
         return extra
 ```
@@ -935,18 +940,49 @@ and insert it between `Rerank(...)` and `AssembleContext()`:
         ExpandNeighbours(enabled=settings.expand_neighbours),
 ```
 
-- [ ] **Step 5: Teach `AssembleContext` to mark expanded blocks**
+- [ ] **Step 5: Teach `AssembleContext` to hydrate and mark expanded hits**
 
-In `assemble.py`'s hit loop, record which element ids arrived expanded:
+`AssembleContext`'s hit loop currently sends anything that is not a chunk hit
+down the table path. An expanded **text or figure** element has no parent table,
+so without routing it would be looked up as a table and disappear. Add to
+`tablerag/storage/repositories.py`:
 
 ```python
-            expanded_ids = {uuid.UUID(h.payload["element_id"])
-                            for h in ctx.hits
-                            if h.payload.get("_expanded")
-                            and h.payload.get("element_id")}
+def get_element_chunk_contexts(s: Session, element_ids: list[uuid.UUID]
+                               ) -> list[ChunkContext]:
+    """The chunks of these elements — expansion arrives by element, not chunk."""
+    if not element_ids:
+        return []
+    chunk_ids = [row.id for row in s.query(Chunk.id).filter(
+        Chunk.element_id.in_(element_ids)).all()]
+    return get_chunk_contexts(s, chunk_ids)
 ```
 
-and set `expanded=element_id in expanded_ids` when building each block.
+In `assemble.py`, before the existing hit loop, collect the expanded ids and
+split them by type:
+
+```python
+        expanded_ids = {uuid.UUID(h.payload["element_id"])
+                        for h in ctx.hits
+                        if h.payload.get("_expanded")
+                        and h.payload.get("element_id")}
+        expanded_elements = [uuid.UUID(h.payload["element_id"])
+                             for h in ctx.hits
+                             if h.payload.get("_expanded")
+                             and h.payload.get("element_type") != "table"]
+```
+
+Route table-typed expansions into `table_ids` as usual, fetch
+`expanded_elements` through `get_element_chunk_contexts`, and set
+`expanded=<id> in expanded_ids` on every block built from them.
+
+- [ ] **Step 5b: Carry the flag onto the `Citation`**
+
+`Citation` gains `expanded` in Task 6, but the citation list is built here. Add
+`expanded=b.expanded` to the `Citation(...)` construction in
+`AssembleContext.run` (around `assemble.py:93`). Without this the field exists,
+is always `False`, and the frontend tag in Task 8 never appears — a whole
+feature silently dead.
 
 - [ ] **Step 6: Run the tests**
 
