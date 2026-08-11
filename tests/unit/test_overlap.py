@@ -5,6 +5,8 @@ from tablerag.query.overlap import (
     header_signature,
     jaccard,
     subject_signature,
+    _fold,
+    _WORD,
 )
 from tablerag.query.pipeline import SourceBlock
 
@@ -42,24 +44,30 @@ def test_a_table_with_no_header_row_has_no_signature():
     assert header_signature("<table><tr><td>7</td></tr></table>") is None
 
 
-def test_boilerplate_alone_does_not_make_two_chunks_the_same_subject():
-    # the words every French notice repeats; nothing specific is shared
-    a = subject_signature("Le présent document est remis à chaque salarié "
-                          "de l'entreprise conformément aux dispositions "
-                          "concernant l'optique.")
-    b = subject_signature("Le présent document est remis à chaque salarié "
-                          "de l'entreprise conformément aux dispositions "
-                          "concernant l'optique.")
-    # identical text does overlap - that is correct - but the rare terms
-    # carrying the subject must be what drives it
-    assert jaccard(a, b) == 1.0
-    c = subject_signature("Le présent document est remis à chaque salarié "
-                          "conformément au régime de prévoyance obligatoire "
-                          "pour l'optique.")
-    d = subject_signature("Le présent document est remis à chaque salarié "
-                          "conformément au barème des indemnités kilométriques "
-                          "pour le transport.")
-    assert jaccard(c, d) < 0.5
+BOILERPLATE = ("Le présent document est remis à chaque salarié de l entreprise "
+               "conformément aux dispositions légales en vigueur et il est tenu "
+               "à la disposition de chaque salarié qui en fait la demande. ")
+PREVOYANCE = BOILERPLATE + "Il concerne le régime de prévoyance obligatoire."
+KILOMETRIQUE = BOILERPLATE + "Il concerne le barème des indemnités kilométriques."
+
+
+def _every_word(text: str) -> frozenset[str]:
+    """Tokenised the same way, but with nothing filtered out."""
+    return frozenset(_fold(word) for word in _WORD.findall(text))
+
+
+def test_stopword_removal_is_the_only_thing_separating_these_two_chunks():
+    # counted word for word they look like the same passage: they share the
+    # entire administrative preamble a French notice repeats on every page
+    assert jaccard(_every_word(PREVOYANCE), _every_word(KILOMETRIQUE)) > 0.5
+    # judged on the rare terms alone they have nothing in common at all
+    assert jaccard(subject_signature(PREVOYANCE),
+                   subject_signature(KILOMETRIQUE)) < 0.2
+
+
+def test_identical_text_still_overlaps_completely():
+    assert jaccard(subject_signature(PREVOYANCE),
+                   subject_signature(PREVOYANCE)) == 1.0
 
 
 def test_groups_two_sibling_tables_and_leaves_the_third_alone():

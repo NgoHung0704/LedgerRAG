@@ -36,6 +36,8 @@ mais me meme mes moi mon ne nos notre nous on ou par pas pour qu que qui sa se
 ses son sur ta te tes toi ton tu un une vos votre vous est sont etre a ils
 plus tout tous toute toutes autre autres cas selon dont ainsi entre sans
 present presenta cette cet leurs doit doivent peut peuvent aussi donc chaque remis
+concerne concernant demande disposition fait legales legale vigueur tenu tenue
+applicable applicables titre article alinea paragraphe suivant suivante
 document salarie salaries entreprise conformement dispositions
 the of and to in for is are be as by or an at this that with from it its on
 """.split())
