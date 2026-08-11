@@ -38,6 +38,9 @@ class SourceBlock:
     # content is a description of a figure produced by the parser VLM, not
     # text extracted from the page (see _render_source)
     from_figure: bool = False
+    # pulled in because it neighbours a retrieved source, not because it was
+    # retrieved. Kept separable so a reader can still see what search found.
+    expanded: bool = False
 
 
 @dataclass

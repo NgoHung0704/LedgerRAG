@@ -11,6 +11,7 @@ the frontend can honor the honest-failure contract (principle #3, §0.3).
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 
 from tablerag.core.schemas import Citation
@@ -26,13 +27,57 @@ from tablerag.storage.repositories import (
     get_table_sources,
 )
 
+logger = logging.getLogger(__name__)
+
 SNIPPET_CHARS = 240
 # must hold a full multi-page merged table: truncating mid-table silently
 # amputates the later rows (the Glossaire cross-page table is ~2x the old
-# 6000 limit). Budgeted against chat_num_ctx=16384.
-TABLE_HTML_LIMIT = 12000
+# 6000 limit). Budgeted against chat_num_ctx=32768.
+TABLE_HTML_LIMIT = 24000
 # how many matched rows to surface above a table before it becomes noise again
 MAX_MATCHED_ROWS = 4
+# Under French's real ~3.5-4 chars/token on purpose: the cost of guessing low
+# is a slightly smaller context, the cost of guessing high is that Ollama
+# truncates from the TOP of the prompt and silently deletes every safety rule
+# in SYSTEM_PROMPT (config.py:137). Asymmetric, so err low.
+CHARS_PER_TOKEN = 3.0
+
+
+def budget_chars(settings) -> int:
+    """How many characters of sources fit, leaving room for prompt and answer."""
+    usable = max(settings.chat_num_ctx - settings.context_reserve_tokens, 0)
+    return int(usable * CHARS_PER_TOKEN)
+
+
+def trim_to_budget(blocks: list[SourceBlock], budget: int
+                   ) -> tuple[list[SourceBlock], list[str]]:
+    """Fit the sources into `budget` characters, sacrificing in a fixed order.
+
+    Blocks arrive in rank order with expanded neighbours last, so dropping from
+    the END gives exactly the order the design calls for: expansions first
+    (lowest rank first), then the lowest-ranked primary sources. The top-ranked
+    source is never dropped — if it alone exceeds the budget it is truncated,
+    because returning nothing is worse than returning a shortened best source.
+
+    Returns the kept blocks and a description of every sacrifice, so the caller
+    can log what the user did not get to see.
+    """
+    dropped: list[str] = []
+    kept = list(blocks)
+
+    def total() -> int:
+        return sum(len(b.content) for b in kept)
+
+    while len(kept) > 1 and total() > budget:
+        gone = kept.pop()
+        dropped.append(f"dropped {gone.kind} {gone.filename} p{gone.page}"
+                       f"{' (expanded)' if gone.expanded else ''}")
+    if kept and total() > budget:
+        head = kept[0]
+        dropped.append(f"truncated {head.kind} {head.filename} p{head.page} "
+                       f"from {len(head.content)} to {budget} chars")
+        head.content = head.content[:budget]
+    return kept, dropped
 
 
 class AssembleContext:
@@ -88,6 +133,14 @@ class AssembleContext:
             (b.kind, b.chunk_id if b.kind == "text" else b.element_id),
             len(ctx.hits)))
 
+        from tablerag.core.config import get_settings
+
+        blocks, sacrificed = trim_to_budget(blocks, budget_chars(get_settings()))
+        if sacrificed:
+            # the one moment a user is at risk of an incomplete answer through
+            # no fault of retrieval — it must be visible in the logs
+            logger.warning("context budget exceeded, sacrificed: %s",
+                           "; ".join(sacrificed))
         ctx.sources = blocks
         ctx.citations = [
             Citation(index=i + 1, kind=b.kind, doc_id=b.doc_id,

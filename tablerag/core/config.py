@@ -138,7 +138,10 @@ class Settings(BaseSettings):
     # Ollama's default num_ctx, which then drops the TOP of the prompt — the
     # system rules and the highest-ranked sources — while the answer still
     # streams normally. Must cover retrieve_top_k blocks incl. table HTML.
-    chat_num_ctx: int = 16384
+    chat_num_ctx: int = 32768
+    # held back from chat_num_ctx for the system prompt and the answer itself,
+    # so assembled sources can never push SYSTEM_PROMPT off the top
+    context_reserve_tokens: int = 3000
     # answers must be reproducible: the same question on unchanged documents
     # has to give the same figures. Left unset, Ollama samples at 0.8 and the
     # same question flip-flopped between right and wrong across eval runs.
