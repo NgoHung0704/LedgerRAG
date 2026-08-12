@@ -33,7 +33,10 @@ class ExpandNeighbours:
         if not self.enabled or not ctx.hits:
             return ctx
         try:
-            ctx.hits = ctx.hits + await asyncio.to_thread(self._extra, ctx.hits)
+            extra = await asyncio.to_thread(self._extra, ctx.hits)
+            logger.info("expand: %d ranked hit(s) pulled in %d neighbour(s)",
+                        len(ctx.hits), len(extra))
+            ctx.hits = ctx.hits + extra
         except Exception:  # noqa: BLE001 — an answer must survive this
             logger.exception("neighbour expansion failed (non-fatal)")
         return ctx

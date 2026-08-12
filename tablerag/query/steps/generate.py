@@ -184,6 +184,14 @@ class GenerateAnswer:
         except Exception:  # noqa: BLE001 — an answer must survive this
             logger.exception("overlap detection failed (non-fatal)")
             groups, note = [], ""
+        # A wrong answer taken from a look-alike source has two very different
+        # causes: the group was never detected, or it was detected and the model
+        # merged anyway. The eval output cannot tell them apart, and they need
+        # opposite fixes, so say which happened.
+        logger.info("overlap: %d group(s) over %d source(s)%s",
+                    len(groups), len(ctx.sources),
+                    "".join(f" | [{'+'.join(str(i + 1) for i in g)}]"
+                            for g in groups))
         context_block = build_context_block(ctx)
         if note:
             context_block = f"{note}\n\n{context_block}"
