@@ -22,6 +22,8 @@ class OpenAICompatProvider:
         self.base_url = cfg.base_url.rstrip("/")
         self.model = cfg.model_name
         self.headers = {"Authorization": f"Bearer {cfg.api_key}"} if cfg.api_key else {}
+        # test seam: an httpx transport to answer /rerank without a server
+        self._transport = None
 
     async def parse_table(self, image: bytes, prompt_ctx: TableCtx) -> TableParse:
         from tablerag.models.table_parsing import run_table_parse
@@ -76,16 +78,34 @@ class OpenAICompatProvider:
                         yield content
 
     async def rerank(self, query: str, docs: list[str]) -> list[float]:
-        """Matches the TEI / Jina / vLLM `/rerank` request shape."""
-        async with httpx.AsyncClient(timeout=_TIMEOUT, headers=self.headers) as client:
-            r = await client.post(
-                f"{self.base_url}/rerank",
-                json={"model": self.model, "query": query, "documents": docs})
+        """Score `docs` against `query`, in either /rerank dialect.
+
+        "The OpenAI-compatible /rerank endpoint" is two incompatible things.
+        vLLM and Jina take `documents` and answer `{"results": [...]}`; TEI —
+        the reranker this repo's own compose file ships — takes `texts` and
+        answers a BARE LIST. Sending the wrong field is a 422 and reading the
+        wrong shape raises, and the Rerank step catches everything and falls
+        back to document diversification. So the whole feature came out looking
+        configured and behaving exactly as if it were disabled: measured on the
+        box, the scores were identical to the no-reranker run, to the question.
+
+        Try the vLLM field first (that is what Phase 4 was measured against),
+        fall back to TEI's on a 4xx, and accept either response shape."""
+        async with httpx.AsyncClient(timeout=_TIMEOUT, headers=self.headers,
+                                     transport=self._transport) as client:
+            url = f"{self.base_url}/rerank"
+            r = await client.post(url, json={"model": self.model,
+                                             "query": query,
+                                             "documents": docs})
+            if 400 <= r.status_code < 500:
+                r = await client.post(url, json={"query": query, "texts": docs})
             r.raise_for_status()
-            results = r.json()["results"]
+            payload = r.json()
+        results = payload if isinstance(payload, list) else payload["results"]
         scores = [0.0] * len(docs)
         for item in results:
-            scores[item["index"]] = item.get("relevance_score", item.get("score", 0.0))
+            scores[item["index"]] = item.get("relevance_score",
+                                             item.get("score", 0.0))
         return scores
 
     async def health(self) -> tuple[bool, str]:
