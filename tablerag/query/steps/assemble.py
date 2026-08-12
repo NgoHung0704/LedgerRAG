@@ -172,6 +172,18 @@ class AssembleContext:
                                      [record_texts[r] for r in matched.get(t.element_id, [])
                                       if r in record_texts][:MAX_MATCHED_ROWS])
                    for t in tables]
+        # Does representation 2 take part at all? A table block is summary +
+        # the rows that matched + THE WHOLE GRID, and the grid is always there.
+        # Two very different problems hide behind the same wrong answer: rows
+        # matched and the model read the grid anyway (cheap to fix - stop
+        # sending the grid), or rows never matched at all (records are not
+        # reaching retrieval, and that is a change to how they are built).
+        # Nothing distinguished them, so the choice was a guess.
+        if tables:
+            logger.info("tables: %s", " | ".join(
+                f"{t.filename[:26]} p{t.page} rows={len(matched.get(t.element_id, []))}"
+                f" grid={len(t.html or '')}" for t in tables))
+
         for block in blocks:
             block.expanded = block.element_id in expanded_ids
         blocks.sort(key=lambda b: rank.get(
