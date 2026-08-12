@@ -9,6 +9,7 @@ without restarts; providers are cached by their effective endpoint config.
 from __future__ import annotations
 
 import logging
+import os
 import time
 
 from tablerag.core.config import EndpointConfig, ModelRole, get_settings
@@ -24,6 +25,67 @@ ROLES: tuple[ModelRole, ...] = ("parser", "embedder", "chat", "reranker")
 # DB round-trip on every single model resolution (get_provider is hot)
 _OVERRIDES_TTL = 5.0
 _overrides_cache: dict = {"value": None, "ts": 0.0}
+
+
+# A role nobody configured SHOULD degrade quietly - that is the point of a
+# pluggable role. A role that IS configured and whose call fails is a defect
+# wearing the same clothes, and for months nothing told the two apart: four
+# separate reranker faults were swallowed by `except Exception` in the Rerank
+# step and the platform ran as if no reranker had ever been asked for.
+_failures: dict[str, dict] = {}
+
+
+def note_role_failure(role: ModelRole, exc: BaseException) -> None:
+    """Record that a configured role's call failed, and say so ONCE.
+
+    Once per role, not once per query: the point is to be noticed in a log, and
+    a line repeated on every question is noise nobody reads."""
+    if role not in _failures:
+        cfg = effective_config(role)
+        logger.error(
+            "role %s is CONFIGURED (%s %s) but its call failed: %s. "
+            "The pipeline is degrading as if the role were disabled.",
+            role, cfg.provider, cfg.base_url, exc)
+    _failures[role] = {"error": str(exc), "at": time.time()}
+
+
+def note_role_success(role: ModelRole) -> None:
+    _failures.pop(role, None)
+
+
+def role_failure(role: ModelRole) -> dict | None:
+    return _failures.get(role)
+
+
+def forget_role_failures() -> None:
+    _failures.clear()
+
+
+def env_endpoint(role: ModelRole) -> dict:
+    """What the environment says for this role, whatever wins in the end.
+
+    Shown beside the effective config so an operator can see a database row
+    masking the .env they just edited - the failure that cost the longest."""
+    prefix = f"LEDGERRAG_MODELS__{role.upper()}__"
+    return {key[len(prefix):].lower(): value
+            for key, value in os.environ.items() if key.startswith(prefix)}
+
+
+def config_source(role: ModelRole) -> str:
+    """Which layer decided this role: database, environment, or default."""
+    if {k: v for k, v in (_overrides().get(role) or {}).items()
+            if v not in (None, "")}:
+        return "database"
+    return "environment" if env_endpoint(role) else "default"
+
+
+def log_effective_roles() -> None:
+    """Say at startup what each role actually resolved to, and from where."""
+    for role in ROLES:
+        cfg = effective_config(role)
+        logger.info("role %-8s %-13s %-40s model=%s (from %s)",
+                    role, cfg.provider, cfg.base_url or "-",
+                    cfg.model_name or "-", config_source(role))
 
 
 class RoleDisabled(Exception):

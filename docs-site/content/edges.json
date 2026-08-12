@@ -2093,8 +2093,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/models.py",
-            "from": 55,
-            "to": 55,
+            "from": 60,
+            "to": 60,
             "anchor": "async def list_roles() -> list[ModelRoleInfo]:"
           }
         },
@@ -2139,8 +2139,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/models.py",
-            "from": 69,
-            "to": 69,
+            "from": 77,
+            "to": 77,
             "anchor": "async def update_role(role: str, body: ModelRoleUpdate,"
           }
         },
@@ -2178,8 +2178,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/models.py",
-            "from": 96,
-            "to": 96,
+            "from": 104,
+            "to": 104,
             "anchor": "async def available_models(role: str) -> list[OllamaModel]:"
           }
         },
@@ -2224,8 +2224,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/models.py",
-            "from": 117,
-            "to": 117,
+            "from": 125,
+            "to": 125,
             "anchor": "async def pull_model(role: str, body: PullRequest,"
           }
         }

@@ -24,6 +24,11 @@ async def lifespan(app: FastAPI):
     from tablerag.storage.qdrant import get_vector_store
 
     init_db()
+    # what each role ACTUALLY resolved to, and from which layer. Without this
+    # line, diagnosing a role starts by guessing whether .env had any effect.
+    from tablerag.models.registry import log_effective_roles
+
+    log_effective_roles()
     try:
         get_vector_store().ensure_collections()
     except Exception as e:  # noqa: BLE001 — API can start before Qdrant; ingestion re-ensures

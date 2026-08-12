@@ -14,7 +14,13 @@ import asyncio
 import logging
 import uuid
 
-from tablerag.models.registry import RoleDisabled, effective_config, get_provider
+from tablerag.models.registry import (
+    RoleDisabled,
+    effective_config,
+    get_provider,
+    note_role_failure,
+    note_role_success,
+)
 from tablerag.query.pipeline import QueryContext
 
 logger = logging.getLogger(__name__)
@@ -68,8 +74,13 @@ class Rerank:
                       sorted(zip(scores, pairs), key=lambda x: x[0],
                              reverse=True)]
             ctx.hits = ranked[:self.top_k]
-        except (RoleDisabled, Exception):  # noqa: BLE001 — degrade, don't die
+            note_role_success("reranker")
+        except (RoleDisabled, Exception) as exc:  # noqa: BLE001 — degrade, don't die
             logger.exception("rerank failed; falling back to retrieval order")
+            # a role the operator configured must not fail in silence: this is
+            # the difference between "no reranker" and "a reranker that is
+            # broken", and the pipeline behaves identically in both
+            note_role_failure("reranker", exc)
             ctx.hits = diversify_by_document(ctx.hits, self.fallback_top_k)
         return ctx
 

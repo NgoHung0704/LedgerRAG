@@ -45,7 +45,7 @@
       "name": "Rerank",
       "decl": "class Rerank:",
       "file": "tablerag/query/steps/rerank.py",
-      "line": 49,
+      "line": 55,
       "note": {
         "vi": "Xếp lại bằng cross-encoder khi vai trò reranker bật được.",
         "en": "Reorders with the cross-encoder when the reranker role is available."
@@ -55,7 +55,7 @@
       "name": "diversify_by_document",
       "decl": "def diversify_by_document(hits: list, k: int) -> list:",
       "file": "tablerag/query/steps/rerank.py",
-      "line": 23,
+      "line": 29,
       "note": {
         "vi": "Cho mỗi tài liệu khối tốt nhất của nó trước, để một tài liệu dài không chiếm hết đầu ngữ cảnh.",
         "en": "Gives each document its best block first, so one long document cannot own the head of the context."

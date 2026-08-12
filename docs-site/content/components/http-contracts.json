@@ -65,7 +65,7 @@
       "name": "update_role",
       "decl": "async def update_role(role: str, body: ModelRoleUpdate,",
       "file": "tablerag/api/routes/models.py",
-      "line": 69,
+      "line": 77,
       "note": {
         "vi": "Đổi endpoint của một vai trò model lúc chạy — ràng buộc C3 thành thao tác.",
         "en": "Repoints a model role at runtime - constraint C3 as an action."

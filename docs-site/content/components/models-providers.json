@@ -5,7 +5,7 @@
       "name": "effective_config",
       "decl": "def effective_config(role: ModelRole) -> EndpointConfig:",
       "file": "tablerag/models/registry.py",
-      "line": 53,
+      "line": 115,
       "note": {
         "vi": "Cấu hình env làm nền, phủ lên bằng bản ghi app_setting; đọc DB mỗi lần nên API và worker cùng nhận thay đổi.",
         "en": "The env config as the base, overlaid with the app_setting row; the DB is read every time so the API and the worker both pick up changes."
@@ -15,7 +15,7 @@
       "name": "get_provider",
       "decl": "def get_provider(role: ModelRole) -> ModelProvider:",
       "file": "tablerag/models/registry.py",
-      "line": 89,
+      "line": 151,
       "note": {
         "vi": "Trả provider cho một vai trò, cache theo đúng cấu hình endpoint đang có hiệu lực.",
         "en": "Returns the provider for a role, cached by the effective endpoint config."
@@ -25,7 +25,7 @@
       "name": "check_role_health",
       "decl": "async def check_role_health(role: ModelRole) -> RoleHealth:",
       "file": "tablerag/models/registry.py",
-      "line": 122,
+      "line": 184,
       "note": {
         "vi": "Kiểm tra sức khoẻ từng vai trò — góc nhìn preflight của người triển khai.",
         "en": "Health per role - the deployer's preflight view."
@@ -35,7 +35,7 @@
       "name": "get_double_read_provider",
       "decl": "def get_double_read_provider() -> ModelProvider | None:",
       "file": "tablerag/models/registry.py",
-      "line": 99,
+      "line": 161,
       "note": {
         "vi": "Provider thứ hai cho lần đọc lại, phục vụ tín hiệu đồng thuận của Phase 3.",
         "en": "The second provider for the second read, feeding the Phase 3 agreement signal."
@@ -141,8 +141,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "tablerag/models/registry.py",
-        "from": 53,
-        "to": 60,
+        "from": 115,
+        "to": 122,
         "code": "def effective_config(role: ModelRole) -> EndpointConfig:\n    base = get_settings().models.for_role(role)\n    override = _overrides().get(role) or {}\n    data = base.model_dump()\n    data.update({k: v for k, v in override.items()\n                 if k in data and v not in (None, \"\")})\n    return EndpointConfig(**data)\n"
       }
     }

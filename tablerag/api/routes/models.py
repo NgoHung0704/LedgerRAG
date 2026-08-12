@@ -26,6 +26,11 @@ from tablerag.core.schemas import (
     PullRequest,
 )
 from tablerag.models.registry import (
+    config_source,
+    env_endpoint,
+    role_failure,
+)
+from tablerag.models.registry import (
     MODEL_ROLES_SETTING,
     ROLES,
     check_role_health,
@@ -58,10 +63,13 @@ async def list_roles() -> list[ModelRoleInfo]:
     infos = []
     for role, health in zip(ROLES, healths):
         cfg = effective_config(role)
+        failure = role_failure(role)
         infos.append(ModelRoleInfo(
             role=role, provider=cfg.provider, base_url=cfg.base_url,
             model_name=cfg.model_name, overridden=role in overridden,
-            ok=health.ok, detail=health.detail))
+            ok=health.ok, detail=health.detail,
+            source=config_source(role), env=env_endpoint(role),
+            last_error=failure["error"] if failure else None))
     return infos
 
 

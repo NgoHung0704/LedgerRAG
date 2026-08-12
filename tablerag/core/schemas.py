@@ -250,6 +250,15 @@ class ModelRoleInfo(BaseModel):
     overridden: bool  # True when a runtime override (admin UI) is active
     ok: bool
     detail: str = ""
+    # which layer decided this role: "database" | "environment" | "default".
+    # A database row silently beating an edited .env cost a day of measurement.
+    source: str = "default"
+    # what the environment says, even when something else won — so an operator
+    # can see their .env being masked instead of guessing
+    env: dict[str, str] = {}
+    # a role that IS configured and whose last call failed. Distinct from
+    # ok=False: that is a health probe, this is the pipeline actually degrading.
+    last_error: str | None = None
 
 
 class ModelRoleUpdate(BaseModel):
