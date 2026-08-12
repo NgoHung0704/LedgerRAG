@@ -166,7 +166,10 @@ def _ingest_table(s, store, kb_id, doc_id, page: int, bbox, crop_png: bytes,
                            result.n_rows, result.n_cols, result.parse_strategy)
     if result.records:
         rows = repo.add_records(s, element_id, result.records)
-        records_out.extend((row.id, row.text_repr, element_id) for row in rows)
+        # the heading travels with the row: a row is filed under WHERE it
+        # came from, and the consumer below adds the document name
+        records_out.extend((row.id, row.text_repr, element_id, context or "")
+                           for row in rows)
     if summary:
         summaries_out.append((element_id, summary))
     elif result.html:
@@ -409,7 +412,7 @@ def process_document(self, doc_id_str: str) -> None:
         vector_store.delete_doc(doc_id)
 
         chunks_out: list[tuple[uuid.UUID, str, uuid.UUID]] = []
-        records_out: list[tuple[uuid.UUID, str, uuid.UUID]] = []
+        records_out: list[tuple[uuid.UUID, str, uuid.UUID, str]] = []
         summaries_out: list[tuple[uuid.UUID, str]] = []
         figures_out: list[uuid.UUID] = []
         with session_scope() as s:
@@ -433,15 +436,22 @@ def process_document(self, doc_id_str: str) -> None:
                           for cid, _, eid in chunks_out],
                 texts=texts)
         if records_out:
-            texts = [t for _, t, _ in records_out]
+            from tablerag.indexing import record_index_text
+            from tablerag.storage.orm import Document
+
+            with session_scope() as s:
+                doc = s.get(Document, doc_id)
+                filename = doc.filename if doc else ""
+            texts = [record_index_text(t, filename, ctx)
+                     for _, t, _, ctx in records_out]
             vectors = asyncio.run(_embed_all(embedder, texts))
             vector_store.upsert(
                 COLLECTION_RECORDS,
-                ids=[rid for rid, _, _ in records_out],
+                ids=[rid for rid, _, _, _ in records_out],
                 dense=[v.dense for v in vectors],
                 payloads=[{"kb_id": str(kb_id), "doc_id": str(doc_id),
                            "element_id": str(eid), "record_id": str(rid)}
-                          for rid, _, eid in records_out],
+                          for rid, _, eid, _ in records_out],
                 texts=texts)
         if summaries_out:
             texts = [t for _, t in summaries_out]

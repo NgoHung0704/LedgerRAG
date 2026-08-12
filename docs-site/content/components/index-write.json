@@ -15,7 +15,7 @@
       "name": "apply_element_edit",
       "decl": "def apply_element_edit(element_id: uuid.UUID, *, text: str | None = None,",
       "file": "tablerag/indexing.py",
-      "line": 79,
+      "line": 101,
       "note": {
         "vi": "Áp chỉnh sửa tay vào Postgres rồi dựng lại vector của riêng element đó.",
         "en": "Applies a hand edit in Postgres and rebuilds that element's vectors alone."
@@ -25,7 +25,7 @@
       "name": "reindex_element",
       "decl": "async def reindex_element(element_id: uuid.UUID) -> None:",
       "file": "tablerag/indexing.py",
-      "line": 873,
+      "line": 895,
       "note": {
         "vi": "Dựng lại chunk, bản ghi và vector cho một element.",
         "en": "Rebuilds the chunks, records and vectors for one element."
@@ -35,7 +35,7 @@
       "name": "undo_element_edit",
       "decl": "def undo_element_edit(element_id: uuid.UUID) -> str | None:",
       "file": "tablerag/indexing.py",
-      "line": 270,
+      "line": 292,
       "note": {
         "vi": "Lấy lại lần sửa cuối của một element mà không đụng tới các chỉnh sửa khác.",
         "en": "Takes back one element's last save without touching any other correction."
@@ -45,7 +45,7 @@
       "name": "split_table",
       "decl": "async def split_table(element_id: uuid.UUID) -> int | None:",
       "file": "tablerag/indexing.py",
-      "line": 646,
+      "line": 668,
       "note": {
         "vi": "\"Đây là hai bảng\": mỗi phần được render lại từ PDF và có bbox, crop riêng.",
         "en": "\"These are two tables\": each part is re-rendered from the PDF with its own bbox and crop."
@@ -55,7 +55,7 @@
       "name": "run",
       "decl": "async def run() -> None:",
       "file": "tablerag/scripts/reindex_all.py",
-      "line": 102,
+      "line": 113,
       "note": {
         "vi": "Migration Phase 4: dựng lại collection theo schema hybrid và embed lại tất cả từ Postgres.",
         "en": "The Phase 4 migration: recreate the collections with the hybrid schema and re-embed everything from Postgres."
@@ -142,8 +142,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "tablerag/scripts/reindex_all.py",
-        "from": 102,
-        "to": 109,
+        "from": 113,
+        "to": 120,
         "code": "async def run() -> None:\n    setup_logging()\n    store = get_vector_store()\n    jobs = _collect_jobs()\n    logger.info(\"reindex: %d vectors to rebuild\", len(jobs))\n\n    logger.info(\"recreating collections with hybrid (dense+sparse) schema...\")\n    store.recreate_collections()"
       }
     }

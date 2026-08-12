@@ -60,6 +60,28 @@ def figure_index_text(meta: dict | None) -> str:
     return "\n\n".join(parts)
 
 
+def record_index_text(text_repr: str, filename: str = "",
+                      context: str = "") -> str:
+    """What goes into the index for one table row.
+
+    `text_repr` alone is what the row says about itself — "5 ans: 50,46 |
+    3 ans: 31,04" — and nothing about WHOSE 5 ans, or WHEN. Measured on the
+    EPSENS corpus, that is six funds times three reporting editions of tables
+    built from one template, so a row is near-indistinguishable from seventeen
+    others and retrieval cannot prefer the right one. The assistant then reads
+    the flattened grid instead and picks a column by eye.
+
+    So the row is filed under where it came from, exactly as a figure is
+    (see figure_index_text): the document that carries it and the heading
+    printed above it.
+
+    The cost is dilution — a forty-character filename in front of a short row
+    shifts what a dense vector encodes — which is why this ships with a
+    reindex and a measurement, not on the strength of the argument."""
+    scope = " · ".join(part for part in (filename, context) if part)
+    return scope + chr(10) + text_repr if scope else text_repr
+
+
 def _replace_records(s, element_id: uuid.UUID, records: list[dict]) -> None:
     for rec in list(s.get(TableElement, element_id).records):
         s.delete(rec)
@@ -897,7 +919,10 @@ async def reindex_element(element_id: uuid.UUID) -> None:
                              table.summary, dict(base)))
             for rec in s.query(Record).filter(
                     Record.table_element_id == element_id):
-                jobs.append((COLLECTION_RECORDS, rec.id, rec.text_repr,
+                jobs.append((COLLECTION_RECORDS, rec.id,
+                             record_index_text(
+                                 rec.text_repr, document.filename,
+                                 (element.meta or {}).get("context", "")),
                              {**base, "record_id": str(rec.id)}))
 
     if not jobs:

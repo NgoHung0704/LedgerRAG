@@ -5,7 +5,7 @@
       "name": "process_document",
       "decl": "def process_document(self, doc_id_str: str) -> None:",
       "file": "tablerag/ingestion/tasks.py",
-      "line": 380,
+      "line": 383,
       "note": {
         "vi": "Điểm vào của ingestion. Idempotent theo doc_id: chạy lại xoá kết quả cũ trước.",
         "en": "The ingestion entry point. Idempotent by doc_id: a rerun deletes the previous output first."
@@ -15,7 +15,7 @@
       "name": "_ingest_page",
       "decl": "def _ingest_page(s, store, settings, kb_id, doc_id, layout: PageLayout,",
       "file": "tablerag/ingestion/tasks.py",
-      "line": 184,
+      "line": 187,
       "note": {
         "vi": "Một trang: bố cục, vùng, bảng, hình, confidence, chunk.",
         "en": "One page: layout, regions, tables, figures, confidence, chunks."

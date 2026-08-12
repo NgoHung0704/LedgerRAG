@@ -22,6 +22,7 @@ from sqlalchemy import select
 
 from tablerag.core.logging import setup_logging
 from tablerag.ingestion.html_tables import html_to_text
+from tablerag.indexing import record_index_text
 from tablerag.ingestion.table_pipeline import build_text_repr
 from tablerag.models.registry import get_provider
 from tablerag.storage.db import session_scope
@@ -53,6 +54,14 @@ def _collect_jobs() -> list[tuple[str, object, str, dict]]:
             return {"kb_id": str(doc.kb_id), "doc_id": str(doc.id),
                     "element_id": str(element_id)}
 
+        def scope(element_id) -> tuple[str, str]:
+            """Where a row came from: its document and the heading above it."""
+            element = elements.get(element_id)
+            doc = docs.get(element.doc_id) if element else None
+            if element is None or doc is None:
+                return "", ""
+            return doc.filename, (element.meta or {}).get("context", "")
+
         for chunk in s.scalars(select(Chunk)):
             payload = base(chunk.element_id)
             if payload:
@@ -71,8 +80,10 @@ def _collect_jobs() -> list[tuple[str, object, str, dict]]:
                 rebuilt += 1
             payload = base(record.table_element_id)
             if payload:
+                filename, context = scope(record.table_element_id)
                 jobs.append((COLLECTION_RECORDS, record.id,
-                             record.text_repr or text,
+                             record_index_text(record.text_repr or text,
+                                               filename, context),
                              {**payload, "record_id": str(record.id)}))
         # always report: a silent step makes "did not run" and "nothing to do"
         # look identical, which is exactly how a stale container hides itself
