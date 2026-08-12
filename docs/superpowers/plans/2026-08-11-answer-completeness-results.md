@@ -172,3 +172,49 @@ is the right rule and it turned four configuration errors into four silent
 years. Degrading quietly is correct for a role nobody configured; a role that IS
 configured and whose first call fails should say so once, loudly, and show as
 "configured, last call failed" on the Models page.
+
+
+---
+
+# Final baseline, with the grader fixed
+
+```
+contrast: 2/5 = 40%
+table   : 4/8 = 50%
+text    : 2/2 = 100%   PASS
+trap    : 2/2 = 100%   PASS
+```
+
+The numbers no longer contradict themselves. `trap` is 2/2 because it now holds
+only the two questions where refusal IS the answer — a value absent from the
+edition the question pins. `contrast` separates the two behaviours it was built
+to separate: f12 and f16 pass because they attribute, f11, f15 and f17 fail
+because they state one version and say nothing about the others.
+
+## Where the remaining failures actually live
+
+Not in retrieval. f3's citations are 6-of-8 on the right fund and the answer
+still reads:
+
+> "La volatilité annualisée sur 3 ans du portefeuille EPSENS OBLIGATIONS VERTES
+> ISR SOLIDAIRE ... est de 0,54 %. Cette information provient du rapport
+> **EPSENS FLEXI TAUX COURT ISR SOLIDAIRE**"
+
+It names its source correctly and answers the wrong question anyway. 0,54 is
+FLEXI's volatility. f6 does the same with 0,89, FLEXI's sensibilité. f1 takes
+the "3 ans" column when asked for "5 ans".
+
+`SYSTEM_PROMPT` already carries the rule this violates — "check the source's
+document name and summary really cover what is asked; if none of them do, say
+so instead of taking a number from a look-alike table". The model does not obey
+it. That is a model-capability question on a 14B chat model, and the same
+family as the eval-tables misses README records at 88.4 % ("deep-pivot sub-row
+misattribution").
+
+Three levers remain, none of them in this plan:
+
+1. the chat model (this is where f3 and f6 are decided),
+2. the parser model (this is where f1 is decided — `make eval-parser` exists to
+   answer it on this corpus rather than on someone else's benchmark),
+3. the ingestion defect on `EPSENS MONETAIRE ISR - 4004.pdf`, whose reporting
+   date never reached the index.
