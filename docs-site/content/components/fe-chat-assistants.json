@@ -5,7 +5,7 @@
       "name": "ChatPanel",
       "decl": "export default function ChatPanel({",
       "file": "frontend/components/ChatPanel.tsx",
-      "line": 53,
+      "line": 55,
       "note": {
         "vi": "Câu trả lời chảy về theo SSE kèm trích dẫn bấm được về ảnh trang.",
         "en": "The answer streams in over SSE with citations that click back to the page image."

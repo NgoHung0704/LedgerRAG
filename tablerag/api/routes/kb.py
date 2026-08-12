@@ -85,6 +85,12 @@ def update_kb(kb_id: uuid.UUID, body: KBUpdate) -> KBOut:
                 config["instructions"] = text
             else:
                 config.pop("instructions", None)  # cleared
+        if body.escalation_contact is not None:
+            contact = body.escalation_contact.strip()
+            if contact:
+                config["escalation_contact"] = contact
+            else:
+                config.pop("escalation_contact", None)  # cleared
         kb.config = config
         s.flush()
         return KBOut.model_validate(kb, from_attributes=True)

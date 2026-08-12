@@ -34,6 +34,10 @@ class KBUpdate(BaseModel):
     locale: str | None = None
     verify: bool | None = None
     instructions: str | None = None
+    # who a reader should ask when an answer is flagged as needing a check.
+    # Lives in KnowledgeBase.config JSONB, not a column: create_all adds
+    # tables, never columns, and this project carries no migrations.
+    escalation_contact: str | None = None
 
 
 class KBDocStatus(BaseModel):

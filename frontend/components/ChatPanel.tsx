@@ -22,6 +22,7 @@ import {
   chatMultiStream,
   getElement,
   sendFeedback,
+  type Caution,
   type Citation,
   type ElementDetail,
   type KB,
@@ -42,6 +43,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   citations?: Citation[];
+  caution?: Caution | null;
   verification?: Verification | null;
   routing?: RoutingInfo | null;
   messageId?: string;
@@ -219,6 +221,8 @@ export default function ChatPanel({
         } else if (ev.type === "citations") {
           searchedAt = performance.now();
           patchLast({ citations: ev.citations });
+        } else if (ev.type === "caution") {
+          patchLast({ caution: ev.caution });
         } else if (ev.type === "done") {
           sessionRef.current = ev.session_id;
           // a brand-new thread just got saved — let the list pick it up
@@ -325,6 +329,8 @@ export default function ChatPanel({
                 {m.verification && m.verification.enabled && (
                   <VerificationBadge verification={m.verification} />
                 )}
+
+                {m.caution && <CautionNotice caution={m.caution} />}
 
                 {/* The margin already carries provenance beside each claim, so
                     this is the bibliography, not the citation — quiet, one
@@ -624,6 +630,14 @@ function Bibliography({
               {c.index} · {c.filename} · p.{c.page}
             </span>
             {c.needs_review && <AlertTriangle size={11} aria-hidden="true" />}
+            {/* retrieval did not find this one - it came along because it sits
+                beside something retrieval did find. Saying so keeps the
+                citation list readable as evidence rather than as a pile. */}
+            {c.expanded && (
+              <span className="rounded bg-line/60 px-1 py-px text-[9px] uppercase tracking-wide text-ink-subtle">
+                ajouté par contexte
+              </span>
+            )}
           </button>
         ))}
         {hidden > 0 && (
@@ -881,6 +895,43 @@ function RoutedBadge({ routing }: { routing: RoutingInfo }) {
       }`}
     >
       <Sparkles size={11} /> {label}
+    </div>
+  );
+}
+
+/** Machine keys from the pipeline, rendered in the reader's language here.
+ *  The answer text itself is never touched: a 14B model asked to append a
+ *  warning omits it unpredictably, and editing the answering prompt would move
+ *  the measured configuration for every query. */
+const CAUTION_COPY: Record<string, string> = {
+  figure_reading:
+    "Cette réponse s'appuie sur la lecture d'une image ou d'un graphique par le modèle, et non sur du texte imprimé.",
+  low_confidence:
+    "Une des sources citées a été analysée avec une confiance faible.",
+  needs_review: "Une des sources citées est signalée comme à vérifier.",
+};
+
+function CautionNotice({ caution }: { caution: Caution }) {
+  const lines = caution.reasons
+    .map((reason) => CAUTION_COPY[reason])
+    .filter(Boolean);
+  if (lines.length === 0) return null;
+  return (
+    <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800/60">
+      <div className="flex items-start gap-1.5">
+        <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+        <div>
+          {lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          <p className="mt-1 font-medium">
+            Vérifiez le document d&apos;origine
+            {caution.contact
+              ? `, ou contactez ${caution.contact}.`
+              : " avant de vous en servir."}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -35,7 +35,7 @@
       "name": "KBOut",
       "decl": "class KBOut(BaseModel):",
       "file": "tablerag/core/schemas.py",
-      "line": 49,
+      "line": 53,
       "note": {
         "vi": "Hình dạng KB mà API trả về — hợp đồng với frontend.",
         "en": "The knowledge-base shape the API returns - the contract with the frontend."

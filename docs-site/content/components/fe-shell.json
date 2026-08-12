@@ -55,7 +55,7 @@
       "name": "getKbs",
       "decl": "export const getKbs = () =>",
       "file": "frontend/lib/api.ts",
-      "line": 209,
+      "line": 225,
       "note": {
         "vi": "Ví dụ của lớp gọi API: mọi lời gọi đều đi qua một chỗ.",
         "en": "An example of the API layer: every call goes through one place."

@@ -12,7 +12,12 @@ export type KB = {
   id: string;
   name: string;
   description: string;
-  config: { locale?: string; verify?: boolean; instructions?: string };
+  config: {
+    locale?: string;
+    verify?: boolean;
+    instructions?: string;
+    escalation_contact?: string;
+  };
   created_at: string;
   doc_status?: KBDocStatus | null; // set by the list endpoint only
 };
@@ -40,6 +45,16 @@ export type Citation = {
   /** this source's text is the parser model's reading of a picture, not text
    *  extracted from the page */
   from_figure: boolean;
+  /** pulled in because it neighbours a retrieved source, not because search
+   *  found it - a reader must be able to tell the two apart */
+  expanded: boolean;
+};
+
+/** Why an answer deserves a second look, and who to ask. `reasons` are stable
+ *  machine keys rendered into French by the UI, never prose from the model. */
+export type Caution = {
+  reasons: string[];
+  contact: string | null;
 };
 
 export type Verification = {
@@ -51,6 +66,7 @@ export type Verification = {
 
 export type ChatEvent =
   | { type: "citations"; citations: Citation[] }
+  | { type: "caution"; caution: Caution }
   | { type: "token"; content: string }
   | {
       type: "done";
@@ -508,6 +524,7 @@ export type RoutingInfo = {
 
 export type MultiChatEvent =
   | { type: "citations"; citations: Citation[] }
+  | { type: "caution"; caution: Caution }
   | { type: "token"; content: string }
   | {
       type: "done";
@@ -674,6 +691,7 @@ export const updateKb = (
     locale: string;
     verify: boolean;
     instructions: string;
+    escalation_contact: string;
   }>,
 ) =>
   fetch(`${API_URL}/api/kbs/${kbId}`, {

@@ -29,6 +29,9 @@ export default function KbSettings({
   const [instructions, setInstructions] = useState(kb.config?.instructions ?? "");
   const [locale, setLocale] = useState(kb.config?.locale ?? "");
   const [verify, setVerify] = useState(kb.config?.verify ?? true);
+  const [contact, setContact] = useState(
+    kb.config?.escalation_contact ?? "",
+  );
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +85,7 @@ export default function KbSettings({
         description: description.trim(),
         instructions: instructions.trim(),
         locale: locale.trim(),
+        escalation_contact: contact.trim(),
         verify,
       });
       onUpdated(updated);
@@ -182,6 +186,20 @@ export default function KbSettings({
             placeholder="fr · de · en · es · (blank = auto)"
             className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
+
+          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
+            Contact en cas de doute
+          </label>
+          <input
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder="ex. service RH du CETIAT"
+            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+          />
+          <p className="mt-1 text-[11px] text-ink-subtle">
+            Affiché quand une réponse s&apos;appuie sur la lecture d&apos;une
+            image ou sur une source peu fiable. Vide = formulation générique.
+          </p>
 
           <label className="mt-3 flex items-center gap-2.5 text-sm text-ink">
             {/* a real switch: announced as one, and its knob slides on a

@@ -111,8 +111,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 161,
-            "to": 161,
+            "from": 167,
+            "to": 167,
             "anchor": "def get_kb(kb_id: uuid.UUID) -> KBOut:"
           }
         },
@@ -189,8 +189,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 138,
-            "to": 138,
+            "from": 144,
+            "to": 144,
             "anchor": "def delete_kb(kb_id: uuid.UUID, user: User = Depends(current_user)) -> Response:"
           }
         },
@@ -235,8 +235,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 94,
-            "to": 94,
+            "from": 100,
+            "to": 100,
             "anchor": "async def suggest_description(kb_id: uuid.UUID) -> dict:"
           }
         },
@@ -274,8 +274,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 124,
-            "to": 124,
+            "from": 130,
+            "to": 130,
             "anchor": "def needs_review(kb_id: uuid.UUID) -> dict:"
           }
         }
