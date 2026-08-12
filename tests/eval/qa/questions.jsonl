@@ -37,3 +37,14 @@
 {"id": "p5", "type": "trap", "question": "Quel est le barème des salaires du groupe d'emplois K ?", "expected_answer_contains": []}
 {"id": "p6", "type": "trap", "question": "Quel est le salaire moyen des salariés du groupe F ?", "expected_answer_contains": []}
 {"id": "p7", "type": "trap", "question": "Quels sont les salaires minima hiérarchiques prévus pour l'année 2026 ?", "expected_answer_contains": []}
+{"id": "e1", "type": "table", "question": "Quelle est la performance cumulée sur 5 ans du fonds EPSENS D.E.F.I.S. ?", "expected_answer_contains": ["50,46"], "expected_doc": "EPSENS DEFIS - 100005.pdf"}
+{"id": "e2", "type": "table", "question": "Quelle est la performance cumulée sur 5 ans du fonds EPSENS MONETAIRE ISR ?", "expected_answer_contains": ["-2,19"], "expected_doc": "EPSENS MONETAIRE ISR - 4004.pdf"}
+{"id": "e3", "type": "table", "question": "Quelle est la volatilité annualisée sur 3 ans du fonds EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE ?", "expected_answer_contains": ["2,63"], "expected_doc": "EPSENS OBLIGATIONS VERTES ISR - 6006.pdf"}
+{"id": "e4", "type": "table", "question": "Quelle a été la performance annuelle 2018 du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?", "expected_answer_contains": ["-10,57"], "expected_doc": "EPSENS RHONE ALPES AUVERGNE SOLIDAIRE - 1008.pdf"}
+{"id": "e5", "type": "table", "question": "Quel est le taux de sélection SR du fonds EPSENS FLEXI TAUX COURT ISR SOLIDAIRE ?", "expected_answer_contains": ["44,20"], "expected_doc": "EPSENS FLEXI TAUX COURT ISR SOLIDAIRE - 100312.pdf"}
+{"id": "e6", "type": "table", "question": "Quelle est la sensibilité du portefeuille EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE à la date du rapport ?", "expected_answer_contains": ["5,31"], "expected_doc": "EPSENS OBLIGATIONS VERTES ISR - 6006.pdf"}
+{"id": "e7", "type": "trap", "question": "Quelle est la performance cumulée sur 10 ans du fonds EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": []}
+{"id": "e8", "type": "trap", "question": "Quelle est la volatilité annualisée sur 3 ans du fonds EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": []}
+{"id": "e9", "type": "trap", "question": "Quelle est la performance cumulée sur 5 ans ?", "expected_answer_contains": []}
+{"id": "e10", "type": "text", "question": "Pourquoi le fonds EPSENS TRANSITION CLIMAT n'a-t-il pas pu profiter de la hausse des prix de l'énergie en septembre 2021 ?", "expected_answer_contains": ["10 ans|dix ans|prix fixé|prix fixe"], "expected_doc": "EPSENS TRANSITION CLIMAT - 810571.pdf"}
+{"id": "e11", "type": "text", "question": "Quel est l'indice de référence du fonds EPSENS D.E.F.I.S. ?", "expected_answer_contains": ["75", "MSCI", "25", "Bloomberg"], "expected_doc": "EPSENS DEFIS - 100005.pdf"}
