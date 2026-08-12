@@ -71,15 +71,16 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest,
             # operator persona: identity + global/KB guidance (never overriding
             # the safety rules — see generate.build_system_prompt)
             identity, extra = _persona(s, kb_config.get("instructions"))
-            return session.id, locale, verify, history, extra, identity
+            return (session.id, locale, verify, history, extra, identity,
+                    kb_config.get("escalation_contact"))
 
-    session_id, locale, verify, history, extra, identity = \
+    session_id, locale, verify, history, extra, identity, contact = \
         await asyncio.to_thread(prepare)
 
     async def event_stream():
         ctx = QueryContext(kb_id=kb_id, question=body.question, locale=locale,
                            history=history, extra_instructions=extra,
-                           identity=identity)
+                           identity=identity, escalation_contact=contact)
         try:
             async for kind, payload in default_pipeline(verify=verify).stream(ctx):
                 if kind == "citations":
@@ -88,6 +89,11 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest,
                                               for c in payload]})
                 elif kind == "token":
                     yield _sse({"type": "token", "content": payload})
+                elif kind == "caution":
+                    # a structured field, never prose in the answer: the model
+                    # is not asked to remember to warn anyone
+                    yield _sse({"type": "caution",
+                                "caution": payload.model_dump(mode="json")})
 
             def persist() -> uuid.UUID:
                 with session_scope() as s:
@@ -149,9 +155,16 @@ async def chat_multi(body: MultiChatRequest,
             kb_instr = (by_id[pinned[0]].config or {}).get("instructions") \
                 if len(pinned) == 1 else None
             identity, extra = _persona(s, kb_instr)
-            return pinned, locale, history, extra, kbs[0].id, identity
+            # same rule as the locale above: naming one department when the
+            # answer may come from another's document would be worse than
+            # the generic wording
+            contacts = {(kb.config or {}).get("escalation_contact")
+                        for kb in scope}
+            contact = contacts.pop() if len(contacts) == 1 else None
+            return (pinned, locale, history, extra, kbs[0].id, identity,
+                    contact)
 
-    pinned, locale, history, extra, first_kb, identity = \
+    pinned, locale, history, extra, first_kb, identity, contact = \
         await asyncio.to_thread(prepare)
 
     async def event_stream():
@@ -161,7 +174,8 @@ async def chat_multi(body: MultiChatRequest,
         ctx = QueryContext(kb_id=pinned[0] if pinned else first_kb,
                            question=body.question, locale=locale,
                            pinned_kb_ids=pinned or None, history=history,
-                           extra_instructions=extra, identity=identity)
+                           extra_instructions=extra, identity=identity,
+                           escalation_contact=contact)
         try:
             pipeline = default_pipeline(verify=body.verify, router=LLMRouter())
             async for kind, payload in pipeline.stream(ctx):
@@ -171,6 +185,11 @@ async def chat_multi(body: MultiChatRequest,
                                               for c in payload]})
                 elif kind == "token":
                     yield _sse({"type": "token", "content": payload})
+                elif kind == "caution":
+                    # a structured field, never prose in the answer: the model
+                    # is not asked to remember to warn anyone
+                    yield _sse({"type": "caution",
+                                "caution": payload.model_dump(mode="json")})
 
             def persist() -> tuple[uuid.UUID, uuid.UUID]:
                 # a multi-KB session is grouped under the first searched KB

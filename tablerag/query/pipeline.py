@@ -9,6 +9,7 @@ implementations without touching the chain.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Protocol
@@ -69,6 +70,10 @@ class QueryContext:
     # facts only from freshly retrieved sources (history is context, not a source).
     history: list[tuple[str, str]] = field(default_factory=list)
     search_question: str = ""
+    # per-KB: who to ask when an answer needs checking by a human. Lives
+    # in KnowledgeBase.config, not a column — create_all adds tables, not
+    # columns.
+    escalation_contact: str | None = None
     # operator guidance (global + per-KB) appended to the chat system prompt;
     # additive only — see GenerateAnswer.build_system_prompt
     extra_instructions: str = ""
@@ -103,7 +108,9 @@ class QueryPipeline:
 
     async def stream(self, ctx: QueryContext) -> AsyncIterator[tuple[str, object]]:
         """Yields ("citations", list[Citation]) once context is assembled,
-        then ("token", str) during generation, finally ("done", ctx)."""
+        then ("token", str) during generation, then ("caution", Caution)
+        when the answer rests on something a human should check, finally
+        ("done", ctx)."""
         from tablerag.query.steps.generate import GenerateAnswer
         from tablerag.query.steps.smalltalk import SmallTalk
 
@@ -122,7 +129,23 @@ class QueryPipeline:
                     return
             else:
                 ctx = await step.run(ctx)
+        if (caution := caution_event(ctx)) is not None:
+            yield "caution", caution
         yield "done", ctx
+
+
+def caution_event(ctx: QueryContext):
+    """The caution for a finished answer, or None. Never raises.
+
+    Called after the answer has already streamed to the reader, so an exception
+    escaping here would throw away work they have watched arrive."""
+    from tablerag.core.citations import caution_for
+
+    try:
+        return caution_for(ctx.answer, ctx.citations, ctx.escalation_contact)
+    except Exception:  # noqa: BLE001 — a warning must not cost the answer
+        logging.getLogger(__name__).exception("caution computation failed")
+        return None
 
 
 def default_pipeline(verify: bool | None = None, *,

@@ -5,7 +5,7 @@
       "name": "default_pipeline",
       "decl": "def default_pipeline(verify: bool | None = None, *,",
       "file": "tablerag/query/pipeline.py",
-      "line": 128,
+      "line": 151,
       "note": {
         "vi": "Lắp sáu bước theo đúng thứ tự; đổi triển khai từng bước là đổi ở đây.",
         "en": "Assembles the six steps in order; swapping an implementation happens here."
@@ -15,7 +15,7 @@
       "name": "QueryContext",
       "decl": "class QueryContext:",
       "file": "tablerag/query/pipeline.py",
-      "line": 50,
+      "line": 51,
       "note": {
         "vi": "Chiếc hộp đi qua cả sáu bước — mỗi bước đọc nó, thêm vào, trả lại.",
         "en": "The box that travels through all six steps - each one reads it, adds to it, hands it on."
@@ -25,7 +25,7 @@
       "name": "Step",
       "decl": "class Step(Protocol):",
       "file": "tablerag/query/pipeline.py",
-      "line": 89,
+      "line": 94,
       "note": {
         "vi": "Hợp đồng của một bước: async run(ctx) trả về ctx. Chỉ có thế.",
         "en": "A step's whole contract: async run(ctx) returning ctx. Nothing else."
@@ -35,7 +35,7 @@
       "name": "SourceBlock",
       "decl": "class SourceBlock:",
       "file": "tablerag/query/pipeline.py",
-      "line": 22,
+      "line": 23,
       "note": {
         "vi": "Một khối nguồn kèm xuất xứ — thứ mà trích dẫn bấm ngược về.",
         "en": "One source block with its provenance - what a citation clicks back to."
@@ -45,7 +45,7 @@
       "name": "QueryPipeline",
       "decl": "class QueryPipeline:",
       "file": "tablerag/query/pipeline.py",
-      "line": 93,
+      "line": 98,
       "note": {
         "vi": "Chạy chuỗi bước, và là chỗ duy nhất biết thứ tự.",
         "en": "Runs the chain, and is the only place that knows the order."
@@ -154,8 +154,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "tablerag/query/pipeline.py",
-        "from": 89,
-        "to": 92,
+        "from": 94,
+        "to": 97,
         "code": "class Step(Protocol):\n    async def run(self, ctx: QueryContext) -> QueryContext: ...\n\n"
       }
     }

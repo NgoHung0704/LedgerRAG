@@ -146,6 +146,8 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
             scope = [kbs[k] for k in kb_ids if k in kbs]
             # locale only when unambiguous across the searched KBs
             locales = {(kb.config or {}).get("locale") for kb in scope}
+            contacts = {(kb.config or {}).get("escalation_contact")
+                        for kb in scope}
             config = assistant.config or {}
             verify = body.verify
             if verify is None:
@@ -168,6 +170,10 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
                             for kb in scope],
                 "kb_ids": [kb.id for kb in scope],
                 "locale": locales.pop() if len(locales) == 1 else None,
+                # same unambiguous-or-nothing rule as the locale: an assistant
+                # spanning several KBs must not name one KB's department for an
+                # answer that may have come from another's document
+                "contact": (contacts.pop() if len(contacts) == 1 else None),
                 "verify": verify, "identity": identity, "extra": extra,
                 "history": history,
             }
@@ -185,6 +191,7 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
                            locale=cfg["locale"], history=cfg["history"],
                            extra_instructions=cfg["extra"],
                            identity=cfg["identity"],
+                           escalation_contact=cfg["contact"],
                            # one KB: search it. several: let the router choose
                            # among them (it degrades to all of them, never none)
                            pinned_kb_ids=kb_ids if len(kb_ids) == 1 else None)
@@ -199,6 +206,11 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
                                               for c in payload]})
                 elif kind == "token":
                     yield _sse({"type": "token", "content": payload})
+                elif kind == "caution":
+                    # a structured field, never prose in the answer: the model
+                    # is not asked to remember to warn anyone
+                    yield _sse({"type": "caution",
+                                "caution": payload.model_dump(mode="json")})
 
             def persist() -> tuple[uuid.UUID, uuid.UUID]:
                 home = ctx.routed_kb_ids[0] if ctx.routed_kb_ids else kb_ids[0]
