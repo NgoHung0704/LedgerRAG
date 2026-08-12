@@ -14,7 +14,12 @@ dependencies = [
     "redis>=5.0",
     "sqlalchemy>=2.0",
     "psycopg[binary]>=3.1",
-    "qdrant-client>=1.10",
+    # The SERVER is pinned to v1.12.4 in docker-compose while this floated
+    # free, so a rebuild pulled client 1.19 and the library itself declared
+    # the pair incompatible ("minor version difference must not exceed 1").
+    # Bound it to the server it talks to: pinning one end and not the other
+    # is how a rebuild silently changes what retrieval does.
+    "qdrant-client>=1.12,<1.14",
     "httpx>=0.27",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
