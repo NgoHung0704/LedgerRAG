@@ -8,10 +8,10 @@
 {"id": "f8", "type": "table", "question": "Dans le reporting au 30/09/2021, quel est le taux de sélection SR du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?", "expected_answer_contains": ["83,27"], "expected_doc": "EPSENS RHONE ALPES AUVERGNE SOLIDAIRE - 1008.pdf"}
 {"id": "f9", "type": "trap", "question": "Dans le reporting au 30/09/2021, quelle est la performance cumulée sur 10 ans du fonds EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": []}
 {"id": "f10", "type": "trap", "question": "Dans le reporting au 30/09/2021, quelle est la volatilité annualisée sur 3 ans du fonds EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": []}
-{"id": "f11", "type": "trap", "question": "Quelle est la performance cumulée sur 5 ans ?", "expected_answer_contains": []}
-{"id": "f12", "type": "trap", "question": "Quel est le taux de sélection SR ?", "expected_answer_contains": []}
+{"id": "f11", "type": "contrast", "question": "Quelle est la performance cumulée sur 5 ans ?", "expected_answer_contains": ["D.E.F.I.S.|DEFIS", "OBLIGATIONS VERTES", "MONETAIRE", "FLEXI TAUX COURT", "RHONE-ALPES|RHONE ALPES|Rhône-Alpes", "TRANSITION CLIMAT"]}
+{"id": "f12", "type": "contrast", "question": "Quel est le taux de sélection SR ?", "expected_answer_contains": ["D.E.F.I.S.|DEFIS", "OBLIGATIONS VERTES", "MONETAIRE", "FLEXI TAUX COURT", "RHONE-ALPES|RHONE ALPES|Rhône-Alpes", "TRANSITION CLIMAT"]}
 {"id": "f13", "type": "text", "question": "Dans le reporting au 30/09/2021, quel est l'indice de référence du fonds EPSENS D.E.F.I.S. ?", "expected_answer_contains": ["75", "MSCI", "25", "Bloomberg"], "expected_doc": "EPSENS DEFIS - 100005.pdf"}
 {"id": "f14", "type": "text", "question": "Dans le reporting au 30/09/2021, quelle est la classification AMF du fonds EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": ["union européenne|Union européenne|pays de l'union"], "expected_doc": "EPSENS TRANSITION CLIMAT - 810571.pdf"}
-{"id": "f15", "type": "trap", "question": "Quelle est la performance cumulée sur 5 ans du fonds EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE ?", "expected_answer_contains": []}
-{"id": "f16", "type": "trap", "question": "Quelle est la volatilité annualisée sur 3 ans du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?", "expected_answer_contains": []}
-{"id": "f17", "type": "trap", "question": "Quel est l'actif net du portefeuille EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": []}
+{"id": "f15", "type": "contrast", "question": "Quelle est la performance cumulée sur 5 ans du fonds EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE ?", "expected_answer_contains": ["30/09/2021", "31/08/2023", "30/09/2024"]}
+{"id": "f16", "type": "contrast", "question": "Quelle est la volatilité annualisée sur 3 ans du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?", "expected_answer_contains": ["30/09/2021", "31/08/2023", "30/09/2024"]}
+{"id": "f17", "type": "contrast", "question": "Quel est l'actif net du portefeuille EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": ["30/09/2021", "31/08/2023", "30/09/2024"]}

@@ -23,7 +23,7 @@ sys.path.insert(0, str(QA))
 from run_eval_qa import _norm  # noqa: E402
 
 DATASETS = sorted(QA.glob("*.jsonl"))
-TYPES = {"table", "text", "factual", "trap", "figure"}
+TYPES = {"table", "text", "factual", "trap", "figure", "contrast"}
 # UTF-8 bytes decoded as latin-1/cp1252: "é" -> "Ã©", "€" -> "â¬". A whole
 # dataset arrived like this once; the questions reach the API as garbage
 # French and no expected string can ever match.
@@ -81,6 +81,18 @@ def test_expectations_are_well_formed(path):
                 "expected_answer_contains is never read")
             assert item.get("expected_doc"), f"{where}: no expected_doc"
             assert item.get("expected_page"), f"{where}: no expected_page"
+            continue
+
+        if item["type"] == "contrast":
+            # several editions of the same table exist, so refusing OR naming
+            # at least two of these markers passes. The markers are what tells
+            # the versions apart, not the value being asked for, so an
+            # expected_doc would name one of several right answers.
+            assert len(expected) >= 2, (
+                f"{where}: a contrast question needs at least two markers, or "
+                f"nothing can ever be named twice")
+            assert "expected_doc" not in item, (
+                f"{where}: expected_doc pins ONE version — drop it")
             continue
 
         if item["type"] == "trap":

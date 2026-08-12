@@ -4,6 +4,8 @@ Feeds real questions through the LIVE query pipeline (API SSE endpoint) and
 grades three things per question type:
 
 - table/text: every `expected_answer_contains` string appears in the answer
+- contrast: the corpus holds several editions, so refusing OR naming at
+  least two of the listed markers passes; picking one silently fails
   AND `expected_doc` is among the citations (right answer FROM the right
   source).
 - trap: the system must NOT confidently invent — pass when the number
@@ -195,6 +197,27 @@ def grade(item: dict, answer: str, citations: list[dict],
         if is_refusal(claim):
             return True, "refused honestly"
         return False, "answered a trap without warning (review by hand)"
+
+    if item.get("type") == "contrast":
+        # Several editions of the same table sit in the corpus, so the question
+        # has more than one correct answer. Refusing is fine. Naming the
+        # versions is BETTER — it is what OVERLAP_RULE asks for. Silently
+        # picking one is the failure.
+        #
+        # Graded as a trap, those good answers scored FAIL: the trap grader
+        # passes only on refusal, so the metric fell while the product improved.
+        # Here the pass condition is "said enough to let a reader tell which
+        # version this is": at least TWO of the listed markers, since one names
+        # a version and two name a choice.
+        if is_refusal(claim):
+            return True, "refused honestly"
+        named = [s for s in item.get("expected_answer_contains", [])
+                 if any(_norm(variant) in claim or _norm(variant) in bare
+                        for variant in s.split("|"))]
+        if len(named) >= 2:
+            return True, f"attributed ({', '.join(named)})"
+        return False, (f"stated one version without naming the alternatives "
+                       f"(named: {named or 'nothing'})")
 
     if item.get("type") == "figure":
         # A chart, a diagram, a colour-coded scale. The assistant is NOT asked
