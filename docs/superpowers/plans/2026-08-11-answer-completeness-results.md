@@ -104,3 +104,71 @@ Worth one measurement each, separately:
    plausibly answer what was asked, so two boilerplate DICs stop consuming the
    contrast rule while the real pair goes unflagged.
 3. **Put a flag on the overlap contrast**, so it can be measured at all.
+
+
+---
+
+# Addendum: the reranker was the thing
+
+Same day, same KB, same question set. Four defects had to be cleared before the
+reranker ran at all, each of them silent:
+
+1. a **database role override** pointing at a vLLM that no longer runs, beating
+   the environment variables entirely (`/api/models` showed `overridden: true`,
+   `"All connection attempts failed"`);
+2. a **health probe** on `/v1/models`, a path TEI does not serve, painting a
+   working service red;
+3. a **request field** (`documents`) the bundled server does not accept, and a
+   response shape (`{"results": ...}`) it does not return;
+4. **413 Payload Too Large** — 50 candidates, some of them whole tables, in one
+   request against a server that accepts 32 and 2 MB.
+
+All four were swallowed by `except Exception` in the Rerank step, which degrades
+to document diversification. Nothing failed. Answers came back, cited 12 blocks
+drawn one per document, and read like a ranking problem.
+
+## With the reranker actually running
+
+| | reranker down (silently) | reranker working |
+|---|---|---|
+| table | 3/8 (38%) | **4/8 (50%)** |
+| text | 2/2 | 2/2 |
+| trap (as graded) | 3/7 | 2/7 |
+
+**f5 passes.** That is the case this whole investigation started from: asked for
+FLEXI's taux de sélection SR, the assistant used to answer 83,27 %, which is
+RHONE-ALPES's. It now answers 44,20 %.
+
+The trap score fell, and the trap score is lying. Read by hand, those answers
+improved in exactly the direction the contrast rule asks for:
+
+- f16 now says "7,16 % selon le rapport daté du 30/09/2024. **Cependant, il
+  existe une autre valeur pour la même période dans un rapport daté** …" — it
+  names the period and admits another exists.
+- f12 enumerates each fund with its own value.
+- f11 distinguishes the annualised table from the cumulative one.
+
+All three are scored FAIL because the trap grader passes only on refusal. That
+is the grading limit recorded in the Makefile, and it is now material: the
+metric moved down while the product moved up.
+
+## What changed about the problem
+
+The remaining table failures are no longer retrieval failures. f3's citations
+are now 6-of-8 on the right fund, and the answer still takes 0,54 — which is
+FLEXI's volatility. f1 takes the "3 ans" column when asked for "5 ans". f6 takes
+0,89, FLEXI's sensibilité.
+
+Retrieval now puts the right documents at the top and the model still reaches
+for the wrong cell. That is table reading, and it belongs to `make eval-tables`
+(88.4 % on the box, the misses recorded as deep-pivot sub-row misattribution)
+and to the parser-model question, not to anything in this plan.
+
+## The lesson worth keeping
+
+Every one of the four defects predates this work, and all four were invisible
+because the Rerank step catches everything and degrades. "Never fail an answer"
+is the right rule and it turned four configuration errors into four silent
+years. Degrading quietly is correct for a role nobody configured; a role that IS
+configured and whose first call fails should say so once, loudly, and show as
+"configured, last call failed" on the Models page.
