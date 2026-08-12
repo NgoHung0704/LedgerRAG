@@ -30,7 +30,14 @@ x-backend-env: &backend-env
   LEDGERRAG_MODELS__RERANKER__BASE_URL: ${LEDGERRAG_MODELS__RERANKER__BASE_URL:-}
   LEDGERRAG_MODELS__RERANKER__MODEL_NAME: ${LEDGERRAG_MODELS__RERANKER__MODEL_NAME:-}
   LEDGERRAG_VERIFICATION_ENABLED: ${LEDGERRAG_VERIFICATION_ENABLED:-true}
-  LEDGERRAG_CHAT_NUM_CTX: ${LEDGERRAG_CHAT_NUM_CTX:-16384}
+  # must match Settings.chat_num_ctx, or the container silently runs a
+  # smaller window than the assembly budget was sized against
+  LEDGERRAG_CHAT_NUM_CTX: ${LEDGERRAG_CHAT_NUM_CTX:-32768}
+  # neighbour expansion: off until eval-funds says it earns its place.
+  # Listed here because `environment:` is an explicit allow-list - a
+  # variable absent from it never reaches the container, however it is
+  # exported on the host.
+  LEDGERRAG_EXPAND_NEIGHBOURS: ${LEDGERRAG_EXPAND_NEIGHBOURS:-false}
   LEDGERRAG_CHAT_TEMPERATURE: ${LEDGERRAG_CHAT_TEMPERATURE:-0.0}
   # image quality knobs (e.g. LEDGERRAG_TABLE_CROP_DPI=300 to test denser grids)
   LEDGERRAG_TABLE_CROP_DPI: ${LEDGERRAG_TABLE_CROP_DPI:-240}

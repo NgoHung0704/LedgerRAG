@@ -15,8 +15,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 167,
-        "to": 167,
+        "from": 174,
+        "to": 174,
         "anchor": "- \"3000:3000\""
       }
     },
@@ -75,8 +75,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 149,
-        "to": 149,
+        "from": 156,
+        "to": 156,
         "anchor": "LEDGERRAG_CONSUME_DIR: /consume"
       }
     },
@@ -95,8 +95,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 162,
-        "to": 162,
+        "from": 169,
+        "to": 169,
         "anchor": "context: ./frontend"
       }
     },
@@ -115,8 +115,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 113,
-        "to": 113,
+        "from": 120,
+        "to": 120,
         "anchor": "- \"8000:8000\""
       }
     },
@@ -135,8 +135,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 129,
-        "to": 129,
+        "from": 136,
+        "to": 136,
         "anchor": "celery -A tablerag.ingestion.worker worker"
       }
     },
@@ -155,8 +155,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 146,
-        "to": 146,
+        "from": 153,
+        "to": 153,
         "anchor": "python -m tablerag.ingestion.consumer"
       }
     },
@@ -195,8 +195,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 55,
-        "to": 55,
+        "from": 62,
+        "to": 62,
         "anchor": "image: postgres:16-alpine"
       }
     },
@@ -215,8 +215,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 70,
-        "to": 70,
+        "from": 77,
+        "to": 77,
         "anchor": "image: redis:7-alpine"
       }
     },
@@ -235,8 +235,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 79,
-        "to": 79,
+        "from": 86,
+        "to": 86,
         "anchor": "image: qdrant/qdrant:v1.12.4"
       }
     },
@@ -255,8 +255,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 94,
-        "to": 94,
+        "from": 101,
+        "to": 101,
         "anchor": "image: minio/minio:RELEASE.2024-06-13T22-53-53Z"
       }
     },
