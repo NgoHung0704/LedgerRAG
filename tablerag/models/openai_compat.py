@@ -109,14 +109,27 @@ class OpenAICompatProvider:
         return scores
 
     async def health(self) -> tuple[bool, str]:
-        # base_url may or may not already end in /v1 (a rerank vLLM is commonly
-        # configured as http://host:8007/v1). Normalize so the check hits
-        # /v1/models either way instead of /v1/v1/models -> false "unhealthy".
+        """Alive on either kind of server behind this provider.
+
+        base_url may already end in /v1 (a rerank vLLM is commonly configured
+        as http://host:8007/v1), so normalise first or the probe becomes
+        /v1/v1/models and reports a false "unhealthy".
+
+        Then try both doors. TEI - the reranker this repo ships - has no
+        /v1/models at all, because it is not a chat server; probing only that
+        path paints a working reranker red, and a red light nobody trusts is
+        how a broken endpoint hides in plain sight. Its /health is the door it
+        does answer."""
         root = self.base_url[:-3] if self.base_url.endswith("/v1") else self.base_url
-        try:
-            async with httpx.AsyncClient(timeout=5.0, headers=self.headers) as client:
-                r = await client.get(f"{root}/v1/models")
-                r.raise_for_status()
-                return True, "ok"
-        except (httpx.HTTPError, OSError) as e:
-            return False, str(e)
+        last = ""
+        for path in ("/v1/models", "/health"):
+            try:
+                async with httpx.AsyncClient(timeout=5.0,
+                                             headers=self.headers,
+                                             transport=self._transport) as client:
+                    r = await client.get(f"{root}{path}")
+                    r.raise_for_status()
+                    return True, "ok"
+            except (httpx.HTTPError, OSError) as e:
+                last = str(e)
+        return False, last
