@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-funds eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
 
 up:
 	docker compose up -d --build
@@ -70,6 +70,17 @@ eval-convention:
 eval-visuals:
 	python tests/eval/qa/run_eval_qa.py --kb $(KB) \
 		--questions tests/eval/qa/visuals.jsonl $(ARGS)
+
+# ---- sibling-table gate (needs the full live stack) ------------------------
+# Six EPSENS fund factsheets built from one template: their tables share a
+# structure exactly and differ only in the numbers and in WHICH FUND they
+# describe. Kept OUT of questions.jsonl because that set targets the CETIAT HR
+# documents - run against the wrong KB, every question fails for the honest
+# reason that its document is not there, and the output says nothing.
+# Usage: make eval-funds KB=<kb holding the EPSENS factsheets>
+eval-funds:
+	python tests/eval/qa/run_eval_qa.py --kb $(KB) \
+		--questions tests/eval/qa/funds.jsonl $(ARGS)
 
 # ---- figure-reading gate (needs a live parser endpoint) --------------------
 # Charts are the one thing with no text to fall back on. Scores three things:
