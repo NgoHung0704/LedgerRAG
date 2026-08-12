@@ -526,6 +526,7 @@
       "modules": [
         "tablerag/query/steps/verify.py",
         "tablerag/query/verification.py",
+        "tablerag/core/citations.py",
         "tablerag/core/numbers.py"
       ],
       "phases": [

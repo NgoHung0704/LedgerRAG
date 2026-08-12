@@ -1183,11 +1183,13 @@ and inside `Citation`, beside `from_figure`:
     expanded: bool = False
 ```
 
-- [ ] **Step 5: Make the eval harness use the shared parser**
+- [ ] **Step 5: (dropped — the premise was wrong)**
 
-In `tests/eval/qa/run_eval_qa.py`, replace the body of `cites()` with a call to
-`cited_indices` from `tablerag.core.citations`, keeping its existing name and
-signature so the rest of the harness is untouched.
+This step claimed marker parsing already lived in the eval harness as `cites()`
+and only needed moving. It does not. `run_eval_qa.py:161` matches a citation
+DICT against a document name and page; it never reads `[n]` markers out of
+answer text, and nothing in the eval tree does. `cited_indices` is therefore new
+code with no existing duplicate to retire, and the harness is left untouched.
 
 - [ ] **Step 6: Run the tests**
 

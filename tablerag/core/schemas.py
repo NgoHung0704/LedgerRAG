@@ -167,6 +167,16 @@ class Citation(BaseModel):
     expanded: bool = False
 
 
+class Caution(BaseModel):
+    """Why this answer deserves a second look, and who to ask.
+
+    `reasons` are stable machine keys, not prose: the UI renders them in the
+    reader's language and an API consumer can act on them."""
+
+    reasons: list[str] = []
+    contact: str | None = None
+
+
 class RecordEdit(BaseModel):
     dimensions: dict = {}
     metrics: dict = {}

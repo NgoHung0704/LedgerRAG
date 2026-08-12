@@ -147,9 +147,10 @@ caution: {reason: list[str], contact: str | None} | None
 
 Computed deterministically at `done`, from the sources the model **actually
 cited**, falling back to the sources offered when it cites nothing. Marker
-parsing already exists as `cites()` in `tests/eval/qa/run_eval_qa.py`; it moves
-into `tablerag/core/` so the gate and the pipeline cannot disagree about what
-counts as a citation. It fires when a cited source is
+parsing is new code in `tablerag/core/citations.py` — an earlier draft of this
+spec said it already existed in the eval harness and only needed moving, which
+was wrong: `cites()` there matches a citation against a document name and never
+reads `[n]` markers at all. It fires when a cited source is
 `from_figure=True`, or `needs_review`, or `confidence <
 confidence_review_threshold` (0.9, already in config). A distinct reason is
 added when the figure's palette satisfies `is_colour_coded()` — reusing
