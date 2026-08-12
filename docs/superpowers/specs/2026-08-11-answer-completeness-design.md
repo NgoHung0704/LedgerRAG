@@ -152,10 +152,10 @@ spec said it already existed in the eval harness and only needed moving, which
 was wrong: `cites()` there matches a citation against a document name and never
 reads `[n]` markers at all. It fires when a cited source is
 `from_figure=True`, or `needs_review`, or `confidence <
-confidence_review_threshold` (0.9, already in config). A distinct reason is
-added when the figure's palette satisfies `is_colour_coded()` — reusing
-`tablerag/ingestion/palette.py` — because a colour code is the hardest thing to
-read off a page and has no printed words to check it against.
+confidence_review_threshold` (0.9, already in config).
+
+**NOT BUILT, and recorded rather than quietly dropped:** this spec also promised a distinct reason when the figure's palette satisfies `is_colour_coded()`. A `Citation` carries no palette, and plumbing one through would mean a new field on `ChunkContext`, on `SourceBlock` and on `Citation` for a message refinement. A colour-coded figure still raises `figure_reading`, so the caution appears and the reader is still told the answer rests on a reading of a picture — what is lost is the sentence naming colour specifically.
+
 
 `contact` comes from a new optional per-KB field. Unset, the caution names "the
 department that issued the document" generically.
