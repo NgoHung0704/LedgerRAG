@@ -15,6 +15,14 @@ from tablerag.core.config import EndpointConfig
 from tablerag.models.base import Msg, TableCtx, TableParse, Vector
 
 _TIMEOUT = httpx.Timeout(600.0, connect=10.0)
+# TEI accepts 32 texts per request and 2 MB of payload; the candidate pool is
+# retrieve_candidates=50. One request for the pool returns 413, the Rerank step
+# swallows it, and the pipeline silently falls back to document diversification.
+_RERANK_BATCH = 16
+# a cross-encoder judges whether a passage is ABOUT the question; it does not
+# hunt for a cell. The head of a table - summary, headers, first rows - carries
+# that, and sending 200 kB of grid costs the payload limit for nothing.
+_RERANK_DOC_CHARS = 4000
 
 
 class OpenAICompatProvider:
@@ -81,31 +89,36 @@ class OpenAICompatProvider:
         """Score `docs` against `query`, in either /rerank dialect.
 
         "The OpenAI-compatible /rerank endpoint" is two incompatible things.
-        vLLM and Jina take `documents` and answer `{"results": [...]}`; TEI —
-        the reranker this repo's own compose file ships — takes `texts` and
-        answers a BARE LIST. Sending the wrong field is a 422 and reading the
-        wrong shape raises, and the Rerank step catches everything and falls
-        back to document diversification. So the whole feature came out looking
-        configured and behaving exactly as if it were disabled: measured on the
-        box, the scores were identical to the no-reranker run, to the question.
+        vLLM and Jina take `documents` and answer {"results": [...]}; TEI - the
+        reranker this repo's own compose file ships - takes `texts` and answers
+        a BARE LIST. Sending the wrong field is a 4xx and reading the wrong
+        shape raises, and the Rerank step catches everything and degrades to
+        document diversification. So the whole feature came out looking
+        configured and behaving exactly as if it were disabled.
 
-        Try the vLLM field first (that is what Phase 4 was measured against),
-        fall back to TEI's on a 4xx, and accept either response shape."""
+        Batched and truncated for the same reason: measured on the box, the
+        full 50-candidate pool returned 413 Payload Too Large, and that also
+        degraded silently."""
+        scores = [0.0] * len(docs)
+        clipped = [d[:_RERANK_DOC_CHARS] for d in docs]
         async with httpx.AsyncClient(timeout=_TIMEOUT, headers=self.headers,
                                      transport=self._transport) as client:
             url = f"{self.base_url}/rerank"
-            r = await client.post(url, json={"model": self.model,
-                                             "query": query,
-                                             "documents": docs})
-            if 400 <= r.status_code < 500:
-                r = await client.post(url, json={"query": query, "texts": docs})
-            r.raise_for_status()
-            payload = r.json()
-        results = payload if isinstance(payload, list) else payload["results"]
-        scores = [0.0] * len(docs)
-        for item in results:
-            scores[item["index"]] = item.get("relevance_score",
-                                             item.get("score", 0.0))
+            for start in range(0, len(clipped), _RERANK_BATCH):
+                batch = clipped[start:start + _RERANK_BATCH]
+                r = await client.post(url, json={"model": self.model,
+                                                 "query": query,
+                                                 "documents": batch})
+                if r.status_code in (400, 422):  # wrong field name -> TEI's
+                    r = await client.post(url, json={"query": query,
+                                                     "texts": batch})
+                r.raise_for_status()
+                payload = r.json()
+                results = (payload if isinstance(payload, list)
+                           else payload["results"])
+                for item in results:
+                    scores[start + item["index"]] = item.get(
+                        "relevance_score", item.get("score", 0.0))
         return scores
 
     async def health(self) -> tuple[bool, str]:
