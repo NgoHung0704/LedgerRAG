@@ -77,6 +77,17 @@ eval-visuals:
 # describe. Kept OUT of questions.jsonl because that set targets the CETIAT HR
 # documents - run against the wrong KB, every question fails for the honest
 # reason that its document is not there, and the output says nothing.
+#
+# The KB holds THREE editions of most funds - 30/09/2021, 31/08/2023 and
+# 30/09/2024 - built from the same template, so a question naming only the fund
+# has several correct answers. f1-f10, f13, f14 pin the period and check a
+# value. f11, f12, f15-f17 name no period on purpose and are graded as traps.
+#
+# READ THOSE BY HAND when they fail. The trap grader passes on a refusal, so an
+# answer that enumerates each edition WITH ITS DATE - which is the behaviour
+# OVERLAP_RULE actually asks for, and better than refusing - is scored FAIL.
+# That is a limit of substring grading, not a wrong answer.
+#
 # Usage: make eval-funds KB=<kb holding the EPSENS factsheets>
 eval-funds:
 	python tests/eval/qa/run_eval_qa.py --kb $(KB) \

@@ -12,3 +12,6 @@
 {"id": "f12", "type": "trap", "question": "Quel est le taux de sélection SR ?", "expected_answer_contains": []}
 {"id": "f13", "type": "text", "question": "Dans le reporting au 30/09/2021, quel est l'indice de référence du fonds EPSENS D.E.F.I.S. ?", "expected_answer_contains": ["75", "MSCI", "25", "Bloomberg"], "expected_doc": "EPSENS DEFIS - 100005.pdf"}
 {"id": "f14", "type": "text", "question": "Dans le reporting au 30/09/2021, quelle est la classification AMF du fonds EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": ["union européenne|Union européenne|pays de l'union"], "expected_doc": "EPSENS TRANSITION CLIMAT - 810571.pdf"}
+{"id": "f15", "type": "trap", "question": "Quelle est la performance cumulée sur 5 ans du fonds EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE ?", "expected_answer_contains": []}
+{"id": "f16", "type": "trap", "question": "Quelle est la volatilité annualisée sur 3 ans du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?", "expected_answer_contains": []}
+{"id": "f17", "type": "trap", "question": "Quel est l'actif net du portefeuille EPSENS TRANSITION CLIMAT ?", "expected_answer_contains": []}
