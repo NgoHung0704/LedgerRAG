@@ -162,6 +162,9 @@ class Citation(BaseModel):
     # off the page — `kind` stays "text" because that is the collection it was
     # retrieved from, and the ranking is keyed by it
     from_figure: bool = False
+    # pulled in because it neighbours a retrieved source, not because search
+    # found it - a reader must be able to tell the two apart
+    expanded: bool = False
 
 
 class RecordEdit(BaseModel):

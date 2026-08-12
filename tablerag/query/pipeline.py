@@ -129,6 +129,7 @@ def default_pipeline(verify: bool | None = None, *,
                      router: object | None = None) -> QueryPipeline:
     from tablerag.query.steps.assemble import AssembleContext
     from tablerag.query.steps.condense import CondenseQuestion
+    from tablerag.query.steps.expand import ExpandNeighbours
     from tablerag.query.steps.generate import GenerateAnswer
     from tablerag.query.steps.rerank import Rerank
     from tablerag.query.steps.retrieve import Retrieve
@@ -152,6 +153,9 @@ def default_pipeline(verify: bool | None = None, *,
         Retrieve(top_k=settings.retrieve_candidates),
         Rerank(top_k=settings.rerank_top_k,
                fallback_top_k=settings.retrieve_top_k),
+        # after Rerank so it cannot dilute ranking, before AssembleContext so
+        # what it adds lives under the same budget and is sacrificed first
+        ExpandNeighbours(enabled=settings.expand_neighbours),
         AssembleContext(),
         GenerateAnswer(),
         Verify(enabled=enabled),

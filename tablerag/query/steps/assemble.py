@@ -23,6 +23,7 @@ from tablerag.storage.repositories import (
     ChunkContext,
     TableSource,
     get_chunk_contexts,
+    get_element_chunk_contexts,
     get_record_texts,
     get_table_sources,
 )
@@ -104,7 +105,30 @@ class AssembleContext:
         # that decision away and made both reranking and diversification no-ops.
         rank: dict[tuple[str, uuid.UUID], int] = {}
 
+        # elements pulled in by ExpandNeighbours. They arrive as ELEMENT ids,
+        # and the loop below would otherwise send every one of them down the
+        # table path — where a text or figure neighbour has no parent table and
+        # would disappear with no error at all.
+        expanded_ids: set[uuid.UUID] = set()
+        expanded_elements: list[uuid.UUID] = []
+        expanded_rank: dict[uuid.UUID, int] = {}
+
         for position, hit in enumerate(ctx.hits):
+            if hit.payload.get("_expanded"):
+                raw = hit.payload.get("element_id")
+                if raw is None:
+                    continue
+                element_id = uuid.UUID(raw)
+                expanded_ids.add(element_id)
+                if hit.payload.get("element_type") == "table":
+                    if element_id not in table_scores:
+                        table_ids.append(element_id)
+                        table_scores[element_id] = hit.score
+                        rank[("table", element_id)] = position
+                elif element_id not in expanded_rank:
+                    expanded_elements.append(element_id)
+                    expanded_rank[element_id] = position
+                continue
             if hit.payload.get("_collection") == COLLECTION_CHUNKS:
                 raw = hit.payload.get("chunk_id")
                 if raw is None:
@@ -130,14 +154,26 @@ class AssembleContext:
                     if record_id not in rows:
                         rows.append(record_id)
 
-        chunks, tables, record_texts = await asyncio.to_thread(
-            self._fetch, chunk_ids, table_ids, matched)
+        chunks, tables, record_texts, expanded_chunks = await asyncio.to_thread(
+            self._fetch, chunk_ids, table_ids, matched, expanded_elements)
+
+        # an expanded chunk scores 0.0: it was never retrieved, and giving it a
+        # borrowed score would let it compete with what search actually found
+        for extra in expanded_chunks:
+            if extra.chunk_id in chunk_scores:
+                continue
+            chunks.append(extra)
+            chunk_scores[extra.chunk_id] = 0.0
+            rank[("text", extra.chunk_id)] = expanded_rank.get(
+                extra.element_id, len(ctx.hits))
 
         blocks: list[SourceBlock] = [self._text_block(c, chunk_scores) for c in chunks]
         blocks += [self._table_block(t, table_scores,
                                      [record_texts[r] for r in matched.get(t.element_id, [])
                                       if r in record_texts][:MAX_MATCHED_ROWS])
                    for t in tables]
+        for block in blocks:
+            block.expanded = block.element_id in expanded_ids
         blocks.sort(key=lambda b: rank.get(
             (b.kind, b.chunk_id if b.kind == "text" else b.element_id),
             len(ctx.hits)))
@@ -157,6 +193,7 @@ class AssembleContext:
                      chunk_id=b.chunk_id, snippet=b.snippet, score=b.score,
                      crop_image_path=b.crop_image_path,
                      confidence=b.confidence, needs_review=b.needs_review,
+                     expanded=b.expanded,
                      from_figure=b.from_figure)
             for i, b in enumerate(blocks)
         ]
@@ -201,11 +238,13 @@ class AssembleContext:
 
     @staticmethod
     def _fetch(chunk_ids: list[uuid.UUID], table_ids: list[uuid.UUID],
-               matched: dict[uuid.UUID, list[uuid.UUID]]
-               ) -> tuple[list, list, dict]:
+               matched: dict[uuid.UUID, list[uuid.UUID]],
+               expanded_elements: list[uuid.UUID] | None = None
+               ) -> tuple[list, list, dict, list]:
         record_ids = [r for rows in matched.values()
                       for r in rows[:MAX_MATCHED_ROWS]]
         with session_scope() as s:
             return (get_chunk_contexts(s, chunk_ids),
                     get_table_sources(s, table_ids),
-                    get_record_texts(s, record_ids))
+                    get_record_texts(s, record_ids),
+                    get_element_chunk_contexts(s, expanded_elements or []))

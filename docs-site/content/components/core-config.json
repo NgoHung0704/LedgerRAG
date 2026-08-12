@@ -25,7 +25,7 @@
       "name": "get_settings",
       "decl": "def get_settings() -> Settings:",
       "file": "tablerag/core/config.py",
-      "line": 195,
+      "line": 198,
       "note": {
         "vi": "Cấu hình được cache, và mọi thứ khác đọc qua đây.",
         "en": "The configuration, cached, and everything else reads it through here."

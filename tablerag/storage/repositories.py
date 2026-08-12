@@ -296,6 +296,21 @@ def get_chunk_contexts(s: Session, chunk_ids: list[uuid.UUID]) -> list[ChunkCont
     return [by_id[cid] for cid in chunk_ids if cid in by_id]
 
 
+def get_element_chunk_contexts(s: Session, element_ids: list[uuid.UUID]
+                               ) -> list[ChunkContext]:
+    """The chunks of these elements.
+
+    Retrieval hands AssembleContext a chunk id; neighbour expansion hands it an
+    ELEMENT id, because a neighbour is chosen by where it sits on the page and
+    nothing has looked inside it yet. This is the one lookup that bridges the
+    two."""
+    if not element_ids:
+        return []
+    chunk_ids = [row[0] for row in s.execute(
+        select(Chunk.id).where(Chunk.element_id.in_(element_ids))).all()]
+    return get_chunk_contexts(s, chunk_ids)
+
+
 def get_page_elements(s: Session, doc_ids: list[uuid.UUID]
                       ) -> list["NeighbourCandidate"]:
     """Every element of these documents, as neighbour candidates.

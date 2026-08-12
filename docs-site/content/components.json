@@ -430,6 +430,7 @@
       "modules": [
         "tablerag/query/steps/router.py",
         "tablerag/query/steps/retrieve.py",
+        "tablerag/query/steps/expand.py",
         "tablerag/query/steps/rerank.py",
         "tablerag/core/sparse.py"
       ],

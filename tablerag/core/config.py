@@ -97,6 +97,9 @@ class Settings(BaseSettings):
     chunk_target_tokens: int = 500
     chunk_overlap_ratio: float = 0.10
     retrieve_top_k: int = 12       # final context size when no reranker
+    # off until measured: expansion changes citation counts, so eval-qa must be
+    # re-run A/B before it can become the default
+    expand_neighbours: bool = False
     retrieve_candidates: int = 50  # hybrid candidate pool fed to the reranker
     rerank_top_k: int = 8          # final context size after reranking
 
