@@ -218,3 +218,55 @@ Three levers remain, none of them in this plan:
    answer it on this corpus rather than on someone else's benchmark),
 3. the ingestion defect on `EPSENS MONETAIRE ISR - 4004.pdf`, whose reporting
    date never reached the index.
+
+
+---
+
+# The detection gate, and the number that was missing
+
+`make eval-detection`, 12 pages across the six EPSENS factsheets, graded on
+whether a printed value can be reached through ANY accepted table region:
+
+```
+pages where every value is reachable: 3/12 = 25%
+```
+
+Beside `make eval-tables` at 88.4 %, which grades transcription of tables
+already cropped for it. Both are true and only together are they honest:
+**reading a table that was found works 88 % of the time; finding it on a real
+factsheet works 25 % of the time.**
+
+## The pattern
+
+| result | pages | what they have in common |
+|---|---|---|
+| PASS | defis-p2, rhone-p2, monetaire-p2 | ONE table, largely alone on the page |
+| 0 found | vertes-p2, flexi-p2 | risk indicators AND sensitivity on one page |
+| 0 found | climat-p1, climat-p2 | a table beside a chart; two tables side by side |
+| 0 found | defis-p1 | three performance tables stacked |
+| 3/4, 2/4 | the other p1s | missing exactly LES PRINCIPALES LIGNES |
+
+`PRINCIPALES LIGNES` is found on monetaire-p2, where it stands alone, and missed
+on every page 1, where it sits beside the allocation chart. Detection fails when
+a table has to share a page: `find_tables` either merges everything into one
+page-wide blob — correctly rejected, since accepting it recreates the swallowing
+bug — or returns nothing.
+
+## Why this explains the whole day
+
+Three retrieval interventions failed to move `table 4/8`:
+
+1. scope in record text — improved a string retrieval never consulted;
+2. the reranker fix — brought the right documents, which held no table;
+3. the structured-slot quota — let tables in, but only the ones that exist.
+
+None could have worked. The value 50,46 exists nowhere but page prose, because
+the table holding it was never built. A ranking change cannot retrieve a table
+that ingestion did not make.
+
+## What this does NOT say
+
+It does not say PyMuPDF is the wrong tool, or that a VLM would do better. It
+says the current detection path reaches 25 % on this corpus, and that any
+alternative now has a number to beat measured on real customer documents rather
+than on a synthetic set.
