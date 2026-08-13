@@ -105,19 +105,29 @@ def proposals(page, found: list) -> str:
     from tablerag.ingestion.layout import accept_table, repair_grid
     from tablerag.ingestion.word_tables import WordTable, find_word_tables
 
+    from tablerag.ingestion.layout import _overlap_ratio
+
     rects = [fitz.Rect(t.bbox) for t, _ in found if not isinstance(t, WordTable)]
-    kept = blocked = shape = 0
+    lines = []
     for bbox, grid in find_word_tables(page.get_text("words")):
         rect, repaired = fitz.Rect(bbox), repair_grid(grid)
+        box = tuple(round(v) for v in bbox)
+        cols = max((len(row) for row in repaired), default=0)
         if accept_table(rect, repaired, "words", rects):
-            kept += 1
+            verdict = "accepted"
             rects.append(rect)
         elif accept_table(rect, repaired, "words", []):
-            blocked += 1
+            # WHICH region blocked it is the whole question: a mangled two-cell
+            # fragment from the text strategy laid down first can veto a region
+            # covering the real table, and the counts alone never said so.
+            hit = next((r for r in rects
+                        if _overlap_ratio(rect, r) > 0.5
+                        or _overlap_ratio(r, rect) > 0.5), None)
+            verdict = f"BLOCKED by {tuple(round(v) for v in hit)}" if hit else "BLOCKED"
         else:
-            shape += 1
-    return (f"word detector: {kept + blocked + shape} offered, {kept} accepted, "
-            f"{blocked} blocked by an earlier region, {shape} refused on shape")
+            verdict = "refused on shape"
+        lines.append(f"offered {box} {len(repaired)}x{cols} {verdict}")
+    return lines
 
 
 def lines_near(page, y: float, span: float = 26.0) -> None:
@@ -201,7 +211,8 @@ def main() -> None:
             if not ok and item.get("note"):
                 print(f"{'':16} {'':8} {item['note']}")
             if args.dump and not ok:
-                print(f"{'':16} {'':8} {proposals(page, found)}")
+                for line in proposals(page, found):
+                    print(f"{'':16} {'':8} {line}")
                 dump(page, item, found)
                 if args.lines:
                     grids = [g for _, g in found]
