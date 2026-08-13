@@ -93,16 +93,69 @@ def dump(page, item: dict, found: list) -> None:
             print(f"{'':16} {'':8}   {value!r}: at ({x0},{y0}) - {place}")
 
 
-def proposals(page) -> tuple[int, int]:
-    """How many regions the word detector offered, and how many survived
-    acceptance — the difference is accept_table's doing, not the detector's."""
-    from tablerag.ingestion.layout import accept_table, repair_grid
-    from tablerag.ingestion.word_tables import find_word_tables
+def proposals(page, found: list) -> str:
+    """What became of each region the word detector offered.
 
-    offered = find_word_tables(page.get_text("words"))
-    kept = sum(1 for bbox, grid in offered
-               if accept_table(fitz.Rect(bbox), repair_grid(grid), "words", []))
-    return len(offered), kept
+    An earlier version of this asked accept_table with NO existing regions, so
+    it reported "3 offered, 3 accepted" on a page whose output held two. It was
+    blind to the dedupe, which is the one thing worth knowing here: word tables
+    are considered last, so a region the ruled or text strategies already put
+    down can block a better one. Replayed in the real order, against the real
+    regions those strategies produced."""
+    from tablerag.ingestion.layout import accept_table, repair_grid
+    from tablerag.ingestion.word_tables import WordTable, find_word_tables
+
+    rects = [fitz.Rect(t.bbox) for t, _ in found if not isinstance(t, WordTable)]
+    kept = blocked = shape = 0
+    for bbox, grid in find_word_tables(page.get_text("words")):
+        rect, repaired = fitz.Rect(bbox), repair_grid(grid)
+        if accept_table(rect, repaired, "words", rects):
+            kept += 1
+            rects.append(rect)
+        elif accept_table(rect, repaired, "words", []):
+            blocked += 1
+        else:
+            shape += 1
+    return (f"word detector: {kept + blocked + shape} offered, {kept} accepted, "
+            f"{blocked} blocked by an earlier region, {shape} refused on shape")
+
+
+def lines_near(page, y: float, span: float = 26.0) -> None:
+    """The baselines the detector built around this y, and why they broke.
+
+    Every word table found on the real pages is exactly two rows tall, in every
+    document, while the tables print three. Whether the third line is missing,
+    or has too few cells, or fails to align, or sits too far below, decides
+    which of four constants is wrong - and no amount of staring at the accepted
+    output distinguishes them."""
+    from tablerag.ingestion.word_tables import (
+        _vertically_adjacent,
+        column_bands,
+        edges_align,
+        group_lines,
+        split_cells,
+    )
+
+    bands = column_bands(page.get_text("words"))
+    print(f"{'':16} {'':8}   page splits into {len(bands)} band(s)")
+    for b, band in enumerate(bands):
+        near = [w for w in band if y - span <= (w[1] + w[3]) / 2 <= y + span]
+        if not near:
+            continue
+        print(f"{'':16} {'':8}   band {b} x=[{min(w[0] for w in band):.0f},"
+              f"{max(w[2] for w in band):.0f}]")
+        previous = None
+        for raw in group_lines(near):
+            line = split_cells(raw)
+            why = "first"
+            if previous is not None:
+                why = "ALIGNED" if edges_align(previous, line) else "not aligned"
+                if not _vertically_adjacent(previous, line):
+                    why += " + too far below"
+            cells = [t[:14] for _, _, t in line.cells]
+            print(f"{'':16} {'':8}     y={line.top:6.1f} cells={len(line.cells):2d} "
+                  f"{why:22} {cells}")
+            previous = line
 
 
 def grade(item: dict, grids: list) -> tuple[bool, str]:
@@ -122,6 +175,9 @@ def main() -> None:
     ap.add_argument("--dump", action="store_true",
                     help="for each failing page, print the accepted regions and "
                          "where each unreachable value actually sits")
+    ap.add_argument("--lines", action="store_true",
+                    help="with --dump, also print the baselines the word "
+                         "detector built around each missing value")
     args = ap.parse_args()
 
     items = [json.loads(line) for line in
@@ -145,10 +201,21 @@ def main() -> None:
             if not ok and item.get("note"):
                 print(f"{'':16} {'':8} {item['note']}")
             if args.dump and not ok:
-                offered, kept = proposals(page)
-                print(f"{'':16} {'':8} word detector offered {offered}, "
-                      f"{kept} pass acceptance")
+                print(f"{'':16} {'':8} {proposals(page, found)}")
                 dump(page, item, found)
+                if args.lines:
+                    grids = [g for _, g in found]
+                    seen: set[int] = set()
+                    for value in item.get("must_reach", []):
+                        if reachable(grids, value):
+                            continue
+                        for _, y0, _, _ in where(page.get_text("words"), value)[:1]:
+                            if any(abs(y0 - s) < 20 for s in seen):
+                                continue
+                            seen.add(y0)
+                            print(f"{'':16} {'':8}   --- lines around {value!r} "
+                                  f"at y={y0} ---")
+                            lines_near(page, float(y0))
 
     print("-" * 78)
     if not ran:
