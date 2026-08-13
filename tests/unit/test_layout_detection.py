@@ -159,3 +159,32 @@ def test_short_or_unrelated_blocks_are_never_dropped():
     assert not duplicates_table_text("21 700", cells)          # too few lines
     assert not duplicates_table_text("a\nb\nc", cells)         # no overlap
     assert not duplicates_table_text("A\n1\n21 700", set())    # no tables
+
+
+def _draw_borderless(page, y0: float, label_x: float = 60.0):
+    """A table held together by nothing but where its words sit."""
+    columns = (label_x, 300.0, 360.0, 420.0)
+    for i, row in enumerate((("Indicateurs", "1 an", "3 ans", "5 ans"),
+                             ("Volatilite", "8,12", "9,44", "10,32"),
+                             ("Tracking", "0,12", "0,36", "0,32"))):
+        for x, cell in zip(columns, row):
+            page.insert_text((x, y0 + i * 14.0), cell, fontsize=9)
+
+
+def test_a_borderless_table_is_found_even_when_the_page_has_a_ruled_one():
+    """The gate said flexi-p2 1/2, rhone-p1 3/4, monetaire-p1 3/4 — every one of
+    them a page where SOMETHING was detected and the missing table was
+    borderless. The word detector ran only where the page came up completely
+    empty, so on those pages it never ran at all. One ruled table on the page
+    was enough to protect every borderless one from being looked for."""
+    doc = fitz.open()
+    page = doc.new_page()
+    _draw_table(page, 50, 60, n_rows=3, n_cols=3)   # ruled: found by lines_*
+    _draw_borderless(page, y0=400.0)                # borderless: words only
+    found = detect_tables(page)
+
+    flat = " ".join(str(cell or "") for _, grid in found
+                    for row in grid for cell in row)
+    assert "0,36" in flat, (
+        f"the borderless table was not detected; {len(found)} region(s) found")
+    assert "8,12" in flat and "10,32" in flat
