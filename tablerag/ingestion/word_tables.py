@@ -51,14 +51,28 @@ _MIN_CELLS = 3
 _MIN_RUN_CELLS = 2
 # fewer rows than this is not a table, it is a heading and a line under it
 _MIN_ROWS = 2
+# a run only TWO columns wide needs this many rows before it counts. climat-p1
+# reports a single period, so its Performances cumulees is genuinely two columns
+# and three rows, and refusing every two-column run lost it. The cost is stated:
+# a fiche d'identite is also label/value, and three of its lines in a row will
+# now be filed as a table. That is real tabular data with a crop and a source,
+# so the cost is noise in the index, not a wrong answer - and two aligned lines,
+# which is what most accidents look like, are still refused.
+_MIN_NARROW_ROWS = 3
 # a vertical gap wider than this many times the line's own height ends the
 # table. Columns alone cannot separate two STACKED tables - the second one's
 # figures sit under the first one's columns by construction, which is what
 # being built from the same template means. The blank band between them is
 # the only signal, and it is the one a reader uses.
 _ROW_GAP_FACTOR = 1.6
-# a vertical strip this wide that no word crosses is a CANDIDATE page gutter
+# a vertical strip this wide that almost no line crosses is a CANDIDATE gutter
 _GUTTER_WIDTH = 14.0
+# ...and "almost" is the operative word. Demanding a strip empty over the whole
+# page height gave a single line the power to weld two columns together for
+# good: flexi-p1 prints "PERFORMANCES DU FONDS" across the full width, so the
+# gutter below it is crossed once and stops existing, and the table's rows come
+# back interleaved with the fiche d'identite printed beside them.
+_GUTTER_MAX_CROSSING = 0.1
 # ...and it is a real one only when few lines reach across it. Emptiness alone
 # does not tell a page gutter from a table's own column gap - both are empty.
 # What separates them is that EVERY row of a table reaches across every one of
@@ -129,27 +143,34 @@ def column_bands(words: list[tuple], min_gutter: float = _GUTTER_WIDTH
 
     step = 2.0
     n_bins = max(int((right - left) / step) + 1, 1)
-    occupied = [False] * n_bins
 
     def _bin(x: float) -> int:
         return min(max(int((x - left) / step), 0), n_bins - 1)
 
-    for word in words:
-        for i in range(_bin(word[0]), _bin(word[2]) + 1):
-            occupied[i] = True
+    # counted per LINE, not per word: what matters is how many lines reach into
+    # the strip, and a heading of five words crossing it is still one line.
+    lines = group_lines(words)
+    crossings = [0] * n_bins
+    for line in lines:
+        touched: set[int] = set()
+        for word in line:
+            touched.update(range(_bin(word[0]), _bin(word[2]) + 1))
+        for i in touched:
+            crossings[i] += 1
+    # int() on purpose: with few lines this is 0 and the strip must be truly
+    # empty, which is what keeps the synthetic fixtures honest.
+    allowed = int(_GUTTER_MAX_CROSSING * len(lines))
 
     candidates: list[float] = []
     run_start: int | None = None
-    for i, taken in enumerate(occupied + [True]):
-        if not taken:
+    for i, count in enumerate([*crossings, n_bins]):
+        if count <= allowed:
             run_start = i if run_start is None else run_start
             continue
         if run_start is not None:
             if (i - run_start) * step >= min_gutter:
                 candidates.append(left + (run_start + (i - run_start) / 2) * step)
             run_start = None
-
-    lines = group_lines(words)
     cuts = [cut for cut in candidates
             if _spanning_share(lines, cut) <= _GUTTER_MAX_SPANNING]
     if not cuts:
@@ -289,8 +310,9 @@ def find_word_tables(words: list[tuple], *, column_gap: float = _COLUMN_GAP,
         if looks_like_prose(run) or not has_figures(run):
             continue
         columns = supported_columns(run)
-        if len(columns) < _MIN_CELLS:
-            continue    # two columns is a label and a value, not a table
+        if len(columns) < 2 or (len(columns) < _MIN_CELLS
+                                and len(run) < _MIN_NARROW_ROWS):
+            continue
         grid = [_row_for(line, columns) for line in run]
         bbox = (min(w[0] for line in run for w in line.words),
                 min(line.top for line in run),

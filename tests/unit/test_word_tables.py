@@ -247,10 +247,53 @@ def test_columns_closer_than_a_word_gap_are_found_by_what_repeats():
 
 def test_a_label_and_a_value_are_not_a_table():
     # the floor moved off the LINE and onto the COLUMNS, so something has to
-    # hold it there. A fiche d'identite prints label/value pairs down the page
-    # that align perfectly and carry figures - two columns is a list, not a
-    # table, and filing every one of them would bury the real tables.
+    # hold it there.
+    #
+    # This test used to assert that THREE such pairs are refused too, on my
+    # guess that filing every fiche d'identite would bury the real tables. The
+    # gate then found climat-p1 reporting a single period, which makes its
+    # Performances cumulees genuinely two columns and three rows - so the guess
+    # was costing a real table. Two lines is where the line sits now: that is
+    # what an accidental alignment looks like, and a run of three is not.
     pairs = [[_w(22.0, y, "Date", 30.0), _w(200.0, y, value, 40.0)]
-             for y, value in ((300.0, "01/01/2015"), (312.0, "12,34"),
-                              (324.0, "9,87"))]
+             for y, value in ((300.0, "01/01/2015"), (312.0, "12,34"))]
     assert find_word_tables([w for row in pairs for w in row]) == []
+
+
+def test_a_full_width_heading_does_not_weld_the_two_columns_together():
+    # flexi-p1 dumped "page splits into 1 band(s)" and its rows came back
+    # interleaved with the fiche d'identite printed beside them:
+    #     y= 498.7 cells= 1 ['Frequence de v']
+    #     y= 503.5 cells= 5 ['Performances a', '1 an', ...]
+    #     y= 506.7 cells= 1 ['Quotidienne']
+    # A run needs consecutive lines, so every foreign line between two rows cuts
+    # the table in half. The gutter is there - a section title spanning the page
+    # ("PERFORMANCES DU FONDS") is the only thing crossing it, and demanding a
+    # strip that is empty over the WHOLE page height gives one line the power to
+    # weld two columns together for good.
+    heading = [_w(x, 40.0, "PERFORMANCES", 90.0) for x in (22.0, 130.0, 240.0,
+                                                           350.0, 460.0)]
+    found = find_word_tables(heading + LEFT_COLUMN + COMMENTARY)
+    tables = [(b, g) for b, g in found if any("0,36" in c for r in g for c in r)]
+    assert len(tables) == 1, "the risk table must still be found under a heading"
+    bbox, grid = tables[0]
+    assert bbox[2] <= 300.0, "the region must stop at the gutter"
+    assert not any("commentaire" in c for r in grid for c in r)
+
+
+# climat-p1 prints its Performances cumulees with ONE period, so the table is
+# two columns wide. Transcribed from the dump:
+#     y= 472.6 cells= 2 ['Performances c', '1 mois']
+#     y= 481.8 cells= 3 ['Portefeuille', '-4,31', 'Frequence de v']
+#     y= 496.9 cells= 2 ['Indice de refe', '-3,29']
+ONE_PERIOD = [
+    [_w(22.0, 472.0, "Performances", 120.0), _w(294.0, 472.0, "1 mois", 30.0)],
+    [_w(22.0, 484.0, "Portefeuille", 120.0), _w(294.0, 484.0, "-4,31", 30.0)],
+    [_w(22.0, 496.0, "Indice", 120.0), _w(294.0, 496.0, "-3,29", 30.0)],
+]
+
+
+def test_a_table_two_columns_wide_is_still_a_table_when_it_has_rows():
+    found = find_word_tables([w for row in ONE_PERIOD for w in row])
+    assert len(found) == 1, "a fund reporting one period still prints a table"
+    assert found[0][1][1] == ["Portefeuille", "-4,31"]
