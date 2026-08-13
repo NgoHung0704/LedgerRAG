@@ -224,6 +224,7 @@
       },
       "modules": [
         "tablerag/ingestion/table_pipeline.py",
+        "tablerag/ingestion/word_tables.py",
         "tablerag/ingestion/html_tables.py",
         "tablerag/core/table_text.py",
         "tablerag/models/table_parsing.py"
