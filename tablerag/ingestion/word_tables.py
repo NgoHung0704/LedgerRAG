@@ -39,8 +39,16 @@ _COLUMN_GAP = 8.0
 _LINE_TOLERANCE = 3.0
 # how far two boundaries may sit apart and still count as the same column edge
 _EDGE_TOLERANCE = 12.0
-# a row with fewer than this many cells is prose, not a table row
+# a table has at least this many COLUMNS once they are known
 _MIN_CELLS = 3
+# ...but a line only needs this many cells to be worth pairing with the next
+# one. Insisting on three HERE lost LES PRINCIPALES LIGNES on four of six
+# documents: Poids and Secteur sit closer together than the two words of
+# "Valeurs actions" on the same line, so the gap rule fuses them and every row
+# reads as two cells. No threshold fixes that - lower it and the label splits,
+# keep it and the columns fuse. The columns are recovered afterwards from what
+# repeats down the run, and the three-column floor is applied there instead.
+_MIN_RUN_CELLS = 2
 # fewer rows than this is not a table, it is a heading and a line under it
 _MIN_ROWS = 2
 # a vertical gap wider than this many times the line's own height ends the
@@ -85,6 +93,11 @@ class WordLine:
     top: float
     bottom: float
     cells: list[tuple[float, float, str]] = field(default_factory=list)
+    # the words themselves, in x order. Cells are a first guess made from gaps
+    # alone and are used to decide which lines belong together; the grid is
+    # built back from the words, because a gap rule cannot see a column that is
+    # narrower than a space (see _MIN_RUN_CELLS).
+    words: list[tuple] = field(default_factory=list)
 
     @property
     def edges(self) -> list[float]:
@@ -239,7 +252,8 @@ def split_cells(line: list[tuple], column_gap: float = _COLUMN_GAP) -> WordLine:
         end = word[2]
     cells.append((start, end, " ".join(text)))
     return WordLine(top=min(w[1] for w in line),
-                    bottom=max(w[3] for w in line), cells=cells)
+                    bottom=max(w[3] for w in line), cells=cells,
+                    words=list(line))
 
 
 def edges_align(a: WordLine, b: WordLine,
@@ -250,11 +264,12 @@ def edges_align(a: WordLine, b: WordLine,
     table often carries one label fewer than its body ("Portefeuille" against a
     blank corner), and demanding every edge match would split the table right
     under its own header."""
-    if len(a.cells) < _MIN_CELLS or len(b.cells) < _MIN_CELLS:
+    if len(a.cells) < _MIN_RUN_CELLS or len(b.cells) < _MIN_RUN_CELLS:
         return False
     matched = sum(1 for edge in a.edges
                   if any(abs(edge - other) <= tolerance for other in b.edges))
-    return matched >= min(len(a.edges), len(b.edges)) - 1 and matched >= _MIN_CELLS
+    return (matched >= min(len(a.edges), len(b.edges)) - 1
+            and matched >= _MIN_RUN_CELLS)
 
 
 def find_word_tables(words: list[tuple], *, column_gap: float = _COLUMN_GAP,
@@ -273,11 +288,13 @@ def find_word_tables(words: list[tuple], *, column_gap: float = _COLUMN_GAP,
     for run in runs:
         if looks_like_prose(run) or not has_figures(run):
             continue
-        columns = _column_edges(run)
+        columns = supported_columns(run)
+        if len(columns) < _MIN_CELLS:
+            continue    # two columns is a label and a value, not a table
         grid = [_row_for(line, columns) for line in run]
-        bbox = (min(c[0] for line in run for c in line.cells),
+        bbox = (min(w[0] for line in run for w in line.words),
                 min(line.top for line in run),
-                max(c[1] for line in run for c in line.cells),
+                max(w[2] for line in run for w in line.words),
                 max(line.bottom for line in run))
         out.append((bbox, grid))
     out.sort(key=lambda pair: (pair[0][1], pair[0][0]))
@@ -296,7 +313,7 @@ def _runs_in_band(words: list[tuple], column_gap: float,
             continue
         if len(current) >= min_rows:
             runs.append(current)
-        current = [line] if len(line.cells) >= _MIN_CELLS else []
+        current = [line] if len(line.cells) >= _MIN_RUN_CELLS else []
     if len(current) >= min_rows:
         runs.append(current)
     return runs
@@ -309,31 +326,50 @@ def _vertically_adjacent(previous: WordLine, line: WordLine,
     return line.top - previous.bottom <= height * factor
 
 
-def _column_edges(run: list[WordLine], tolerance: float = _EDGE_TOLERANCE
-                  ) -> list[float]:
-    """One x per column, merged across the run's baselines."""
-    edges: list[float] = []
-    for line in run:
-        for edge in line.edges:
-            for i, known in enumerate(edges):
-                if abs(edge - known) <= tolerance:
-                    edges[i] = min(known, edge)
+def supported_columns(run: list[WordLine], tolerance: float = _EDGE_TOLERANCE
+                      ) -> list[float]:
+    """The x positions that REPEAT down this run — one per real column.
+
+    Built from every word rather than from the cells, and this is the whole
+    point. A cell boundary is a guess made from one line in isolation, and one
+    line cannot tell the gap between two columns from the gap between two words
+    of a label — on rhone-p1 the column gap is the SMALLER of the two. What a
+    column has that a word boundary does not is company: "Secteur", "Santé" and
+    "Consommation" all start at the same x, while "actions" in the label above
+    starts at an x nothing else shares.
+
+    Support is counted per LINE, so a run of two rows needs both, and a longer
+    run needs half. A genuine column can be empty on some rows — that is the
+    hole `_row_for` exists to preserve — but not on most of them."""
+    clusters: list[list[float]] = []
+    owners: list[set[int]] = []
+    for i, line in enumerate(run):
+        for word in line.words:
+            for c, xs in enumerate(clusters):
+                if abs(word[0] - min(xs)) <= tolerance:
+                    xs.append(word[0])
+                    owners[c].add(i)
                     break
             else:
-                edges.append(edge)
-    return sorted(edges)
+                clusters.append([word[0]])
+                owners.append({i})
+    need = max(2, (len(run) + 1) // 2)
+    return sorted(min(xs) for xs, own in zip(clusters, owners) if len(own) >= need)
 
 
-def _row_for(line: WordLine, columns: list[float],
-             tolerance: float = _EDGE_TOLERANCE) -> list[str]:
-    """This baseline's cells placed into the run's columns, blanks included.
+def _row_for(line: WordLine, columns: list[float]) -> list[str]:
+    """This baseline's words placed into the run's columns, blanks included.
 
     A blank matters: "Indice de référence" with no 10-year figure must leave
     that column EMPTY, not shift every later value one place left — which is
-    exactly how a value ends up reported under the wrong header."""
+    exactly how a value ends up reported under the wrong header.
+
+    Every word lands somewhere — a word far from any column joins its nearest,
+    which is how "actions" rejoins "Valeurs" in the label it belongs to. Nothing
+    printed on the line may be dropped: a value the grid discards is a value no
+    answer can cite, and the reader has no way to know it was ever there."""
     row = [""] * len(columns)
-    for start, _, text in line.cells:
-        best = min(range(len(columns)), key=lambda i: abs(columns[i] - start))
-        if abs(columns[best] - start) <= tolerance * 2:
-            row[best] = (row[best] + " " + text).strip() if row[best] else text
+    for word in line.words:
+        best = min(range(len(columns)), key=lambda i: abs(columns[i] - word[0]))
+        row[best] = f"{row[best]} {word[4]}".strip() if row[best] else word[4]
     return row

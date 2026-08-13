@@ -212,3 +212,45 @@ def test_a_table_alone_in_its_column_is_not_shredded_into_one_band_per_column():
     # nothing at all is not an answer.
     assert grid[2][0] == "Tracking", "the figures must keep the label they belong to"
     assert grid[0].index("3 ans") == grid[2].index("0,36")
+
+
+# --- columns closer together than the words inside one label ----------------
+# rhone-p1 LES PRINCIPALES LIGNES, transcribed from `make eval-detection
+# ARGS="--dump --lines"`:
+#     y= 653.5 cells= 2 ['Valeurs action', 'Poids Secteur']
+#     y= 666.6 cells= 2 ['ADOCIA',         '1,52% Santé']
+# Poids and Secteur are separated by LESS space than the two words of "Valeurs
+# actions" are. No gap threshold cuts this line correctly - lower it and the
+# label splits, keep it and the two columns fuse - which is why 1,52% could not
+# be reached on four of the six documents.
+LIGNES = [
+    [_w(22.0, 654.0, "Valeurs", 30.0), _w(58.0, 654.0, "actions", 28.0),
+     _w(200.0, 654.0, "Poids", 24.0), _w(228.0, 654.0, "Secteur", 30.0)],
+    [_w(22.0, 666.0, "ADOCIA", 36.0), _w(200.0, 666.0, "1,52%", 24.0),
+     _w(228.0, 666.0, "Sante", 26.0)],
+    [_w(22.0, 678.0, "ARTPRICE", 60.0), _w(200.0, 678.0, "0,74%", 24.0),
+     _w(228.0, 678.0, "Consommation", 62.0)],
+    [_w(22.0, 690.0, "TOTAL", 34.0), _w(200.0, 690.0, "3,10%", 24.0),
+     _w(228.0, 690.0, "Energie", 32.0)],
+]
+
+
+def test_columns_closer_than_a_word_gap_are_found_by_what_repeats():
+    found = find_word_tables([w for row in LIGNES for w in row])
+    assert len(found) == 1, "the three-column holdings table must be found"
+    _, grid = found[0]
+    assert grid[1] == ["ADOCIA", "1,52%", "Sante"], (
+        "the weight and the sector are different columns - only the fact that "
+        f"Sante, Consommation and Secteur share an x says so; got {grid[1]}")
+    assert grid[0][0] == "Valeurs actions", "the label is one cell, not two"
+
+
+def test_a_label_and_a_value_are_not_a_table():
+    # the floor moved off the LINE and onto the COLUMNS, so something has to
+    # hold it there. A fiche d'identite prints label/value pairs down the page
+    # that align perfectly and carry figures - two columns is a list, not a
+    # table, and filing every one of them would bury the real tables.
+    pairs = [[_w(22.0, y, "Date", 30.0), _w(200.0, y, value, 40.0)]
+             for y, value in ((300.0, "01/01/2015"), (312.0, "12,34"),
+                              (324.0, "9,87"))]
+    assert find_word_tables([w for row in pairs for w in row]) == []
