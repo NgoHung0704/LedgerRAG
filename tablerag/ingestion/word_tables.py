@@ -79,6 +79,11 @@ _GUTTER_MAX_CROSSING = 0.1
 # its gaps, while lines belonging to two independent page columns almost never
 # do.
 _GUTTER_MAX_SPANNING = 0.25
+# how far either side of a candidate strip counts as "beside" it, as a share of
+# the width the page's words occupy. Only the immediate neighbours can say what
+# a strip separates: judged against the whole page, a table's own column gap is
+# compared with the prose column further right and loses.
+_GUTTER_WINDOW = 0.2
 # a cell holding this many words is a sentence. Justified prose leaves gaps that
 # line up by accident, so alignment alone accepts a paragraph as a table.
 _PROSE_WORDS = 4
@@ -171,8 +176,9 @@ def column_bands(words: list[tuple], min_gutter: float = _GUTTER_WIDTH
             if (i - run_start) * step >= min_gutter:
                 candidates.append(left + (run_start + (i - run_start) / 2) * step)
             run_start = None
+    window = (right - left) * _GUTTER_WINDOW
     cuts = [cut for cut in candidates
-            if _spanning_share(lines, cut) <= _GUTTER_MAX_SPANNING]
+            if _spanning_share(lines, cut, window) <= _GUTTER_MAX_SPANNING]
     if not cuts:
         return [words]
 
@@ -183,23 +189,37 @@ def column_bands(words: list[tuple], min_gutter: float = _GUTTER_WIDTH
     return [band for band in bands if band]
 
 
-def _spanning_share(lines: list[list[tuple]], cut: float) -> float:
-    """Of the lines that reach one side of this x, how many carry on past it?
+def _spanning_share(lines: list[list[tuple]], cut: float, window: float) -> float:
+    """Of the lines printed either side of this strip, how many reach across?
 
-    Measured against the SMALLER side, not against the whole page. Against the
-    whole page a four-row table sitting in a column of forty lines of prose
-    scores 4/40 on its own inter-column gaps, and gets shredded into one band
-    per column. Against the smaller side it scores 4/4, which is the truth: a
-    row is precisely a line that reaches across every gap in its table.
+    Both halves are measured within a WINDOW of the strip, and against the
+    BUSIER of the two. Each of those was wrong on its own, and each was wrong on
+    a real page:
+
+      - counted over the whole page, everything beyond the strip counts, so the
+        gap between two columns of a table is judged against the prose column
+        further right and the table is cut into one band per column;
+      - counted against the smaller side, flexi-p2 fails. Its left column holds
+        NOTHING but the risk table, so six of its eight lines merge with a line
+        of the commentary beside them, the share reads 0.75, and the gutter is
+        refused - which is how ['Indice de référence', '0,18', '0,34', '0,40',
+        'prix enregistrait une progression'] came back as one row.
+
+    Within the window the two sides of a table's own gap are the same rows, so
+    the share is 1. The two sides of a page gutter are a handful of rows against
+    forty lines of prose, and the share is small however many of them collide.
 
     1.0 when one side is empty — a cut at the page margin separates nothing.
     """
-    left = [line for line in lines if any(w[2] <= cut for w in line)]
-    right = [line for line in lines if any(w[0] >= cut for w in line)]
+    left = [line for line in lines
+            if any(cut - window <= w[2] <= cut for w in line)]
+    right = [line for line in lines
+             if any(cut <= w[0] <= cut + window for w in line)]
     if not left or not right:
         return 1.0
-    spanning = sum(1 for line in left if any(w[0] >= cut for w in line))
-    return spanning / min(len(left), len(right))
+    on_right = {id(line) for line in right}
+    spanning = sum(1 for line in left if id(line) in on_right)
+    return spanning / max(len(left), len(right))
 
 
 def has_figures(run: list["WordLine"]) -> bool:

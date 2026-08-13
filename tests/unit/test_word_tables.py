@@ -212,6 +212,12 @@ def test_a_table_alone_in_its_column_is_not_shredded_into_one_band_per_column():
     # nothing at all is not an answer.
     assert grid[2][0] == "Tracking", "the figures must keep the label they belong to"
     assert grid[0].index("3 ans") == grid[2].index("0,36")
+    # ...and it must not have swallowed the commentary either. Surviving is half
+    # the requirement; this fixture is flexi-p2, where the left column holds
+    # NOTHING but the table, so most of its lines merge with a prose line and
+    # the gutter has to be found from a handful of rows against forty.
+    assert not any("commentaire" in cell for row in grid for cell in row), \
+        f"the commentary is not part of the risk table: {grid[0]}"
 
 
 # --- columns closer together than the words inside one label ----------------
@@ -297,3 +303,29 @@ def test_a_table_two_columns_wide_is_still_a_table_when_it_has_rows():
     found = find_word_tables([w for row in ONE_PERIOD for w in row])
     assert len(found) == 1, "a fund reporting one period still prints a table"
     assert found[0][1][1] == ["Portefeuille", "-4,31"]
+
+
+# the mirror of flexi-p2: commentary on the LEFT, table on the right. Same page,
+# read from the other side, and it needs the other half of the window - without
+# it the forty lines of prose are counted against the table's three rows on its
+# OWN column gap, and the table is cut into one band per column.
+MIRROR_TABLE = [
+    [_w(330.0, 120.0, "Indicateurs", 120.0), _w(470.0, 120.0, "1 an"),
+     _w(510.0, 120.0, "3 ans"), _w(550.0, 120.0, "5 ans")],
+    [_w(330.0, 132.0, "Volatilite", 120.0), _w(470.0, 132.0, "8,12"),
+     _w(510.0, 132.0, "9,44"), _w(550.0, 132.0, "10,32")],
+    [_w(330.0, 144.0, "Tracking", 120.0), _w(470.0, 144.0, "0,12"),
+     _w(510.0, 144.0, "0,36"), _w(550.0, 144.0, "0,32")],
+]
+LEFT_COMMENTARY = [w for i in range(20)
+                   for w in _prose_line(60.0 + 12.0 * i, 22.0, 300.0,
+                                        "commentaire", i)]
+
+
+def test_a_table_to_the_RIGHT_of_the_prose_keeps_its_columns():
+    found = find_word_tables([w for row in MIRROR_TABLE for w in row]
+                             + LEFT_COMMENTARY)
+    assert found, "the table must survive prose printed down its left"
+    grid = found[0][1]
+    assert grid[2][0] == "Tracking", "the figures must keep their label"
+    assert not any("commentaire" in cell for row in grid for cell in row)
