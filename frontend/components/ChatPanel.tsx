@@ -591,6 +591,8 @@ function AnswerBody({
  *  bibliography rather than the citation: it names the files the margin only
  *  numbers. A wide search can return a dozen, which buries the answer above it
  *  — so three, and the rest on request. */
+// below this share of the best source's score, a citation is shown faded
+const WEAK_RATIO = 0.5;
 const SHOWN = 3;
 
 function Bibliography({
@@ -604,6 +606,15 @@ function Bibliography({
   const hidden = citations.length - SHOWN;
   const shown = all ? citations : citations.slice(0, SHOWN);
 
+  // Ten sources printed at equal weight tell a reader nothing about which one
+  // the answer rests on. The score is the reranker's judgement - does this
+  // passage answer the question - so a source far below the best one is shown
+  // faded: still there, still clickable, no longer competing for attention.
+  // Relative, not absolute: the reranker is pluggable and its scale is not ours
+  // to assume, but "much weaker than the best" holds whatever it returns.
+  const best = Math.max(...citations.map((c) => c.score), 0);
+  const isWeak = (c: Citation) => best > 0 && c.score < best * WEAK_RATIO;
+
   return (
     <div className="marginal mt-2.5">
       <div className="marginal-note hidden font-mono text-[10px] uppercase tracking-wider text-ink-subtle sm:block sm:pt-1 sm:text-right">
@@ -614,8 +625,14 @@ function Bibliography({
           <button
             key={c.index}
             onClick={() => onOpen(c)}
-            title={c.snippet}
+            title={
+              isWeak(c)
+                ? `Correspondance faible avec la question — ${c.snippet}`
+                : c.snippet
+            }
             className={`group inline-flex items-center gap-1.5 font-mono text-[11px] transition-colors ${
+              isWeak(c) ? "opacity-40 hover:opacity-100" : ""
+            } ${
               c.needs_review
                 ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
                 : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"

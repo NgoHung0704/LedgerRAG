@@ -45,7 +45,7 @@
       "name": "Rerank",
       "decl": "class Rerank:",
       "file": "tablerag/query/steps/rerank.py",
-      "line": 110,
+      "line": 131,
       "note": {
         "vi": "Xếp lại bằng cross-encoder khi vai trò reranker bật được.",
         "en": "Reorders with the cross-encoder when the reranker role is available."

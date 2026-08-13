@@ -67,6 +67,27 @@ def collection_mix(hits) -> str:
     return " ".join(f"{name}={n}" for name, n in sorted(counts.items())) or "empty"
 
 
+# where the cross-encoder's judgement is kept. Not on hit.score: that is the
+# hybrid-fusion score, the reason this candidate was in the pool at all, and it
+# is worth keeping. The two answer different questions - "several searches
+# agreed to look here" versus "this passage answers what was asked" - and only
+# the second is fit to show a reader as relevance.
+_RERANK_SCORE = "_rerank_score"
+
+
+def carry_rerank_score(hit, score: float) -> None:
+    hit.payload[_RERANK_SCORE] = float(score)
+
+
+def relevance_of(hit) -> float:
+    """How well this source answered, falling back to how it was found.
+
+    The reranker is pluggable and may be disabled; a source list must still be
+    ordered by something meaningful rather than by zero."""
+    value = hit.payload.get(_RERANK_SCORE)
+    return float(value) if value is not None else float(hit.score)
+
+
 def reserve_structured_slots(ranked: list, top_k: int, reserve: int) -> list:
     """Keep the top `top_k`, but never let prose take every slot.
 
@@ -127,6 +148,8 @@ class Rerank:
             reranker = get_provider("reranker")
             scores = await reranker.rerank(ctx.search_query,
                                            [text for _, text in pairs])
+            for score, (hit, _) in zip(scores, pairs):
+                carry_rerank_score(hit, score)
             ranked = [hit for _, (hit, _) in
                       sorted(zip(scores, pairs), key=lambda x: x[0],
                              reverse=True)]

@@ -17,6 +17,7 @@ import uuid
 from tablerag.core.schemas import Citation
 from tablerag.core.table_text import flatten_table_for_context, html_to_text
 from tablerag.query.pipeline import QueryContext, SourceBlock
+from tablerag.query.steps.rerank import relevance_of
 from tablerag.storage.db import session_scope
 from tablerag.storage.qdrant import COLLECTION_CHUNKS
 from tablerag.storage.repositories import (
@@ -136,7 +137,10 @@ class AssembleContext:
                 chunk_id = uuid.UUID(raw)
                 if chunk_id not in chunk_scores:
                     chunk_ids.append(chunk_id)
-                    chunk_scores[chunk_id] = hit.score
+                    # what the reranker judged, not what retrieval fused: the
+                    # number a reader is shown must mean "this answered the
+                    # question", not "several searches agreed to look here"
+                    chunk_scores[chunk_id] = relevance_of(hit)
                     rank[("text", chunk_id)] = position
             else:  # records / table_summaries -> parent table element
                 raw = hit.payload.get("element_id")
@@ -145,7 +149,7 @@ class AssembleContext:
                 element_id = uuid.UUID(raw)
                 if element_id not in table_scores:
                     table_ids.append(element_id)
-                    table_scores[element_id] = hit.score
+                    table_scores[element_id] = relevance_of(hit)
                     rank[("table", element_id)] = position
                 record_raw = hit.payload.get("record_id")
                 if record_raw:
