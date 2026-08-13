@@ -45,3 +45,6 @@ Thumbs.db
 docs-site/node_modules/
 # screenshots from `node tools/shots.mjs` — evidence for a review, not source
 docs-site/shots/
+
+# real customer PDFs for the detection gate — never committed
+tests/eval/tables/pdfs/*.pdf

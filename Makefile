@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-figures eval-funds eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-detection eval-figures eval-funds eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
 
 up:
 	docker compose up -d --build
@@ -35,6 +35,16 @@ spike-grade:
 # grades per cell. Run after any prompt/model/parsing change (prompt is code).
 eval-tables:
 	python tests/eval/tables/run_eval.py
+
+# ---- table DETECTION gate (no model; needs the real PDFs) ------------------
+# eval-tables grades how a table is READ, from images already cropped for it in
+# spike/tables/. It never asks whether the platform would have FOUND that table
+# on the page. Measured on the box: EPSENS DEFIS had one table element in the
+# whole document while its three performance tables went undetected, and
+# eval-tables still read 88.4%.
+# Drop the PDFs named in detection.jsonl into tests/eval/tables/pdfs/.
+eval-detection:
+	python tests/eval/tables/run_eval_detection.py $(ARGS)
 
 # ---- Phase 3: confidence-flag gate (needs a live parser endpoint) ----
 # Clean tables must not be flagged (<=10%), corrupted ones must be (>=90%).
