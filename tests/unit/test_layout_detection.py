@@ -201,17 +201,48 @@ def test_a_text_region_that_cut_through_the_numbers_is_refused():
     veto the word detector's region for the table they sit inside, because they
     were laid down first.
 
-    Only the lenient `text` strategy is judged this way: a ruled table's cell
-    boundaries were drawn on the page, so if one holds two numbers that is what
-    the page says."""
-    from tablerag.ingestion.layout import accept_table
+    This first exempted the ruled strategies, on my argument that a ruled cell
+    boundary was drawn on the page and so must be believed. vertes-p1 then
+    vetoed all three of its performance tables with three RULED fragments, each
+    cutting a value in half - so the argument was wrong and the exemption is
+    gone. The word detector keeps it, for the opposite reason: there, refusing
+    would drop the only reading of the table rather than a wrong reading that is
+    vetoing a right one."""
+    from tablerag.ingestion.layout import accept_table, cuts_through_numbers
 
     mangled = [["46 -0,33 0,0", "7,42"], ["18 0,74 -0,6", "0,45"]]
     assert accept_table(R(234, 466, 399, 494), mangled, "text", []) is False
-    assert accept_table(R(234, 466, 399, 494), mangled, "lines", []) is True
-    # a real borderless table survives: one value per cell, however dense
-    clean = [["Portefeuille", "-0,33", "0,72"], ["Indice", "-0,44", "0,23"]]
-    assert accept_table(R(22, 503, 393, 537), clean, "text", []) is True
-    # French thousands are written with a space and are still ONE number
-    thousands = [["Actif net", "1 234,56"], ["Encours", "987,10"]]
-    assert accept_table(R(22, 600, 393, 630), thousands, "text", []) is True
+    assert accept_table(R(234, 466, 399, 494), mangled, "lines", []) is False
+    assert accept_table(R(234, 466, 399, 494), mangled, "words", []) is True
+
+    # every mangled cell the gate actually printed, and what must survive it
+    for sliced in ("3 -1,91 -1,0", "1,63 0,4", "-0,82 0,8", ",79 3,89",
+                   ",06 21,02", "-2,06 8,52", "0,57 4,92", "46 -0,33 0,0"):
+        assert cuts_through_numbers([[sliced]]), sliced
+    for whole in ("de 2,5 à 3,5", "1 234,56", "1,52% Santé", "-10,57",
+                  "31/12/2020", "Volatilité 3 ans"):
+        assert not cuts_through_numbers([[whole]]), whole
+
+
+def test_a_RULED_region_sliced_through_its_values_is_dropped():
+    """The ruled candidates never pass through accept_table - they are filtered
+    inline in detect_tables - so guarding accept_table alone left vertes-p1
+    exactly where it was, with three ruled fragments vetoing its three tables.
+
+    Two values printed inside one ruled cell is what the page's own boxes did
+    there, and the resulting grid says the second column holds "-0,82 0,8"."""
+    doc = fitz.open()
+    page = doc.new_page()
+    x0, y0, cw, ch = 60.0, 100.0, 120.0, 24.0
+    for i in range(3):
+        page.draw_line((x0, y0 + i * ch), (x0 + 2 * cw, y0 + i * ch))
+    for j in range(3):
+        page.draw_line((x0 + j * cw, y0), (x0 + j * cw, y0 + 2 * ch))
+    page.insert_text((x0 + 6, y0 + 16), "Annee", fontsize=9)
+    page.insert_text((x0 + cw + 6, y0 + 16), "Perf", fontsize=9)
+    page.insert_text((x0 + 6, y0 + ch + 16), "2020", fontsize=9)
+    page.insert_text((x0 + cw + 6, y0 + ch + 16), "-0,82 0,8", fontsize=9)
+
+    flat = " ".join(str(cell or "") for _, grid in detect_tables(page)
+                    for row in grid for cell in row)
+    assert "-0,82 0,8" not in flat, f"a sliced ruled row was kept: {flat!r}"

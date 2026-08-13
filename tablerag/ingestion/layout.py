@@ -271,9 +271,13 @@ def looks_like_page_layout(grid: list[list]) -> bool:
             or sentence_cell_ratio(grid) > _LAYOUT_MAX_SENTENCE_CELLS)
 
 
-# a decimal as these documents print them: 4,79 or -1,91. Two in one cell means
-# two columns were never separated.
-_DECIMAL = re.compile(r"-?\d+,\d+")
+# two decimals with nothing between them but space: '-0,82 0,8' is two columns
+# that were never separated. "de 2,5 à 3,5" has a word between them and is one
+# cell; "1 234,56" is one number with one comma; "1,52% Santé" is a value and a
+# label. None of those match.
+_SLICED_APART = re.compile(r"-?\d+,\d+\s+-?\d+[,.]?\d*")
+# ...and a cell that BEGINS with the separator: 4,79 cut into '4' and ',79'
+_SLICED_MID_NUMBER = re.compile(r"^\s*[.,]\d")
 
 
 def cuts_through_numbers(grid: list[list]) -> bool:
@@ -285,17 +289,24 @@ def cuts_through_numbers(grid: list[list]) -> bool:
         [',79 3,89', '4,68']
 
     A cell beginning with a comma is a value cut in half — 4,79 became "4" and
-    ",79" in the next column. A cell holding two decimals is two columns that
-    were never separated. Either way the row was sliced through its values, and
-    the grid is not a reading of the table but a mangling of it; it goes into the
-    index all the same, and its rectangle then vetoes any better region covering
-    the same table.
+    ",79" in the next column. Two decimals with nothing between them but space
+    are two columns that were never separated. Either way the row was sliced
+    through its values, and the grid is not a reading of the table but a
+    mangling of it; it goes into the index all the same, and its rectangle then
+    vetoes any better region covering the same table.
 
-    One decimal and some words is fine ("1,52% Santé"), and so is a French
-    thousands separator ("1 234,56") — that is one number, with one comma.
+    This was first written for the lenient `text` strategy only, on the argument
+    that a ruled cell boundary was drawn on the page and so must be believed.
+    vertes-p1 then vetoed all three of its performance tables with three RULED
+    fragments, each of which cut a value in half. A boundary that lands inside a
+    number is wrong whoever drew it.
+
+    What must survive: "de 2,5 à 3,5" has a word between its decimals, "1 234,56"
+    is one number with one comma, "1,52% Santé" is a value and a label.
     """
-    return any(len(_DECIMAL.findall(str(cell or ""))) > 1
-               for row in grid for cell in row)
+    return any(_SLICED_APART.search(text) or _SLICED_MID_NUMBER.search(text)
+               for row in grid for cell in row
+               if (text := str(cell or "")))
 
 
 def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
@@ -315,8 +326,11 @@ def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
         return False
     if strategy == "text" and grid_fill_ratio(grid) < 0.6:
         return False  # sparse -> probably prose, not a table
-    if strategy == "text" and cuts_through_numbers(grid):
-        return False  # boundaries fell inside the rows, not between them
+    if strategy != "words" and cuts_through_numbers(grid):
+        # not applied to the word detector: there it would drop the only
+        # reading of a table, while here it drops a wrong reading that is
+        # vetoing a right one
+        return False
     return True
 
 
@@ -410,6 +424,10 @@ def detect_tables(page: fitz.Page) -> list[tuple]:
             # of boxes; that check used to guard only the lenient strategy, so
             # a page frame came through here and became an element
             if looks_like_page_layout(grid):
+                continue
+            # a ruled region can be sliced through its values too - vertes-p1
+            # vetoed all three performance tables with three of them
+            if cuts_through_numbers(grid):
                 continue
             line_candidates.append(
                 (len(grid) * n_cols, rect.get_area(), priority, rect))
