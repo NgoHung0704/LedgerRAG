@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import Counter
 import uuid
 
 from tablerag.models.registry import (
@@ -52,6 +53,19 @@ def diversify_by_document(hits: list, k: int) -> list:
     return (first_of_doc + rest)[:k]
 
 
+def collection_mix(hits) -> str:
+    """Which collections a set of hits came from, e.g. "chunks=11 records=1".
+
+    The table sub-pipeline is this product's reason to exist, and a run on the
+    EPSENS corpus put a table in the context for one question out of seventeen.
+    Two causes need opposite fixes - records never retrieved, or retrieved and
+    outranked by prose - and the pool composition before and after ranking is
+    what separates them.
+    """
+    counts = Counter(h.payload.get("_collection", "?") for h in hits)
+    return " ".join(f"{name}={n}" for name, n in sorted(counts.items())) or "empty"
+
+
 class Rerank:
     def __init__(self, top_k: int = 8, fallback_top_k: int = 12):
         self.top_k = top_k
@@ -73,6 +87,10 @@ class Rerank:
             ranked = [hit for _, (hit, _) in
                       sorted(zip(scores, pairs), key=lambda x: x[0],
                              reverse=True)]
+            logger.info("rerank: %d candidates (%s) -> %d kept (%s)",
+                        len(ctx.hits), collection_mix(ctx.hits),
+                        len(ranked[:self.top_k]),
+                        collection_mix(ranked[:self.top_k]))
             ctx.hits = ranked[:self.top_k]
             note_role_success("reranker")
         except (RoleDisabled, Exception) as exc:  # noqa: BLE001 — degrade, don't die
