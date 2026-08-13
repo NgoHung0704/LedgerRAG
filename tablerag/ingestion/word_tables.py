@@ -49,6 +49,17 @@ _MIN_ROWS = 2
 # being built from the same template means. The blank band between them is
 # the only signal, and it is the one a reader uses.
 _ROW_GAP_FACTOR = 1.6
+# a vertical strip this wide that no word crosses is a CANDIDATE page gutter
+_GUTTER_WIDTH = 14.0
+# ...and it is a real one only when few lines reach across it. Emptiness alone
+# does not tell a page gutter from a table's own column gap - both are empty.
+# What separates them is that EVERY row of a table reaches across every one of
+# its gaps, while lines belonging to two independent page columns almost never
+# do.
+_GUTTER_MAX_SPANNING = 0.25
+# a cell holding this many words is a sentence. Justified prose leaves gaps that
+# line up by accident, so alignment alone accepts a paragraph as a table.
+_PROSE_WORDS = 4
 
 
 @dataclass
@@ -78,6 +89,120 @@ class WordLine:
     @property
     def edges(self) -> list[float]:
         return [start for start, _, _ in self.cells]
+
+
+def column_bands(words: list[tuple], min_gutter: float = _GUTTER_WIDTH
+                 ) -> list[list[tuple]]:
+    """The page's independent columns, split where few lines reach across.
+
+    Without this, a row of the risk table and a line of the market commentary
+    printed beside it share a baseline and are read as one row:
+
+        ['Tracking error (en %)', '0,12', '0,36', '0,32',
+         'annuel autour de 1%. La banque centrale']
+
+    Emptiness alone cannot find the boundary: the gap between two columns of a
+    table is just as empty as the gutter between two columns of a page. The
+    difference is who reaches across. Every row of a table spans every gap
+    inside it — that is what makes it a row. Lines set in two independent page
+    columns belong to one or the other, and span nothing.
+    """
+    if not words:
+        return []
+    left = min(w[0] for w in words)
+    right = max(w[2] for w in words)
+    if right - left <= min_gutter:
+        return [words]
+
+    step = 2.0
+    n_bins = max(int((right - left) / step) + 1, 1)
+    occupied = [False] * n_bins
+
+    def _bin(x: float) -> int:
+        return min(max(int((x - left) / step), 0), n_bins - 1)
+
+    for word in words:
+        for i in range(_bin(word[0]), _bin(word[2]) + 1):
+            occupied[i] = True
+
+    candidates: list[float] = []
+    run_start: int | None = None
+    for i, taken in enumerate(occupied + [True]):
+        if not taken:
+            run_start = i if run_start is None else run_start
+            continue
+        if run_start is not None:
+            if (i - run_start) * step >= min_gutter:
+                candidates.append(left + (run_start + (i - run_start) / 2) * step)
+            run_start = None
+
+    lines = group_lines(words)
+    cuts = [cut for cut in candidates
+            if _spanning_share(lines, cut) <= _GUTTER_MAX_SPANNING]
+    if not cuts:
+        return [words]
+
+    bands: list[list[tuple]] = [[] for _ in range(len(cuts) + 1)]
+    for word in words:
+        centre = (word[0] + word[2]) / 2
+        bands[sum(1 for cut in cuts if centre > cut)].append(word)
+    return [band for band in bands if band]
+
+
+def _spanning_share(lines: list[list[tuple]], cut: float) -> float:
+    """Of the lines that reach one side of this x, how many carry on past it?
+
+    Measured against the SMALLER side, not against the whole page. Against the
+    whole page a four-row table sitting in a column of forty lines of prose
+    scores 4/40 on its own inter-column gaps, and gets shredded into one band
+    per column. Against the smaller side it scores 4/4, which is the truth: a
+    row is precisely a line that reaches across every gap in its table.
+
+    1.0 when one side is empty — a cut at the page margin separates nothing.
+    """
+    left = [line for line in lines if any(w[2] <= cut for w in line)]
+    right = [line for line in lines if any(w[0] >= cut for w in line)]
+    if not left or not right:
+        return 1.0
+    spanning = sum(1 for line in left if any(w[0] >= cut for w in line))
+    return spanning / min(len(left), len(right))
+
+
+def has_figures(run: list["WordLine"]) -> bool:
+    """Does this run carry a number anywhere?
+
+    The second false positive on the real page, and the one `looks_like_prose`
+    cannot see, because every cell in it holds a single word:
+
+        ['orientation', '', 'avec', 'des', 'niveaux', '', 'de']
+
+    Justified text stretches its spaces to reach the margin, so on two unlucky
+    lines the stretched gaps land within _EDGE_TOLERANCE of each other and the
+    lines "align". Nothing about the words themselves says table.
+
+    What every table in this corpus has and that paragraph does not is figures —
+    these are fund factsheets, and a table here is a table OF something measured.
+    The cost is stated plainly: a borderless table made only of words is refused.
+    That is the conservative direction. This runs solely as the last resort after
+    `find_tables` returns nothing, so refusing leaves the page exactly as it is
+    today, while accepting puts a paragraph into the index as a table — with a
+    crop image and a summary asserting it is one.
+    """
+    return any(any(ch.isdigit() for ch in text)
+               for line in run for _, _, text in line.cells)
+
+
+def looks_like_prose(run: list["WordLine"]) -> bool:
+    """Is this run a paragraph whose gaps happen to line up?
+
+    Justified text is the trap: it stretches spaces to reach the margin, so its
+    word boundaries fall on similar x positions line after line. What it never
+    does is put SHORT cells in those columns."""
+    cells = [text for line in run for _, _, text in line.cells]
+    if not cells:
+        return True
+    wordy = sum(1 for text in cells if len(text.split()) >= _PROSE_WORDS)
+    return wordy > len(cells) / 2
 
 
 def group_lines(words: list[tuple], line_tolerance: float = _LINE_TOLERANCE
@@ -140,6 +265,27 @@ def find_word_tables(words: list[tuple], *, column_gap: float = _COLUMN_GAP,
     Returns (bbox, grid) pairs in reading order — the same shape `detect_tables`
     already works with, so the acceptance rules and the crop-image contract
     apply unchanged."""
+    runs: list[list[WordLine]] = []
+    for band in column_bands(words):
+        runs.extend(_runs_in_band(band, column_gap, min_rows))
+
+    out = []
+    for run in runs:
+        if looks_like_prose(run) or not has_figures(run):
+            continue
+        columns = _column_edges(run)
+        grid = [_row_for(line, columns) for line in run]
+        bbox = (min(c[0] for line in run for c in line.cells),
+                min(line.top for line in run),
+                max(c[1] for line in run for c in line.cells),
+                max(line.bottom for line in run))
+        out.append((bbox, grid))
+    out.sort(key=lambda pair: (pair[0][1], pair[0][0]))
+    return out
+
+
+def _runs_in_band(words: list[tuple], column_gap: float,
+                  min_rows: int) -> list[list["WordLine"]]:
     lines = [split_cells(line, column_gap) for line in group_lines(words) if line]
     runs: list[list[WordLine]] = []
     current: list[WordLine] = []
@@ -153,17 +299,7 @@ def find_word_tables(words: list[tuple], *, column_gap: float = _COLUMN_GAP,
         current = [line] if len(line.cells) >= _MIN_CELLS else []
     if len(current) >= min_rows:
         runs.append(current)
-
-    out = []
-    for run in runs:
-        columns = _column_edges(run)
-        grid = [_row_for(line, columns) for line in run]
-        bbox = (min(c[0] for line in run for c in line.cells),
-                min(line.top for line in run),
-                max(c[1] for line in run for c in line.cells),
-                max(line.bottom for line in run))
-        out.append((bbox, grid))
-    return out
+    return runs
 
 
 def _vertically_adjacent(previous: WordLine, line: WordLine,

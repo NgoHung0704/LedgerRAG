@@ -19,6 +19,21 @@ def _w(x0: float, y: float, text: str, width: float = 26.0) -> tuple:
     return (x0, y, x0 + width, y + 9.0, text, 0, 0, 0)
 
 
+def _prose_line(y: float, x0: float, x1: float, word: str, seed: int = 0) -> list[tuple]:
+    """A line of running text: word widths that wander, spaces too small to cut.
+
+    A 4pt space is under _COLUMN_GAP, so a line like this is ONE cell — which is
+    what stops a paragraph being read as a row, and why the widths must differ
+    line to line the way real words do."""
+    widths = [30.0, 18.0, 44.0, 25.0, 37.0, 21.0]
+    words, x, i = [], x0, seed
+    while x + widths[i % len(widths)] <= x1:
+        words.append(_w(x, y, word, widths[i % len(widths)]))
+        x += widths[i % len(widths)] + 4.0
+        i += 1
+    return words
+
+
 # Performances cumulées (en %) | 1 mois | 2021 | 1 an | 3 ans | 5 ans | 10 ans
 COLUMNS = [40.0, 250.0, 300.0, 350.0, 400.0, 450.0, 500.0]
 HEADER = [_w(COLUMNS[0], 100.0, "Performances"), _w(COLUMNS[1], 100.0, "1 mois"),
@@ -126,3 +141,74 @@ def test_two_stacked_tables_are_two_regions():
     found = find_word_tables(words)
     assert len(found) == 2
     assert found[0][0][3] < found[1][0][1], "regions must not overlap vertically"
+
+
+# --- the two failures seen on a REAL page ----------------------------------
+# EPSENS FLEXI TAUX COURT ISR SOLIDAIRE p2 is set in two columns: risk table on
+# the left, market commentary on the right. Both defects below were dumped from
+# it, not imagined.
+
+# left column: heading, a paragraph, the risk table, more paragraph
+RISK_TABLE = [
+    [_w(22.0, 120.0, "Indicateurs", 120.0), _w(160.0, 120.0, "1 an"),
+     _w(200.0, 120.0, "3 ans"), _w(240.0, 120.0, "5 ans")],
+    [_w(22.0, 132.0, "Volatilite", 120.0), _w(160.0, 132.0, "8,12"),
+     _w(200.0, 132.0, "9,44"), _w(240.0, 132.0, "10,32")],
+    [_w(22.0, 144.0, "Tracking", 120.0), _w(160.0, 144.0, "0,12"),
+     _w(200.0, 144.0, "0,36"), _w(240.0, 144.0, "0,32")],
+]
+LEFT_COLUMN = (_prose_line(54.0, 22.0, 266.0, "Risque", 1)
+               + [w for i, y in enumerate((66.0, 78.0, 90.0, 102.0))
+                  for w in _prose_line(y, 22.0, 266.0, "gestion", i)]
+               + [w for row in RISK_TABLE for w in row]
+               + [w for i, y in enumerate((174.0, 186.0, 198.0, 210.0,
+                                           222.0, 234.0, 246.0, 258.0))
+                  for w in _prose_line(y, 22.0, 266.0, "gestion", i + 5)])
+# right column: 20 lines of commentary on a 12pt grid. Three of them fall on the
+# table's baselines - not by design, by the arithmetic of two columns set on the
+# same page, and that is exactly how the dump came out:
+#   ['Tracking error (en %)', '0,12', '0,36', '0,32',
+#    'annuel autour de 1%. La banque centrale']
+COMMENTARY = [w for i in range(20)
+              for w in _prose_line(60.0 + 12.0 * i, 310.0, 586.0, "commentaire", i)]
+
+
+def test_the_commentary_beside_a_table_does_not_become_a_column_of_it():
+    found = find_word_tables(LEFT_COLUMN + COMMENTARY)
+    assert len(found) == 1, "the commentary column must not be a second table"
+    bbox, grid = found[0]
+    assert bbox[2] <= 300.0, "the region must stop at the gutter, not cross it"
+    assert not any("commentaire" in cell for row in grid for cell in row), \
+        "a sentence printed beside a row is not a cell of that row"
+    assert len(grid[0]) == 4, "four columns, not five"
+    assert grid[2][grid[0].index("3 ans")] == "0,36"
+
+
+def test_justified_prose_whose_gaps_line_up_is_not_a_table():
+    # justification stretches spaces to reach the margin, so two unlucky lines
+    # align on nothing but accident. They carry no figure, and a table in these
+    # documents is a table OF something measured.
+    a = [_w(416.0, 681.0, "orientation", 70.0), _w(500.0, 681.0, "avec", 28.0),
+         _w(545.0, 681.0, "des", 22.0)]
+    b = [_w(416.0, 693.0, "niveaux", 60.0), _w(498.0, 693.0, "de", 30.0),
+         _w(543.0, 693.0, "taux", 20.0)]
+    assert edges_align(split_cells(a), split_cells(b)), \
+        "these really do align - alignment alone cannot be the whole test"
+    assert find_word_tables(a + b) == []
+
+
+def test_a_table_alone_in_its_column_is_not_shredded_into_one_band_per_column():
+    # nothing else in the left column, so the table's OWN inter-column gaps are
+    # empty all the way down the page and are crossed by only three lines out of
+    # twenty-three. Measured against the page they look like gutters and the
+    # table is cut into four one-cell strips - it disappears entirely. Measured
+    # against the smaller side they are crossed by three lines out of three.
+    found = find_word_tables([w for row in RISK_TABLE for w in row] + COMMENTARY)
+    assert found, "the risk table must survive being beside a column of prose"
+    grid = found[0][1]
+    # asserting only that the header and the value agree is not enough: cut at
+    # its widest gap the table loses its LABEL column and the three figure
+    # columns still line up perfectly with each other. 0,36 under "3 ans" of
+    # nothing at all is not an answer.
+    assert grid[2][0] == "Tracking", "the figures must keep the label they belong to"
+    assert grid[0].index("3 ans") == grid[2].index("0,36")
