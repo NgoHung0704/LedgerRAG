@@ -175,7 +175,8 @@ def default_pipeline(verify: bool | None = None, *,
         router or SingleKBRouter(),
         Retrieve(top_k=settings.retrieve_candidates),
         Rerank(top_k=settings.rerank_top_k,
-               fallback_top_k=settings.retrieve_top_k),
+               fallback_top_k=settings.retrieve_top_k,
+               reserve_structured=settings.rerank_reserve_structured),
         # after Rerank so it cannot dilute ranking, before AssembleContext so
         # what it adds lives under the same budget and is sacrificed first
         ExpandNeighbours(enabled=settings.expand_neighbours),

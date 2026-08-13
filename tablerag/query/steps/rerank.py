@@ -23,6 +23,7 @@ from tablerag.models.registry import (
     note_role_success,
 )
 from tablerag.query.pipeline import QueryContext
+from tablerag.storage.qdrant import COLLECTION_CHUNKS
 
 logger = logging.getLogger(__name__)
 
@@ -66,10 +67,52 @@ def collection_mix(hits) -> str:
     return " ".join(f"{name}={n}" for name, n in sorted(counts.items())) or "empty"
 
 
+def reserve_structured_slots(ranked: list, top_k: int, reserve: int) -> list:
+    """Keep the top `top_k`, but never let prose take every slot.
+
+    Measured on the box: a candidate pool of a third chunks, a third records and
+    a third table summaries came out of the cross-encoder as eight chunks and
+    nothing else, on ten queries out of ten. bge-reranker-v2-m3 scores whether a
+    PASSAGE answers a question, and a table row - "Portefeuille | 1 mois: -2,58
+    | 2021: 9,42" - is not a passage however exactly it holds the answer. The
+    table sub-pipeline was therefore absent from the context on sixteen of
+    seventeen questions, and table questions were answered off page prose.
+
+    So `reserve` slots go to the best record/summary hits when any exist. This
+    is the same admission `diversify_by_document` already makes: a pure ranking
+    can produce a context that is uniform and therefore poor.
+
+    Rank order is preserved. Position IS rank downstream, and re-ordering here
+    would silently undo the reranker's decision.
+    """
+    kept = list(ranked[:top_k])
+    if reserve <= 0 or len(ranked) <= top_k:
+        return kept
+
+    def structured(hit) -> bool:
+        return hit.payload.get("_collection") != COLLECTION_CHUNKS
+
+    have = sum(1 for hit in kept if structured(hit))
+    waiting = [hit for hit in ranked[top_k:] if structured(hit)]
+    chosen = {id(hit) for hit in kept}
+    for candidate in waiting[:max(0, reserve - have)]:
+        # give up the weakest prose slot, not the strongest
+        for index in range(len(kept) - 1, -1, -1):
+            if not structured(kept[index]):
+                chosen.discard(id(kept.pop(index)))
+                break
+        else:
+            break
+        chosen.add(id(candidate))
+    return [hit for hit in ranked if id(hit) in chosen]
+
+
 class Rerank:
-    def __init__(self, top_k: int = 8, fallback_top_k: int = 12):
+    def __init__(self, top_k: int = 8, fallback_top_k: int = 12,
+                 reserve_structured: int = 0):
         self.top_k = top_k
         self.fallback_top_k = fallback_top_k
+        self.reserve_structured = reserve_structured
 
     async def run(self, ctx: QueryContext) -> QueryContext:
         if effective_config("reranker").provider == "disabled" or not ctx.hits:
@@ -87,11 +130,12 @@ class Rerank:
             ranked = [hit for _, (hit, _) in
                       sorted(zip(scores, pairs), key=lambda x: x[0],
                              reverse=True)]
+            kept = reserve_structured_slots(ranked, self.top_k,
+                                            self.reserve_structured)
             logger.info("rerank: %d candidates (%s) -> %d kept (%s)",
                         len(ctx.hits), collection_mix(ctx.hits),
-                        len(ranked[:self.top_k]),
-                        collection_mix(ranked[:self.top_k]))
-            ctx.hits = ranked[:self.top_k]
+                        len(kept), collection_mix(kept))
+            ctx.hits = kept
             note_role_success("reranker")
         except (RoleDisabled, Exception) as exc:  # noqa: BLE001 — degrade, don't die
             logger.exception("rerank failed; falling back to retrieval order")

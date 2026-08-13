@@ -102,6 +102,13 @@ class Settings(BaseSettings):
     expand_neighbours: bool = False
     retrieve_candidates: int = 50  # hybrid candidate pool fed to the reranker
     rerank_top_k: int = 8          # final context size after reranking
+    # of those slots, how many are held for record / table-summary hits. A
+    # cross-encoder scores whether a PASSAGE answers a question, so a table row
+    # loses to prose every time: measured on the box, a balanced candidate pool
+    # came out as 8 chunks and nothing else on 10 queries out of 10, and the
+    # table sub-pipeline was absent from the context it exists to fill.
+    # 0 disables the reservation.
+    rerank_reserve_structured: int = 3
 
     # table-parsing generation options — proven out in the Phase 0 spike.
     # num_ctx MUST be large: the few-shot prompt + a vision image easily
