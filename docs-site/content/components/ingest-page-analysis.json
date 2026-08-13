@@ -15,7 +15,7 @@
       "name": "analyze_page",
       "decl": "def analyze_page(page: fitz.Page, dpi: int, min_chars: int,",
       "file": "tablerag/ingestion/layout.py",
-      "line": 753,
+      "line": 773,
       "note": {
         "vi": "Chia một trang thành vùng text, bảng, hình.",
         "en": "Splits one page into text, table and figure regions."
@@ -45,7 +45,7 @@
       "name": "merge_cross_page_tables",
       "decl": "def merge_cross_page_tables(pages: list[PageLayout]) -> None:",
       "file": "tablerag/ingestion/layout.py",
-      "line": 982,
+      "line": 1002,
       "note": {
         "vi": "Nối bảng bị cắt qua trang, để nửa số dòng không trả lời thay cả bảng.",
         "en": "Joins a table cut across pages, so half its rows do not answer for the whole."

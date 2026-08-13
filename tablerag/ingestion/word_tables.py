@@ -52,6 +52,22 @@ _ROW_GAP_FACTOR = 1.6
 
 
 @dataclass
+class WordTable:
+    """A detected region, shaped like what `find_tables` returns.
+
+    `detect_tables` and everything downstream reads `.bbox` — the crop is cut
+    from it, and the crop is what a reader checks the answer against. Carrying
+    the same attribute means the acceptance rules, the crop contract and the
+    citation path all apply unchanged."""
+
+    bbox: tuple[float, float, float, float]
+    grid: list[list[str]]
+
+    def extract(self) -> list[list[str]]:
+        return self.grid
+
+
+@dataclass
 class WordLine:
     """One baseline of the page, already split into cells by its gaps."""
 

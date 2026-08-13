@@ -403,6 +403,26 @@ def detect_tables(page: fitz.Page) -> list[tuple]:
             found.append((table, repair_grid(grid)))
             rects.append(rect)
 
+    # Last resort, and only where the ruled and text strategies came up empty.
+    # Measured with `make eval-detection`: find_tables reaches 25% of real
+    # factsheet pages, not because it reads cells badly but because it cannot
+    # tell where a borderless table starts and ends once a page holds more than
+    # one thing. Word coordinates can (see word_tables), and they still yield a
+    # bbox, so the crop contract survives.
+    if not found:
+        from tablerag.ingestion.word_tables import WordTable, find_word_tables
+
+        try:
+            words = page.get_text("words")
+        except Exception:  # noqa: BLE001 — detection must not kill the page
+            words = []
+        for bbox, grid in find_word_tables(words):
+            rect = fitz.Rect(bbox)
+            repaired = repair_grid(grid)
+            if accept_table(rect, repaired, "words", rects):
+                found.append((WordTable(bbox=bbox, grid=repaired), repaired))
+                rects.append(rect)
+
     found.sort(key=lambda pair: (pair[0].bbox[1], pair[0].bbox[0]))
     return found
 
