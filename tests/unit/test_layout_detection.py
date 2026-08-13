@@ -188,3 +188,30 @@ def test_a_borderless_table_is_found_even_when_the_page_has_a_ruled_one():
     assert "0,36" in flat, (
         f"the borderless table was not detected; {len(found)} region(s) found")
     assert "8,12" in flat and "10,32" in flat
+
+
+def test_a_text_region_that_cut_through_the_numbers_is_refused():
+    """vertes-p1 and flexi-p1, straight from the gate:
+
+        #0 Table (201, 466, 399, 494) 2x3 ['3 -1,91 -1,0', '4,96 2,4', '3 18,60']
+        #1 Table (304, 513, 399, 541) 2x2 [',79 3,89', '4,68']
+
+    A cell beginning with a comma is a value sliced in half - 4,79 became "4" in
+    one cell and ",79" in the next. These are in the index today, and they also
+    veto the word detector's region for the table they sit inside, because they
+    were laid down first.
+
+    Only the lenient `text` strategy is judged this way: a ruled table's cell
+    boundaries were drawn on the page, so if one holds two numbers that is what
+    the page says."""
+    from tablerag.ingestion.layout import accept_table
+
+    mangled = [["46 -0,33 0,0", "7,42"], ["18 0,74 -0,6", "0,45"]]
+    assert accept_table(R(234, 466, 399, 494), mangled, "text", []) is False
+    assert accept_table(R(234, 466, 399, 494), mangled, "lines", []) is True
+    # a real borderless table survives: one value per cell, however dense
+    clean = [["Portefeuille", "-0,33", "0,72"], ["Indice", "-0,44", "0,23"]]
+    assert accept_table(R(22, 503, 393, 537), clean, "text", []) is True
+    # French thousands are written with a space and are still ONE number
+    thousands = [["Actif net", "1 234,56"], ["Encours", "987,10"]]
+    assert accept_table(R(22, 600, 393, 630), thousands, "text", []) is True

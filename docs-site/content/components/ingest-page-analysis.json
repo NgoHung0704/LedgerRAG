@@ -15,7 +15,7 @@
       "name": "analyze_page",
       "decl": "def analyze_page(page: fitz.Page, dpi: int, min_chars: int,",
       "file": "tablerag/ingestion/layout.py",
-      "line": 784,
+      "line": 813,
       "note": {
         "vi": "Chia một trang thành vùng text, bảng, hình.",
         "en": "Splits one page into text, table and figure regions."
@@ -25,7 +25,7 @@
       "name": "accept_table",
       "decl": "def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,",
       "file": "tablerag/ingestion/layout.py",
-      "line": 274,
+      "line": 301,
       "note": {
         "vi": "Quyết định một lưới find_tables có thật là bảng hay chỉ là văn bản chia cột.",
         "en": "Decides whether a find_tables grid is really a table or just column-laid-out prose."
@@ -45,7 +45,7 @@
       "name": "merge_cross_page_tables",
       "decl": "def merge_cross_page_tables(pages: list[PageLayout]) -> None:",
       "file": "tablerag/ingestion/layout.py",
-      "line": 1013,
+      "line": 1042,
       "note": {
         "vi": "Nối bảng bị cắt qua trang, để nửa số dòng không trả lời thay cả bảng.",
         "en": "Joins a table cut across pages, so half its rows do not answer for the whole."

@@ -271,6 +271,33 @@ def looks_like_page_layout(grid: list[list]) -> bool:
             or sentence_cell_ratio(grid) > _LAYOUT_MAX_SENTENCE_CELLS)
 
 
+# a decimal as these documents print them: 4,79 or -1,91. Two in one cell means
+# two columns were never separated.
+_DECIMAL = re.compile(r"-?\d+,\d+")
+
+
+def cuts_through_numbers(grid: list[list]) -> bool:
+    """Did the column boundaries land INSIDE the rows rather than between them?
+
+    The lenient `text` strategy returned these on the fund factsheets:
+
+        ['3 -1,91 -1,0', '4,96 2,4', '3 18,60']
+        [',79 3,89', '4,68']
+
+    A cell beginning with a comma is a value cut in half — 4,79 became "4" and
+    ",79" in the next column. A cell holding two decimals is two columns that
+    were never separated. Either way the row was sliced through its values, and
+    the grid is not a reading of the table but a mangling of it; it goes into the
+    index all the same, and its rectangle then vetoes any better region covering
+    the same table.
+
+    One decimal and some words is fine ("1,52% Santé"), and so is a French
+    thousands separator ("1 234,56") — that is one number, with one comma.
+    """
+    return any(len(_DECIMAL.findall(str(cell or ""))) > 1
+               for row in grid for cell in row)
+
+
 def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
                  existing: list[fitz.Rect]) -> bool:
     """Keep a detected table region? Dedupe against already-accepted regions
@@ -288,6 +315,8 @@ def accept_table(rect: fitz.Rect, grid: list[list], strategy: str,
         return False
     if strategy == "text" and grid_fill_ratio(grid) < 0.6:
         return False  # sparse -> probably prose, not a table
+    if strategy == "text" and cuts_through_numbers(grid):
+        return False  # boundaries fell inside the rows, not between them
     return True
 
 

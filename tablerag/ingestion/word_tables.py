@@ -63,8 +63,13 @@ _MIN_NARROW_ROWS = 3
 # table. Columns alone cannot separate two STACKED tables - the second one's
 # figures sit under the first one's columns by construction, which is what
 # being built from the same template means. The blank band between them is
-# the only signal, and it is the one a reader uses.
+# the only signal, and it is the one a reader uses. Applies to the FIRST pair
+# of a run, before there is a rhythm to measure against.
 _ROW_GAP_FACTOR = 1.6
+# ...and after that, how far past the run's own row pitch a line may sit and
+# still be the next row. Rows land 12pt apart and the band between two stacked
+# tables is 23pt, so the rhythm is what separates them.
+_PITCH_FACTOR = 1.5
 # a vertical strip this wide that almost no line crosses is a CANDIDATE gutter
 _GUTTER_WIDTH = 14.0
 # ...and "almost" is the operative word. Demanding a strip empty over the whole
@@ -350,7 +355,7 @@ def _runs_in_band(words: list[tuple], column_gap: float,
     current: list[WordLine] = []
     for line in lines:
         if (current and edges_align(current[-1], line)
-                and _vertically_adjacent(current[-1], line)):
+                and _row_continues(current, line)):
             current.append(line)
             continue
         if len(current) >= min_rows:
@@ -361,11 +366,23 @@ def _runs_in_band(words: list[tuple], column_gap: float,
     return runs
 
 
-def _vertically_adjacent(previous: WordLine, line: WordLine,
-                         factor: float = _ROW_GAP_FACTOR) -> bool:
-    """Is this baseline the next ROW, or the start of something else?"""
-    height = max(previous.bottom - previous.top, 1.0)
-    return line.top - previous.bottom <= height * factor
+def _row_continues(run: list[WordLine], line: WordLine,
+                   factor: float = _PITCH_FACTOR) -> bool:
+    """Is this baseline the next ROW of this run, or the start of a new table?
+
+    Judged against the run's own PITCH once there is one. Against the line's
+    height instead, vertes-p1 and flexi-p1 returned their three performance
+    tables as a single nine-row region: rows sit 12pt apart, the band between
+    two tables is 23pt, and 23 <= height * 1.6 holds for any type above about
+    9pt. Pitch says the same thing the reader's eye does — the rhythm broke.
+
+    A run of one has no rhythm yet, so the first pair still goes by height."""
+    if len(run) < 2:
+        height = max(run[-1].bottom - run[-1].top, 1.0)
+        return line.top - run[-1].bottom <= height * _ROW_GAP_FACTOR
+    pitches = sorted(b.top - a.top for a, b in zip(run, run[1:]))
+    pitch = max(pitches[len(pitches) // 2], 1.0)
+    return line.top - run[-1].top <= pitch * factor
 
 
 def supported_columns(run: list[WordLine], tolerance: float = _EDGE_TOLERANCE

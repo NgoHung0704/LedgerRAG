@@ -329,3 +329,34 @@ def test_a_table_to_the_RIGHT_of_the_prose_keeps_its_columns():
     grid = found[0][1]
     assert grid[2][0] == "Tracking", "the figures must keep their label"
     assert not any("commentaire" in cell for row in grid for cell in row)
+
+
+# vertes-p1 and flexi-p1 stack three performance tables built from one template,
+# and the word detector returned all three as ONE region: "offered (22, 457,
+# 393, 585) 9x6". Nine rows. Transcribed spacing - rows 11-13pt apart, tables
+# 23pt apart:
+#     y= 550.5 ['Performances a', '2020', '2019', '2018', '2017', '2016']
+#     y= 561.5 ['Portefeuille',   '2,45', '4,10', '-0,82', '0,80', '2,05']
+#     y= 574.7 ['Indice de réfé', '3,26', '4,24', '0,18', '0,84', '2,02']
+# test_two_stacked_tables_are_two_regions put 76pt between its tables, which no
+# realistic page does, so it never touched the rule it was named for.
+STACK_COLUMNS = (22.0, 200.0, 240.0, 280.0, 320.0, 360.0)
+
+
+def _stacked(y: float, label: str, values: tuple) -> list[tuple]:
+    return ([_w(STACK_COLUMNS[0], y, label, 120.0)]
+            + [_w(x, y, v, 30.0) for x, v in zip(STACK_COLUMNS[1:], values)])
+
+
+def test_tables_stacked_a_normal_gap_apart_are_separate_regions():
+    words = (_stacked(503.0, "Performances", ("1 an", "3 ans", "5 ans", "10 ans", ""))
+             + _stacked(514.0, "Portefeuille", ("-0,33", "0,03", "-0,12", "0,72", ""))
+             + _stacked(527.0, "Indice", ("-0,44", "-0,15", "-0,30", "0,23", ""))
+             + _stacked(550.0, "Performances", ("2020", "2019", "2018", "2017", "2016"))
+             + _stacked(561.0, "Portefeuille", ("2,45", "4,10", "-0,82", "0,80", "2,05"))
+             + _stacked(574.0, "Indice", ("3,26", "4,24", "0,18", "0,84", "2,02")))
+    found = find_word_tables(words)
+    assert len(found) == 2, (
+        "three rows 12pt apart then a 23pt band then three more is two tables; "
+        f"got {len(found)} region(s) of {[len(g) for _, g in found]} rows")
+    assert found[0][0][3] < found[1][0][1], "the regions must not overlap"
