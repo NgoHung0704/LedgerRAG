@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical, Settings2, Trash2 } from "lucide-react";
@@ -16,6 +17,7 @@ export default function KbCardMenu({
   kb: KB;
   onChanged: () => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -48,7 +50,7 @@ export default function KbCardMenu({
     <div className="relative" ref={ref}>
       <button
         type="button"
-        aria-label="Knowledge base actions"
+        aria-label={t("kb.actions")}
         onClick={() => setOpen((o) => !o)}
         className="flex h-7 w-7 items-center justify-center rounded border border-transparent text-ink-subtle hover:border-line hover:bg-surface hover:text-ink"
       >
@@ -65,22 +67,20 @@ export default function KbCardMenu({
                 className="flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left text-[13px] text-ink hover:bg-surface-sunken"
               >
                 <Settings2 size={15} className="text-ink-subtle" />
-                Settings &amp; rename
+                {t("kb.settings_and_rename")}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(true)}
                 className="flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left text-[13px] text-red-600 hover:bg-red-50"
               >
-                <Trash2 size={15} /> Delete knowledge base
+                <Trash2 size={15} /> {t("kb.delete")}
               </button>
             </>
           ) : (
             <div className="p-1.5">
               <div className="text-[12px] leading-snug text-ink-muted">
-                Delete <span className="font-semibold">{kb.name}</span> and all
-                its documents, vectors and chat history? This can&apos;t be
-                undone.
+                {t("kb.delete_confirm", { name: kb.name })}
               </div>
               <div className="mt-2.5 flex justify-end gap-1.5">
                 <Button
@@ -90,7 +90,7 @@ export default function KbCardMenu({
                   onClick={() => setConfirming(false)}
                   disabled={deleting}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="button"
@@ -100,7 +100,7 @@ export default function KbCardMenu({
                   loading={deleting}
                   icon={<Trash2 size={12} />}
                 >
-                  Delete
+                  {t("common.delete")}
                 </Button>
               </div>
             </div>

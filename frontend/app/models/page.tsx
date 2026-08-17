@@ -1,5 +1,7 @@
 "use client";
 
+import type { MessageKey } from "@/messages/en";
+import { useT } from "@/components/LocaleProvider";
 import { useCallback, useEffect, useState } from "react";
 import {
   Braces,
@@ -27,31 +29,32 @@ import { Button, Card, Spinner, inputCls } from "@/components/ui";
 
 const ROLE_META: Record<
   ModelRole["role"],
-  { title: string; hint: string; icon: LucideIcon }
+  { titleKey: MessageKey; hintKey: MessageKey; icon: LucideIcon }
 > = {
   parser: {
-    title: "Parser / OCR (VLM)",
-    hint: "Reads tables and scanned pages during ingestion — the accuracy-critical role. Validate any change with `make eval-tables`.",
+    titleKey: "models.parser",
+    hintKey: "models.parser_hint",
     icon: Eye,
   },
   embedder: {
-    title: "Embedder",
-    hint: "Turns chunks, records and summaries into vectors for retrieval. Changing it requires re-indexing documents.",
+    titleKey: "models.embedder",
+    hintKey: "models.embedder_hint",
     icon: Braces,
   },
   chat: {
-    title: "Chat (LLM)",
-    hint: "Generates answers and table summaries, in the user's language.",
+    titleKey: "models.chat",
+    hintKey: "models.chat_hint",
     icon: MessageSquareText,
   },
   reranker: {
-    title: "Reranker",
-    hint: "Optional result reordering (Phase 4). Leave disabled until then.",
+    titleKey: "models.reranker",
+    hintKey: "models.reranker_hint",
     icon: ScanSearch,
   },
 };
 
 export default function ModelsPage() {
+  const t = useT();
   const [roles, setRoles] = useState<ModelRole[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,13 +75,10 @@ export default function ModelsPage() {
       <div className="mb-6">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <SlidersHorizontal size={20} className="text-ink-subtle" />
-          Model Providers
+          {t("models.title")}
         </h1>
         <p className="mt-0.5 max-w-2xl text-sm text-ink-muted">
-          Four abstract roles, each mapped to an endpoint you control. Nothing
-          is hardcoded — pick installed Ollama models or pull new ones, per
-          role. In local-only deployments every endpoint stays on your
-          infrastructure.
+          {t("models.lede")}
         </p>
       </div>
 
@@ -110,6 +110,7 @@ export default function ModelsPage() {
 // built-in answering rules. Both additive — they can't relax the rules that
 // keep numbers exact. Saving is admin-gated server-side.
 function GlobalInstructions() {
+  const t = useT();
   const [persona, setPersona] = useState<ChatPersona | null>(null);
   const [saved, setSaved] = useState<ChatPersona>({ identity: "", text: "" });
   const [saving, setSaving] = useState(false);
@@ -155,9 +156,9 @@ function GlobalInstructions() {
           <MessageSquareText size={17} />
         </div>
         <div>
-          <div className="text-sm font-semibold">Chat persona (global)</div>
+          <div className="text-sm font-semibold">{t("models.persona")}</div>
           <div className="text-[11px] uppercase tracking-wide text-ink-subtle">
-            applies to every conversation
+            {t("models.persona_scope")}
           </div>
         </div>
       </div>
@@ -169,11 +170,10 @@ function GlobalInstructions() {
       ) : (
         <>
           <label className="mt-2 block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-            Identity — who the assistant is
+            {t("models.identity")}
           </label>
           <p className="mb-1 text-xs leading-5 text-ink-muted">
-            Used when someone asks « qui es-tu ? » — answered directly, without
-            searching the documents. Leave empty for the built-in description.
+            {t("models.identity_hint")}
           </p>
           <textarea
             value={persona.identity}
@@ -181,23 +181,21 @@ function GlobalInstructions() {
               setPersona({ ...persona, identity: e.target.value })
             }
             rows={3}
-            placeholder="e.g. l'assistant documentaire RH du CETIAT : tu réponds aux questions sur les accords et conventions, en citant toujours tes sources."
+            placeholder={t("models.identity_placeholder")}
             className={`${inputCls} font-sans`}
           />
 
           <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-            Instructions — how it should answer
+            {t("models.instructions")}
           </label>
           <p className="mb-1 text-xs leading-5 text-ink-muted">
-            Shapes tone, focus and format for every knowledge base. It cannot
-            override the rules that keep numbers exact and answers grounded in
-            the sources. A KB can add its own in its Settings.
+            {t("models.instructions_hint")}
           </p>
           <textarea
             value={persona.text}
             onChange={(e) => setPersona({ ...persona, text: e.target.value })}
             rows={3}
-            placeholder="e.g. Répondez de façon concise et professionnelle ; citez les numéros d'article quand ils existent."
+            placeholder={t("models.instructions_placeholder")}
             className={`${inputCls} font-sans`}
           />
 
@@ -210,12 +208,12 @@ function GlobalInstructions() {
             >
               {ok ? (
                 <>
-                  <Check size={15} /> Saved
+                  <Check size={15} /> {t("common.saved")}
                 </>
               ) : saving ? (
-                "Saving…"
+                t("common.saving")
               ) : (
-                "Save"
+                t("common.save")
               )}
             </Button>
           </div>
@@ -232,6 +230,7 @@ function RoleCard({
   role: ModelRole;
   onChanged: () => void;
 }) {
+  const t = useT();
   const meta = ROLE_META[role.role];
   const Icon = meta.icon;
   const [available, setAvailable] = useState<OllamaModel[] | null>(null);
@@ -289,7 +288,7 @@ function RoleCard({
             <Icon size={17} />
           </div>
           <div>
-            <div className="text-sm font-semibold">{meta.title}</div>
+            <div className="text-sm font-semibold">{t(meta.titleKey)}</div>
             <div className="text-[11px] uppercase tracking-wide text-ink-subtle">
               {role.provider}
               {role.overridden && " · runtime override"}
@@ -311,21 +310,21 @@ function RoleCard({
         </span>
       </div>
 
-      <p className="mb-4 text-xs leading-5 text-ink-muted">{meta.hint}</p>
+      <p className="mb-4 text-xs leading-5 text-ink-muted">{t(meta.hintKey)}</p>
 
       {role.provider === "disabled" ? (
         <div className="rounded-lg bg-surface-sunken px-3 py-2.5 text-xs text-ink-muted dark:bg-slate-800/60">
-          Disabled by configuration. Enable it via
+          {t("models.disabled_by_config")}
           <code className="mx-1 rounded bg-surface-sunken px-1 py-0.5">
             LEDGERRAG_MODELS__{role.role.toUpperCase()}__PROVIDER
           </code>
-          when the phase that uses it lands.
+          {t("models.disabled_tail")}
         </div>
       ) : (
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">
-              Endpoint
+              {t("models.endpoint")}
             </label>
             <input
               className={inputCls}
@@ -336,7 +335,7 @@ function RoleCard({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">
-              Model
+              {t("models.model")}
             </label>
             {isOllama && available !== null && available.length > 0 ? (
               <select
@@ -360,7 +359,7 @@ function RoleCard({
                 className={inputCls}
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
-                placeholder="model name"
+                placeholder={t("models.model_placeholder")}
               />
             )}
           </div>
@@ -373,12 +372,12 @@ function RoleCard({
             >
               {saved ? (
                 <>
-                  <Check size={15} /> Saved
+                  <Check size={15} /> {t("common.saved")}
                 </>
               ) : saving ? (
-                "Saving…"
+                t("common.saving")
               ) : (
-                "Save"
+                t("common.save")
               )}
             </Button>
           </div>
@@ -398,6 +397,7 @@ function PullBox({
   role: string;
   onPulled: () => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [percent, setPercent] = useState<number | null>(null);
@@ -439,12 +439,12 @@ function PullBox({
   return (
     <div className="rounded-lg border border-line bg-surface-sunken p-3">
       <div className="mb-2 text-xs font-medium text-ink-muted">
-        Install a new model on this endpoint
+        {t("models.install")}
       </div>
       <div className="flex gap-2">
         <input
           className={inputCls}
-          placeholder="e.g. qwen3-vl:8b-instruct"
+          placeholder={t("models.pull_placeholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={pulling}
@@ -457,7 +457,7 @@ function PullBox({
           icon={<Download size={14} />}
           className="shrink-0"
         >
-          Pull
+          {t("models.pull")}
         </Button>
       </div>
       {(status || percent !== null) && (

@@ -5,7 +5,7 @@
       "name": "ModelsPage",
       "decl": "export default function ModelsPage() {",
       "file": "frontend/app/models/page.tsx",
-      "line": 54,
+      "line": 56,
       "note": {
         "vi": "Đổi endpoint và model của từng vai trò lúc chạy, và kéo model mới về.",
         "en": "Repoints each role's endpoint and model at runtime, and pulls new models."
@@ -15,7 +15,7 @@
       "name": "AuditPage",
       "decl": "export default function AuditPage() {",
       "file": "frontend/app/audit/page.tsx",
-      "line": 20,
+      "line": 21,
       "note": {
         "vi": "Nhật ký kiểm toán GDPR, mới nhất trước, chỉ admin xem được.",
         "en": "The GDPR audit log, most recent first, visible to admins only."
@@ -25,7 +25,7 @@
       "name": "DiagnosticsPage",
       "decl": "export default function DiagnosticsPage() {",
       "file": "frontend/app/diagnostics/page.tsx",
-      "line": 15,
+      "line": 16,
       "note": {
         "vi": "Soi nhận diện bảng trên một PDF mà không ingest nó — tệp được phân tích trong bộ nhớ rồi bỏ.",
         "en": "Inspects table detection on a PDF without ingesting it - the file is analysed in memory and discarded."

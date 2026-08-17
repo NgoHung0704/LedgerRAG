@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Settings2, Trash2, Check, ShieldCheck, Sparkles } from "lucide-react";
@@ -20,6 +21,7 @@ export default function KbSettings({
   onUpdated: (kb: KB) => void;
   defaultOpen?: boolean;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
   const ref = useRef<HTMLDivElement>(null);
@@ -116,15 +118,15 @@ export default function KbSettings({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         icon={<Settings2 size={14} />}
-        title="Knowledge base settings"
+        title={t("kb.settings_title")}
       >
-        Settings
+        {t("asst.settings")}
       </Button>
 
       {open && (
         <div className="pop absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] origin-top-right rounded-xl border border-line bg-surface p-3.5 shadow-lift">
           <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-            Name
+            {t("kb.field_name")}
           </label>
           <input
             value={name}
@@ -134,7 +136,7 @@ export default function KbSettings({
 
           <div className="mt-3 flex items-center justify-between">
             <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-              Description
+              {t("kb.field_description")}
             </label>
             <Button
               size="xs"
@@ -143,28 +145,28 @@ export default function KbSettings({
               disabled={saving}
               loading={suggesting}
               icon={<Sparkles size={11} />}
-              title="Draft from this KB's documents"
+              title={t("kb.suggest_hint")}
             >
-              Suggest
+              {t("kb.suggest")}
             </Button>
           </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            placeholder="What this KB uniquely holds — the router reads it to route questions here. When two KBs share vocabulary, say what sets them apart."
+            placeholder={t("kb.description_router_placeholder")}
             className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
           <div className="mt-3 flex items-center justify-between">
             <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-              Operator instructions
+              {t("kb.operator_instructions")}
             </label>
             <span
-              title="These guide tone, focus and format only. The built-in safety rules — answer only from the cited sources, quote numbers exactly, and say when the answer isn't in the documents — always win."
+              title={t("kb.safety_core_hint")}
               className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60"
             >
-              <ShieldCheck size={11} /> Safety core protected
+              <ShieldCheck size={11} /> {t("kb.safety_core")}
             </span>
           </div>
           {/* prompts are code — mono reads right, and the chip above makes the
@@ -173,12 +175,12 @@ export default function KbSettings({
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             rows={4}
-            placeholder="Extra guidance for answers in this KB (tone, focus, format) — e.g. « cite les numéros d'article ». Layered on top of the built-in rules; it can never relax them."
+            placeholder={t("kb.instructions_placeholder")}
             className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 font-mono text-[12px] leading-relaxed placeholder:font-sans placeholder:text-[11px] placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
           <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-            Number locale
+            {t("kb.number_locale")}
           </label>
           <input
             value={locale}
@@ -188,17 +190,16 @@ export default function KbSettings({
           />
 
           <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-            Contact en cas de doute
+            {t("kb.escalation_contact")}
           </label>
           <input
             value={contact}
             onChange={(e) => setContact(e.target.value)}
-            placeholder="ex. service RH du CETIAT"
+            placeholder={t("kb.contact_placeholder")}
             className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
           <p className="mt-1 text-[11px] text-ink-subtle">
-            Affiché quand une réponse s&apos;appuie sur la lecture d&apos;une
-            image ou sur une source peu fiable. Vide = formulation générique.
+            {t("kb.escalation_contact_hint")}
           </p>
 
           <label className="mt-3 flex items-center gap-2.5 text-sm text-ink">
@@ -223,7 +224,7 @@ export default function KbSettings({
             </button>
             <span className="inline-flex items-center gap-1">
               <ShieldCheck size={14} className="text-ink-subtle" />
-              Verify numbers against sources
+              {t("kb.verify_against_sources")}
             </span>
           </label>
 
@@ -237,7 +238,7 @@ export default function KbSettings({
               loading={saving}
               icon={<Check size={13} />}
             >
-              Save changes
+              {t("common.save_changes")}
             </Button>
           </div>
 
@@ -245,16 +246,16 @@ export default function KbSettings({
               reading it out of the address bar to retype it is a chore */}
           <div className="mt-3 border-t border-line pt-3">
             <div className="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-              Knowledge base id
+              {t("kb.id_label")}
             </div>
             <div className="mt-1 flex items-center gap-1">
               <code className="min-w-0 flex-1 truncate rounded-md bg-surface-sunken px-2 py-1 font-mono text-[11px] text-ink-muted">
                 {kb.id}
               </code>
-              <CopyButton text={kb.id} title="Copy the knowledge base id" />
+              <CopyButton text={kb.id} title={t("kb.id_copy")} />
             </div>
             <div className="mt-1 text-[11px] text-ink-subtle">
-              For the API and the eval gates —{" "}
+              {t("kb.id_hint")}{" "}
               <span className="font-mono">make eval-qa KB=…</span>
             </div>
           </div>
@@ -268,13 +269,12 @@ export default function KbSettings({
                 icon={<Trash2 size={13} />}
                 className="!text-red-700 hover:!bg-red-50 dark:!text-red-400 dark:hover:!bg-red-950/40"
               >
-                Delete this knowledge base
+                {t("kb.delete_this")}
               </Button>
             ) : (
               <div className="rounded-lg bg-red-50 p-2.5 dark:bg-red-950/40">
                 <div className="text-[12px] text-red-700 dark:text-red-300">
-                  Delete <span className="font-semibold">{kb.name}</span> and all
-                  its documents, vectors and chat history? This cannot be undone.
+                  {t("kb.delete_confirm", { name: kb.name })}
                 </div>
                 <div className="mt-2 flex justify-end gap-1.5">
                   <Button
@@ -283,7 +283,7 @@ export default function KbSettings({
                     onClick={() => setConfirming(false)}
                     disabled={deleting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     size="sm"
@@ -292,7 +292,7 @@ export default function KbSettings({
                     loading={deleting}
                     icon={<Trash2 size={13} />}
                   >
-                    Delete permanently
+                    {t("kb.delete_permanently")}
                   </Button>
                 </div>
               </div>

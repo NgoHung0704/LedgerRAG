@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useRef, useState } from "react";
 import { Eye, FileSearch, Upload } from "lucide-react";
 import {
@@ -13,6 +14,7 @@ import { Button, Card, Spinner } from "@/components/ui";
 const STRATEGIES = ["lines_strict", "lines", "text"] as const;
 
 export default function DiagnosticsPage() {
+  const t = useT();
   const [result, setResult] = useState<TableDiagnostics | null>(null);
   const [busy, setBusy] = useState(false);
   const [vlmBusy, setVlmBusy] = useState<number | null>(null);
@@ -56,13 +58,10 @@ export default function DiagnosticsPage() {
       <div className="mb-6">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <FileSearch size={20} className="text-ink-subtle" />
-          Table detection diagnostics
+          {t("diag.title")}
         </h1>
         <p className="mt-0.5 max-w-2xl text-sm text-ink-muted">
-          Upload a PDF to see what each detection strategy finds per page.
-          Scanned pages (no text layer) can additionally be probed with the
-          parser VLM — you&apos;ll see its raw reply and the table regions it
-          reports. Nothing is stored.
+          {t("diag.lede")}
         </p>
       </div>
 
@@ -72,7 +71,7 @@ export default function DiagnosticsPage() {
       >
         <Upload size={24} className="text-ink-faint" />
         <div className="mt-2 text-sm font-medium text-ink">
-          Click to choose a PDF
+          {t("diag.choose_pdf")}
         </div>
         <input
           ref={fileInput}
@@ -89,7 +88,7 @@ export default function DiagnosticsPage() {
 
       {busy && (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-ink-muted">
-          <Spinner size={18} /> analyzing…
+          <Spinner size={18} /> {t("diag.analyzing")}
         </div>
       )}
       {error && (
@@ -133,6 +132,7 @@ function PageCard({
   vlmBusy: boolean;
   onRunVlm: () => void;
 }) {
+  const t = useT();
   const isScan = page.text_chars < 32;
   return (
     <Card className="p-4">
@@ -151,7 +151,7 @@ function PageCard({
               icon={<Eye size={13} />}
               onClick={onRunVlm}
             >
-              VLM detect
+              {t("diag.vlm_detect")}
             </Button>
           )}
           <span
@@ -171,10 +171,10 @@ function PageCard({
           <table className="w-full text-xs">
             <thead>
               <tr className="text-left text-ink-subtle">
-                <th className="py-1.5 pr-3 font-medium">strategy</th>
-                <th className="py-1.5 pr-3 font-medium">found</th>
+                <th className="py-1.5 pr-3 font-medium">{t("diag.col_strategy")}</th>
+                <th className="py-1.5 pr-3 font-medium">{t("diag.col_found")}</th>
                 <th className="py-1.5 font-medium">
-                  tables (bbox · rows×cols · fill · accept)
+                  {t("diag.col_tables")}
                 </th>
               </tr>
             </thead>
@@ -236,7 +236,7 @@ function PageCard({
           )}
           <details>
             <summary className="cursor-pointer text-ink-muted">
-              raw model reply
+              {t("diag.raw_reply")}
             </summary>
             <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-surface p-2 text-[11px] text-ink-muted">
               {vlm.raw}

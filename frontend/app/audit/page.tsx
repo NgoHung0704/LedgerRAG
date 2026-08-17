@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useState } from "react";
 import {
   ScrollText,
@@ -18,35 +19,35 @@ const ICON: Record<string, LucideIcon> = {
 };
 
 export default function AuditPage() {
+  const t = useT();
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getAudit()
       .then((r) => setEvents(r.events))
-      .catch(() => setError("Admin access required."));
+      .catch(() => setError(t("audit.admin_only")));
   }, []);
 
   return (
     <div>
       <h1 className="mb-1 flex items-center gap-2 text-xl font-semibold tracking-tight">
-        <ScrollText size={20} /> Audit log
+        <ScrollText size={20} /> {t("audit.title")}
       </h1>
       <p className="mb-5 text-sm text-ink-muted">
-        Who uploaded, queried, or changed model configuration — GDPR
-        accountability, most recent first.
+        {t("audit.lede")}
       </p>
 
       {error && <div className="text-sm text-red-600 dark:text-red-400">{error}</div>}
       {!events && !error && (
         <div className="flex items-center gap-2 text-sm text-ink-subtle">
-          <Spinner size={15} /> Loading…
+          <Spinner size={15} /> {t("common.loading")}
         </div>
       )}
 
       {events && events.length === 0 && (
         <div className="rounded-xl border border-line bg-surface p-8 text-center text-sm text-ink-subtle shadow-card">
-          No activity recorded yet.
+          {t("audit.empty")}
         </div>
       )}
 
@@ -55,10 +56,10 @@ export default function AuditPage() {
           <table className="w-full text-sm">
             <thead className="bg-surface-sunken text-left text-[11px] uppercase tracking-wide text-ink-subtle dark:bg-slate-800/60">
               <tr>
-                <th className="px-4 py-2.5 font-medium">When</th>
-                <th className="px-4 py-2.5 font-medium">Who</th>
-                <th className="px-4 py-2.5 font-medium">Action</th>
-                <th className="px-4 py-2.5 font-medium">Detail</th>
+                <th className="px-4 py-2.5 font-medium">{t("audit.col_when")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("audit.col_who")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("audit.col_action")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("audit.col_detail")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

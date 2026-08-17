@@ -96,3 +96,51 @@ def test_no_translated_screen_carries_a_literal_in_another_language():
     assert not offenders, (
         f"reader-facing screens still carry hardcoded copy: {offenders} — "
         f"move it into frontend/messages/ and call t()")
+
+
+# --- every reader-visible string goes through t() ---------------------------
+
+from tests.unit.ui_text_scan import visible_text  # noqa: E402
+
+# Screens the interface language applies to. The document inspector, the
+# element editor and the boilerplate panel are NOT here: they were not part of
+# what was asked for, and their copy is dense with rowspan / records / grid
+# vocabulary that reads worse translated than left alone.
+UI_FILES = sorted(
+    [p for p in pathlib.Path("frontend/components").glob("*.tsx")
+     if p.name not in {"ElementEditor.tsx", "BoilerplatePanel.tsx",
+                       "RecordsTable.tsx"}]
+    + [p for p in pathlib.Path("frontend/app").rglob("page.tsx")
+       if "doc" not in p.parts])
+
+# Strings that are deliberately not translated, each for a stated reason.
+ALLOWED = {
+    # a product name is a name
+    "LedgerRAG",
+    # the project's motto, not interface copy
+    "parse it right, or fail honestly",
+    # locale CODES and an example URL: data shown as data, the same reason the
+    # language picker never translates "Deutsch"
+    "fr · de · en · es · (blank = auto)",
+    "http://localhost:11434",
+}
+
+
+def test_no_reader_facing_screen_hardcodes_its_own_copy():
+    """Everything a reader can read comes from the catalogues.
+
+    This replaces an accent-only check, which could only catch copy I had
+    written in French and said nothing about the English that was never
+    translated at all. It also sees JSX text nodes spanning several lines,
+    which the sweep behind an earlier "no hardcoded strings left" claim could
+    not — that is how the whole lede of /ask shipped in English while the app
+    around it spoke French.
+    """
+    offenders = {}
+    for path in UI_FILES:
+        stray = [s for s in visible_text(path) if s not in ALLOWED]
+        if stray:
+            offenders[str(path)] = stray[:5]
+    assert not offenders, (
+        "reader-facing screens still hardcode copy — move it into "
+        f"frontend/messages/ and call t():\n{offenders}")

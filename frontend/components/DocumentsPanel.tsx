@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -32,6 +33,7 @@ import { confirm } from "@/components/confirm";
 const plural = (n: number) => (n === 1 ? "" : "s");
 
 export default function DocumentsPanel({ kbId }: { kbId: string }) {
+  const t = useT();
   const [docs, setDocs] = useState<Doc[] | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -79,12 +81,9 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
     if (
       d.status !== "failed" &&
       !(await confirm({
-        title: `Reprocess ${d.filename}?`,
-        message:
-          "Ingestion runs again from the original file, so the document picks " +
-          "up any parsing improvements. Its current elements are replaced — " +
-          "edits, splits and approvals made on them are lost.",
-        confirmLabel: "Reprocess",
+        title: t("doc.reprocess_confirm", { filename: d.filename }),
+        message: t("doc.reprocess_body"),
+        confirmLabel: t("doc.reprocess"),
         danger: false,
       }))
     )
@@ -104,11 +103,9 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
   const remove = async (d: Doc) => {
     if (
       !(await confirm({
-        title: `Delete ${d.filename}?`,
-        message:
-          "Its parsed text, tables and vectors are removed, and answers stop " +
-          "citing it. The original file goes too — this cannot be undone.",
-        confirmLabel: "Delete",
+        title: t("doc.delete_confirm", { filename: d.filename }),
+        message: t("doc.delete_body"),
+        confirmLabel: t("common.delete"),
       }))
     )
       return;
@@ -149,7 +146,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
           `Parsed elements are rebuilt from the original files, so any manual ` +
           `corrections on them are replaced. The worker takes documents one at ` +
           `a time — a large batch will take a while.`,
-        confirmLabel: "Reprocess",
+        confirmLabel: t("doc.reprocess"),
         danger: false,
       }))
     )
@@ -179,9 +176,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
     if (
       !(await confirm({
         title: `Delete ${selected.size} document${plural(selected.size)}?`,
-        message:
-          "Their parsed text, tables and vectors are removed, and answers stop " +
-          "citing them. The original files go too — this cannot be undone.",
+        message: t("doc.delete_many_body"),
         confirmLabel: `Delete ${selected.size} document${plural(selected.size)}`,
       }))
     )
@@ -224,11 +219,10 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
           className={dragOver ? "text-indigo-500" : "text-ink-faint"}
         />
         <div className="mt-2 text-sm font-medium text-ink">
-          Drop documents here, or click to browse
+          {t("doc.drop_here")}
         </div>
         <div className="mt-0.5 text-xs text-ink-subtle">
-          PDF, Word, PowerPoint or Excel. Tables keep their original image —
-          parsing is verified, never guessed.
+          {t("doc.formats")}
         </div>
         <input
           ref={fileInput}
@@ -253,8 +247,8 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
       {docs !== null && docs.length === 0 ? (
         <EmptyState
           icon={<Files size={34} />}
-          title="No documents yet"
-          hint="Upload PDFs above. Ingestion runs in the background — status updates live."
+          title={t("doc.none_yet")}
+          hint={t("doc.none_yet_hint")}
         />
       ) : (
         <Card className="overflow-hidden">
@@ -265,7 +259,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
-                  Clear
+                  {t("doc.clear")}
                 </Button>
                 <Button
                   variant="tonal"
@@ -273,9 +267,9 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                   loading={bulkBusy}
                   icon={<RefreshCw size={13} />}
                   onClick={reprocessSelected}
-                  title="Re-run ingestion from the original files. Useful after a batch of failures, or to pick up a parsing change."
+                  title={t("doc.reprocess_hint")}
                 >
-                  Reprocess
+                  {t("doc.reprocess")}
                 </Button>
                 <Button
                   variant="danger"
@@ -302,15 +296,15 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                     checked={allSelected}
                     onChange={toggleAll}
                     className="h-4 w-4 rounded border-line-strong text-indigo-600"
-                    aria-label={allSelected ? "Clear selection" : "Select all documents"}
+                    aria-label={allSelected ? t("doc.clear_selection") : t("doc.select_all")}
                   />
                 </th>
-                <th className="px-4 py-2.5">Document</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="hidden px-4 py-2.5 sm:table-cell">Pages</th>
-                <th className="hidden px-4 py-2.5 md:table-cell">Added</th>
+                <th className="px-4 py-2.5">{t("doc.col_document")}</th>
+                <th className="px-4 py-2.5">{t("doc.col_status")}</th>
+                <th className="hidden px-4 py-2.5 sm:table-cell">{t("doc.col_pages")}</th>
+                <th className="hidden px-4 py-2.5 md:table-cell">{t("doc.col_added")}</th>
                 <th className="px-4 py-2.5">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("doc.col_actions")}</span>
                 </th>
               </tr>
             </thead>
@@ -335,7 +329,7 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                     <Link
                       href={`/doc/${d.id}`}
                       className="block truncate font-medium text-ink hover:text-indigo-700 dark:hover:text-indigo-300"
-                      title="Inspect parsed output"
+                      title={t("doc.inspect_hint")}
                     >
                       {d.filename}
                     </Link>
@@ -373,14 +367,14 @@ export default function DocumentsPanel({ kbId }: { kbId: string }) {
                           ) : (
                             <RefreshCw size={13} />
                           )}
-                          Reprocess
+                          {t("doc.reprocess")}
                         </button>
                       )}
                       <Link
                         href={`/doc/${d.id}`}
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/50"
                       >
-                        <ScanSearch size={13} /> Inspect
+                        <ScanSearch size={13} /> {t("doc.inspect")}
                       </Link>
                       <IconButton
                         label={`Delete ${d.filename}`}
