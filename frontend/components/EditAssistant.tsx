@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useRef, useState } from "react";
 import { Check, CornerDownLeft, Sparkles } from "lucide-react";
 import { assistElementEdit, type AssistTurn } from "@/lib/api";
@@ -22,6 +23,7 @@ export default function EditAssistant({
   content: string;
   onApply: (next: string) => void;
 }) {
+  const t = useT();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -104,7 +106,7 @@ export default function EditAssistant({
           )}
           {busy && (
             <div className="inline-flex items-center gap-2 text-[11px] text-ink-subtle">
-              <Spinner size={12} /> thinking…
+              <Spinner size={12} /> {t("chat.thinking")}
             </div>
           )}
           {error && <p className="text-[11px] text-red-600">{error}</p>}
@@ -121,14 +123,14 @@ export default function EditAssistant({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) ask();
             }}
-            placeholder="What should change?"
+            placeholder={t("asst.what_should_change")}
             disabled={busy}
             className="min-h-0 flex-1 resize-none rounded-md border border-line-strong px-2 py-1.5 text-[12px] placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
           <button
             type="submit"
             disabled={busy || !input.trim()}
-            aria-label="Send instruction"
+            aria-label={t("asst.send_instruction")}
             className="shrink-0 rounded-md bg-indigo-600 p-1.5 text-white transition-[background-color,transform] duration-150 active:scale-[0.97] hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100"
           >
             <CornerDownLeft size={14} aria-hidden="true" />

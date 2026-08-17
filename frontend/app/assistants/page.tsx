@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,6 +22,7 @@ import AssistantCardMenu from "@/components/AssistantCardMenu";
 // its own instructions, and its own conversations. Knowledge bases stay
 // independent — an assistant references them, so one corpus can back several.
 export default function AssistantsPage() {
+  const t = useT();
   const router = useRouter();
   const [editing, setEditing] = useState<Assistant | null>(null);
   const [assistants, setAssistants] = useState<Assistant[] | null>(null);
@@ -47,10 +49,9 @@ export default function AssistantsPage() {
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Assistants</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{t("asst.title")}</h1>
           <p className="mt-0.5 text-sm text-ink-muted">
-            A chat of its own: pick the knowledge bases it may search, tell it
-            how to answer.
+            {t("asst.lede")}
           </p>
         </div>
         <Button
@@ -59,11 +60,11 @@ export default function AssistantsPage() {
           // a dead control should say why it is dead
           title={
             kbs.length === 0
-              ? "Create a knowledge base first — an assistant answers from one."
+              ? t("asst.create_kb_first_disabled")
               : undefined
           }
         >
-          <Plus size={16} aria-hidden="true" /> New assistant
+          <Plus size={16} aria-hidden="true" /> {t("asst.new")}
         </Button>
       </div>
 
@@ -76,14 +77,14 @@ export default function AssistantsPage() {
       ) : kbs.length === 0 ? (
         <EmptyState
           icon={<Database size={36} />}
-          title="Create a knowledge base first"
-          hint="An assistant answers from knowledge bases — add one with your documents, then come back and give it an assistant."
+          title={t("asst.create_kb_first")}
+          hint={t("asst.create_kb_first_hint")}
         />
       ) : assistants.length === 0 ? (
         <EmptyState
           icon={<Bot size={36} />}
-          title="No assistants yet"
-          hint="Create one: choose which knowledge bases it can search and write its instructions — e.g. an HR assistant over your agreements."
+          title={t("asst.none_yet")}
+          hint={t("asst.none_yet_hint")}
         />
       ) : (
         <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -98,12 +99,12 @@ export default function AssistantsPage() {
                   {a.name}
                 </div>
                 <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-ink-muted">
-                  {a.description || "No description yet."}
+                  {a.description || t("asst.no_description")}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   {a.kb_names.length === 0 ? (
                     <span className="text-[11px] text-amber-600 dark:text-amber-400">
-                      No knowledge base attached
+                      {t("asst.no_kb_attached")}
                     </span>
                   ) : (
                     a.kb_names.map((n) => (
@@ -132,7 +133,7 @@ export default function AssistantsPage() {
 
       {creating && (
         <AssistantForm
-          title="New assistant"
+          title={t("asst.new")}
           kbs={kbs}
           onClose={() => setCreating(false)}
           onSubmit={async (values) => {

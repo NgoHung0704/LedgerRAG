@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,7 @@ import AssistantForm from "@/components/AssistantForm";
 import ChatPanel from "@/components/ChatPanel";
 
 export default function AssistantPage({ params }: { params: { id: string } }) {
+  const t = useT();
   const assistantId = params.id;
   const router = useRouter();
   const [assistant, setAssistant] = useState<Assistant | null>(null);
@@ -83,11 +85,9 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
   const removeConversation = async (sessionId: string) => {
     if (
       !(await confirm({
-        title: "Delete this conversation?",
-        message:
-          "Its questions and answers are removed for everyone who can see this " +
-          "assistant. This cannot be undone.",
-        confirmLabel: "Delete",
+        title: t("conv.delete_confirm"),
+        message: t("conv.delete_body"),
+        confirmLabel: t("common.delete"),
       }))
     )
       return;
@@ -97,7 +97,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
   };
 
   const rename = async (c: Conversation) => {
-    const title = window.prompt("Rename this conversation", c.title);
+    const title = window.prompt(t("conv.rename_prompt"), c.title);
     if (!title?.trim()) return;
     await renameConversation(c.session_id, title.trim()).catch((e) =>
       setError(String(e)),
@@ -126,7 +126,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
         href="/assistants"
         className="mb-2 inline-flex items-center gap-1 text-xs text-ink-subtle hover:text-ink-muted"
       >
-        <ArrowLeft size={13} /> Assistants
+        <ArrowLeft size={13} /> {t("asst.title")}
       </Link>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -140,7 +140,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
             {assistant.kb_names.length === 0 ? (
               <span className="text-[11px] text-amber-600 dark:text-amber-400">
-                No knowledge base attached — add one in Settings
+                {t("asst.no_kb_attached_settings")}
               </span>
             ) : (
               assistant.kb_names.map((n) => (
@@ -160,7 +160,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
             icon={<Settings2 size={14} />}
             onClick={() => setEditing(true)}
           >
-            Settings
+            {t("asst.settings")}
           </Button>
         </div>
       </div>
@@ -175,13 +175,13 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
               icon={<Plus size={14} />}
               className="w-full"
             >
-              New conversation
+              {t("asst.new_conversation")}
             </Button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
             {conversations.length === 0 ? (
               <p className="px-2 py-3 text-[11px] leading-4 text-ink-subtle">
-                No saved conversation yet — ask something and it appears here.
+                {t("asst.no_conversation")}
               </p>
             ) : (
               conversations.map((c) => (
@@ -205,7 +205,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
                       }`}
                     >
                       <MessageSquare size={12} className="shrink-0 text-ink-subtle" />
-                      {c.title || "Untitled"}
+                      {c.title || t("conv.untitled")}
                     </span>
                     <span className="block pl-[18px] text-[10px] text-ink-subtle">
                       {new Date(c.updated_at).toLocaleDateString()}
@@ -215,7 +215,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
                       to anyone arriving by keyboard */}
                   <button
                     onClick={() => rename(c)}
-                    title="Rename"
+                    title={t("common.rename")}
                     aria-label={`Rename "${c.title}"`}
                     className="relative shrink-0 rounded p-1.5 text-ink-subtle opacity-0 transition-[opacity,color,transform] duration-150 after:absolute after:-inset-1 after:content-[''] hover:text-indigo-600 active:scale-95 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:text-indigo-300"
                   >
@@ -223,7 +223,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
                   </button>
                   <button
                     onClick={() => removeConversation(c.session_id)}
-                    title="Delete"
+                    title={t("common.delete")}
                     aria-label={`Delete "${c.title}"`}
                     className="relative shrink-0 rounded p-1.5 text-ink-subtle opacity-0 transition-[opacity,color,transform] duration-150 after:absolute after:-inset-1 after:content-[''] hover:text-red-600 active:scale-95 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:text-red-400"
                   >
@@ -268,7 +268,7 @@ export default function AssistantPage({ params }: { params: { id: string } }) {
 
       {editing && (
         <AssistantForm
-          title="Assistant settings"
+          title={t("asst.settings_title")}
           kbs={kbs}
           assistant={assistant}
           onClose={() => setEditing(false)}

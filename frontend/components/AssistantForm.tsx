@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useState } from "react";
 import { Database, ShieldCheck, Trash2 } from "lucide-react";
 import type { Assistant, AssistantInput, KB } from "@/lib/api";
@@ -23,6 +24,7 @@ export default function AssistantForm({
   onSubmit: (values: AssistantInput) => Promise<void>;
   onDelete?: () => Promise<void>;
 }) {
+  const t = useT();
   const [name, setName] = useState(assistant?.name ?? "");
   const [description, setDescription] = useState(assistant?.description ?? "");
   const [instructions, setInstructions] = useState(
@@ -70,11 +72,11 @@ export default function AssistantForm({
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
-            Name
+            {t("kb.field_name")}
           </label>
           <input
             className={inputCls}
-            placeholder="e.g. Assistant RH"
+            placeholder={t("asst.name_placeholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -83,11 +85,11 @@ export default function AssistantForm({
 
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
-            Description
+            {t("kb.field_description")}
           </label>
           <input
             className={inputCls}
-            placeholder="What it helps with — also how it introduces itself."
+            placeholder={t("asst.description_placeholder")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -95,11 +97,11 @@ export default function AssistantForm({
 
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
-            Knowledge bases it can search
+            {t("asst.kbs_it_can_search")}
           </label>
           {kbs.length === 0 ? (
             <p className="text-xs text-ink-subtle">
-              No knowledge base exists yet.
+              {t("asst.no_kb_exists")}
             </p>
           ) : (
             <div className="max-h-48 space-y-1 overflow-auto rounded-lg border border-line p-1.5">
@@ -120,7 +122,7 @@ export default function AssistantForm({
                       {kb.name}
                     </span>
                     <span className="line-clamp-1 text-[11px] text-ink-subtle">
-                      {kb.description || "No description"}
+                      {kb.description || t("kb.no_description_short")}
                     </span>
                   </span>
                 </label>
@@ -128,35 +130,33 @@ export default function AssistantForm({
             </div>
           )}
           <p className="mt-1 text-[11px] leading-4 text-ink-subtle">
-            With several, the router picks the relevant one(s) per question —
-            among these only, never the rest of your workspace.
+            {t("asst.kbs_hint")}
           </p>
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
-            Instructions
+            {t("asst.instructions")}
           </label>
           <textarea
             className={`${inputCls} resize-none`}
             rows={4}
-            placeholder="How it should answer — e.g. « Réponds de façon concise et cite les numéros d'article. »"
+            placeholder={t("asst.instructions_placeholder")}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
           />
           <p className="mt-1 text-[11px] leading-4 text-ink-subtle">
-            Added on top of the built-in rules: it shapes tone and focus but
-            can&apos;t loosen quoting numbers exactly or citing sources.
+            {t("asst.instructions_hint")}
           </p>
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
-            Opening message
+            {t("asst.opening_message")}
           </label>
           <input
             className={inputCls}
-            placeholder="Shown in an empty conversation, e.g. « Bonjour, que puis-je chercher pour vous ? »"
+            placeholder={t("asst.opening_placeholder")}
             value={opening}
             onChange={(e) => setOpening(e.target.value)}
           />
@@ -172,11 +172,10 @@ export default function AssistantForm({
           <span className="text-xs leading-4 text-ink-muted">
             <span className="inline-flex items-center gap-1 font-medium text-ink">
               <ShieldCheck size={13} className="text-ink-subtle" />
-              Verify numbers in answers
+              {t("kb.verify_numbers")}
             </span>
             <br />
-            Cross-check every figure against the cited sources and warn on any
-            that can&apos;t be matched.
+            {t("asst.verify_hint")}
           </span>
         </label>
 
@@ -185,7 +184,7 @@ export default function AssistantForm({
           {onDelete &&
             (confirmingDelete ? (
               <div className="flex items-center gap-2 text-xs text-red-700 dark:text-red-300">
-                Delete this assistant and its conversations?
+                {t("asst.delete_confirm")}
                 <Button
                   type="button"
                   size="xs"
@@ -201,7 +200,7 @@ export default function AssistantForm({
                     }
                   }}
                 >
-                  Delete
+                  {t("common.delete")}
                 </Button>
                 <Button
                   type="button"
@@ -209,7 +208,7 @@ export default function AssistantForm({
                   variant="ghost"
                   onClick={() => setConfirmingDelete(false)}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </div>
             ) : (
@@ -221,16 +220,16 @@ export default function AssistantForm({
                 icon={<Trash2 size={13} />}
                 className="!text-red-700 hover:!bg-red-50 dark:!text-red-400 dark:hover:!bg-red-950/40"
               >
-                Delete assistant
+                {t("asst.delete")}
               </Button>
             ))}
           <div className="ml-auto flex gap-2">
             <Button type="button" variant="secondary" onClick={onClose}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={busy || !name.trim()}>
               {busy ? <Spinner size={14} /> : null}
-              {assistant ? "Save changes" : "Create"}
+              {assistant ? t("common.save_changes") : t("common.create")}
             </Button>
           </div>
         </div>

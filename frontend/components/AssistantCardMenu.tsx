@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useRef, useState } from "react";
 import { MessagesSquare, MoreVertical, Settings2 } from "lucide-react";
 import type { Assistant } from "@/lib/api";
@@ -20,6 +21,7 @@ export default function AssistantCardMenu({
   onSettings: () => void;
   onOpen: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -66,7 +68,7 @@ export default function AssistantCardMenu({
             className="flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left text-[13px] text-ink transition-colors hover:bg-surface-sunken"
           >
             <Settings2 size={15} className="text-ink-subtle" aria-hidden="true" />
-            Settings
+            {t("asst.settings")}
           </button>
           <button
             type="button"
@@ -75,7 +77,7 @@ export default function AssistantCardMenu({
             className="flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left text-[13px] text-ink transition-colors hover:bg-surface-sunken"
           >
             <MessagesSquare size={15} className="text-ink-subtle" aria-hidden="true" />
-            Open conversations
+            {t("asst.open_conversations")}
           </button>
         </div>
       )}
