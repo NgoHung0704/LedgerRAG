@@ -115,7 +115,7 @@ export default function Sidebar({
           <Link
             href="/"
             className="emblem group flex min-w-0 items-center gap-2.5 rounded"
-            aria-label="LedgerRAG — home"
+            aria-label={t("shell.home")}
           >
             <Emblem />
             {!collapsed && (
@@ -132,7 +132,7 @@ export default function Sidebar({
           {!collapsed && (
             <div className="ml-auto lg:hidden">
               <IconButton
-                label="Close navigation"
+                label={t("shell.close_nav")}
                 onClick={onClose}
                 className="!text-rail-ink hover:!bg-white/10 hover:!text-rail-hi"
               >
@@ -144,7 +144,7 @@ export default function Sidebar({
 
         <nav
           ref={navRef}
-          aria-label="Main"
+          aria-label={t("shell.nav_main")}
           className="relative flex-1 space-y-0.5 overflow-y-auto px-2.5 pt-1"
         >
           {marker && (
@@ -196,7 +196,7 @@ export default function Sidebar({
                   {me.username}
                 </div>
                 <div className="text-[10px] uppercase tracking-wide text-rail-ink/55">
-                  {me.is_admin ? "Admin" : "User"}
+                  {me.is_admin ? t("shell.role_admin") : t("shell.role_user")}
                 </div>
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function Sidebar({
             <UserCircle2
               size={20}
               className="text-rail-ink/50"
-              aria-label={`Signed in as ${me.username}`}
+              aria-label={t("shell.signed_in_as", { username: me.username })}
             />
           )}
           <LocaleToggle compact={collapsed} />
@@ -216,10 +216,10 @@ export default function Sidebar({
           <button
             type="button"
             onClick={toggle}
-            aria-label={collapsed ? "Expand the navigation rail" : "Collapse the navigation rail"}
+            aria-label={collapsed ? t("shell.expand_rail") : t("shell.collapse_rail")}
             aria-expanded={!collapsed}
             aria-controls="app-nav"
-            title={collapsed ? "Expand" : "Collapse"}
+            title={collapsed ? t("shell.expand") : t("shell.collapse")}
             className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[12px] font-medium text-rail-ink transition-colors hover:bg-white/[0.06] hover:text-rail-hi ${
               collapsed ? "justify-center px-0" : ""
             }`}
@@ -229,7 +229,7 @@ export default function Sidebar({
             ) : (
               <PanelLeftClose size={16} aria-hidden="true" />
             )}
-            {!collapsed && "Collapse"}
+            {!collapsed && t("shell.collapse")}
           </button>
         </div>
       </aside>

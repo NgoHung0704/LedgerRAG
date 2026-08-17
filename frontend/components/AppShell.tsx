@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import { useT } from "@/components/LocaleProvider";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmHost } from "@/components/confirm";
 
@@ -11,6 +12,7 @@ import { ConfirmHost } from "@/components/confirm";
  *  becomes a drawer behind a menu button and the page gets the full width. */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
+  const t = useT();
   const pathname = usePathname();
 
   // following a link inside the drawer should feel like arriving somewhere,
@@ -32,7 +34,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setNavOpen(true)}
-              aria-label="Open navigation"
+              aria-label={t("shell.open_nav")}
               aria-expanded={navOpen}
               aria-controls="app-nav"
               className="inline-flex h-10 w-10 items-center justify-center rounded text-rail-ink transition-colors hover:bg-white/10 hover:text-rail-hi"
