@@ -6,6 +6,8 @@ Coordinates are approximate but their RELATIONSHIPS are what the algorithm
 reads, and those are copied from the page.
 """
 
+import pytest
+
 from tablerag.ingestion.word_tables import (
     edges_align,
     find_word_tables,
@@ -360,3 +362,63 @@ def test_tables_stacked_a_normal_gap_apart_are_separate_regions():
         "three rows 12pt apart then a 23pt band then three more is two tables; "
         f"got {len(found)} region(s) of {[len(g) for _, g in found]} rows")
     assert found[0][0][3] < found[1][0][1], "the regions must not overlap"
+
+
+# --- KNOWN DEFECT, recorded rather than fixed (2026-08-17) -------------------
+# The gutter rule of "judge a strip by what is beside it" measures each side
+# within a window of the strip. A table whose first column is SHORT and whose
+# column gaps are WIDE has nothing beside the strip on the label side - the
+# labels end far to the left of it - so the rule reads "nothing on the left",
+# cuts, and the table is shredded into one band per column. Measured on a page
+# built with PyMuPDF:
+#
+#     the page splits into 3 band(s):
+#       band 0 x=[66,94]    ['Classe', '1', '2', '3', '4', '5']
+#       band 1 x=[196,245]  ['Taux', 'salarie', '0,75', '0,80', ...]
+#       band 2 x=[326,391]  ['Taux', 'employeur', '1,25', '1,30', ...]
+#
+# That is the commonest shape in the HR corpus: 'A | 1 | 21 700'. The fixtures
+# meant to cover it give their labels a width of 120pt, which reaches into the
+# window - which is why they pass.
+#
+# Marked strict: whoever fixes the rule gets a RED suite telling them to delete
+# these markers, instead of a silent pass nobody notices.
+
+
+def _narrow(x0: float, y: float, text: str) -> tuple:
+    """A word box the width the text really is - about 5pt a character at 9pt.
+
+    The first attempt at these fixtures passed _w's default width to every
+    word, so the label "A" was 34pt wide and reached the window on its own. A
+    reproduction that gives the fixture the very property whose absence causes
+    the bug reproduces nothing, and both tests XPASSed."""
+    return (x0, y, x0 + max(len(text) * 5.0, 5.0), y + 9.0, text, 0, 0, 0)
+
+
+BAREME = [("Groupe", "Classe", "Salaire"), ("A", "1", "21 700"),
+          ("A", "2", "21 850"), ("B", "3", "22 450"),
+          ("C", "5", "24 250"), ("H", "16", "52 000")]
+
+
+@pytest.mark.xfail(strict=True, reason="short label column + wide gaps: the "
+                                       "page is banded per column, no run "
+                                       "survives, 0 regions")
+def test_a_bareme_with_a_short_label_column_is_found():
+    words = [_narrow(70.0 + c * 140.0, 120.0 + r * 16.0, text)
+             for r, row in enumerate(BAREME) for c, text in enumerate(row)]
+    assert len(find_word_tables(words)) == 1
+
+
+@pytest.mark.xfail(strict=True, reason="the label column is banded away and "
+                                       "the figures are filed without it")
+def test_a_shredded_table_never_loses_its_label_column():
+    # the dangerous half of the same defect. Here the surviving bands DO make a
+    # run - two columns, four rows - so a table IS filed, holding numbers with
+    # no dimension at all: Taux=0,75 of which class? The crop and the summary
+    # both assert it is a table.
+    rows = [("Classe", "Taux", "Employeur"), ("1", "0,75", "1,25"),
+            ("2", "0,80", "1,30"), ("3", "0,85", "1,35")]
+    words = [_narrow(66.0 + c * 130.0, 116.0 + r * 11.0, text)
+             for r, row in enumerate(rows) for c, text in enumerate(row)]
+    found = find_word_tables(words)
+    assert found and found[0][1][1][0] == "1",         f"the class labels are gone: {found}"
