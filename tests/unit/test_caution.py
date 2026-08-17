@@ -89,3 +89,49 @@ def test_a_confidence_exactly_at_the_threshold_is_not_flagged():
     # is the value the ingestion side already treats as acceptable
     assert caution_for("La valeur est 34 900 [1].",
                        [_cite(1, confidence=0.9)], contact=None) is None
+
+
+# --- the strongest signal was the one not wired in ---------------------------
+# verify_answer already reads every number out of the answer and tries to match
+# it against the numbers in the retrieved sources. A number it cannot match is
+# the single most concrete thing this system knows about an answer being shaky,
+# and it was rendered as a separate badge while the caution - the field that
+# carries "check the original, or ask HR" - stayed silent about it.
+
+
+def test_a_number_that_matched_no_source_raises_a_caution():
+    caution = caution_for("Le taux est de 4,79 % [1].",
+                          [_cite(1, confidence=1.0)], contact=None,
+                          verification={"enabled": True, "status": "warnings",
+                                        "unverified": ["4,79"]})
+    assert caution is not None
+    assert caution.reasons == ["unverified_numbers"]
+
+
+def test_verification_that_matched_everything_stays_silent():
+    assert caution_for("Le taux est de 4,79 % [1].",
+                       [_cite(1, confidence=1.0)], contact=None,
+                       verification={"enabled": True, "status": "ok",
+                                     "numbers": [{"raw": "4,79", "value": 4.79,
+                                                  "status": "verified"}],
+                                     "unverified": []}) is None
+
+
+def test_verification_switched_off_is_not_read_as_a_clean_bill():
+    # absence of evidence is not evidence: a KB with verify disabled must not
+    # look SAFER than one where the check ran and passed
+    assert caution_for("Le taux est de 4,79 % [1].",
+                       [_cite(1, confidence=1.0)], contact=None,
+                       verification={"enabled": False, "status": "ok",
+                                     "unverified": []}) is None
+    assert caution_for("Le taux est de 4,79 % [1].",
+                       [_cite(1, confidence=1.0)], contact=None,
+                       verification=None) is None
+
+
+def test_an_unmatched_number_is_reported_beside_the_other_reasons():
+    caution = caution_for("Le graphique montre 27 % [1].",
+                          [_cite(1, from_figure=True)], contact=None,
+                          verification={"enabled": True, "status": "warnings",
+                                        "unverified": ["27"]})
+    assert set(caution.reasons) == {"figure_reading", "unverified_numbers"}

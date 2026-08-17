@@ -5,7 +5,7 @@
       "name": "default_pipeline",
       "decl": "def default_pipeline(verify: bool | None = None, *,",
       "file": "tablerag/query/pipeline.py",
-      "line": 151,
+      "line": 152,
       "note": {
         "vi": "Lắp sáu bước theo đúng thứ tự; đổi triển khai từng bước là đổi ở đây.",
         "en": "Assembles the six steps in order; swapping an implementation happens here."

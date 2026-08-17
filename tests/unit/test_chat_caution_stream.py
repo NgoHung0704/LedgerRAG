@@ -91,3 +91,41 @@ def test_every_stream_consumer_handles_the_caution_event():
             f"{path.name} handles the citations event {citation_branches} "
             f"time(s) but the caution event {caution_branches} time(s) — one of "
             f"its streams would silently never warn the reader")
+
+
+def test_the_verify_step_result_reaches_the_caution():
+    # caution_for reads it, but only if the pipeline hands it over: the field
+    # existed on QueryContext and was passed to nothing.
+    ctx = QueryContext(kb_id=uuid.uuid4(), question="q")
+    ctx.answer = "Le taux est de 4,79 % [1]."
+    ctx.citations = [Citation(index=1, kind="table", doc_id=uuid.uuid4(),
+                              filename="f.pdf", page=1,
+                              element_id=uuid.uuid4(), snippet="", score=0.9,
+                              confidence=1.0)]
+    ctx.verification = {"enabled": True, "status": "warnings",
+                        "unverified": ["4,79"]}
+    event = caution_event(ctx)
+    assert event is not None and event.reasons == ["unverified_numbers"]
+
+
+def test_every_caution_reason_has_copy_in_the_ui():
+    """A reason key with no French copy reaches the reader as nothing at all.
+
+    CautionNotice maps reasons through CAUTION_COPY and drops what it cannot
+    translate; when none survive it returns null. So a caution that fired
+    correctly in the pipeline - the answer DOES rest on something shaky -
+    renders as blank space, which is indistinguishable from a clean answer.
+    Adding a reason and forgetting the copy is a silent regression, so it is
+    pinned here rather than left to be noticed."""
+    reasons = set(re.findall(
+        r'reasons\.append\("([a-z_]+)"\)',
+        (REPO_ROOT / "tablerag" / "core" / "citations.py").read_text(
+            encoding="utf-8")))
+    panel = (REPO_ROOT / "frontend" / "components" / "ChatPanel.tsx").read_text(
+        encoding="utf-8")
+    block = panel[panel.index("CAUTION_COPY"):]
+    block = block[:block.index("};")]
+    translated = set(re.findall(r"^\s{2}([a-z_]+):", block, re.M))
+    assert reasons, "the reason keys are no longer written as literals here"
+    assert reasons <= translated, \
+        f"caution reasons with no copy in ChatPanel: {sorted(reasons - translated)}"

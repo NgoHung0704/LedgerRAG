@@ -35,11 +35,25 @@ def cited_indices(answer: str) -> set[int]:
 
 def caution_for(answer: str, citations: list[Citation],
                 contact: str | None,
+                verification: dict | None = None,
                 confidence_threshold: float = 0.9) -> Caution | None:
-    """Whether this answer rests on something a human should check."""
+    """Whether this answer rests on something a human should check.
+
+    `verification` is the Verify step's result, and it carries the most concrete
+    thing this system knows about a shaky answer: a number printed in the answer
+    that matched no number in any retrieved source. It was rendered as its own
+    badge while this field — the one that says "check the original, or ask the
+    contact" — stayed silent about it.
+
+    Read only when the check actually RAN. A knowledge base with verification
+    switched off must not come out looking safer than one where it ran and
+    passed; silence there means nothing was measured, not that nothing is wrong.
+    """
     used = cited_indices(answer)
     relevant = [c for c in citations if not used or c.index in used]
     reasons: list[str] = []
+    if (verification or {}).get("enabled") and (verification or {}).get("unverified"):
+        reasons.append("unverified_numbers")
     if any(c.from_figure for c in relevant):
         reasons.append("figure_reading")
     if any(c.needs_review for c in relevant):

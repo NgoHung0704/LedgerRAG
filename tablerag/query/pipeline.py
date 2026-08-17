@@ -142,7 +142,8 @@ def caution_event(ctx: QueryContext):
     from tablerag.core.citations import caution_for
 
     try:
-        return caution_for(ctx.answer, ctx.citations, ctx.escalation_contact)
+        return caution_for(ctx.answer, ctx.citations, ctx.escalation_contact,
+                           ctx.verification)
     except Exception:  # noqa: BLE001 — a warning must not cost the answer
         logging.getLogger(__name__).exception("caution computation failed")
         return None

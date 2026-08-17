@@ -926,6 +926,8 @@ const CAUTION_COPY: Record<string, string> = {
   low_confidence:
     "Une des sources citées a été analysée avec une confiance faible.",
   needs_review: "Une des sources citées est signalée comme à vérifier.",
+  unverified_numbers:
+    "Un chiffre de cette réponse n'a pas pu être retrouvé dans les sources citées.",
 };
 
 function CautionNotice({ caution }: { caution: Caution }) {
