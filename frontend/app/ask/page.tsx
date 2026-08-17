@@ -24,13 +24,12 @@ export default function AskPage() {
     <div className="flex h-full flex-col">
       <div className="mb-4">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          <MessagesSquare size={20} /> Ask
+          <MessagesSquare size={20} /> {t("ask.title")}
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-ink-muted">
-          Ask across your knowledge bases. The assistant auto-routes to the
-          relevant one(s) by their descriptions — or use{" "}
-          <span className="font-medium text-ink-muted">{t("scope.search_in")}</span> to pick
-          a specific group.
+          {t("ask.lede")}{" "}
+          <span className="font-medium text-ink-muted">{t("scope.search_in")}</span>{" "}
+          {t("ask.lede_tail")}
         </p>
       </div>
 
@@ -38,17 +37,16 @@ export default function AskPage() {
         <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-line-strong text-center">
           <Database size={26} className="mb-2 text-ink-faint" />
           <div className="text-sm font-medium text-ink-muted">
-            No knowledge bases yet
+            {t("ask.no_kbs")}
           </div>
           <p className="mt-1 max-w-xs text-xs text-ink-subtle">
-            Create one and upload documents, then come back here to ask across
-            them.
+            {t("ask.no_kbs_body")}
           </p>
           <Link
             href="/"
             className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
           >
-            <Sparkles size={13} /> Go to Knowledge Bases
+            <Sparkles size={13} /> {t("ask.go_to_kbs")}
           </Link>
         </div>
       ) : (

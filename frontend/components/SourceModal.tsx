@@ -115,12 +115,10 @@ export default function SourceModal({
               <ImageIcon size={16} className="mt-0.5 shrink-0" />
               <div>
                 <div className="font-medium">
-                  This source is a description of an image.
+                  {t("source.is_figure_description")}
                 </div>
                 <div className="mt-0.5 text-[13px]">
-                  The parser model read the figure below and wrote what it
-                  shows. That description is not text printed in the document —
-                  the image is what the document actually says.
+                  {t("source.figure_description_body")}
                 </div>
               </div>
             </div>
@@ -131,11 +129,10 @@ export default function SourceModal({
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
               <div>
                 <div className="font-medium">
-                  This parse is unreliable, so no figure is asserted from it.
+                  {t("source.unreliable_parse")}
                 </div>
                 <div className="mt-0.5 text-[13px]">
-                  The image below is the record. Read the numbers there — the
-                  assistant will not quote them for you.
+                  {t("source.image_is_the_record")}
                 </div>
               </div>
             </div>
@@ -143,8 +140,7 @@ export default function SourceModal({
 
           {failed ? (
             <p className="text-sm text-red-700 dark:text-red-400">
-              This source could not be loaded. It may have been deleted, or the
-              document reprocessed since the answer was written.
+              {t("source.could_not_load")}
             </p>
           ) : detail === null ? (
             <div className="flex justify-center py-10">

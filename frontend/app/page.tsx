@@ -64,11 +64,11 @@ export default function HomePage() {
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight">{t("kb.title")}</h1>
           <p className="mt-0.5 text-sm text-ink-muted">
-            Each knowledge base is an isolated corpus with its own documents.
+            {t("kb.lede")}
           </p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
-          <Plus size={16} aria-hidden="true" /> New knowledge base
+          <Plus size={16} aria-hidden="true" /> {t("kb.create_title")}
         </Button>
       </div>
 
@@ -89,7 +89,7 @@ export default function HomePage() {
           hint={t("kb.empty_body")}
           action={
             <Button onClick={() => setShowCreate(true)}>
-              <Plus size={16} aria-hidden="true" /> New knowledge base
+              <Plus size={16} aria-hidden="true" /> {t("kb.create_title")}
             </Button>
           }
         />
@@ -174,10 +174,11 @@ function IngestProgress({ s }: { s?: KBDocStatus | null }) {
 // non-zero state (processing / failed / ready) so a glance answers "is it done,
 // still parsing, or did something fail?" without opening the KB.
 function KbStatus({ s }: { s?: KBDocStatus | null }) {
+  const t = useT();
   if (!s || s.total === 0)
     return (
       <span className="text-[11px] text-ink-subtle">
-        No documents
+        {t("kb.no_documents")}
       </span>
     );
 
@@ -293,17 +294,16 @@ function CreateModal({
           />
           <span className="text-xs leading-4 text-ink-muted">
             <span className="font-medium text-ink">
-              Verify numbers in answers
+              {t("kb.verify_numbers")}
             </span>
             <br />
-            Cross-check every figure in an answer against the cited sources and
-            warn on any that can&apos;t be matched. Recommended for tables.
+            {t("kb.verify_numbers_hint")}
           </span>
         </label>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={busy || !name.trim()}>
             {busy ? t("common.creating") : t("common.create")}

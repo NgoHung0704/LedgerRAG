@@ -272,9 +272,7 @@ export default function ChatPanel({
                   : t("chat.empty_multi")}
               </div>
               <div className="mt-1 max-w-md text-xs leading-5 text-ink-subtle">
-                Answers stream with citations. Numbers are quoted exactly as
-                printed — when a table couldn't be read reliably, you'll see the
-                original image instead of a guess.
+                {t("chat.stream_note")}
               </div>
             </div>
           ))}
@@ -309,7 +307,7 @@ export default function ChatPanel({
               <div className="w-full max-w-[94%] rounded-lg rounded-l-sm border-l-[3px] border-line-strong bg-surface-sunken/70 px-3.5 py-3">
                 <div className="marginal mb-1.5">
                   <div className="marginal-body font-mono text-[10px] uppercase tracking-[0.14em] text-ink-subtle">
-                    answer
+                    {t("chat.answer_label")}
                   </div>
                 </div>
                 {/* the answer reads like a printed document excerpt, straight on
@@ -665,7 +663,7 @@ function Bibliography({
                 citation list readable as evidence rather than as a pile. */}
             {c.expanded && (
               <span className="rounded bg-line/60 px-1 py-px text-[9px] uppercase tracking-wide text-ink-subtle">
-                ajouté par contexte
+                {t("sources.added_by_context")}
               </span>
             )}
           </button>
@@ -904,7 +902,7 @@ function SourceTable({
         </button>
         {citation.needs_review && (
           <span className="text-amber-700 dark:text-amber-400">
-            · parse needs review
+            · {t("sources.parse_needs_review")}
           </span>
         )}
       </figcaption>

@@ -22,7 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <a href="#main" className="skip-link">
-        Skip to content
+        {t("shell.skip_to_content")}
       </a>
 
       <div className="flex h-screen overflow-hidden">

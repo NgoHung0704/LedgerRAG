@@ -56,7 +56,7 @@ export default function KBPage({ params }: { params: { id: string } }) {
           href="/"
           className="mb-2 inline-flex items-center gap-1 text-xs text-ink-subtle hover:text-ink-muted"
         >
-          <ArrowLeft size={13} /> Knowledge Bases
+          <ArrowLeft size={13} /> {t("kb.breadcrumb")}
         </Link>
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold tracking-tight">

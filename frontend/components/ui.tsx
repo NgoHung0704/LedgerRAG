@@ -287,6 +287,7 @@ export function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const t = useT();
   const ref = useDialog(onClose);
   const titleId = `dlg-${title.replace(/\W+/g, "-").toLowerCase()}`;
 
@@ -308,7 +309,7 @@ export function Modal({
           <h3 id={titleId} className="text-base font-semibold">
             {title}
           </h3>
-          <IconButton label="Close" onClick={onClose}>
+          <IconButton label={t("common.close")} onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
