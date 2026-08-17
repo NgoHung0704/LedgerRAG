@@ -135,3 +135,36 @@ def test_an_unmatched_number_is_reported_beside_the_other_reasons():
                           verification={"enabled": True, "status": "warnings",
                                         "unverified": ["27"]})
     assert set(caution.reasons) == {"figure_reading", "unverified_numbers"}
+
+
+# --- what the answer actually rests on, for the "see also" list --------------
+
+
+def test_the_pages_an_answer_rests_on_are_the_ones_it_cited():
+    from tablerag.core.citations import pages_used
+
+    doc = uuid.uuid4()
+    other = uuid.uuid4()
+    cites = [_cite(1, doc_id=doc, page=3), _cite(2, doc_id=doc, page=7),
+             _cite(3, doc_id=other, page=2)]
+    assert pages_used("La valeur est 34 900 [1], voir aussi [3].", cites) \
+        == {(doc, 3), (other, 2)}
+
+
+def test_an_answer_citing_nothing_rests_on_every_page_it_was_shown():
+    # the same rule caution_for uses: with no markers we know LEAST about where
+    # the answer came from, so nothing is excluded
+    from tablerag.core.citations import pages_used
+
+    doc = uuid.uuid4()
+    cites = [_cite(1, doc_id=doc, page=3), _cite(2, doc_id=doc, page=7)]
+    assert pages_used("Cette information ne figure pas dans les documents.",
+                      cites) == {(doc, 3), (doc, 7)}
+
+
+def test_two_citations_on_one_page_are_one_page():
+    from tablerag.core.citations import pages_used
+
+    doc = uuid.uuid4()
+    assert pages_used("[1][2]", [_cite(1, doc_id=doc, page=3),
+                                 _cite(2, doc_id=doc, page=3)]) == {(doc, 3)}

@@ -9,6 +9,7 @@ implementations without touching the chain.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -64,6 +65,9 @@ class QueryContext:
     citations: list[Citation] = field(default_factory=list)
     answer: str = ""
     verification: dict | None = None
+    # things printed on the pages the answer used, offered to be
+    # looked at. Never enters the model's context (see see_also_event)
+    see_also: list = field(default_factory=list)
     # Multi-turn: prior turns (role, content) oldest→newest, excluding the
     # current question. CondenseQuestion folds them into search_question — a
     # standalone query router+retrieval act on — while the answer still draws
@@ -131,6 +135,9 @@ class QueryPipeline:
                 ctx = await step.run(ctx)
         if (caution := caution_event(ctx)) is not None:
             yield "caution", caution
+        # a DB read, so off the event loop: the answer has already streamed and
+        # the reader is waiting on nothing but this
+        ctx.see_also = await asyncio.to_thread(see_also_event, ctx)
         yield "done", ctx
 
 
@@ -147,6 +154,42 @@ def caution_event(ctx: QueryContext):
     except Exception:  # noqa: BLE001 — a warning must not cost the answer
         logging.getLogger(__name__).exception("caution computation failed")
         return None
+
+
+def see_also_event(ctx: QueryContext) -> list:
+    """Figures and tables printed on the pages this answer used. Never raises.
+
+    They are OFFERED, not read: nothing here reaches the model. That is the
+    whole point. Putting them in the context is the neighbour expansion that
+    was measured and rejected — 18 to 53 blocks a query, citations 12 to 52,
+    traps 3/7 down to 1/7 — where the damage was not size but dilution. Putting
+    them in a list to click costs the prompt nothing, and `eval-visuals` already
+    grades a chart on the citation alone: the assistant is not asked to read a
+    figure, only to put it in front of a human.
+
+    Bounded to the pages the answer CITED, which is what keeps it from becoming
+    that same expansion by another route.
+    """
+    from tablerag.core.citations import pages_used
+    from tablerag.core.schemas import SeeAlso
+    from tablerag.storage.db import session_scope
+    from tablerag.storage.repositories import get_page_visuals
+
+    try:
+        pairs = pages_used(ctx.answer, ctx.citations)
+        if not pairs:
+            return []
+        shown = {c.element_id for c in ctx.citations}
+        with session_scope() as s:
+            visuals = get_page_visuals(s, sorted(pairs, key=lambda p: (str(p[0]), p[1])),
+                                       exclude=shown)
+        return [SeeAlso(kind=v.kind, doc_id=v.doc_id, filename=v.filename,
+                        page=v.page, element_id=v.element_id,
+                        crop_image_path=v.crop_image_path, context=v.context)
+                for v in visuals]
+    except Exception:  # noqa: BLE001 — an offer must not cost the answer
+        logging.getLogger(__name__).exception("see-also computation failed")
+        return []
 
 
 def default_pipeline(verify: bool | None = None, *,

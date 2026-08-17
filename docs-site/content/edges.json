@@ -1616,8 +1616,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/chat.py",
-            "from": 125,
-            "to": 125,
+            "from": 129,
+            "to": 129,
             "anchor": "async def chat_multi(body: MultiChatRequest,"
           }
         },
@@ -1929,8 +1929,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 253,
-            "to": 253,
+            "from": 257,
+            "to": 257,
             "anchor": "def list_conversations(assistant_id: uuid.UUID) -> list[ConversationOut]:"
           }
         },
@@ -1968,8 +1968,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 261,
-            "to": 261,
+            "from": 265,
+            "to": 265,
             "anchor": "def conversation_messages(session_id: uuid.UUID) -> dict:"
           }
         },
@@ -2007,8 +2007,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 273,
-            "to": 273,
+            "from": 277,
+            "to": 277,
             "anchor": "def rename_conversation(session_id: uuid.UUID,"
           }
         },
@@ -2046,8 +2046,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 285,
-            "to": 285,
+            "from": 289,
+            "to": 289,
             "anchor": "def delete_conversation(session_id: uuid.UUID) -> Response:"
           }
         }

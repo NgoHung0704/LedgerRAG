@@ -330,6 +330,62 @@ def get_page_elements(s: Session, doc_ids: list[uuid.UUID]
 
 
 @dataclass
+class PageVisual:
+    """Something printed on a page the answer used, offered to be LOOKED at."""
+
+    element_id: uuid.UUID
+    doc_id: uuid.UUID
+    filename: str
+    page: int
+    kind: str            # 'figure' | 'table'
+    crop_image_path: str
+    context: str = ""    # the heading printed above it, when ingestion saw one
+
+
+# how many to offer under one answer. A dense factsheet page carries several
+# charts and tables, and three cited pages would put twenty chips under an
+# answer — at which point the list stops being read, which costs more than the
+# one figure it was meant to surface.
+_MAX_PAGE_VISUALS = 6
+
+
+def get_page_visuals(s: Session, pairs: list[tuple[uuid.UUID, int]],
+                     exclude: set[uuid.UUID] | None = None,
+                     limit: int = _MAX_PAGE_VISUALS) -> list[PageVisual]:
+    """Figures and tables printed on these (document, page) pairs.
+
+    Figures first. A table's cells are text and can be reached by ranking on
+    their own merits — records and summaries even hold reserved slots in the
+    context. A figure's numbers are in its drawing, and its description is a
+    paraphrase competing against the page's own prose, so ranking cannot
+    reliably surface it. Under a cap, the one that cannot be reached otherwise
+    goes first.
+
+    Documents and pages are filtered separately and paired back up in Python:
+    a tuple IN clause is not portable across the dialects this runs on, and the
+    rows involved are a handful of pages' worth.
+    """
+    if not pairs:
+        return []
+    wanted = {(doc_id, page) for doc_id, page in pairs}
+    rows = s.execute(
+        select(Element, Document)
+        .join(Document, Element.doc_id == Document.id)
+        .where(Element.doc_id.in_({doc_id for doc_id, _ in wanted}),
+               Element.page.in_({page for _, page in wanted}),
+               Element.type.in_(("figure", "table")))
+    ).all()
+    out = [PageVisual(element_id=e.id, doc_id=e.doc_id, filename=d.filename,
+                      page=e.page, kind=e.type,
+                      crop_image_path=e.crop_image_path,
+                      context=(e.meta or {}).get("context", ""))
+           for e, d in rows
+           if (e.doc_id, e.page) in wanted and e.id not in (exclude or set())]
+    out.sort(key=lambda v: (v.kind != "figure", v.page, str(v.element_id)))
+    return out[:limit]
+
+
+@dataclass
 class TableSource:
     """A retrieved table hit hydrated with its parent-table HTML and full
     provenance (principle #3 + SPEC Phase 2 §6: record hits pull the whole

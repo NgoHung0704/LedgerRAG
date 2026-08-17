@@ -35,7 +35,7 @@
       "name": "snapshot_element",
       "decl": "def snapshot_element(s: Session, element_id: uuid.UUID, action: str) -> None:",
       "file": "tablerag/storage/repositories.py",
-      "line": 450,
+      "line": 506,
       "note": {
         "vi": "Chụp lại element trước khi sửa, để lấy lại được đúng một lần sửa.",
         "en": "Snapshots an element before an edit, so exactly one edit can be taken back."

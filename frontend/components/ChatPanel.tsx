@@ -8,6 +8,7 @@ import {
   BadgeCheck,
   FileText,
   Gauge,
+  ImageIcon,
   RotateCcw,
   Search,
   Send,
@@ -27,6 +28,7 @@ import {
   type ElementDetail,
   type KB,
   type RoutingInfo,
+  type SeeAlso,
   type StoredMessage,
   type Verification,
 } from "@/lib/api";
@@ -44,6 +46,7 @@ type Message = {
   content: string;
   citations?: Citation[];
   caution?: Caution | null;
+  seeAlso?: SeeAlso[];
   verification?: Verification | null;
   routing?: RoutingInfo | null;
   messageId?: string;
@@ -230,6 +233,7 @@ export default function ChatPanel({
           const finishedAt = performance.now();
           patchLast({
             verification: ev.verification,
+            seeAlso: "see_also" in ev ? ev.see_also : [],
             routing: "routing" in ev ? (ev.routing as RoutingInfo | null) : null,
             messageId: ev.message_id,
             timing: {
@@ -337,6 +341,10 @@ export default function ChatPanel({
                     line, and it names the files the margin only numbers. */}
                 {m.citations && m.citations.length > 0 && (
                   <Bibliography citations={m.citations} onOpen={setOpenSource} />
+                )}
+
+                {m.seeAlso && m.seeAlso.length > 0 && (
+                  <SeeAlsoRow items={m.seeAlso} />
                 )}
 
                 {m.content && !m.error && (
@@ -990,6 +998,48 @@ function VerificationBadge({ verification }: { verification: Verification }) {
       </div>
       <div className="mt-1 text-[11px] text-amber-700">
         {verified}/{total} verified. Check the cited sources for the rest.
+      </div>
+    </div>
+  );
+}
+
+/** Printed on the pages the answer used, and NOT read by the assistant.
+ *
+ *  Kept apart from the bibliography deliberately. A chart cannot be reached by
+ *  ranking: its numbers are in the drawing, and its description is a paraphrase
+ *  competing against the page's own prose for a question phrased in that
+ *  prose's words. So it is offered rather than retrieved — but numbering it
+ *  among the sources would tell the reader the answer rests on it, which is
+ *  precisely what is not true, and nothing on screen would give that away.
+ *  Hence its own row, its own label, and a sentence saying so in words.
+ *
+ *  Each one links into the document inspector at that element, which already
+ *  scrolls to it and highlights it — the reader lands on the figure inside the
+ *  page it was printed on, which is what "check the original" means. */
+function SeeAlsoRow({ items }: { items: SeeAlso[] }) {
+  return (
+    <div className="marginal mt-2">
+      <div className="marginal-note hidden font-mono text-[10px] uppercase tracking-wider text-ink-subtle sm:block sm:pt-1 sm:text-right">
+        voir aussi
+      </div>
+      <div className="marginal-body flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px] text-ink-subtle">
+        <span className="italic">Sur ces pages, non lu par l&apos;assistant&nbsp;:</span>
+        {items.map((v) => (
+          <a
+            key={v.element_id}
+            href={`/doc/${v.doc_id}#el-${v.element_id}`}
+            title={`${v.filename} — page ${v.page}`}
+            className="inline-flex max-w-[18rem] items-center gap-1 truncate underline decoration-dotted underline-offset-2 hover:text-ink"
+          >
+            {v.kind === "figure" ? (
+              <ImageIcon size={12} className="shrink-0" />
+            ) : (
+              <Table2 size={12} className="shrink-0" />
+            )}
+            <span className="truncate">{v.context || v.filename}</span>
+            <span className="shrink-0 tabular-nums">p.{v.page}</span>
+          </a>
+        ))}
       </div>
     </div>
   );

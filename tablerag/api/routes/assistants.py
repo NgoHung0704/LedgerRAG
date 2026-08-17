@@ -234,7 +234,11 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
                         "message_id": str(message_id),
                         "routing": ctx.routing,
                         "search_question": ctx.search_question,
-                        "verification": ctx.verification})
+                        "verification": ctx.verification,
+                        # printed on the pages the answer used, never read
+                        # by the model — a list to click, not a source
+                        "see_also": [v.model_dump(mode="json")
+                                     for v in ctx.see_also]})
         except Exception:  # noqa: BLE001 — stream errors must reach the client
             logger.exception("assistant chat failed (assistant=%s)", assistant_id)
             yield _sse({"type": "error",

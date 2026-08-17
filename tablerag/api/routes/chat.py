@@ -109,7 +109,11 @@ async def chat(kb_id: uuid.UUID, body: ChatRequest,
                         # the standalone query a follow-up was condensed to
                         # (== question on a first turn); surfaced for eval-followup
                         "search_question": ctx.search_question,
-                        "verification": ctx.verification})
+                        "verification": ctx.verification,
+                        # printed on the pages the answer used, never read
+                        # by the model — a list to click, not a source
+                        "see_also": [v.model_dump(mode="json")
+                                     for v in ctx.see_also]})
         except Exception:  # noqa: BLE001 — stream errors must reach the client readably
             logger.exception("chat pipeline failed (kb=%s)", kb_id)
             yield _sse({"type": "error",
@@ -214,7 +218,11 @@ async def chat_multi(body: MultiChatRequest,
                         # the standalone query a follow-up was condensed to
                         # (== question on a first turn); surfaced for eval-followup
                         "search_question": ctx.search_question,
-                        "verification": ctx.verification})
+                        "verification": ctx.verification,
+                        # printed on the pages the answer used, never read
+                        # by the model — a list to click, not a source
+                        "see_also": [v.model_dump(mode="json")
+                                     for v in ctx.see_also]})
         except Exception:  # noqa: BLE001 — stream errors must reach the client
             logger.exception("multi-KB chat failed")
             yield _sse({"type": "error",

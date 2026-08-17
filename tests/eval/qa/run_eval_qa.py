@@ -139,8 +139,9 @@ def _norm(s: str) -> str:
     return _WS.sub(" ", s)
 
 
-def ask(api: str, kb_id: str, question: str) -> tuple[str, list[dict], dict | None]:
-    answer, citations, verification = "", [], None
+def ask(api: str, kb_id: str,
+        question: str) -> tuple[str, list[dict], dict | None, list[dict]]:
+    answer, citations, verification, see_also = "", [], None, []
     with httpx.Client(base_url=api, timeout=180) as client:
         with client.stream("POST", f"/api/kbs/{kb_id}/chat",
                            json={"question": question}) as response:
@@ -155,9 +156,10 @@ def ask(api: str, kb_id: str, question: str) -> tuple[str, list[dict], dict | No
                     citations = event["citations"]
                 elif event["type"] == "done":
                     verification = event.get("verification")
+                    see_also = event.get("see_also") or []
                 elif event["type"] == "error":
                     raise RuntimeError(event["message"])
-    return answer, citations, verification
+    return answer, citations, verification, see_also
 
 
 def cites(citations: list[dict], doc: str | None,
@@ -181,7 +183,8 @@ def cited_pages(citations: list[dict], doc: str | None) -> list[int]:
 
 
 def grade(item: dict, answer: str, citations: list[dict],
-          verification: dict | None) -> tuple[bool, str]:
+          verification: dict | None,
+          see_also: list[dict] | None = None) -> tuple[bool, str]:
     # grade what the answer ASSERTS: dumped table rows are evidence the model
     # pasted, not a claim it made (run 2 had answers stating the wrong cell in
     # prose while pasting a grid containing the right string)
@@ -228,9 +231,17 @@ def grade(item: dict, answer: str, citations: list[dict],
         page = item.get("expected_page")
         if cites(citations, item.get("expected_doc"), page):
             return True, f"retrieved (page {page})" if page else "retrieved"
+        # ...or offered in the see-also list, which is the OTHER way a figure
+        # reaches the reader and the one built for it: a chart cannot be found
+        # by ranking, since its numbers are in the drawing and its description
+        # loses to the page's own prose. Grading citations alone would leave
+        # this gate blind to the mechanism written to satisfy it.
+        if cites(see_also or [], item.get("expected_doc"), page):
+            return True, f"offered (page {page})" if page else "offered"
         seen = cited_pages(citations, item.get("expected_doc"))
-        return False, (f"page {page} of {item.get('expected_doc')} was not "
-                       f"retrieved; pages cited from it: {seen or 'none'}")
+        return False, (f"page {page} of {item.get('expected_doc')} was neither "
+                       f"retrieved nor offered; pages cited from it: "
+                       f"{seen or 'none'}")
 
     # a hedged/refusing answer cannot also be a correct one, even if the
     # expected string appears somewhere in a pasted table
@@ -274,17 +285,19 @@ def main() -> None:
     print(f"{'id':6s} {'type':6s} {'verdict':8s} detail")
     print("-" * 72)
     for item in items:
-        answer, citations, verification = "", [], None
+        answer, citations, verification, see_also = "", [], None, []
         try:
-            answer, citations, verification = ask(args.api, args.kb,
-                                                  item["question"])
-            ok, detail = grade(item, answer, citations, verification)
+            answer, citations, verification, see_also = ask(
+                args.api, args.kb, item["question"])
+            ok, detail = grade(item, answer, citations, verification, see_also)
         except Exception as e:  # noqa: BLE001
             ok, detail = False, f"error: {e}"
         results.setdefault(item.get("type", "text"), []).append(ok)
         transcript.append({**item, "ok": ok, "detail": detail,
                            "answer": answer,
                            "cited": [c.get("filename") for c in citations],
+                           "offered": [f"{v.get('filename')} p{v.get('page')}"
+                                       for v in see_also],
                            "verification": verification})
         print(f"{item.get('id', '?'):6s} {item.get('type', 'text'):6s} "
               f"{'PASS' if ok else 'FAIL':8s} {detail}")

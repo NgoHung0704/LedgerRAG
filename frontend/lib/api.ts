@@ -57,6 +57,21 @@ export type Caution = {
   contact: string | null;
 };
 
+/** Printed on a page the answer used, offered to be LOOKED at. Never a source:
+ *  the model was not shown it and cannot have used it, so it is never numbered
+ *  beside the citations — a figure's numbers live in its drawing, and its
+ *  description loses to the page's own prose for a question phrased in that
+ *  prose's words, so ranking alone will not surface it. */
+export type SeeAlso = {
+  kind: "figure" | "table";
+  doc_id: string;
+  filename: string;
+  page: number;
+  element_id: string;
+  crop_image_path: string | null;
+  context: string;
+};
+
 export type Verification = {
   enabled: boolean;
   status: "ok" | "warnings";
@@ -73,6 +88,7 @@ export type ChatEvent =
       session_id: string;
       message_id: string;
       verification: Verification | null;
+      see_also?: SeeAlso[];
     }
   | { type: "error"; message: string };
 
@@ -532,6 +548,7 @@ export type MultiChatEvent =
       message_id: string;
       routing: RoutingInfo | null;
       verification: Verification | null;
+      see_also?: SeeAlso[];
     }
   | { type: "error"; message: string };
 

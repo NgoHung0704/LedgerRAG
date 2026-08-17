@@ -171,6 +171,30 @@ class Citation(BaseModel):
     expanded: bool = False
 
 
+class SeeAlso(BaseModel):
+    """Something printed on a page the answer used, offered to be LOOKED at.
+
+    Deliberately not a Citation, and deliberately unnumbered. The model never
+    saw this and cannot have used it, so listing it among the sources would
+    tell the reader the answer rests on it — closing a gap in what we surface
+    by opening one in what the reader believes, which is the worse of the two
+    because nothing on screen would reveal it.
+
+    It exists because a figure cannot be reached by ranking. Its numbers are in
+    the drawing, and its description is a paraphrase competing against the
+    page's own prose for a question phrased in that prose's words.
+    """
+
+    kind: Literal["figure", "table"]
+    doc_id: uuid.UUID
+    filename: str
+    page: int
+    element_id: uuid.UUID
+    crop_image_path: str | None = None
+    # the heading printed above it — what a reader would call this thing
+    context: str = ""
+
+
 class Caution(BaseModel):
     """Why this answer deserves a second look, and who to ask.
 

@@ -237,3 +237,47 @@ def test_a_page_can_also_tighten_an_ordinary_question():
     ok, detail = grade({**item, "expected_page": 3}, "Industries : 27,6 %.",
                        FIGURES, None)
     assert not ok and "page 3" in detail
+
+
+# --- a figure offered rather than cited still counts as put in front of a human
+
+
+def _figure_item(**kw) -> dict:
+    base = {"id": "v1", "type": "figure", "question": "q",
+            "expected_doc": "notice.pdf", "expected_page": 4}
+    base.update(kw)
+    return base
+
+
+def test_a_figure_reached_through_the_see_also_list_passes():
+    """`eval-visuals` grades a chart on retrieval alone, because the assistant
+    is asked to put the right one in front of a human, not to read it. A figure
+    that arrives in the see-also list has been put in front of that human — and
+    that list exists BECAUSE a figure cannot be reached by ranking. Grading only
+    citations would make the gate blind to the mechanism built to satisfy it."""
+    from tests.eval.qa.run_eval_qa import grade
+
+    ok, detail = grade(_figure_item(), "Voir le graphique.", citations=[],
+                       verification=None,
+                       see_also=[{"filename": "notice.pdf", "page": 4,
+                                  "kind": "figure"}])
+    assert ok, detail
+
+
+def test_a_figure_offered_from_the_wrong_page_still_fails():
+    from tests.eval.qa.run_eval_qa import grade
+
+    ok, _ = grade(_figure_item(), "Voir le graphique.", citations=[],
+                  verification=None,
+                  see_also=[{"filename": "notice.pdf", "page": 9,
+                             "kind": "figure"}])
+    assert not ok
+
+
+def test_a_cited_figure_still_passes_with_no_see_also_list():
+    from tests.eval.qa.run_eval_qa import grade
+
+    ok, _ = grade(_figure_item(), "Voir le graphique [1].",
+                  citations=[{"filename": "notice.pdf", "page": 4}],
+                  verification=None)
+    assert ok

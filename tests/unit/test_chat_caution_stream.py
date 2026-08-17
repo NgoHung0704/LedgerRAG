@@ -129,3 +129,51 @@ def test_every_caution_reason_has_copy_in_the_ui():
     assert reasons, "the reason keys are no longer written as literals here"
     assert reasons <= translated, \
         f"caution reasons with no copy in ChatPanel: {sorted(reasons - translated)}"
+
+
+def test_every_stream_carries_the_see_also_list():
+    """Three routes build the `done` payload separately, so a field added to
+    one of them silently never reaches the other two.
+
+    This is the same trap the caution guard above was written for, and it was
+    real: the plan for that work named one consumer out of three."""
+    for path in (REPO_ROOT / "tablerag" / "api" / "routes" / "chat.py",
+                 REPO_ROOT / "tablerag" / "api" / "routes" / "assistants.py"):
+        source = path.read_text(encoding="utf-8")
+        verifications = len(re.findall(r'"verification": ctx\.verification',
+                                       source))
+        offers = len(re.findall(r'"see_also"', source))
+        assert verifications == offers, (
+            f"{path.name} finishes {verifications} stream(s) with a "
+            f"verification field but {offers} with a see-also list — one of "
+            f"its answers would never offer the figures on its own pages")
+
+
+@pytest.mark.asyncio
+async def test_the_stream_fills_the_see_also_list_before_done(monkeypatch):
+    """The offer is computed after the answer, and put on the context the routes
+    serialise. Nothing else calls it, so if the stream does not, the whole
+    mechanism exists only in its own unit tests."""
+    from tablerag.query import pipeline as pl
+    from tablerag.query.steps.generate import GenerateAnswer
+
+    class FakeGenerate(GenerateAnswer):
+        async def run(self, ctx):
+            return ctx
+
+        async def stream(self, ctx):
+            ctx.answer = "La valeur est 34 900 [1]."
+            yield ctx.answer
+
+    seen = {}
+
+    def fake_offer(ctx):
+        seen["answer"] = ctx.answer      # computed AFTER the answer, not before
+        return ["a figure"]
+
+    monkeypatch.setattr(pl, "see_also_event", fake_offer)
+    ctx = QueryContext(kb_id=uuid.uuid4(), question="q")
+    async for _ in pl.QueryPipeline([FakeGenerate()]).stream(ctx):
+        pass
+    assert ctx.see_also == ["a figure"]
+    assert seen["answer"] == "La valeur est 34 900 [1]."

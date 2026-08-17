@@ -33,6 +33,25 @@ def cited_indices(answer: str) -> set[int]:
     return {int(m) for m in _MARKER.findall(answer or "")}
 
 
+def pages_used(answer: str, citations: list[Citation]) -> set[tuple]:
+    """The (document, page) pairs this answer actually stands on.
+
+    Used to offer the reader the figures printed on those pages. A chart's
+    numbers live in its drawing, not in its description, so an answer about a
+    topic will nearly always be written from the prose beside the chart rather
+    than from the chart — the description is a paraphrase competing against the
+    original, and it loses. Bounding the offer to the pages the answer cited is
+    what keeps it from becoming the neighbour expansion that was measured and
+    rejected: that one pulled 18 to 53 blocks a query and buried the answer.
+
+    Same fallback as `caution_for`: an answer citing nothing is judged on
+    everything it was shown, because that is the case where we know least.
+    """
+    used = cited_indices(answer)
+    return {(c.doc_id, c.page) for c in citations
+            if not used or c.index in used}
+
+
 def caution_for(answer: str, citations: list[Citation],
                 contact: str | None,
                 verification: dict | None = None,
