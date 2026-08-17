@@ -183,8 +183,15 @@ export default function Sidebar({
           })}
         </nav>
 
+        {/* its own row: the rail is 240px and the identity block, a language
+            name and the theme button do not fit on one line — crowded in, the
+            picker sat on top of the username */}
+        <div className="border-t border-rail-line px-3 pt-3">
+          <LocaleToggle compact={collapsed} />
+        </div>
+
         <div
-          className={`flex items-center gap-2 border-t border-rail-line px-3 py-3 ${
+          className={`flex items-center gap-2 px-3 py-3 ${
             collapsed ? "flex-col" : "justify-between"
           }`}
         >
@@ -208,7 +215,6 @@ export default function Sidebar({
               aria-label={t("shell.signed_in_as", { username: me.username })}
             />
           )}
-          <LocaleToggle compact={collapsed} />
           <ThemeToggle compact={collapsed} />
         </div>
 
