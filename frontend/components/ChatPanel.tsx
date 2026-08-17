@@ -32,7 +32,9 @@ import {
   type StoredMessage,
   type Verification,
 } from "@/lib/api";
+import { useT } from "@/components/LocaleProvider";
 import { Spinner } from "@/components/ui";
+import type { MessageKey } from "@/messages/en";
 import CopyButton from "@/components/CopyButton";
 import SourceModal from "@/components/SourceModal";
 import ChatScopeSelector, { type Scope } from "@/components/ChatScopeSelector";
@@ -76,6 +78,7 @@ export default function ChatPanel({
   emptyState?: React.ReactNode;
   onSessionStarted?: (sessionId: string) => void;
 }) {
+  const t = useT();
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
@@ -265,8 +268,8 @@ export default function ChatPanel({
               <Sparkles size={28} className="mb-3 text-ink-faint" />
               <div className="text-sm font-medium text-ink-muted">
                 {kbId
-                  ? "Ask anything about the documents in this knowledge base"
-                  : "Ask across your knowledge bases"}
+                  ? t("chat.empty_scoped")
+                  : t("chat.empty_multi")}
               </div>
               <div className="mt-1 max-w-md text-xs leading-5 text-ink-subtle">
                 Answers stream with citations. Numbers are quoted exactly as
@@ -290,13 +293,13 @@ export default function ChatPanel({
                   type="button"
                   onClick={() => ask(undefined, m.content)}
                   disabled={busy}
-                  title="Ask this again"
-                  aria-label="Ask this question again"
+                  title={t("chat.ask_again")}
+                  aria-label={t("chat.ask_again")}
                   className="relative rounded-md p-1.5 text-ink-subtle transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-surface-sunken hover:text-indigo-700 disabled:opacity-40 dark:hover:text-indigo-300"
                 >
                   <RotateCcw size={13} aria-hidden="true" />
                 </button>
-                <CopyButton text={m.content} title="Copy the question" />
+                <CopyButton text={m.content} title={t("chat.copy_question")} />
               </div>
             </div>
           ) : (
@@ -324,7 +327,7 @@ export default function ChatPanel({
                   />
                 ) : busy && i === messages.length - 1 ? (
                   <span className="inline-flex items-center gap-2 text-ink-subtle">
-                    <Spinner size={14} /> thinking…
+                    <Spinner size={14} /> {t("chat.thinking")}
                   </span>
                 ) : null}
 
@@ -349,7 +352,7 @@ export default function ChatPanel({
 
                 {m.content && !m.error && (
                   <div className="mt-2 flex items-center gap-1">
-                    <CopyButton text={m.content} title="Copy the answer" />
+                    <CopyButton text={m.content} title={t("chat.copy_answer")} />
                     {m.messageId && (
                       <>
                         <FeedbackButton
@@ -395,8 +398,8 @@ export default function ChatPanel({
             ref={taRef}
             rows={1}
             className="flex-1 resize-none border-0 bg-transparent py-1 text-[15px] leading-relaxed text-ink transition-[height] duration-200 placeholder:text-sm placeholder:text-ink-subtle focus:outline-none focus:ring-0"
-            aria-label="Your question"
-            placeholder="Ask your question… (Enter to send, ↑ for an earlier one)"
+            aria-label={t("chat.your_question")}
+            placeholder={t("chat.placeholder")}
             value={question}
             onFocus={() => setComposerOpen(true)}
             onBlur={() => !question && setComposerOpen(false)}
@@ -424,7 +427,7 @@ export default function ChatPanel({
           <button
             type="submit"
             disabled={busy || !question.trim()}
-            aria-label="Send question"
+            aria-label={t("chat.send")}
             className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-600/40"
           >
             <Send size={15} aria-hidden="true" />
@@ -478,13 +481,14 @@ function FeedbackButton({
   onClick: () => void;
   up?: boolean;
 }) {
+  const t = useT();
   const Icon = up ? ThumbsUp : ThumbsDown;
   const activeColor = up ? "text-emerald-600" : "text-red-500";
   return (
     <button
       onClick={onClick}
-      title={up ? "Helpful" : "Not helpful"}
-      aria-label={up ? "Mark this answer helpful" : "Mark this answer unhelpful"}
+      title={up ? t("chat.helpful") : t("chat.not_helpful")}
+      aria-label={up ? t("chat.mark_helpful") : t("chat.mark_unhelpful")}
       aria-pressed={active}
       className={`relative rounded-md p-1.5 transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-surface-sunken ${
         active ? activeColor : "text-ink-subtle hover:text-ink-muted"
@@ -610,6 +614,7 @@ function Bibliography({
   citations: Citation[];
   onOpen: (c: Citation) => void;
 }) {
+  const t = useT();
   const [all, setAll] = useState(false);
   const hidden = citations.length - SHOWN;
   const shown = all ? citations : citations.slice(0, SHOWN);
@@ -626,7 +631,7 @@ function Bibliography({
   return (
     <div className="marginal mt-2.5">
       <div className="marginal-note hidden font-mono text-[10px] uppercase tracking-wider text-ink-subtle sm:block sm:pt-1 sm:text-right">
-        from
+        {t("sources.from")}
       </div>
       <div className="marginal-body flex flex-wrap items-center gap-x-3 gap-y-1">
         {shown.map((c) => (
@@ -635,7 +640,7 @@ function Bibliography({
             onClick={() => onOpen(c)}
             title={
               isWeak(c)
-                ? `Correspondance faible avec la question — ${c.snippet}`
+                ? t("sources.weak_match", { snippet: c.snippet })
                 : c.snippet
             }
             className={`group inline-flex items-center gap-1.5 font-mono text-[11px] transition-colors ${
@@ -672,7 +677,7 @@ function Bibliography({
             aria-expanded={all}
             className="font-mono text-[11px] text-indigo-700 underline decoration-dotted underline-offset-2 transition-colors hover:text-indigo-600 dark:text-indigo-300"
           >
-            {all ? "show fewer" : `+${hidden} more`}
+            {all ? t("sources.show_fewer") : t("sources.show_more", { count: hidden })}
           </button>
         )}
       </div>
@@ -703,12 +708,13 @@ function CiteMark({
   citation: Citation;
   onOpen: (c: Citation) => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={() => onOpen(c)}
-      title={`${c.filename} · p.${c.page}${c.needs_review ? " · needs review" : ""}`}
-      aria-label={`Source ${c.index}: ${c.filename}, page ${c.page}`}
+      title={`${c.filename} · p.${c.page}${c.needs_review ? ` · ${t("sources.needs_review")}` : ""}`}
+      aria-label={t("source.header", { index: c.index, filename: c.filename, page: c.page })}
       className={`group mt-[3px] inline-flex items-center gap-1.5 rounded px-1 font-mono text-[11px] transition-colors sm:mt-[7px] ${
         c.needs_review
           ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
@@ -735,6 +741,11 @@ function CiteMark({
 const FIGURE = /\d[\d  .,\s]*\d\s*(?:%|€)?|\d\s*(?:%|€)?/g;
 
 function useFigureRules(verification?: Verification | null) {
+  // this hook writes a title onto a DOM node inside an effect that runs ONCE
+  // per answer, so a figure already on screen keeps the language it was
+  // rendered in until the next answer. Stated rather than papered over: making
+  // it re-run would mean re-walking text the reader is looking at.
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -766,7 +777,7 @@ function useFigureRules(verification?: Verification | null) {
         const bad = unverified.indexOf(raw) !== -1;
         span.className = bad ? "fig fig-unverified" : "fig";
         span.textContent = raw;
-        if (bad) span.title = "This figure could not be matched to a cited source";
+        if (bad) span.title = t("sources.figure_unverified");
         frag.append(span);
         last = m.index + m[0].length;
         // keep any trailing space the trim() dropped
@@ -797,6 +808,7 @@ function MarkdownProse({
   citations?: Citation[];
   onOpen: (c: Citation) => void;
 }) {
+  const t = useT();
   // [1] -> [[1]](#cite-1) so markdown renders a link we can intercept
   const linked = content.replace(/\[(\d+)\]/g, "[[$1]](#cite-$1)");
   return (
@@ -815,7 +827,7 @@ function MarkdownProse({
               <button
                 type="button"
                 onClick={() => onOpen(c)}
-                title={`${c.filename} · p.${c.page}${c.needs_review ? " · needs review" : ""}`}
+                title={`${c.filename} · p.${c.page}${c.needs_review ? ` · ${t("sources.needs_review")}` : ""}`}
                 className={`mx-0.5 align-super text-[11px] font-semibold no-underline ${
                   c.needs_review
                     ? "text-amber-700 hover:text-amber-800 dark:text-amber-400"
@@ -848,6 +860,7 @@ function SourceTable({
   citations?: Citation[];
   onOpen: (c: Citation) => void;
 }) {
+  const t = useT();
   const [detail, setDetail] = useState<ElementDetail | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -863,8 +876,8 @@ function SourceTable({
   if (!failed && !detail)
     return (
       <div className="my-2 flex items-center gap-2 text-xs text-ink-subtle">
-        <Spinner size={12} label="Loading the original table" /> loading the
-        original table…
+        <Spinner size={12} label={t("sources.loading_table")} />{" "}
+        {t("sources.loading_table")}…
       </div>
     );
 
@@ -900,16 +913,17 @@ function SourceTable({
 }
 
 function RoutedBadge({ routing }: { routing: RoutingInfo }) {
+  const t = useT();
   // nothing to show when the search wasn't a routing decision
   if (routing.mode === "single" || routing.mode === "trivial") return null;
   const label =
     routing.mode === "pinned"
-      ? "Searched the knowledge bases you chose"
+      ? t("routing.pinned")
       : routing.mode === "fallback_all"
-        ? `Unsure — searched all ${routing.kb_ids.length} knowledge bases`
+        ? t("routing.fallback", { count: routing.kb_ids.length })
         : routing.names && routing.names.length > 0
-          ? `Routed to: ${routing.names.join(", ")}`
-          : `Routed to ${routing.kb_ids.length} knowledge base(s)`;
+          ? t("routing.routed_to", { names: routing.names.join(", ") })
+          : t("routing.routed_count", { count: routing.kb_ids.length });
   const warn = routing.mode === "fallback_all";
   return (
     <div
@@ -924,24 +938,27 @@ function RoutedBadge({ routing }: { routing: RoutingInfo }) {
   );
 }
 
-/** Machine keys from the pipeline, rendered in the reader's language here.
- *  The answer text itself is never touched: a 14B model asked to append a
- *  warning omits it unpredictably, and editing the answering prompt would move
- *  the measured configuration for every query. */
-const CAUTION_COPY: Record<string, string> = {
-  figure_reading:
-    "Cette réponse s'appuie sur la lecture d'une image ou d'un graphique par le modèle, et non sur du texte imprimé.",
-  low_confidence:
-    "Une des sources citées a été analysée avec une confiance faible.",
-  needs_review: "Une des sources citées est signalée comme à vérifier.",
-  unverified_numbers:
-    "Un chiffre de cette réponse n'a pas pu être retrouvé dans les sources citées.",
+/** Machine keys from the pipeline, mapped to message keys and rendered in the
+ *  reader's chosen language. The answer text itself is never touched: a 14B
+ *  model asked to append a warning omits it unpredictably, and editing the
+ *  answering prompt would move the measured configuration for every query.
+ *
+ *  A reason with no entry here renders NOTHING, so the pytest guard
+ *  test_every_caution_reason_has_copy_in_the_ui reads this map by name and
+ *  fails when the pipeline can emit a reason this cannot translate. */
+const CAUTION_KEYS: Record<string, MessageKey> = {
+  figure_reading: "caution.figure_reading",
+  low_confidence: "caution.low_confidence",
+  needs_review: "caution.needs_review",
+  unverified_numbers: "caution.unverified_numbers",
 };
 
 function CautionNotice({ caution }: { caution: Caution }) {
+  const t = useT();
   const lines = caution.reasons
-    .map((reason) => CAUTION_COPY[reason])
-    .filter(Boolean);
+    .map((reason) => CAUTION_KEYS[reason])
+    .filter(Boolean)
+    .map((key) => t(key));
   if (lines.length === 0) return null;
   return (
     <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800/60">
@@ -952,10 +969,10 @@ function CautionNotice({ caution }: { caution: Caution }) {
             <p key={line}>{line}</p>
           ))}
           <p className="mt-1 font-medium">
-            Vérifiez le document d&apos;origine
+            {t("caution.check_origin")}
             {caution.contact
-              ? `, ou contactez ${caution.contact}.`
-              : " avant de vous en servir."}
+              ? t("caution.or_contact", { contact: caution.contact })
+              : t("caution.before_using")}
           </p>
         </div>
       </div>
@@ -964,6 +981,7 @@ function CautionNotice({ caution }: { caution: Caution }) {
 }
 
 function VerificationBadge({ verification }: { verification: Verification }) {
+  const t = useT();
   const verified = verification.numbers.filter(
     (n) => n.status !== "unverified",
   ).length;
@@ -974,7 +992,7 @@ function VerificationBadge({ verification }: { verification: Verification }) {
     return (
       <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60">
         <BadgeCheck size={12} />
-        {total} number{total === 1 ? "" : "s"} checked against sources
+        {t("verify.checked", { count: total })}
       </div>
     );
   }
@@ -982,9 +1000,7 @@ function VerificationBadge({ verification }: { verification: Verification }) {
     <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
       <div className="flex items-center gap-1.5 font-medium">
         <AlertTriangle size={13} />
-        {verification.unverified.length} number
-        {verification.unverified.length === 1 ? "" : "s"} could not be matched to
-        a source
+        {t("verify.unmatched", { count: verification.unverified.length })}
       </div>
       <div className="mt-1 flex flex-wrap gap-1">
         {verification.unverified.map((raw, i) => (
@@ -997,7 +1013,7 @@ function VerificationBadge({ verification }: { verification: Verification }) {
         ))}
       </div>
       <div className="mt-1 text-[11px] text-amber-700">
-        {verified}/{total} verified. Check the cited sources for the rest.
+        {t("verify.rest", { verified, total })}
       </div>
     </div>
   );
@@ -1017,13 +1033,14 @@ function VerificationBadge({ verification }: { verification: Verification }) {
  *  scrolls to it and highlights it — the reader lands on the figure inside the
  *  page it was printed on, which is what "check the original" means. */
 function SeeAlsoRow({ items }: { items: SeeAlso[] }) {
+  const t = useT();
   return (
     <div className="marginal mt-2">
       <div className="marginal-note hidden font-mono text-[10px] uppercase tracking-wider text-ink-subtle sm:block sm:pt-1 sm:text-right">
-        voir aussi
+        {t("seealso.label")}
       </div>
       <div className="marginal-body flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px] text-ink-subtle">
-        <span className="italic">Sur ces pages, non lu par l&apos;assistant&nbsp;:</span>
+        <span className="italic">{t("seealso.not_read")}</span>
         {items.map((v) => (
           <a
             key={v.element_id}

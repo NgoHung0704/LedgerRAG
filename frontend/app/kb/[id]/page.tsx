@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -19,12 +20,13 @@ import ReviewPanel from "@/components/ReviewPanel";
 type Tab = "documents" | "chat" | "review";
 
 export default function KBPage({ params }: { params: { id: string } }) {
+  const t = useT();
   const kbId = params.id;
   const [kb, setKb] = useState<KB | null>(null);
   const [allKbs, setAllKbs] = useState<KB[]>([]);
   const [tab, setTab] = useState<Tab>("documents");
   const [reviewCount, setReviewCount] = useState(0);
-  // the list's ⋮ "Settings & rename" lands here with ?settings=1 so the panel
+  // the list's ⋮ t("kb.settings_rename") lands here with ?settings=1 so the panel
   // opens straight away; strip the param so a refresh doesn't reopen it
   const [openSettings, setOpenSettings] = useState(false);
 
@@ -76,9 +78,9 @@ export default function KBPage({ params }: { params: { id: string } }) {
         <div className="-mb-px mt-3 flex gap-1">
           {(
             [
-              { id: "documents", label: "Documents", icon: FileText },
-              { id: "chat", label: "Chat", icon: MessageSquareText },
-              { id: "review", label: "Review", icon: AlertTriangle },
+              { id: "documents", label: t("kb.tab_documents"), icon: FileText },
+              { id: "chat", label: t("kb.tab_chat"), icon: MessageSquareText },
+              { id: "review", label: t("kb.tab_review"), icon: AlertTriangle },
             ] as const
           ).map(({ id, label, icon: Icon }) => (
             <button

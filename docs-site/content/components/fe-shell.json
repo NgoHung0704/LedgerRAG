@@ -25,7 +25,7 @@
       "name": "useDialog",
       "decl": "export function useDialog(onClose: () => void) {",
       "file": "frontend/components/ui.tsx",
-      "line": 210,
+      "line": 212,
       "note": {
         "vi": "Một chỗ duy nhất lo bẫy focus và phím Escape cho mọi hộp thoại.",
         "en": "One place that owns focus trapping and the Escape key for every dialog."
@@ -35,7 +35,7 @@
       "name": "Modal",
       "decl": "export function Modal({",
       "file": "frontend/components/ui.tsx",
-      "line": 277,
+      "line": 279,
       "note": {
         "vi": "Hộp thoại dùng chung, dựng trên useDialog.",
         "en": "The shared dialog, built on useDialog."
@@ -131,8 +131,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "frontend/components/ui.tsx",
-        "from": 210,
-        "to": 219,
+        "from": 212,
+        "to": 221,
         "code": "export function useDialog(onClose: () => void) {\n  const ref = useRef<HTMLDivElement>(null);\n  // Captured during render, which is BEFORE React commits an `autoFocus` — by\n  // the time the effect below runs, activeElement is already the focused field\n  // inside the dialog, and restoring to that on close would drop focus to the\n  // body.\n  const [opener] = useState<HTMLElement | null>(() =>\n    typeof document === \"undefined\"\n      ? null\n      : (document.activeElement as HTMLElement | null),"
       }
     }

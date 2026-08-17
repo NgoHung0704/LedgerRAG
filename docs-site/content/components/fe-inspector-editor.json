@@ -25,7 +25,7 @@
       "name": "SourceModal",
       "decl": "export default function SourceModal({",
       "file": "frontend/components/SourceModal.tsx",
-      "line": 25,
+      "line": 26,
       "note": {
         "vi": "Mở ảnh trang gốc từ một trích dẫn.",
         "en": "Opens the original page image from a citation."

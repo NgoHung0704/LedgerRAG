@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, X } from "lucide-react";
@@ -116,6 +117,7 @@ export function Card({
 }
 
 export function Spinner({ size = 16, label }: { size?: number; label?: string }) {
+  const t = useT();
   return (
     <>
       <Loader2
@@ -127,7 +129,7 @@ export function Spinner({ size = 16, label }: { size?: number; label?: string })
       {/* announced to screen readers, which otherwise get no sign that the
           screen is waiting on anything */}
       <span role="status" className="sr-only">
-        {label ?? "Loading…"}
+        {label ?? t("common.loading")}
       </span>
     </>
   );

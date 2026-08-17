@@ -785,6 +785,7 @@
         "frontend/components/confirm.tsx",
         "frontend/components/CopyButton.tsx",
         "frontend/lib/i18n.ts",
+        "frontend/lib/numberLocales.ts",
         "frontend/lib/api.ts",
         "frontend/lib/clipboard.ts"
       ],

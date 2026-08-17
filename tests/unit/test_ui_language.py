@@ -51,3 +51,48 @@ def test_the_cookie_name_does_not_come_from_a_client_module():
             f"layout.tsx takes LOCALE_COOKIE from {spec}, which is a client "
             f"module — the server will receive a client reference and read no "
             f"cookie at all")
+
+
+# the reader-facing screens, per the design. Operator screens are out of scope
+# and stay English.
+TRANSLATED = [
+    "frontend/components/Sidebar.tsx",
+    "frontend/components/AppShell.tsx",
+    "frontend/components/ChatPanel.tsx",
+    "frontend/components/ChatScopeSelector.tsx",
+    "frontend/components/SourceModal.tsx",
+    "frontend/components/CopyButton.tsx",
+    "frontend/app/ask/page.tsx",
+    "frontend/app/page.tsx",
+    "frontend/app/kb/[id]/page.tsx",
+]
+
+_LITERAL_WITH_ACCENT = re.compile(
+    r"""(["'])([^"'\n]*[àâäéèêëîïôöùûüçñßÀÂÄÉÈÊËÎÏÔÖÙÛÜÇÑ][^"'\n]*)\1""")
+
+
+def test_no_translated_screen_carries_a_literal_in_another_language():
+    """No screen on the reader's path may speak a language nobody chose.
+
+    The app used to be English with about fifteen French strings around the
+    answer — I wrote those, reasoning that the reader is a CETIAT employee. The
+    reasoning was right about the reader and wrong about the result: the app
+    spoke two languages at once and no user had picked either.
+
+    Accented characters are the test, which catches French, Spanish and German
+    but NOT an unaccented French sentence ("Vous pouvez consulter le document").
+    A tripwire for the common case, not a proof. The proof is that every string
+    in these files goes through t().
+    """
+    offenders = {}
+    for rel in TRANSLATED:
+        path = REPO_ROOT / rel
+        if not path.exists():
+            continue
+        hits = [m.group(2) for m in
+                _LITERAL_WITH_ACCENT.finditer(path.read_text(encoding="utf-8"))]
+        if hits:
+            offenders[rel] = hits[:3]
+    assert not offenders, (
+        f"reader-facing screens still carry hardcoded copy: {offenders} — "
+        f"move it into frontend/messages/ and call t()")

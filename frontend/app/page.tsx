@@ -21,18 +21,12 @@ import {
   inputCls,
 } from "@/components/ui";
 import KbCardMenu from "@/components/KbCardMenu";
+import { useT } from "@/components/LocaleProvider";
+import { NUMBER_LOCALES } from "@/lib/numberLocales";
 
-const LOCALES = [
-  { value: "", label: "Not specified" },
-  { value: "fr", label: "Français (1 234,56)" },
-  { value: "de", label: "Deutsch (1.234,56)" },
-  { value: "en", label: "English (1,234.56)" },
-  { value: "es", label: "Español (1.234,56)" },
-  { value: "it", label: "Italiano (1.234,56)" },
-  { value: "pt", label: "Português (1.234,56)" },
-];
 
 export default function HomePage() {
+  const t = useT();
   const [kbs, setKbs] = useState<KB[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -68,7 +62,7 @@ export default function HomePage() {
           primary action is worse than one that stacks */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight">Knowledge Bases</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{t("kb.title")}</h1>
           <p className="mt-0.5 text-sm text-ink-muted">
             Each knowledge base is an isolated corpus with its own documents.
           </p>
@@ -91,8 +85,8 @@ export default function HomePage() {
       ) : kbs.length === 0 ? (
         <EmptyState
           icon={<FolderPlus size={36} />}
-          title="No knowledge bases yet"
-          hint="Create one, then drop your documents on it — policies, reports, anything with tables."
+          title={t("kb.empty_title")}
+          hint={t("kb.empty_body")}
           action={
             <Button onClick={() => setShowCreate(true)}>
               <Plus size={16} aria-hidden="true" /> New knowledge base
@@ -119,7 +113,7 @@ export default function HomePage() {
                     {kb.name}
                   </div>
                   <p className="mt-1 line-clamp-2 min-h-[2rem] text-[13px] leading-5 text-ink-muted">
-                    {kb.description || "No description — add one, the router will use it."}
+                    {kb.description || t("kb.no_description")}
                   </p>
                   <IngestProgress s={kb.doc_status} />
                   <div className="mt-3 flex items-center justify-between gap-2">
@@ -228,6 +222,7 @@ function CreateModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [locale, setLocale] = useState("");
@@ -250,41 +245,41 @@ function CreateModal({
   };
 
   return (
-    <Modal title="New knowledge base" onClose={onClose}>
+    <Modal title={t("kb.create_title")} onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Name">
+        <Field label={t("kb.field_name")}>
           <input
             className={inputCls}
-            placeholder="e.g. HR policies"
+            placeholder={t("kb.name_placeholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
         </Field>
         <Field
-          label="Description"
-          hint="Used later to route a question to the right knowledge base, so describe what it holds rather than what it is called."
+          label={t("kb.field_description")}
+          hint={t("kb.description_hint")}
         >
           <textarea
             className={`${inputCls} resize-none`}
             rows={3}
-            placeholder="e.g. Collective agreements and pay scales, 2019 onwards."
+            placeholder={t("kb.description_placeholder")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </Field>
         <Field
-          label="Number locale of the documents"
-          hint="How numbers are printed in your documents. Declaring it avoids guessing when normalizing table values."
+          label={t("kb.field_number_locale")}
+          hint={t("kb.number_locale_hint")}
         >
           <select
             className={inputCls}
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
           >
-            {LOCALES.map((l) => (
+            {NUMBER_LOCALES.map((l) => (
               <option key={l.value} value={l.value}>
-                {l.label}
+                {l.label ?? t(l.labelKey!)}
               </option>
             ))}
           </select>
@@ -311,7 +306,7 @@ function CreateModal({
             Cancel
           </Button>
           <Button type="submit" disabled={busy || !name.trim()}>
-            {busy ? "Creating…" : "Create"}
+            {busy ? t("common.creating") : t("common.create")}
           </Button>
         </div>
       </form>

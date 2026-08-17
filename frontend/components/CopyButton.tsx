@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { copyText } from "@/lib/clipboard";
@@ -17,6 +18,7 @@ export default function CopyButton({
   tone?: "muted" | "light";
   className?: string;
 }) {
+  const t = useT();
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -36,7 +38,7 @@ export default function CopyButton({
     <button
       type="button"
       onClick={copy}
-      title={failed ? "Could not copy — select the text manually" : title}
+      title={failed ? t("common.copy_failed") : title}
       aria-label={title}
       className={`rounded-md p-1 transition-colors ${colour} ${className}`}
     >

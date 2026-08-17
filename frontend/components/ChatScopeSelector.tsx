@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Sparkles, Database, ListChecks } from "lucide-react";
 import type { KB } from "@/lib/api";
@@ -24,6 +25,7 @@ export default function ChatScopeSelector({
   allKbs: KB[];
   disabled?: boolean;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -40,7 +42,7 @@ export default function ChatScopeSelector({
     scope.mode === "this"
       ? `This KB · ${thisKb?.name ?? "…"}`
       : scope.mode === "auto"
-        ? "Auto — let the assistant choose"
+        ? t("scope.auto")
         : `${scope.kbIds.size} knowledge base${scope.kbIds.size === 1 ? "" : "s"} chosen`;
 
   const togglePinned = (id: string) => {
@@ -62,7 +64,7 @@ export default function ChatScopeSelector({
         className="inline-flex min-h-8 items-center gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-[12px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200/80 transition-[background-color,box-shadow,transform] duration-150 hover:bg-indigo-100 hover:ring-indigo-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:ring-indigo-800/70 dark:hover:bg-indigo-900/60"
       >
         <Sparkles size={13} aria-hidden="true" />
-        <span className="opacity-70">Search in:</span> {summary}
+        <span className="opacity-70">{t("scope.search_in_colon")}</span> {summary}
         <ChevronDown
           size={13}
           aria-hidden="true"
@@ -75,7 +77,7 @@ export default function ChatScopeSelector({
           {kbId && (
             <Option
               icon={<Database size={15} />}
-              title="This knowledge base"
+              title={t("scope.this_kb")}
               subtitle={thisKb?.name}
               active={scope.mode === "this"}
               onClick={() => {
@@ -86,8 +88,8 @@ export default function ChatScopeSelector({
           )}
           <Option
             icon={<Sparkles size={15} />}
-            title="Auto-route"
-            subtitle="Let the assistant pick the right KB(s) by their descriptions"
+            title={t("scope.auto_route")}
+            subtitle={t("scope.auto_route_hint")}
             active={scope.mode === "auto"}
             onClick={() => {
               onChange({ mode: "auto" });
@@ -96,8 +98,8 @@ export default function ChatScopeSelector({
           />
           <Option
             icon={<ListChecks size={15} />}
-            title="Choose specific knowledge bases"
-            subtitle="Search exactly the ones you tick"
+            title={t("scope.pick_specific")}
+            subtitle={t("scope.pick_specific_hint")}
             active={scope.mode === "pinned"}
             onClick={() =>
               onChange({
@@ -154,6 +156,7 @@ function Option({
   active: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"

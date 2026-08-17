@@ -8,9 +8,9 @@ import {
   LOCALE_COOKIE,
   translate,
   type Locale,
+  type TKey,
   type Vars,
 } from "@/lib/i18n";
-import type { MessageKey } from "@/messages/en";
 
 type Ctx = { locale: Locale; setLocale: (next: Locale) => void };
 
@@ -56,6 +56,6 @@ export function useLocale() {
 
 export function useT() {
   const { locale } = useContext(LocaleContext);
-  return (key: MessageKey, vars?: Vars) =>
+  return (key: TKey, vars?: Vars) =>
     translate(catalogues[locale], key, vars);
 }

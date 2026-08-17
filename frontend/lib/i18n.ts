@@ -37,6 +37,19 @@ export function isLocale(value: string | undefined): value is Locale {
   return !!value && value in catalogues;
 }
 
+/** A key `t()` will accept: any real key, plus the BASE of a plural pair.
+ *
+ *  `verify.checked_one` and `verify.checked_other` are what the catalogues
+ *  hold; `t("verify.checked", { count })` is what a caller writes, and the base
+ *  exists in no catalogue. Derived from the `_other` members rather than listed
+ *  by hand, so a plural added later is accepted without anyone remembering to
+ *  widen this. TypeScript found this the moment the first plural was used —
+ *  the alternative was typing the parameter as `string`, which would have
+ *  thrown away the guard that makes the whole catalogue safe. */
+type PluralBase<K> = K extends `${infer Base}_other` ? Base : never;
+
+export type TKey = MessageKey | PluralBase<MessageKey>;
+
 export type Vars = Record<string, string | number>;
 
 /** One string, in one language, with its variables filled in.

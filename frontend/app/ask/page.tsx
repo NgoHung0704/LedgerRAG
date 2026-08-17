@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MessagesSquare, Sparkles, Database } from "lucide-react";
@@ -10,6 +11,7 @@ import ChatPanel from "@/components/ChatPanel";
 // the right knowledge base(s), or tick a group yourself. This is the answer to
 // "how do I chat across several KBs" — it lives above any single KB.
 export default function AskPage() {
+  const t = useT();
   const [kbs, setKbs] = useState<KB[] | null>(null);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function AskPage() {
         <p className="mt-1 max-w-2xl text-sm text-ink-muted">
           Ask across your knowledge bases. The assistant auto-routes to the
           relevant one(s) by their descriptions — or use{" "}
-          <span className="font-medium text-ink-muted">Search in</span> to pick
+          <span className="font-medium text-ink-muted">{t("scope.search_in")}</span> to pick
           a specific group.
         </p>
       </div>

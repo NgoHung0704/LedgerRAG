@@ -111,24 +111,37 @@ def test_the_verify_step_result_reaches_the_caution():
 def test_every_caution_reason_has_copy_in_the_ui():
     """A reason key with no French copy reaches the reader as nothing at all.
 
-    CautionNotice maps reasons through CAUTION_COPY and drops what it cannot
+    CautionNotice maps reasons through CAUTION_KEYS and drops what it cannot
     translate; when none survive it returns null. So a caution that fired
     correctly in the pipeline - the answer DOES rest on something shaky -
     renders as blank space, which is indistinguishable from a clean answer.
     Adding a reason and forgetting the copy is a silent regression, so it is
-    pinned here rather than left to be noticed."""
+    pinned here rather than left to be noticed.
+
+    Since the interface became translatable the map holds message KEYS, and the
+    copy itself lives in frontend/messages/. That is one more hop, so this
+    checks both: every reason has a message key, and every one of those keys is
+    a real entry in the English catalogue — which the other four are typed
+    against, so proving it for English proves it for all five."""
     reasons = set(re.findall(
         r'reasons\.append\("([a-z_]+)"\)',
         (REPO_ROOT / "tablerag" / "core" / "citations.py").read_text(
             encoding="utf-8")))
     panel = (REPO_ROOT / "frontend" / "components" / "ChatPanel.tsx").read_text(
         encoding="utf-8")
-    block = panel[panel.index("CAUTION_COPY"):]
+    block = panel[panel.index("CAUTION_KEYS"):]
     block = block[:block.index("};")]
-    translated = set(re.findall(r"^\s{2}([a-z_]+):", block, re.M))
+    mapped = dict(re.findall(r'^\s{2}([a-z_]+):\s*"([a-z_.]+)"', block, re.M))
     assert reasons, "the reason keys are no longer written as literals here"
-    assert reasons <= translated, \
-        f"caution reasons with no copy in ChatPanel: {sorted(reasons - translated)}"
+    assert reasons <= set(mapped), \
+        f"caution reasons with no message key: {sorted(reasons - set(mapped))}"
+
+    english = (REPO_ROOT / "frontend" / "messages" / "en.ts").read_text(
+        encoding="utf-8")
+    catalogue = set(re.findall(r'^\s{2}"([a-z_.]+)":', english, re.M))
+    dangling = {mapped[r] for r in reasons} - catalogue
+    assert not dangling, \
+        f"caution message keys absent from the English catalogue: {sorted(dangling)}"
 
 
 def test_every_stream_carries_the_see_also_list():

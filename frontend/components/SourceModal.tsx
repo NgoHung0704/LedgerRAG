@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/LocaleProvider";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
@@ -29,6 +30,7 @@ export default function SourceModal({
   citation: Citation;
   onClose: () => void;
 }) {
+  const t = useT();
   const [detail, setDetail] = useState<ElementDetail | null>(null);
   const [failed, setFailed] = useState(false);
   const [shown, setShown] = useState(false);
@@ -99,7 +101,7 @@ export default function SourceModal({
               {citation.kind === "table" ? " · table" : ""}
             </div>
           </div>
-          <IconButton label="Close source" onClick={close}>
+          <IconButton label={t("source.close")} onClick={close}>
             <X size={18} />
           </IconButton>
         </div>
@@ -179,7 +181,7 @@ export default function SourceModal({
               )}
 
               <div>
-                <SectionLabel>As printed in the document</SectionLabel>
+                <SectionLabel>{t("source.as_printed")}</SectionLabel>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={elementImageUrl(detail.id)}
@@ -220,6 +222,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // The parse confidence, straight from the stored element — the same number the
 // review flow and the flag eval act on, surfaced next to the source it grades.
 function ConfidenceBar({ value, rev }: { value: number; rev: boolean }) {
+  const t = useT();
   const pct = Math.round(value * 100);
   return (
     <div
@@ -234,7 +237,7 @@ function ConfidenceBar({ value, rev }: { value: number; rev: boolean }) {
       ) : (
         <BadgeCheck size={14} className="shrink-0" />
       )}
-      <span className="shrink-0">Parse confidence</span>
+      <span className="shrink-0">{t("source.parse_confidence")}</span>
       <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/15">
         <span
           className="absolute inset-y-0 left-0 rounded-full bg-current"

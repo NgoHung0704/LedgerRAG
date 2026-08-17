@@ -5,7 +5,7 @@
       "name": "ChatPanel",
       "decl": "export default function ChatPanel({",
       "file": "frontend/components/ChatPanel.tsx",
-      "line": 58,
+      "line": 60,
       "note": {
         "vi": "Câu trả lời chảy về theo SSE kèm trích dẫn bấm được về ảnh trang.",
         "en": "The answer streams in over SSE with citations that click back to the page image."
@@ -15,7 +15,7 @@
       "name": "ChatScopeSelector",
       "decl": "export default function ChatScopeSelector({",
       "file": "frontend/components/ChatScopeSelector.tsx",
-      "line": 14,
+      "line": 15,
       "note": {
         "vi": "Chọn phạm vi KB, hoặc để router tự chọn.",
         "en": "Choose the knowledge-base scope, or leave it to the router."
