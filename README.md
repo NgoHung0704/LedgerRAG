@@ -106,7 +106,15 @@ python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e .[dev]
 pytest tests/unit -q                            # no services needed
 RUN_INTEGRATION=1 pytest tests/integration -q   # needs docker compose stack
+make frontend-test                              # message catalogue + i18n lookup
 ```
+
+The interface can be read in English, French, Vietnamese, Spanish or German
+(picker on the navigation rail; English by default). **The Spanish and German
+catalogues are correct in meaning but have not been read by a native speaker** —
+`frontend/messages/es.ts` and `de.ts` say so at the top, and the notice stays
+until one has. What the assistant ANSWERS is unaffected: it keeps replying in
+the language of the documents, and no prompt was touched.
 
 Rule from the spec: **prompts are code** — any prompt/model change must re-run
 the relevant eval (`make spike-grade` now; `make eval-tables` / `make eval-qa`

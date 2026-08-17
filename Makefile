@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-detection eval-figures eval-funds eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-detection eval-figures eval-funds eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build frontend-test
 
 up:
 	docker compose up -d --build
@@ -154,6 +154,10 @@ lint:
 # Refuses to touch a citation whose TEXT changed — that needs a human.
 docs-relink:
 	python docs-site/tools/relink.py --write
+
+# ---- frontend unit tests (message catalogue + i18n lookup) -----------------
+frontend-test:
+	cd frontend && npx vitest run
 
 # ---- docs site ------------------------------------------------------------
 docs-test:
