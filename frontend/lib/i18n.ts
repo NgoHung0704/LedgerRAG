@@ -4,6 +4,15 @@ import { es } from "@/messages/es";
 import { fr } from "@/messages/fr";
 import { vi } from "@/messages/vi";
 
+/** Where the choice is kept.
+ *
+ *  Declared HERE, in a plain module, and not in the provider that uses it: a
+ *  Server Component importing a constant from a "use client" file receives a
+ *  client reference rather than the string, so `cookies().get(NAME)` silently
+ *  matched nothing and every request rendered the default. The cookie name is
+ *  shared data, not part of a component. */
+export const LOCALE_COOKIE = "locale";
+
 export type Locale = "en" | "fr" | "vi" | "es" | "de";
 
 export const LOCALES: { code: Locale; label: string }[] = [

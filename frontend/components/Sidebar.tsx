@@ -14,18 +14,23 @@ import {
   SlidersHorizontal,
   UserCircle2,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { getMe, type Me } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useT } from "@/components/LocaleProvider";
+import LocaleToggle from "@/components/LocaleToggle";
 import { IconButton } from "@/components/ui";
+import type { MessageKey } from "@/messages/en";
 
-const NAV = [
-  { href: "/assistants", label: "Assistants", icon: Bot, match: /^\/assistants/, admin: false },
-  { href: "/ask", label: "Ask", icon: MessagesSquare, match: /^\/ask/, admin: false },
-  { href: "/", label: "Knowledge Bases", icon: Database, match: /^\/($|kb|doc)/, admin: false },
-  { href: "/models", label: "Model Providers", icon: SlidersHorizontal, match: /^\/models/, admin: true },
-  { href: "/audit", label: "Audit log", icon: ScrollText, match: /^\/audit/, admin: true },
-  { href: "/diagnostics", label: "Diagnostics", icon: FileSearch, match: /^\/diagnostics/, admin: false },
+const NAV: { href: string; labelKey: MessageKey; icon: LucideIcon;
+             match: RegExp; admin: boolean }[] = [
+  { href: "/assistants", labelKey: "nav.assistants", icon: Bot, match: /^\/assistants/, admin: false },
+  { href: "/ask", labelKey: "nav.ask", icon: MessagesSquare, match: /^\/ask/, admin: false },
+  { href: "/", labelKey: "nav.knowledge_bases", icon: Database, match: /^\/($|kb|doc)/, admin: false },
+  { href: "/models", labelKey: "nav.model_providers", icon: SlidersHorizontal, match: /^\/models/, admin: true },
+  { href: "/audit", labelKey: "nav.audit_log", icon: ScrollText, match: /^\/audit/, admin: true },
+  { href: "/diagnostics", labelKey: "nav.diagnostics", icon: FileSearch, match: /^\/diagnostics/, admin: false },
 ];
 
 const STORE = "rail-collapsed";
@@ -85,6 +90,7 @@ export default function Sidebar({
     return () => removeEventListener("resize", place);
   }, [place]);
 
+  const t = useT();
   const nav = NAV.filter((n) => !n.admin || me?.is_admin);
 
   return (
@@ -152,7 +158,7 @@ export default function Sidebar({
               }}
             />
           )}
-          {nav.map(({ href, label, icon: Icon, match }) => {
+          {nav.map(({ href, labelKey, icon: Icon, match }) => {
             const active = match.test(pathname);
             return (
               <Link
@@ -160,7 +166,7 @@ export default function Sidebar({
                 href={href}
                 data-active={active}
                 aria-current={active ? "page" : undefined}
-                title={collapsed ? label : undefined}
+                title={collapsed ? t(labelKey) : undefined}
                 className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13.5px] font-medium transition-colors ${
                   collapsed ? "justify-center px-0" : ""
                 } ${
@@ -170,8 +176,8 @@ export default function Sidebar({
                 }`}
               >
                 <Icon size={17} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-                {!collapsed && <span className="truncate">{label}</span>}
-                {collapsed && <span className="sr-only">{label}</span>}
+                {!collapsed && <span className="truncate">{t(labelKey)}</span>}
+                {collapsed && <span className="sr-only">{t(labelKey)}</span>}
               </Link>
             );
           })}
@@ -202,6 +208,7 @@ export default function Sidebar({
               aria-label={`Signed in as ${me.username}`}
             />
           )}
+          <LocaleToggle compact={collapsed} />
           <ThemeToggle compact={collapsed} />
         </div>
 

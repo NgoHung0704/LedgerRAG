@@ -779,6 +779,8 @@
         "frontend/components/AppShell.tsx",
         "frontend/components/Sidebar.tsx",
         "frontend/components/ui.tsx",
+        "frontend/components/LocaleProvider.tsx",
+        "frontend/components/LocaleToggle.tsx",
         "frontend/components/ThemeToggle.tsx",
         "frontend/components/confirm.tsx",
         "frontend/components/CopyButton.tsx",

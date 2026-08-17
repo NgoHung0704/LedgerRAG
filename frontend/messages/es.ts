@@ -4,6 +4,12 @@ import type { MessageKey } from "@/messages/en";
 // for an HR audience. Have a Spanish speaker read this file before relying on
 // it in front of users, and delete this notice when they have.
 export const es: Record<MessageKey, string> = {
+  "nav.assistants": "Asistentes",
+  "nav.ask": "Preguntar",
+  "nav.knowledge_bases": "Bases de conocimiento",
+  "nav.model_providers": "Proveedores de modelos",
+  "nav.audit_log": "Registro de auditoría",
+  "nav.diagnostics": "Diagnóstico",
   "app.language": "Idioma",
   "source.header": "Fuente {index}: {filename}, página {page}",
   "verify.checked_one": "{count} cifra verificada con las fuentes",

@@ -15,7 +15,7 @@
       "name": "Sidebar",
       "decl": "export default function Sidebar({",
       "file": "frontend/components/Sidebar.tsx",
-      "line": 33,
+      "line": 38,
       "note": {
         "vi": "Điều hướng chính, và là nơi thấy được mình đang ở đâu.",
         "en": "The main navigation, and where you see where you are."
