@@ -5,7 +5,7 @@
       "name": "AppShell",
       "decl": "export default function AppShell({ children }: { children: React.ReactNode }) {",
       "file": "frontend/components/AppShell.tsx",
-      "line": 12,
+      "line": 13,
       "note": {
         "vi": "Khung chung của mọi màn hình.",
         "en": "The frame every screen sits in."
