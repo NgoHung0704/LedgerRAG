@@ -95,11 +95,20 @@ def source_modules() -> set[str]:
     Scope agreed in the spec: tablerag/ + frontend/{app,components,lib}.
     Build output and caches are excluded by anchoring on those three
     frontend subdirectories rather than on frontend/ itself.
+
+    Tests are excluded, on both sides of the repo. The page documents what the
+    system IS, and `tests/` is not scanned for the Python half for exactly that
+    reason; a frontend test happens to sit beside the module it tests rather
+    than in a tests/ tree, which is a layout convention and not a statement
+    about architecture. Without this, adding a test would demand a paragraph on
+    the architecture page about the test.
     """
     found: set[str] = set()
     for base, pattern in SOURCE_GLOBS:
         for path in (REPO_ROOT / base).glob(pattern):
             if "__pycache__" in path.parts or "node_modules" in path.parts:
+                continue
+            if path.name.endswith((".test.ts", ".test.tsx")):
                 continue
             found.add(path.relative_to(REPO_ROOT).as_posix())
     return found
