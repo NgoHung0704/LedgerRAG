@@ -45,7 +45,7 @@
       "name": "EditAssistant",
       "decl": "export default function EditAssistant({",
       "file": "frontend/components/EditAssistant.tsx",
-      "line": 14,
+      "line": 15,
       "note": {
         "vi": "Trợ lý sửa nội dung; kết quả là đề xuất, người duyệt tự áp dụng.",
         "en": "The editing assistant; its output is a proposal the reviewer applies."

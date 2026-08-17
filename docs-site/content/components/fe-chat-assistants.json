@@ -25,7 +25,7 @@
       "name": "AssistantForm",
       "decl": "export default function AssistantForm({",
       "file": "frontend/components/AssistantForm.tsx",
-      "line": 11,
+      "line": 12,
       "note": {
         "vi": "Một trợ lý gói sẵn phạm vi KB và chỉ dẫn riêng.",
         "en": "An assistant packages a knowledge-base scope and its own instructions."
@@ -35,7 +35,7 @@
       "name": "AssistantCardMenu",
       "decl": "export default function AssistantCardMenu({",
       "file": "frontend/components/AssistantCardMenu.tsx",
-      "line": 14,
+      "line": 15,
       "note": {
         "vi": "Các hành động trên một trợ lý, kèm xác nhận cho việc phá huỷ.",
         "en": "The actions on an assistant, with confirmation for the destructive ones."
