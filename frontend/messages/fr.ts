@@ -61,7 +61,7 @@ export const fr: Record<MessageKey, string> = {
   "caution.unverified_numbers": "Un chiffre de cette réponse n'a pas pu être retrouvé dans les sources citées.",
   "caution.check_origin": "Vérifiez le document d'origine",
   "caution.or_contact": ", ou contactez {contact}.",
-  "caution.before_using": " avant de vous en servir.",
+  "caution.before_using": ", ou demandez à une personne compétente, avant de vous en servir.",
   "verify.unmatched_one": "{count} chiffre n'a pas pu être rattaché à une source",
   "verify.unmatched_other": "{count} chiffres n'ont pas pu être rattachés à une source",
   "verify.rest": "{verified}/{total} vérifiés. Consultez les sources citées pour le reste.",

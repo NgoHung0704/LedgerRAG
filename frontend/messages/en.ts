@@ -62,7 +62,7 @@ export const en = {
   "caution.unverified_numbers": "A figure in this answer could not be found in the cited sources.",
   "caution.check_origin": "Check the original document",
   "caution.or_contact": ", or contact {contact}.",
-  "caution.before_using": " before relying on it.",
+  "caution.before_using": ", or ask someone who knows the subject, before relying on it.",
   "verify.unmatched_one": "{count} number could not be matched to a source",
   "verify.unmatched_other": "{count} numbers could not be matched to a source",
   "verify.rest": "{verified}/{total} verified. Check the cited sources for the rest.",

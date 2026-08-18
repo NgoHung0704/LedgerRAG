@@ -64,7 +64,7 @@ export const de: Record<MessageKey, string> = {
   "caution.unverified_numbers": "Eine Zahl in dieser Antwort ließ sich in den zitierten Quellen nicht finden.",
   "caution.check_origin": "Prüfen Sie das Originaldokument",
   "caution.or_contact": ", oder wenden Sie sich an {contact}.",
-  "caution.before_using": " bevor Sie sich darauf verlassen.",
+  "caution.before_using": ", oder fragen Sie eine fachkundige Person, bevor Sie sich darauf verlassen.",
   "verify.unmatched_one": "{count} Zahl ließ sich keiner Quelle zuordnen",
   "verify.unmatched_other": "{count} Zahlen ließen sich keiner Quelle zuordnen",
   "verify.rest": "{verified}/{total} geprüft. Prüfen Sie die zitierten Quellen für den Rest.",

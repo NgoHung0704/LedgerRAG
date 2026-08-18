@@ -63,7 +63,7 @@ export const vi: Record<MessageKey, string> = {
   "caution.unverified_numbers": "Một con số trong câu trả lời này không tìm thấy trong các nguồn được trích.",
   "caution.check_origin": "Hãy xem lại tài liệu gốc",
   "caution.or_contact": ", hoặc liên hệ {contact}.",
-  "caution.before_using": " trước khi dùng.",
+  "caution.before_using": ", hoặc hỏi người có chuyên môn, trước khi dùng.",
   "verify.unmatched_one": "{count} con số không khớp được với nguồn nào",
   "verify.unmatched_other": "{count} con số không khớp được với nguồn nào",
   "verify.rest": "Đã kiểm {verified}/{total}. Phần còn lại hãy xem các nguồn được trích.",
