@@ -39,6 +39,7 @@ import CopyButton from "@/components/CopyButton";
 import SourceModal from "@/components/SourceModal";
 import ChatScopeSelector, { type Scope } from "@/components/ChatScopeSelector";
 import { citationWeights } from "@/lib/citationWeight";
+import { shortName } from "@/lib/documentName";
 
 // what the turn cost, measured client-side: the wait the user actually had.
 // searchMs is null for a conversational reply (nothing was retrieved).
@@ -575,7 +576,7 @@ function AnswerBody({
             return (
               <div key={`${i}-${j}`} className="marginal">
                 {marks.length > 0 && (
-                  <div className="marginal-note mb-1 flex flex-row gap-1 sm:mb-0 sm:flex-col sm:items-end sm:gap-0.5">
+                  <div className="marginal-note mb-1 flex min-w-0 flex-row flex-wrap gap-x-2 gap-y-1 sm:mb-0 sm:flex-col sm:flex-nowrap sm:items-end sm:gap-0.5">
                     {marks.map((c) => (
                       <CiteMark key={c.index} citation={c} onOpen={onOpen} />
                     ))}
@@ -714,8 +715,13 @@ function citedIn(text: string, citations?: Citation[]): Citation[] {
     .filter((c): c is Citation => Boolean(c));
 }
 
-/** A citation as marginalia: the index in the ledger mono, with a hairline
- *  leader that reaches toward the line it supports. */
+/** A citation as marginalia: the index and the document it points at, in the
+ *  ledger mono, with a hairline leader reaching toward the line it supports.
+ *
+ *  The name is there because the number alone was not provenance. An answer
+ *  drawing on three documents put "1", "2", "3" down the margin, and finding
+ *  out which claim came from which meant hovering each one or reading the
+ *  bibliography at the bottom and counting back up. */
 function CiteMark({
   citation: c,
   onOpen,
@@ -730,16 +736,19 @@ function CiteMark({
       onClick={() => onOpen(c)}
       title={`${c.filename} · p.${c.page}${c.needs_review ? ` · ${t("sources.needs_review")}` : ""}`}
       aria-label={t("source.header", { index: c.index, filename: c.filename, page: c.page })}
-      className={`group mt-[3px] inline-flex items-center gap-1.5 rounded px-1 font-mono text-[11px] transition-colors sm:mt-[7px] ${
+      className={`group mt-[3px] flex max-w-[12rem] items-center gap-1.5 rounded px-1 font-mono text-[11px] transition-colors sm:mt-[7px] sm:w-full sm:max-w-full sm:justify-end ${
         c.needs_review
           ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
           : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
       }`}
     >
-      {c.index}
+      <span className="shrink-0 tabular-nums">{c.index}</span>
+      <span className="min-w-0 truncate text-[10px] sm:text-right">
+        {shortName(c.filename)}
+      </span>
       <span
         aria-hidden="true"
-        className="hidden h-px w-2.5 bg-line transition-all group-hover:w-4 group-hover:bg-indigo-600 sm:block dark:group-hover:bg-indigo-400"
+        className="hidden h-px w-2.5 shrink-0 bg-line transition-all group-hover:w-4 group-hover:bg-indigo-600 sm:block dark:group-hover:bg-indigo-400"
       />
     </button>
   );

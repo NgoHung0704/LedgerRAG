@@ -150,7 +150,10 @@
   }
   @screen sm {
     .marginal {
-      grid-template-columns: 2.5rem minmax(0, 1fr);
+      /* wide enough for a document name, not just its number: with three
+         documents in play a bare digit tells a reader nothing about which
+         claim came from where, and they had to hover to find out */
+      grid-template-columns: 8.5rem minmax(0, 1fr);
     }
     .marginal > .marginal-body {
       grid-column: 2;

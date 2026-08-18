@@ -933,7 +933,8 @@
         "frontend/components/ChatScopeSelector.tsx",
         "frontend/components/AssistantForm.tsx",
         "frontend/components/AssistantCardMenu.tsx",
-        "frontend/lib/citationWeight.ts"
+        "frontend/lib/citationWeight.ts",
+        "frontend/lib/documentName.ts"
       ],
       "phases": [
         {
