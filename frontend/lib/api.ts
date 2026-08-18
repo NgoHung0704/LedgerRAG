@@ -16,7 +16,6 @@ export type KB = {
     locale?: string;
     verify?: boolean;
     instructions?: string;
-    escalation_contact?: string;
   };
   created_at: string;
   doc_status?: KBDocStatus | null; // set by the list endpoint only
@@ -577,6 +576,9 @@ export type Assistant = {
   kb_names: string[];
   opening_message: string;
   verify: boolean | null;
+  // who the caution notice names. On the assistant, not its knowledge bases:
+  // one fixed set of documents, one purpose, nobody to be ambiguous with.
+  escalation_contact: string;
   created_at: string;
 };
 
@@ -587,6 +589,7 @@ export type AssistantInput = Partial<{
   kb_ids: string[];
   opening_message: string;
   verify: boolean | null;
+  escalation_contact: string;
 }>;
 
 export type Conversation = {
@@ -708,7 +711,6 @@ export const updateKb = (
     locale: string;
     verify: boolean;
     instructions: string;
-    escalation_contact: string;
   }>,
 ) =>
   fetch(`${API_URL}/api/kbs/${kbId}`, {

@@ -35,6 +35,7 @@ export default function AssistantForm({
     new Set(assistant?.kb_ids ?? []),
   );
   const [verify, setVerify] = useState<boolean>(assistant?.verify ?? true);
+  const [contact, setContact] = useState(assistant?.escalation_contact ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -60,6 +61,7 @@ export default function AssistantForm({
         opening_message: opening.trim(),
         kb_ids: Array.from(kbIds),
         verify,
+        escalation_contact: contact.trim(),
       });
     } catch (err) {
       setError(String(err));
@@ -160,6 +162,21 @@ export default function AssistantForm({
             value={opening}
             onChange={(e) => setOpening(e.target.value)}
           />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
+            {t("asst.escalation_contact")}
+          </label>
+          <input
+            className={inputCls}
+            placeholder={t("kb.contact_placeholder")}
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-ink-subtle">
+            {t("asst.escalation_contact_hint")}
+          </p>
         </div>
 
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line p-3">

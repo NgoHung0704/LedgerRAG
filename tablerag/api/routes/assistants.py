@@ -36,6 +36,21 @@ router = APIRouter(prefix="/api", tags=["assistants"])
 TITLE_CHARS = 60
 
 
+def escalation_contact(assistant_config: dict | None) -> str | None:
+    """Who the reader is told to ask when an answer is flagged.
+
+    The assistant's own setting, and nothing else. It has one fixed set of
+    documents and one purpose, so there is nobody to be ambiguous with — which
+    is why this moved here off the knowledge bases, where an assistant spanning
+    an HR base and a finance base, each naming its own department, produced no
+    contact at all and the reader got generic wording precisely when a name
+    would have helped most.
+
+    A stored blank is not a contact: it would reach the reader as "or contact ."
+    """
+    return ((assistant_config or {}).get("escalation_contact") or "").strip() or None
+
+
 def _out(s, assistant) -> AssistantOut:
     kb_ids = repo.assistant_kb_ids(s, assistant.id)
     names = {kb.id: kb.name for kb in repo.list_kbs(s)}
@@ -45,7 +60,9 @@ def _out(s, assistant) -> AssistantOut:
         instructions=assistant.instructions, kb_ids=kb_ids,
         kb_names=[names.get(k, "?") for k in kb_ids],
         opening_message=config.get("opening_message", ""),
-        verify=config.get("verify"), created_at=assistant.created_at)
+        verify=config.get("verify"),
+        escalation_contact=config.get("escalation_contact", ""),
+        created_at=assistant.created_at)
 
 
 @router.get("/assistants", response_model=list[AssistantOut])
@@ -60,6 +77,8 @@ def create_assistant(body: AssistantCreate,
     config: dict = {"opening_message": body.opening_message.strip()}
     if body.verify is not None:
         config["verify"] = body.verify
+    if body.escalation_contact.strip():
+        config["escalation_contact"] = body.escalation_contact.strip()
     with session_scope() as s:
         assistant = repo.create_assistant(
             s, name=body.name.strip(), description=body.description.strip(),
@@ -99,6 +118,12 @@ def update_assistant(assistant_id: uuid.UUID, body: AssistantUpdate,
             config["opening_message"] = body.opening_message.strip()
         if body.verify is not None:
             config["verify"] = body.verify
+        if body.escalation_contact is not None:
+            wanted = body.escalation_contact.strip()
+            if wanted:
+                config["escalation_contact"] = wanted
+            else:
+                config.pop("escalation_contact", None)  # cleared
         assistant.config = config
         if body.kb_ids is not None:
             repo.set_assistant_kbs(s, assistant_id, body.kb_ids)
@@ -146,8 +171,6 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
             scope = [kbs[k] for k in kb_ids if k in kbs]
             # locale only when unambiguous across the searched KBs
             locales = {(kb.config or {}).get("locale") for kb in scope}
-            contacts = {(kb.config or {}).get("escalation_contact")
-                        for kb in scope}
             config = assistant.config or {}
             verify = body.verify
             if verify is None:
@@ -170,10 +193,7 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
                             for kb in scope],
                 "kb_ids": [kb.id for kb in scope],
                 "locale": locales.pop() if len(locales) == 1 else None,
-                # same unambiguous-or-nothing rule as the locale: an assistant
-                # spanning several KBs must not name one KB's department for an
-                # answer that may have come from another's document
-                "contact": (contacts.pop() if len(contacts) == 1 else None),
+                "contact": escalation_contact(config),
                 "verify": verify, "identity": identity, "extra": extra,
                 "history": history,
             }

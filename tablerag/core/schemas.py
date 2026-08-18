@@ -34,10 +34,6 @@ class KBUpdate(BaseModel):
     locale: str | None = None
     verify: bool | None = None
     instructions: str | None = None
-    # who a reader should ask when an answer is flagged as needing a check.
-    # Lives in KnowledgeBase.config JSONB, not a column: create_all adds
-    # tables, never columns, and this project carries no migrations.
-    escalation_contact: str | None = None
 
 
 class KBDocStatus(BaseModel):
@@ -96,6 +92,15 @@ class AssistantCreate(BaseModel):
     kb_ids: list[uuid.UUID] = []  # the context it searches
     opening_message: str = ""    # shown in an empty conversation
     verify: bool | None = None   # override number verification for this app
+    # who a reader should ask when an answer is flagged as needing a check.
+    # On the ASSISTANT rather than the knowledge base: an assistant has one
+    # fixed set of documents and one purpose, so its contact is unambiguous by
+    # construction. Read off the KBs instead, a question spanning two of them
+    # that name different departments had to fall back to generic wording —
+    # naming one while the answer may come from the other's document is worse
+    # than naming none. Lives in Assistant.config JSONB, not a column:
+    # create_all adds tables, never columns, and this project has no migrations.
+    escalation_contact: str = ""
 
 
 class AssistantUpdate(BaseModel):
@@ -107,6 +112,7 @@ class AssistantUpdate(BaseModel):
     kb_ids: list[uuid.UUID] | None = None
     opening_message: str | None = None
     verify: bool | None = None
+    escalation_contact: str | None = None
 
 
 class AssistantOut(BaseModel):
@@ -118,6 +124,7 @@ class AssistantOut(BaseModel):
     kb_names: list[str]
     opening_message: str = ""
     verify: bool | None = None
+    escalation_contact: str = ""
     created_at: datetime
 
 

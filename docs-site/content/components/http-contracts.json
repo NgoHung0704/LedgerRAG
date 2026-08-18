@@ -191,8 +191,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "tablerag/api/routes/kb.py",
-        "from": 144,
-        "to": 149,
+        "from": 138,
+        "to": 143,
         "code": "def delete_kb(kb_id: uuid.UUID, user: User = Depends(current_user)) -> Response:\n    \"\"\"Delete a KB and everything it owns — vectors, files, documents, chat\n    history. External stores are purged BEFORE the Postgres cascade, so a later\n    failure can't leave orphaned vectors serving answers from a deleted KB.\"\"\"\n    from tablerag.storage.object_store import get_object_store, kb_prefix\n    from tablerag.storage.qdrant import get_vector_store"
       }
     }

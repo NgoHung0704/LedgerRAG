@@ -31,9 +31,6 @@ export default function KbSettings({
   const [instructions, setInstructions] = useState(kb.config?.instructions ?? "");
   const [locale, setLocale] = useState(kb.config?.locale ?? "");
   const [verify, setVerify] = useState(kb.config?.verify ?? true);
-  const [contact, setContact] = useState(
-    kb.config?.escalation_contact ?? "",
-  );
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +84,6 @@ export default function KbSettings({
         description: description.trim(),
         instructions: instructions.trim(),
         locale: locale.trim(),
-        escalation_contact: contact.trim(),
         verify,
       });
       onUpdated(updated);
@@ -124,7 +120,7 @@ export default function KbSettings({
       </Button>
 
       {open && (
-        <div className="pop absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] origin-top-right rounded-xl border border-line bg-surface p-3.5 shadow-lift">
+        <div className="pop max-h-[min(30rem,70vh)] overflow-y-auto absolute right-0 z-20 mt-1.5 w-96 max-w-[90vw] origin-top-right rounded-xl border border-line bg-surface p-3.5 shadow-lift">
           <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
             {t("kb.field_name")}
           </label>
@@ -189,18 +185,6 @@ export default function KbSettings({
             className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
 
-          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
-            {t("kb.escalation_contact")}
-          </label>
-          <input
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            placeholder={t("kb.contact_placeholder")}
-            className="mt-1 w-full rounded-lg border border-line-strong px-2.5 py-1.5 text-sm placeholder:text-ink-subtle bg-surface text-ink focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-          />
-          <p className="mt-1 text-[11px] text-ink-subtle">
-            {t("kb.escalation_contact_hint")}
-          </p>
 
           <label className="mt-3 flex items-center gap-2.5 text-sm text-ink">
             {/* a real switch: announced as one, and its knob slides on a

@@ -73,7 +73,7 @@ export default function ChatScopeSelector({
       </button>
 
       {open && (
-        <div className="pop absolute bottom-full z-20 mb-1.5 w-80 origin-bottom-left rounded-xl border border-line bg-surface p-1.5 shadow-lift">
+        <div className="pop max-h-[min(30rem,70vh)] overflow-y-auto absolute bottom-full z-20 mb-1.5 w-80 origin-bottom-left rounded-xl border border-line bg-surface p-1.5 shadow-lift">
           {kbId && (
             <Option
               icon={<Database size={15} />}

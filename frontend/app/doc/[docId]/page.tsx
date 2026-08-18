@@ -715,7 +715,7 @@ ${r.findings}` : ""),
                     className="fixed inset-0 z-10"
                     onClick={() => setRereadMenu(false)}
                   />
-                  <div className="pop absolute right-0 z-20 mt-1 w-72 origin-top-right rounded-lg border border-line bg-surface p-1.5 shadow-lift">
+                  <div className="pop max-h-[min(30rem,70vh)] overflow-y-auto absolute right-0 z-20 mt-1 w-72 origin-top-right rounded-lg border border-line bg-surface p-1.5 shadow-lift">
                     {(
                       [
                         {
