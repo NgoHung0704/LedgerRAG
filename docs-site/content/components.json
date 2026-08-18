@@ -64,7 +64,8 @@
         "tablerag/api/routes/health.py",
         "tablerag/api/routes/kb.py",
         "tablerag/api/routes/me.py",
-        "tablerag/api/routes/models.py"
+        "tablerag/api/routes/models.py",
+        "tablerag/api/routes/embed.py"
       ],
       "phases": [
         {

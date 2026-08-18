@@ -57,6 +57,7 @@ def create_app() -> FastAPI:
         chat,
         diagnostics,
         documents,
+        embed,
         elements,
         health,
         kb,
@@ -73,6 +74,9 @@ def create_app() -> FastAPI:
     app.include_router(elements.router)
     app.include_router(models.router)
     app.include_router(diagnostics.router)
+    # last, and its own prefix: the only routes reachable without an
+    # identity, each checking the token it was given
+    app.include_router(embed.router)
     return app
 
 

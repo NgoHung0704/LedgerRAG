@@ -20,9 +20,11 @@ from fastapi import Depends, HTTPException, Request
 
 from tablerag.core.config import get_settings
 
-# open paths: health for load balancers, docs/schema for developers. Never
-# gate these, or a proxy health check / the docs break.
-OPEN_PREFIXES = ("/api/health", "/docs", "/redoc", "/openapi.json")
+# open paths: health for load balancers, docs/schema for developers, and the
+# embed prefix, whose routes carry their own credential — a token standing for
+# exactly one assistant, checked inside each route. Never gate these, or a proxy
+# health check / the docs / a deployed embed break.
+OPEN_PREFIXES = ("/api/health", "/docs", "/redoc", "/openapi.json", "/api/embed")
 
 
 @dataclass(frozen=True)

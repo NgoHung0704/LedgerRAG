@@ -174,6 +174,19 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
     """Chat with one assistant: its KBs are the whole search space, its
     instructions shape the answer, and the thread is saved under it. Same SSE
     contract as the other chat endpoints."""
+    return await assistant_chat_response(assistant_id, body, user.username)
+
+
+async def assistant_chat_response(
+    assistant_id: uuid.UUID, body: AssistantChatRequest, actor: str,
+) -> StreamingResponse:
+    """One assistant's chat, whoever is asking.
+
+    Shared by the signed-in route above and the embed route, which differ in
+    exactly one thing: who the audit trail records. Duplicating it instead would
+    mean two copies of the pipeline wiring, and the embedded copy would be the
+    one that quietly stops matching.
+    """
     from tablerag.query.steps.router import KBRef, LLMRouter
 
     def prepare() -> dict:
@@ -257,7 +270,7 @@ async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,
                     repo.link_conversation(s, assistant_id, session.id,
                                            body.question[:TITLE_CHARS])
                     repo.add_message(s, session.id, "user", body.question)
-                    repo.log_audit(s, user.username, "query", kb_id=home,
+                    repo.log_audit(s, actor, "query", kb_id=home,
                                    detail={"assistant_id": str(assistant_id),
                                            "question": body.question[:200]})
                     msg = repo.add_message(

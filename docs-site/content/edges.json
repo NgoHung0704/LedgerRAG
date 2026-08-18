@@ -1929,8 +1929,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 295,
-            "to": 295,
+            "from": 308,
+            "to": 308,
             "anchor": "def list_conversations(assistant_id: uuid.UUID) -> list[ConversationOut]:"
           }
         },
@@ -1968,8 +1968,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 303,
-            "to": 303,
+            "from": 316,
+            "to": 316,
             "anchor": "def conversation_messages(session_id: uuid.UUID) -> dict:"
           }
         },
@@ -2007,8 +2007,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 315,
-            "to": 315,
+            "from": 328,
+            "to": 328,
             "anchor": "def rename_conversation(session_id: uuid.UUID,"
           }
         },
@@ -2046,8 +2046,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 327,
-            "to": 327,
+            "from": 340,
+            "to": 340,
             "anchor": "def delete_conversation(session_id: uuid.UUID) -> Response:"
           }
         }
@@ -2938,6 +2938,71 @@
         "to": 5,
         "anchor": "The role is disabled by default"
       }
+    },
+    {
+      "id": "host-api-embed",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Trợ lý nhúng",
+        "en": "Embedded assistant"
+      },
+      "summary": {
+        "vi": "Một trợ lý được phục vụ cho ứng dụng khác bằng token. Đây là tiền tố duy nhất đi qua middleware mà không cần danh tính, nên mỗi route tự đổi token lấy trợ lý và trả 404 khi không khớp — 404 chứ không phải 403, vì 403 xác nhận có trợ lý ở đó.",
+        "en": "One assistant served to another application by token. This is the only prefix the middleware lets through without an identity, so each route exchanges the token itself and answers 404 when it does not match — 404 rather than 403, because a 403 confirms an assistant is there."
+      },
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/embed/{token}",
+          "auth": {
+            "vi": "Token chính là chứng chỉ. Không cần header danh tính.",
+            "en": "The token is the whole credential. No identity header."
+          },
+          "request": {
+            "vi": "Token trong đường dẫn.",
+            "en": "The token, in the path."
+          },
+          "response": {
+            "vi": "Mặt tiền của trợ lý: tên, mô tả, lời mở đầu. Không có id kho tri thức, không có chỉ dẫn vận hành, không có chính token.",
+            "en": "The assistant's public face: name, description, opening message. No knowledge base ids, no operator instructions, and not the token itself."
+          },
+          "errors": [
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Token lạ, đã thu hồi, hoặc là khoảng trắng.",
+                "en": "Unknown, revoked or blank token."
+              }
+            }
+          ]
+        },
+        {
+          "method": "POST",
+          "path": "/api/embed/{token}/chat",
+          "auth": {
+            "vi": "Token chính là chứng chỉ, và cũng là danh tính — đường này không nhận id trợ lý, nên một token hợp lệ không chĩa sang trợ lý khác được.",
+            "en": "The token is the credential and the identity — this route takes no assistant id, so a valid token cannot be aimed at another assistant."
+          },
+          "request": {
+            "vi": "Câu hỏi và session_id tuỳ chọn, giống hợp đồng chat khác.",
+            "en": "A question and an optional session_id, the same contract as the other chat routes."
+          },
+          "response": {
+            "vi": "Cùng luồng SSE của chat trợ lý: citations, token, caution, done. Ghi nhật ký với actor embed:<tên trợ lý>.",
+            "en": "The same SSE stream as the assistant chat: citations, token, caution, done. Audited with actor embed:<assistant name>."
+          },
+          "errors": [
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Token lạ, đã thu hồi, hoặc là khoảng trắng.",
+                "en": "Unknown, revoked or blank token."
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
