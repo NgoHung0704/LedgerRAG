@@ -39,7 +39,7 @@ import CopyButton from "@/components/CopyButton";
 import SourceModal from "@/components/SourceModal";
 import ChatScopeSelector, { type Scope } from "@/components/ChatScopeSelector";
 import { citationWeights } from "@/lib/citationWeight";
-import { shortName } from "@/lib/documentName";
+import { inlineLabel } from "@/lib/documentName";
 
 // what the turn cost, measured client-side: the wait the user actually had.
 // searchMs is null for a conversational reply (nothing was retrieved).
@@ -564,34 +564,28 @@ function AnswerBody({
         }
         if (!seg.text.trim()) return null;
 
-        // The citations a paragraph carries move out to the margin, so the
-        // reading line stays clean and the provenance still sits beside the
-        // claim it supports — a note on a document, not a footnote. One margin
-        // per paragraph, or every mark in a long answer piles up at the top.
+        // The citations stay in the sentence they support, as the document's
+        // own name. They used to be stripped out here and set as bare numbers
+        // in the margin, which read cleanly and told a reader nothing: an
+        // answer over three documents put "1", "2", "3" down the side, and
+        // finding out which claim came from which meant hovering each one.
         return seg.text
           .split(/\n[ \t]*\n/)
           .filter((para) => para.trim())
-          .map((para, j) => {
-            const marks = citedIn(para, citations);
-            return (
-              <div key={`${i}-${j}`} className="marginal">
-                {marks.length > 0 && (
-                  <div className="marginal-note mb-1 flex min-w-0 flex-row flex-wrap gap-x-2 gap-y-1 sm:mb-0 sm:flex-col sm:flex-nowrap sm:items-end sm:gap-0.5">
-                    {marks.map((c) => (
-                      <CiteMark key={c.index} citation={c} onOpen={onOpen} />
-                    ))}
-                  </div>
-                )}
-                <div className="marginal-body">
-                  <MarkdownProse
-                    content={para.replace(/[ \t]*\[\d+\]/g, "")}
-                    citations={citations}
-                    onOpen={onOpen}
-                  />
-                </div>
+          .map((para, j) => (
+            // the grid stays even with an empty margin: it is what keeps the
+            // answer aligned with the source list below it, and what caps the
+            // reading measure at 68ch (.marginal-body > .chat-md)
+            <div key={`${i}-${j}`} className="marginal">
+              <div className="marginal-body">
+                <MarkdownProse
+                  content={para}
+                  citations={citations}
+                  onOpen={onOpen}
+                />
               </div>
-            );
-          });
+            </div>
+          ));
       })}
     </div>
   );
@@ -701,59 +695,6 @@ function Bibliography({
   );
 }
 
-/** The citations referenced inside one run of text, in the order they appear
- *  and without repeats. */
-function citedIn(text: string, citations?: Citation[]): Citation[] {
-  const seen: number[] = [];
-  const marker = /\[(\d+)\]/g;
-  for (let m = marker.exec(text); m; m = marker.exec(text)) {
-    const n = Number(m[1]);
-    if (seen.indexOf(n) === -1) seen.push(n);
-  }
-  return seen
-    .map((n) => citations?.find((c) => c.index === n))
-    .filter((c): c is Citation => Boolean(c));
-}
-
-/** A citation as marginalia: the index and the document it points at, in the
- *  ledger mono, with a hairline leader reaching toward the line it supports.
- *
- *  The name is there because the number alone was not provenance. An answer
- *  drawing on three documents put "1", "2", "3" down the margin, and finding
- *  out which claim came from which meant hovering each one or reading the
- *  bibliography at the bottom and counting back up. */
-function CiteMark({
-  citation: c,
-  onOpen,
-}: {
-  citation: Citation;
-  onOpen: (c: Citation) => void;
-}) {
-  const t = useT();
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(c)}
-      title={`${c.filename} · p.${c.page}${c.needs_review ? ` · ${t("sources.needs_review")}` : ""}`}
-      aria-label={t("source.header", { index: c.index, filename: c.filename, page: c.page })}
-      className={`group mt-[3px] flex max-w-[12rem] items-center gap-1.5 rounded px-1 font-mono text-[11px] transition-colors sm:mt-[7px] sm:w-full sm:max-w-full sm:justify-end ${
-        c.needs_review
-          ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
-          : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
-      }`}
-    >
-      <span className="shrink-0 tabular-nums">{c.index}</span>
-      <span className="min-w-0 truncate text-[10px] sm:text-right">
-        {shortName(c.filename)}
-      </span>
-      <span
-        aria-hidden="true"
-        className="hidden h-px w-2.5 shrink-0 bg-line transition-all group-hover:w-4 group-hover:bg-indigo-600 sm:block dark:group-hover:bg-indigo-400"
-      />
-    </button>
-  );
-}
-
 // A figure is the part of an answer that has to be right, so it is set in the
 // ledger mono and carries its own verdict: a verdigris rule under one the
 // verifier matched to a cited source, ochre under one it could not.
@@ -847,18 +788,21 @@ function MarkdownProse({
             if (!m) return <a href={href}>{children}</a>;
             const c = citations?.find((x) => x.index === Number(m[1]));
             if (!c) return <sup className="text-ink-subtle">{children}</sup>;
+            // the document's name, not its number: provenance a reader can
+            // act on without leaving the sentence. `children` is the "[n]"
+            // markdown put here and is deliberately discarded.
             return (
               <button
                 type="button"
                 onClick={() => onOpen(c)}
                 title={`${c.filename} · p.${c.page}${c.needs_review ? ` · ${t("sources.needs_review")}` : ""}`}
-                className={`mx-0.5 align-super text-[11px] font-semibold no-underline ${
+                className={`mx-0.5 whitespace-nowrap rounded px-1 py-px font-mono text-[10.5px] no-underline ring-1 transition-colors ${
                   c.needs_review
-                    ? "text-amber-700 hover:text-amber-800 dark:text-amber-400"
-                    : "text-indigo-700 hover:text-indigo-900 dark:text-indigo-400"
-                } hover:underline`}
+                    ? "bg-amber-50 text-amber-800 ring-amber-200 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800/60"
+                    : "bg-indigo-50/70 text-indigo-800 ring-indigo-100 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60"
+                }`}
               >
-                {children}
+                {inlineLabel(c.filename, c.page)}
               </button>
             );
           },

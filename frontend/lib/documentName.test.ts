@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { shortName } from "./documentName";
+import { inlineLabel, shortName } from "./documentName";
 
 describe("shortName", () => {
   it("drops the extension", () => {
@@ -32,5 +32,32 @@ describe("shortName", () => {
     expect(shortName("Cotation emplois CETIAT 2023_07_27.pdf")).toBe(
       "Cotation emplois CETIAT 2023_07_27",
     );
+  });
+});
+
+describe("inlineLabel", () => {
+  it("names the document and the page, inside the sentence", () => {
+    expect(inlineLabel("Glossaire.pdf", 4)).toBe("Glossaire · p.4");
+  });
+
+  it("clips a long name so one citation cannot swallow a line", () => {
+    const label = inlineLabel(
+      "EPSENS FLEXI TAUX COURT ISR SOLIDAIRE - 100312.pdf",
+      2,
+    );
+    expect(label.endsWith("· p.2")).toBe(true);
+    expect(label.length).toBeLessThanOrEqual(30);
+    expect(label).toContain("…");
+  });
+
+  it("clips from the END, keeping the words a reader scans for", () => {
+    // "EPSENS FLEXI" identifies the fund; the reference number does not, and a
+    // middle-ellipsis would keep the digits and drop the name
+    expect(inlineLabel("EPSENS FLEXI TAUX COURT ISR SOLIDAIRE - 100312.pdf", 2))
+      .toMatch(/^EPSENS FLEXI/);
+  });
+
+  it("does not clip a name that already fits", () => {
+    expect(inlineLabel("Avenant 2023.pdf", 11)).toBe("Avenant 2023 · p.11");
   });
 });
