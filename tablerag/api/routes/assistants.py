@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import secrets
 import logging
 import uuid
 
@@ -34,6 +35,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["assistants"])
 
 TITLE_CHARS = 60
+
+
+def mint_embed_token() -> str:
+    """A fresh credential for one embed.
+
+    Minted here rather than in the browser: crypto.randomUUID() exists only in a
+    secure context, and this is served over plain http on an intranet name, so
+    the button would have thrown — in production only.
+    """
+    return secrets.token_urlsafe(24)
 
 
 def escalation_contact(assistant_config: dict | None) -> str | None:
@@ -62,6 +73,7 @@ def _out(s, assistant) -> AssistantOut:
         opening_message=config.get("opening_message", ""),
         verify=config.get("verify"),
         escalation_contact=config.get("escalation_contact", ""),
+        embed_token=config.get("embed_token", ""),
         created_at=assistant.created_at)
 
 
@@ -124,6 +136,12 @@ def update_assistant(assistant_id: uuid.UUID, body: AssistantUpdate,
                 config["escalation_contact"] = wanted
             else:
                 config.pop("escalation_contact", None)  # cleared
+        if body.embed_token is not None:
+            minted = body.embed_token.strip()
+            if minted:
+                config["embed_token"] = minted
+            else:
+                config.pop("embed_token", None)  # revoked
         assistant.config = config
         if body.kb_ids is not None:
             repo.set_assistant_kbs(s, assistant_id, body.kb_ids)

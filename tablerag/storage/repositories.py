@@ -851,6 +851,27 @@ def get_assistant(s: Session, assistant_id: uuid.UUID) -> Assistant | None:
     return s.get(Assistant, assistant_id)
 
 
+def get_assistant_by_embed_token(s: Session, token: str) -> Assistant | None:
+    """The assistant one embed token stands for, or None.
+
+    Compared in Python rather than in SQL: the token lives inside a JSONB blob,
+    and the operators for reaching into it differ between Postgres and the
+    SQLite the tests run on. The number of assistants is small enough that this
+    is not the query worth optimising.
+
+    A blank token matches nothing, whatever is stored. Without that, an embed
+    whose token was cleared to "" would be handed to anyone posting an empty
+    string.
+    """
+    wanted = (token or "").strip()
+    if not wanted:
+        return None
+    for assistant in s.scalars(select(Assistant)):
+        if ((assistant.config or {}).get("embed_token") or "").strip() == wanted:
+            return assistant
+    return None
+
+
 def list_assistants(s: Session) -> list[Assistant]:
     return list(s.scalars(select(Assistant).order_by(Assistant.created_at)))
 

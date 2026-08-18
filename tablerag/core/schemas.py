@@ -113,6 +113,10 @@ class AssistantUpdate(BaseModel):
     opening_message: str | None = None
     verify: bool | None = None
     escalation_contact: str | None = None
+    # "" revokes an embed, a value replaces it. Absent leaves it alone, like
+    # every other field here. Not on AssistantCreate: a token is minted by the
+    # server after the assistant exists, never supplied by its creator.
+    embed_token: str | None = None
 
 
 class AssistantOut(BaseModel):
@@ -125,7 +129,23 @@ class AssistantOut(BaseModel):
     opening_message: str = ""
     verify: bool | None = None
     escalation_contact: str = ""
+    # shown in the deploy panel so the snippet can be copied; empty when no
+    # embed exists
+    embed_token: str = ""
     created_at: datetime
+
+
+class EmbedFace(BaseModel):
+    """What an embedded assistant shows before anyone types.
+
+    Its name, what it is for, and how it opens. Deliberately not AssistantOut:
+    that carries the knowledge base ids, the operator instructions and the token
+    itself, none of which belongs on a page served to another application.
+    """
+
+    name: str
+    description: str = ""
+    opening_message: str = ""
 
 
 class ConversationOut(BaseModel):

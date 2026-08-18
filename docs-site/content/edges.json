@@ -1695,8 +1695,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 69,
-            "to": 69,
+            "from": 81,
+            "to": 81,
             "anchor": "def list_assistants() -> list[AssistantOut]:"
           }
         },
@@ -1727,8 +1727,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 75,
-            "to": 75,
+            "from": 87,
+            "to": 87,
             "anchor": "def create_assistant(body: AssistantCreate,"
           }
         },
@@ -1766,8 +1766,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 94,
-            "to": 94,
+            "from": 106,
+            "to": 106,
             "anchor": "def get_assistant(assistant_id: uuid.UUID) -> AssistantOut:"
           }
         },
@@ -1805,8 +1805,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 103,
-            "to": 103,
+            "from": 115,
+            "to": 115,
             "anchor": "def update_assistant(assistant_id: uuid.UUID, body: AssistantUpdate,"
           }
         },
@@ -1844,8 +1844,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 137,
-            "to": 137,
+            "from": 155,
+            "to": 155,
             "anchor": "def delete_assistant(assistant_id: uuid.UUID,"
           }
         },
@@ -1890,8 +1890,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 154,
-            "to": 154,
+            "from": 172,
+            "to": 172,
             "anchor": "async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,"
           }
         },
@@ -1929,8 +1929,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 277,
-            "to": 277,
+            "from": 295,
+            "to": 295,
             "anchor": "def list_conversations(assistant_id: uuid.UUID) -> list[ConversationOut]:"
           }
         },
@@ -1968,8 +1968,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 285,
-            "to": 285,
+            "from": 303,
+            "to": 303,
             "anchor": "def conversation_messages(session_id: uuid.UUID) -> dict:"
           }
         },
@@ -2007,8 +2007,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 297,
-            "to": 297,
+            "from": 315,
+            "to": 315,
             "anchor": "def rename_conversation(session_id: uuid.UUID,"
           }
         },
@@ -2046,8 +2046,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 309,
-            "to": 309,
+            "from": 327,
+            "to": 327,
             "anchor": "def delete_conversation(session_id: uuid.UUID) -> Response:"
           }
         }
