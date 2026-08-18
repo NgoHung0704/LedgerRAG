@@ -38,7 +38,10 @@ import type { MessageKey } from "@/messages/en";
 import CopyButton from "@/components/CopyButton";
 import SourceModal from "@/components/SourceModal";
 import ChatScopeSelector, { type Scope } from "@/components/ChatScopeSelector";
+import React from "react";
+
 import { citationWeights } from "@/lib/citationWeight";
+import { splitFigures } from "@/lib/figures";
 import { inlineLabel } from "@/lib/documentName";
 
 // what the turn cost, measured client-side: the wait the user actually had.
@@ -542,12 +545,20 @@ function AnswerBody({
   verification?: Verification | null;
   onOpen: (c: Citation) => void;
 }) {
-  const ref = useFigureRules(verification);
   const segments = splitAnswerSegments(content);
+  // the rules under the figures animate in one frame after the verdict lands,
+  // so they have a scaleX(0) to grow from. A class this component owns, not one
+  // written onto the DOM behind React's back — that was the whole bug.
+  const [ruled, setRuled] = useState(false);
+  useEffect(() => {
+    if (!verification?.enabled) return;
+    const id = requestAnimationFrame(() => setRuled(true));
+    return () => cancelAnimationFrame(id);
+  }, [verification]);
   const tableCitations = (citations ?? []).filter((c) => c.kind === "table");
   let t = 0;
   return (
-    <div ref={ref} className="space-y-1">
+    <div className={`space-y-1 ${ruled ? "verified" : ""}`}>
       {segments.map((seg, i) => {
         if (seg.type === "table") {
           const cite = tableCitations[t++];
@@ -581,6 +592,7 @@ function AnswerBody({
                 <MarkdownProse
                   content={para}
                   citations={citations}
+                  verification={verification}
                   onOpen={onOpen}
                 />
               </div>
@@ -695,85 +707,58 @@ function Bibliography({
   );
 }
 
-// A figure is the part of an answer that has to be right, so it is set in the
-// ledger mono and carries its own verdict: a verdigris rule under one the
-// verifier matched to a cited source, ochre under one it could not.
-//
-// The pass runs once, when verification lands — which is the same moment the
-// rules draw themselves. The motion is the checking finishing, not an ornament
-// laid on afterwards. Wrapping happens in the DOM rather than in the markdown
-// so the model's text is never re-parsed as HTML.
-const FIGURE = /\d[\d  .,\s]*\d\s*(?:%|€)?|\d\s*(?:%|€)?/g;
-
-function useFigureRules(verification?: Verification | null) {
-  // this hook writes a title onto a DOM node inside an effect that runs ONCE
-  // per answer, so a figure already on screen keeps the language it was
-  // rendered in until the next answer. Stated rather than papered over: making
-  // it re-run would mean re-walking text the reader is looking at.
-  const t = useT();
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const root = ref.current;
-    if (!root || !verification?.enabled || root.dataset.figured === "1") return;
-    root.dataset.figured = "1";
-
-    const unverified = verification.unverified ?? [];
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const texts: Text[] = [];
-    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-      const t = n as Text;
-      // tables already line their own digits up; leave code and controls alone
-      if (t.parentElement?.closest("table, code, pre, button, .fig")) continue;
-      if (/\d/.test(t.data)) texts.push(t);
-    }
-
-    for (const node of texts) {
-      const frag = document.createDocumentFragment();
-      let last = 0;
-      FIGURE.lastIndex = 0;
-      for (let m = FIGURE.exec(node.data); m; m = FIGURE.exec(node.data)) {
-        const raw = m[0].trim();
-        // a lone digit is a list marker or part of a date, not a figure the
-        // answer is staking a claim on
-        if (!raw || /^\d$/.test(raw)) continue;
-        frag.append(node.data.slice(last, m.index));
-        const span = document.createElement("span");
-        const bad = unverified.indexOf(raw) !== -1;
-        span.className = bad ? "fig fig-unverified" : "fig";
-        span.textContent = raw;
-        if (bad) span.title = t("sources.figure_unverified");
-        frag.append(span);
-        last = m.index + m[0].length;
-        // keep any trailing space the trim() dropped
-        frag.append(m[0].slice(raw.length));
-      }
-      if (last === 0) continue;
-      frag.append(node.data.slice(last));
-      node.replaceWith(frag);
-    }
-
-    // one frame later, so the rules have a scaleX(0) to animate FROM
-    const id = requestAnimationFrame(() => root.classList.add("verified"));
-    return () => cancelAnimationFrame(id);
-  }, [verification]);
-
-  return ref;
-}
-
 // Prose (or a fallback markdown table). Inline citation markers ([1], [2][3])
 // become clickable receipts that open the exact source — provenance made
 // tactile: the answer's numbers trace back to the table they came from.
+/** Text with its figures marked, as React elements.
+ *
+ *  Recursion is one level deep by design: react-markdown hands each element its
+ *  own children, so a number inside **bold** is marked when the `strong`
+ *  renderer runs, not here. */
+function figured(
+  children: React.ReactNode,
+  unverified: string[] | null,
+  title: string,
+): React.ReactNode {
+  if (!unverified) return children;
+  return React.Children.map(children, (child, ci) => {
+    if (typeof child !== "string") return child;
+    const parts = splitFigures(child);
+    if (parts.length === 1 && !parts[0].figure) return child;
+    return parts.map((part, pi) => {
+      if (!part.figure) return part.text;
+      const bad = unverified.indexOf(part.text) !== -1;
+      return (
+        <span
+          key={`${ci}-${pi}`}
+          className={bad ? "fig fig-unverified" : "fig"}
+          title={bad ? title : undefined}
+        >
+          {part.text}
+        </span>
+      );
+    });
+  });
+}
+
 function MarkdownProse({
   content,
   citations,
+  verification,
   onOpen,
 }: {
   content: string;
   citations?: Citation[];
+  verification?: Verification | null;
   onOpen: (c: Citation) => void;
 }) {
   const t = useT();
+  // null when the check did not run: no verdict, so nothing is marked
+  const unverified = verification?.enabled
+    ? verification.unverified ?? []
+    : null;
+  const mark = (children: React.ReactNode) =>
+    figured(children, unverified, t("sources.figure_unverified"));
   // [1] -> [[1]](#cite-1) so markdown renders a link we can intercept
   const linked = content.replace(/\[(\d+)\]/g, "[[$1]](#cite-$1)");
   return (
@@ -806,6 +791,14 @@ function MarkdownProse({
               </button>
             );
           },
+          p: ({ children }) => <p>{mark(children)}</p>,
+          li: ({ children }) => <li>{mark(children)}</li>,
+          strong: ({ children }) => <strong>{mark(children)}</strong>,
+          em: ({ children }) => <em>{mark(children)}</em>,
+          blockquote: ({ children }) => <blockquote>{mark(children)}</blockquote>,
+          h1: ({ children }) => <h1>{mark(children)}</h1>,
+          h2: ({ children }) => <h2>{mark(children)}</h2>,
+          h3: ({ children }) => <h3>{mark(children)}</h3>,
         }}
       >
         {linked}
