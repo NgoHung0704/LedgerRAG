@@ -1,5 +1,6 @@
 "use client";
 
+import { createEmbedToken } from "@/lib/api";
 import { useT } from "@/components/LocaleProvider";
 import { useState } from "react";
 import { Database, ShieldCheck, Trash2 } from "lucide-react";
@@ -36,6 +37,28 @@ export default function AssistantForm({
   );
   const [verify, setVerify] = useState<boolean>(assistant?.verify ?? true);
   const [contact, setContact] = useState(assistant?.escalation_contact ?? "");
+  const [token, setToken] = useState(assistant?.embed_token ?? "");
+  const [minting, setMinting] = useState(false);
+
+  /** The token comes from the server; see createEmbedToken. */
+  const mint = async (id: string) => {
+    setMinting(true);
+    try {
+      setToken((await createEmbedToken(id)).embed_token);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setMinting(false);
+    }
+  };
+
+  /** What the host application pastes. `origin` is read at render because the
+   *  deployment's own address is the only one that can be right here, and it is
+   *  not known at build time. */
+  const snippet = (tok: string) =>
+    `<iframe src="${typeof window === "undefined" ? "" : window.location.origin}` +
+    `/embed/${tok}?lang=fr" width="420" height="620" ` +
+    `style="border:1px solid #e5e7eb;border-radius:12px"></iframe>`;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -62,6 +85,7 @@ export default function AssistantForm({
         kb_ids: Array.from(kbIds),
         verify,
         escalation_contact: contact.trim(),
+        embed_token: token.trim(),
       });
     } catch (err) {
       setError(String(err));
@@ -177,6 +201,41 @@ export default function AssistantForm({
           <p className="mt-1 text-xs text-ink-subtle">
             {t("asst.escalation_contact_hint")}
           </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
+            {t("asst.embed")}
+          </label>
+          {!assistant ? (
+            <p className="text-xs text-ink-subtle">{t("asst.embed_save_first")}</p>
+          ) : token ? (
+            <>
+              <textarea
+                readOnly
+                rows={3}
+                className={`${inputCls} font-mono text-[11px]`}
+                onFocus={(e) => e.currentTarget.select()}
+                value={snippet(token)}
+              />
+              <div className="mt-1 flex items-center gap-2">
+                <Button type="button" size="xs" variant="ghost" loading={minting}
+                        onClick={() => mint(assistant.id)}>
+                  {t("asst.embed_regenerate")}
+                </Button>
+                <Button type="button" size="xs" variant="ghost"
+                        onClick={() => setToken("")}>
+                  {t("asst.embed_revoke")}
+                </Button>
+              </div>
+              <p className="mt-1 text-xs text-ink-subtle">{t("asst.embed_hint")}</p>
+            </>
+          ) : (
+            <Button type="button" size="xs" variant="tonal" loading={minting}
+                    onClick={() => mint(assistant.id)}>
+              {t("asst.embed_create")}
+            </Button>
+          )}
         </div>
 
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line p-3">

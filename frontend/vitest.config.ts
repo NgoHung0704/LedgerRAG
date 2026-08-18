@@ -14,5 +14,5 @@ export default defineConfig({
   // node, not jsdom: what is tested here is a pure function. useT() is a
   // three-line wrapper over it and a browser environment would be weight
   // carried for nothing.
-  test: { environment: "node", include: ["lib/**/*.test.ts", "components/**/*.test.tsx"] },
+  test: { environment: "node", include: ["lib/**/*.test.ts", "components/**/*.test.tsx", "middleware.test.ts"] },
 });

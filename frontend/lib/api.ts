@@ -579,6 +579,8 @@ export type Assistant = {
   // who the caution notice names. On the assistant, not its knowledge bases:
   // one fixed set of documents, one purpose, nobody to be ambiguous with.
   escalation_contact: string;
+  // the credential one embed uses; "" when no embed exists
+  embed_token: string;
   created_at: string;
 };
 
@@ -590,6 +592,10 @@ export type AssistantInput = Partial<{
   opening_message: string;
   verify: boolean | null;
   escalation_contact: string;
+  // "" revokes the embed. A new value comes from createEmbedToken, never from
+  // the browser: crypto.randomUUID() exists only in a secure context and this
+  // is served over plain http on an intranet name.
+  embed_token: string;
 }>;
 
 export type Conversation = {
@@ -630,6 +636,11 @@ export const updateAssistant = (id: string, body: AssistantInput) =>
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+  }).then((r) => jsonOrThrow<Assistant>(r));
+
+export const createEmbedToken = (id: string) =>
+  fetch(`${API_URL}/api/assistants/${id}/embed-token`, {
+    method: "POST",
   }).then((r) => jsonOrThrow<Assistant>(r));
 
 export const deleteAssistant = (id: string) =>

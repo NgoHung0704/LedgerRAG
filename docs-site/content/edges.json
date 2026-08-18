@@ -1844,8 +1844,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 155,
-            "to": 155,
+            "from": 181,
+            "to": 181,
             "anchor": "def delete_assistant(assistant_id: uuid.UUID,"
           }
         },
@@ -1890,8 +1890,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 172,
-            "to": 172,
+            "from": 198,
+            "to": 198,
             "anchor": "async def assistant_chat(assistant_id: uuid.UUID, body: AssistantChatRequest,"
           }
         },
@@ -1929,8 +1929,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 308,
-            "to": 308,
+            "from": 334,
+            "to": 334,
             "anchor": "def list_conversations(assistant_id: uuid.UUID) -> list[ConversationOut]:"
           }
         },
@@ -1968,8 +1968,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 316,
-            "to": 316,
+            "from": 342,
+            "to": 342,
             "anchor": "def conversation_messages(session_id: uuid.UUID) -> dict:"
           }
         },
@@ -2007,8 +2007,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 328,
-            "to": 328,
+            "from": 354,
+            "to": 354,
             "anchor": "def rename_conversation(session_id: uuid.UUID,"
           }
         },
@@ -2046,10 +2046,35 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/assistants.py",
-            "from": 340,
-            "to": 340,
+            "from": 366,
+            "to": 366,
             "anchor": "def delete_conversation(session_id: uuid.UUID) -> Response:"
           }
+        },
+        {
+          "method": "POST",
+          "path": "/api/assistants/{assistant_id}/embed-token",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Không có thân yêu cầu. Token do máy chủ sinh, không phải trình duyệt: crypto.randomUUID() chỉ tồn tại trong secure context, còn hệ thống này phục vụ qua http trên tên nội bộ.",
+            "en": "No body. The token is minted by the server, not the browser: crypto.randomUUID() exists only in a secure context and this is served over plain http on an intranet name."
+          },
+          "response": {
+            "vi": "Trợ lý kèm token mới. Token cũ chết ngay lúc lệnh này trả về.",
+            "en": "The assistant with its new token. The previous one stops working the moment this returns."
+          },
+          "errors": [
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Không có trợ lý này.",
+                "en": "No such assistant."
+              }
+            }
+          ]
         }
       ]
     },
@@ -2535,8 +2560,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 174,
-        "to": 174,
+        "from": 178,
+        "to": 178,
         "anchor": "- \"3000:3000\""
       }
     },

@@ -151,6 +151,32 @@ def update_assistant(assistant_id: uuid.UUID, body: AssistantUpdate,
         return _out(s, assistant)
 
 
+@router.post("/assistants/{assistant_id}/embed-token",
+             response_model=AssistantOut)
+def create_embed_token(assistant_id: uuid.UUID,
+                       user: User = Depends(current_user)) -> AssistantOut:
+    """Mint a fresh embed token, replacing any existing one.
+
+    On the server because crypto.randomUUID() exists only in a secure context
+    and this is served over plain http on an intranet name — minted in the
+    browser, the button would have thrown in production and nowhere else.
+
+    Replacing is the same act as revoking-and-reissuing, so the running embed
+    stops working the moment this returns. The UI says so before it is pressed.
+    """
+    with session_scope() as s:
+        assistant = repo.get_assistant(s, assistant_id)
+        if assistant is None:
+            raise HTTPException(404, "assistant not found")
+        config = dict(assistant.config or {})
+        config["embed_token"] = mint_embed_token()
+        assistant.config = config
+        s.flush()
+        repo.log_audit(s, user.username, "assistant_embed_token",
+                       detail={"assistant": assistant.name})
+        return _out(s, assistant)
+
+
 @router.delete("/assistants/{assistant_id}", status_code=204)
 def delete_assistant(assistant_id: uuid.UUID,
                      user: User = Depends(current_user)) -> Response:

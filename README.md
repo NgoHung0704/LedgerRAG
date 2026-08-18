@@ -116,6 +116,24 @@ catalogues are correct in meaning but have not been read by a native speaker** �
 until one has. What the assistant ANSWERS is unaffected: it keeps replying in
 the language of the documents, and no prompt was touched.
 
+### Embedding an assistant in another application
+
+An assistant can be dropped into another internal page as an `<iframe>`. Open
+its Settings, press **Create an embed**, and copy the snippet. Sharing a
+knowledge base needs nothing: attach the same KB to a second assistant.
+
+Two things gate it, both closed by default. The token is minted per assistant
+and revoking it stops the running embed immediately. And nothing may frame the
+page until `EMBED_FRAME_ANCESTORS` names the host origins — unset, the embed
+route answers `frame-ancestors 'none'` and the iframe stays blank.
+
+The token opens exactly two routes, `GET /api/embed/{token}` and
+`POST /api/embed/{token}/chat`, and the chat route takes no assistant id, so it
+cannot be aimed elsewhere. It is **not** a secret while `auth.mode` is
+`disabled`: everyone who can reach the API on the intranet is already an
+administrator of it. What it buys is revocation, and being able to turn
+authentication on later without tearing the embed out.
+
 Rule from the spec: **prompts are code** — any prompt/model change must re-run
 the relevant eval (`make spike-grade` now; `make eval-tables` / `make eval-qa`
 from Phases 2/4; `make eval-adversarial` for the guardrail red-team) and paste

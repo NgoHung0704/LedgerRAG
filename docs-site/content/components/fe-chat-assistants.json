@@ -25,7 +25,7 @@
       "name": "AssistantForm",
       "decl": "export default function AssistantForm({",
       "file": "frontend/components/AssistantForm.tsx",
-      "line": 12,
+      "line": 13,
       "note": {
         "vi": "Một trợ lý gói sẵn phạm vi KB và chỉ dẫn riêng.",
         "en": "An assistant packages a knowledge-base scope and its own instructions."

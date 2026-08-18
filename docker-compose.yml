@@ -170,6 +170,10 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     restart: *restart
+    # who may iframe an embedded assistant. Empty = nobody, which is what the
+    # middleware renders as frame-ancestors 'none'.
+    environment:
+      - EMBED_FRAME_ANCESTORS=${EMBED_FRAME_ANCESTORS:-}
     ports:
       - "3000:3000"
     depends_on:
