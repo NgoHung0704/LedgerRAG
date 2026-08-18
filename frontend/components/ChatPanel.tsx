@@ -38,6 +38,7 @@ import type { MessageKey } from "@/messages/en";
 import CopyButton from "@/components/CopyButton";
 import SourceModal from "@/components/SourceModal";
 import ChatScopeSelector, { type Scope } from "@/components/ChatScopeSelector";
+import { citationWeights } from "@/lib/citationWeight";
 
 // what the turn cost, measured client-side: the wait the user actually had.
 // searchMs is null for a conversational reply (nothing was retrieved).
@@ -602,7 +603,6 @@ function AnswerBody({
  *  numbers. A wide search can return a dozen, which buries the answer above it
  *  — so three, and the rest on request. */
 // below this share of the best source's score, a citation is shown faded
-const WEAK_RATIO = 0.5;
 const SHOWN = 3;
 
 function Bibliography({
@@ -618,13 +618,20 @@ function Bibliography({
   const shown = all ? citations : citations.slice(0, SHOWN);
 
   // Ten sources printed at equal weight tell a reader nothing about which one
-  // the answer rests on. The score is the reranker's judgement - does this
-  // passage answer the question - so a source far below the best one is shown
-  // faded: still there, still clickable, no longer competing for attention.
-  // Relative, not absolute: the reranker is pluggable and its scale is not ours
-  // to assume, but "much weaker than the best" holds whatever it returns.
-  const best = Math.max(...citations.map((c) => c.score), 0);
-  const isWeak = (c: Citation) => best > 0 && c.score < best * WEAK_RATIO;
+  // the answer rests on. So the ones the retrieval scored highest are set in
+  // the page's ink and a heavier weight, and the trailing ones are faded —
+  // still there, still clickable, no longer competing for attention.
+  //
+  // The first version of this only faded, and only when a source fell below
+  // half the best score. Nothing was ever emphasised, and cross-encoder scores
+  // cluster tightly enough that the fading almost never fired either. See
+  // citationWeights: it reads position within THIS answer's spread, and says
+  // nothing at all when the sources are genuinely equal.
+  // over ALL citations, not the three currently shown: computed on the slice,
+  // pressing "+2 more" would re-decide which sources are emphasised, and the
+  // weight of a source would depend on whether the list happened to be open.
+  // shown is a prefix of citations, so the index lines up either way.
+  const weights = citationWeights(citations.map((c) => c.score));
 
   return (
     <div className="marginal mt-2.5">
@@ -632,21 +639,27 @@ function Bibliography({
         {t("sources.from")}
       </div>
       <div className="marginal-body flex flex-wrap items-center gap-x-3 gap-y-1">
-        {shown.map((c) => (
+        {shown.map((c, i) => (
           <button
             key={c.index}
             onClick={() => onOpen(c)}
             title={
-              isWeak(c)
+              weights[i] === "weak"
                 ? t("sources.weak_match", { snippet: c.snippet })
-                : c.snippet
+                : weights[i] === "strong"
+                  ? t("sources.strong_match", { snippet: c.snippet })
+                  : c.snippet
             }
-            className={`group inline-flex items-center gap-1.5 font-mono text-[11px] transition-colors ${
-              isWeak(c) ? "opacity-40 hover:opacity-100" : ""
-            } ${
+            className={`group inline-flex items-center gap-1.5 font-mono transition-colors ${
+              weights[i] === "strong"
+                ? "text-[11.5px] font-semibold"
+                : "text-[11px]"
+            } ${weights[i] === "weak" ? "opacity-40 hover:opacity-100" : ""} ${
               c.needs_review
                 ? "text-amber-700 hover:text-amber-800 dark:text-amber-500"
-                : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
+                : weights[i] === "strong"
+                  ? "text-ink hover:text-indigo-700 dark:hover:text-indigo-300"
+                  : "text-ink-subtle hover:text-indigo-700 dark:hover:text-indigo-300"
             }`}
           >
             {c.kind === "table" ? (
@@ -654,7 +667,11 @@ function Bibliography({
             ) : (
               <FileText size={11} aria-hidden="true" />
             )}
-            <span className="underline decoration-line underline-offset-2 group-hover:decoration-current">
+            <span
+              className={`underline underline-offset-2 group-hover:decoration-current ${
+                weights[i] === "strong" ? "decoration-current/40" : "decoration-line"
+              }`}
+            >
               {c.index} · {c.filename} · p.{c.page}
             </span>
             {c.needs_review && <AlertTriangle size={11} aria-hidden="true" />}

@@ -249,6 +249,7 @@ export const de: Record<MessageKey, string> = {
   "diag.col_tables": "Tabellen (bbox · Zeilen×Spalten · Füllung · akzeptiert)",
   "diag.raw_reply": "Rohantwort des Modells",
   "models.pull_placeholder": "z. B. qwen3-vl:8b-instruct",
+  "sources.strong_match": "Starke Übereinstimmung mit der Frage — {snippet}",
   "app.language": "Sprache",
   "source.header": "Quelle {index}: {filename}, Seite {page}",
   "verify.checked_one": "{count} Zahl mit den Quellen abgeglichen",

@@ -246,6 +246,7 @@ export const fr: Record<MessageKey, string> = {
   "diag.col_tables": "tableaux (bbox · lignes×colonnes · remplissage · accepté)",
   "diag.raw_reply": "réponse brute du modèle",
   "models.pull_placeholder": "ex. qwen3-vl:8b-instruct",
+  "sources.strong_match": "Correspondance forte avec la question — {snippet}",
   "app.language": "Langue",
   "source.header": "Source {index} : {filename}, page {page}",
   "verify.checked_one": "{count} chiffre vérifié dans les sources",

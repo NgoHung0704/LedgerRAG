@@ -247,6 +247,7 @@ export const en = {
   "diag.col_tables": "tables (bbox · rows×cols · fill · accept)",
   "diag.raw_reply": "raw model reply",
   "models.pull_placeholder": "e.g. qwen3-vl:8b-instruct",
+  "sources.strong_match": "Strong match with the question — {snippet}",
   "app.language": "Language",
   "source.header": "Source {index}: {filename}, page {page}",
   "verify.checked_one": "{count} number checked against sources",

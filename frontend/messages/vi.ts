@@ -248,6 +248,7 @@ export const vi: Record<MessageKey, string> = {
   "diag.col_tables": "bảng (bbox · hàng×cột · độ đầy · chấp nhận)",
   "diag.raw_reply": "phản hồi thô của mô hình",
   "models.pull_placeholder": "ví dụ: qwen3-vl:8b-instruct",
+  "sources.strong_match": "Khớp mạnh với câu hỏi — {snippet}",
   "app.language": "Ngôn ngữ",
   "source.header": "Nguồn {index}: {filename}, trang {page}",
   "verify.checked_one": "Đã đối chiếu {count} con số với nguồn",

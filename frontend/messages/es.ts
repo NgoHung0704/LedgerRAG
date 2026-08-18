@@ -249,6 +249,7 @@ export const es: Record<MessageKey, string> = {
   "diag.col_tables": "tablas (bbox · filas×columnas · relleno · aceptado)",
   "diag.raw_reply": "respuesta en bruto del modelo",
   "models.pull_placeholder": "p. ej. qwen3-vl:8b-instruct",
+  "sources.strong_match": "Coincidencia fuerte con la pregunta — {snippet}",
   "app.language": "Idioma",
   "source.header": "Fuente {index}: {filename}, página {page}",
   "verify.checked_one": "{count} cifra verificada con las fuentes",

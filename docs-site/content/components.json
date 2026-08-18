@@ -932,7 +932,8 @@
         "frontend/components/ChatPanel.tsx",
         "frontend/components/ChatScopeSelector.tsx",
         "frontend/components/AssistantForm.tsx",
-        "frontend/components/AssistantCardMenu.tsx"
+        "frontend/components/AssistantCardMenu.tsx",
+        "frontend/lib/citationWeight.ts"
       ],
       "phases": [
         {
