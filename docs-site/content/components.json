@@ -936,7 +936,9 @@
         "frontend/components/AssistantCardMenu.tsx",
         "frontend/lib/citationWeight.ts",
         "frontend/lib/documentName.ts",
-        "frontend/lib/figures.ts"
+        "frontend/lib/figures.ts",
+        "frontend/app/embed/[token]/page.tsx",
+        "frontend/app/embed/[token]/EmbedChat.tsx"
       ],
       "phases": [
         {

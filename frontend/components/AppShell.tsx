@@ -19,6 +19,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // not like being left with the menu still covering the page
   useEffect(() => setNavOpen(false), [pathname]);
 
+  // an embedded page is somebody else's page: no rail, no skip link, none of
+  // our chrome around it. The hooks above run first and unconditionally — a
+  // hook after this return would change count on the render where the path
+  // changes, which React throws on.
+  //
+  // The more idiomatic Next answer is two route groups with two layouts, but
+  // that means moving every existing page into a new directory for the sake of
+  // one exception.
+  if (pathname?.startsWith("/embed")) return <>{children}</>;
+
   return (
     <>
       <a href="#main" className="skip-link">

@@ -650,6 +650,36 @@ export async function* assistantChatStream(
   yield* sseStream<MultiChatEvent>(res);
 }
 
+/** What an embedded assistant shows before anyone types.
+ *  Deliberately not Assistant: what another application is served carries no
+ *  knowledge base ids, no operator instructions and not the token itself. */
+export type EmbedFace = {
+  name: string;
+  description: string;
+  opening_message: string;
+};
+
+export const getEmbedFace = (token: string) =>
+  fetch(`${API_URL}/api/embed/${encodeURIComponent(token)}`, {
+    cache: "no-store",
+  }).then((r) => jsonOrThrow<EmbedFace>(r));
+
+export async function* embedChatStream(
+  token: string,
+  question: string,
+  sessionId: string | null,
+): AsyncGenerator<MultiChatEvent> {
+  const res = await fetch(
+    `${API_URL}/api/embed/${encodeURIComponent(token)}/chat`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, session_id: sessionId }),
+    },
+  );
+  yield* sseStream<MultiChatEvent>(res);
+}
+
 export const getConversations = (assistantId: string) =>
   fetch(`${API_URL}/api/assistants/${assistantId}/conversations`, {
     cache: "no-store",

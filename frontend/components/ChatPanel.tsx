@@ -21,6 +21,7 @@ import {
   assistantChatStream,
   chatStream,
   chatMultiStream,
+  embedChatStream,
   getElement,
   sendFeedback,
   type Caution,
@@ -66,6 +67,7 @@ export default function ChatPanel({
   kbId,
   allKbs = [],
   assistantId,
+  embedToken,
   conversationId = null,
   initialMessages,
   emptyState,
@@ -78,6 +80,9 @@ export default function ChatPanel({
   // assistant mode: the app's own KBs and prompt drive everything, so there is
   // no scope picker — its context is fixed by definition.
   assistantId?: string;
+  // embedded in another application: the token is the whole credential, so
+  // there is no scope picker and no assistant id in any request
+  embedToken?: string;
   conversationId?: string | null;
   initialMessages?: StoredMessage[];
   emptyState?: React.ReactNode;
@@ -93,7 +98,7 @@ export default function ChatPanel({
   );
   // the scope picker shows whenever there is a choice: >1 KB when anchored to
   // one, any KB on the standalone Ask page. An assistant has a fixed context.
-  const showScope = assistantId
+  const showScope = assistantId || embedToken
     ? false
     : kbId
       ? allKbs.length > 1
@@ -210,7 +215,9 @@ export default function ChatPanel({
     // an assistant has its own endpoint (its KBs + prompt); otherwise "this KB"
     // uses the scoped endpoint and auto/pinned the multi-KB router
     const isNewThread = sessionRef.current === null;
-    const stream = assistantId
+    const stream = embedToken
+      ? embedChatStream(embedToken, q, sessionRef.current)
+      : assistantId
       ? assistantChatStream(assistantId, q, sessionRef.current)
       : scope.mode === "this" && kbId
         ? chatStream(kbId, q, sessionRef.current)
