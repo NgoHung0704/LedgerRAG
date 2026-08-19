@@ -1,0 +1,765 @@
+# Vérification du jeu d'évaluation
+
+> Généré par `tests/eval/qa/checklist.py`. **Ne pas modifier ici** — corriger le `.jsonl` puis régénérer.
+
+Chaque ligne est une attente écrite à la main à partir d'un document réel. Rien ne relit ces documents : une attente fausse plafonne le score en silence, ou pire, valide une réponse qui n'est pas vraie. Cocher une case veut dire **« j'ai rouvert le document et l'attente est exacte »**.
+
+## Comment chaque type est noté
+
+- **`table`** — La réponse doit contenir CHAQUE chaîne attendue, et citer le bon document.
+- **`text`** — Idem `table`, sur du texte courant.
+- **`factual`** — Idem `table`, sur un fait non chiffré.
+- **`trap`** — Le corpus ne contient PAS la réponse. Le système doit refuser, signaler, ou ne citer aucune source. Répondre est l'échec.
+- **`contrast`** — Plusieurs éditions couvrent le sujet et DIFFÈRENT. Refuser passe ; nommer au moins deux des marqueurs listés passe ; en choisir une en silence échoue.
+- **`concordant`** — Plusieurs éditions couvrent le sujet et CONCORDENT. Refuser ÉCHOUE — il n'y a aucune ambiguïté. Il faut énoncer la valeur et citer au moins deux sources.
+- **`figure`** — Seule la RÉCUPÉRATION est notée : la bonne page doit être citée ou proposée en « voir aussi ». Ce que la réponse dit de l'image n'est pas jugé.
+
+
+---
+
+## Jeu principal (`make eval-qa`) — 3 PDF RH réels
+
+`questions.jsonl` — 39 entrées
+
+- [ ] **c1** · `table`
+  - **Q :** Quelle est la cotation correspondant à la classe d'emploi 16 ?
+  - **Attendu :** `52 à 54  _(ou : 52 et 54, entre 52 et 54)_`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c2** · `table`
+  - **Q :** Quelles classes d'emploi appartiennent au groupe d'emplois H ?
+  - **Attendu :** `15` · `16`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c3** · `table`
+  - **Q :** Quelles classes d'emploi appartiennent au groupe d'emplois I ?
+  - **Attendu :** `17` · `18`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c4** · `table`
+  - **Q :** Quel emploi CETIAT correspond à la classe d'emploi 16 ?
+  - **Attendu :** `Directeur`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c5** · `table`
+  - **Q :** Quelle est la cotation du poste Comptable ?
+  - **Attendu :** `22 à 24`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c6** · `table`
+  - **Q :** Quelle est la cotation de la classe d'emploi 5 ?
+  - **Attendu :** `19 à 21`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c7** · `table`
+  - **Q :** Citez deux emplois CETIAT de la classe d'emploi 10.
+  - **Attendu :** `Maintenance` · `Parc Mesure`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c8** · `table`
+  - **Q :** Quelle est la cotation du poste Ingénieur(e) Commercial(e) ?
+  - **Attendu :** `40 à 42`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **c9** · `table`
+  - **Q :** Quelle est la cotation du poste Acheteur(se) ?
+  - **Attendu :** `37 à 39`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **a1** · `table`
+  - **Q :** Quel est le salaire minimum hiérarchique de la classe d'emploi 11 dans le barème unique à partir de 2024 ?
+  - **Attendu :** `34 900`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a2** · `table`
+  - **Q :** Quel est le salaire minimum hiérarchique de la classe d'emploi 16 dans le barème unique ?
+  - **Attendu :** `52 000`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a3** · `table`
+  - **Q :** Quel est le salaire minimum hiérarchique de la classe d'emploi 18 ?
+  - **Attendu :** `68 000`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a4** · `table`
+  - **Q :** Quel est le salaire minimum hiérarchique de la classe d'emploi 1 ?
+  - **Attendu :** `21 700`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a5** · `table`
+  - **Q :** Dans le barème adapté du groupe F, quel est le montant pour la classe 11 avec moins de 2 ans d'expérience professionnelle ?
+  - **Attendu :** `28 200`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a6** · `table`
+  - **Q :** Dans le barème adapté du groupe F, quel est le montant pour la classe 12 entre 2 et 4 ans d'expérience ?
+  - **Attendu :** `31 185`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a7** · `table`
+  - **Q :** Dans le barème adapté du groupe F, quel est le montant pour la classe 11 de 4 à 6 ans d'expérience ?
+  - **Attendu :** `31 979`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a8** · `text`
+  - **Q :** À combien d'années les partenaires sociaux souhaitent-ils porter la périodicité des négociations triennales obligatoires de branche ?
+  - **Attendu :** `4 ans`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a9** · `text`
+  - **Q :** À quelle date la convention collective nationale de la métallurgie entre-t-elle en vigueur ?
+  - **Attendu :** `janvier 2024`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a10** · `text`
+  - **Q :** Combien d'heures de travail de nuit sur 12 mois consécutifs suffisent à qualifier un salarié de travailleur de nuit ?
+  - **Attendu :** `320 heures`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a11** · `text`
+  - **Q :** Quel est le taux de la cotisation garantie de branche pour les cadres ?
+  - **Attendu :** `1,12`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a12** · `text`
+  - **Q :** Quel est le taux de la cotisation garantie de branche pour les salariés non-cadres ?
+  - **Attendu :** `0,6`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a13** · `text`
+  - **Q :** Jusqu'à quelle date l'application du barème unique peut-elle être reportée pour les entreprises éligibles à la période transitoire ?
+  - **Attendu :** `2030`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a14** · `text`
+  - **Q :** Sur quelle base mensualisée en heures le barème unique des salaires minima hiérarchiques est-il fixé ?
+  - **Attendu :** `151,66`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **a15** · `text`
+  - **Q :** Quel est le délai de franchise de la garantie « relais » pour les salariés ayant moins de 12 mois d'ancienneté ?
+  - **Attendu :** `90 jours`
+  - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **g1** · `text`
+  - **Q :** Comment le glossaire de classification définit-il le « diagnostic » ?
+  - **Attendu :** `dysfonctionnement`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **g2** · `text`
+  - **Q :** Qu'est-ce qu'un « contrôle ponctuel » selon le glossaire ?
+  - **Attendu :** `aléatoire`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **g3** · `text`
+  - **Q :** Qu'est-ce qu'une « négociation complexe » selon le glossaire ?
+  - **Attendu :** `périmètre large` · `période longue` · `acteurs`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **g4** · `text`
+  - **Q :** Que recouvrent les « connaissances élémentaires » dans le glossaire ?
+  - **Attendu :** `lire  _(ou : lecture)_` · `compter  _(ou : calcul)_`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **g5** · `table`
+  - **Q :** Quelles activités correspondent à la technique « Chaudronnerie » dans la colonne Activités du tableau illustratif ?
+  - **Attendu :** `Assemblage` · `Découpe`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **g6** · `table`
+  - **Q :** À quel domaine professionnel appartient la « Transformation des métaux » ?
+  - **Attendu :** `Fabrication`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **g7** · `table`
+  - **Q :** Citez des activités du domaine professionnel Maintenance d'après le tableau illustratif.
+  - **Attendu :** `Diagnostic` · `Dépannage`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **g8** · `table`
+  - **Q :** Quelles techniques relèvent du domaine « Administration et finance » ?
+  - **Attendu :** `Comptabilité` · `Audit`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **p1** · `trap`
+  - **Q :** Quel est le salaire minimum hiérarchique de la classe d'emploi 20 ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **p2** · `trap`
+  - **Q :** Quel était le salaire d'un Directeur(trice) au CETIAT en 2019 ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **p3** · `trap`
+  - **Q :** Quel est le montant de la prime de vacances au CETIAT ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **p4** · `trap`
+  - **Q :** Combien de salariés le CETIAT emploie-t-il ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **p5** · `trap`
+  - **Q :** Quel est le barème des salaires du groupe d'emplois K ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **p6** · `trap`
+  - **Q :** Quel est le salaire moyen des salariés du groupe F ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **p7** · `trap`
+  - **Q :** Quels sont les salaires minima hiérarchiques prévus pour l'année 2026 ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+
+---
+
+## Fiches de fonds (`make eval-funds`) — 3 éditions du même corpus
+
+`funds.jsonl` — 17 entrées
+
+- [ ] **f1** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quelle est la performance cumulée sur 5 ans du fonds EPSENS D.E.F.I.S. ?
+  - **Attendu :** `50,46`
+  - **Source :** EPSENS DEFIS - 100005.pdf
+- [ ] **f2** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quelle est la performance cumulée sur 5 ans du fonds EPSENS MONETAIRE ISR ?
+  - **Attendu :** `-2,19`
+  - **Source :** EPSENS MONETAIRE ISR - 4004.pdf
+- [ ] **f3** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quelle est la volatilité annualisée sur 3 ans du portefeuille EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE ?
+  - **Attendu :** `2,63`
+  - **Source :** EPSENS OBLIGATIONS VERTES ISR - 6006.pdf
+- [ ] **f4** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quelle a été la performance annuelle 2018 du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?
+  - **Attendu :** `-10,57`
+  - **Source :** EPSENS RHONE ALPES AUVERGNE SOLIDAIRE - 1008.pdf
+- [ ] **f5** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quel est le taux de sélection SR du fonds EPSENS FLEXI TAUX COURT ISR SOLIDAIRE ?
+  - **Attendu :** `44,20`
+  - **Source :** EPSENS FLEXI TAUX COURT ISR SOLIDAIRE - 100312.pdf
+- [ ] **f6** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quelle est la sensibilité du portefeuille EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE à la date du rapport ?
+  - **Attendu :** `5,31`
+  - **Source :** EPSENS OBLIGATIONS VERTES ISR - 6006.pdf
+- [ ] **f7** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quel est l'actif net du portefeuille EPSENS TRANSITION CLIMAT ?
+  - **Attendu :** `2,00`
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571.pdf
+- [ ] **f8** · `table`
+  - **Q :** Dans le reporting au 30/09/2021, quel est le taux de sélection SR du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?
+  - **Attendu :** `83,27`
+  - **Source :** EPSENS RHONE ALPES AUVERGNE SOLIDAIRE - 1008.pdf
+- [ ] **f9** · `trap`
+  - **Q :** Dans le reporting au 30/09/2021, quelle est la performance cumulée sur 10 ans du fonds EPSENS TRANSITION CLIMAT ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **f10** · `trap`
+  - **Q :** Dans le reporting au 30/09/2021, quelle est la volatilité annualisée sur 3 ans du fonds EPSENS TRANSITION CLIMAT ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **f11** · `contrast`
+  - **Q :** Quelle est la performance cumulée sur 5 ans ?
+  - **Attendu :** `D.E.F.I.S.  _(ou : DEFIS)_` · `OBLIGATIONS VERTES` · `MONETAIRE` · `FLEXI TAUX COURT` · `RHONE-ALPES  _(ou : RHONE ALPES, Rhône-Alpes)_` · `TRANSITION CLIMAT`
+- [ ] **f12** · `contrast`
+  - **Q :** Quel est le taux de sélection SR ?
+  - **Attendu :** `D.E.F.I.S.  _(ou : DEFIS)_` · `OBLIGATIONS VERTES` · `MONETAIRE` · `FLEXI TAUX COURT` · `RHONE-ALPES  _(ou : RHONE ALPES, Rhône-Alpes)_` · `TRANSITION CLIMAT`
+- [ ] **f13** · `text`
+  - **Q :** Dans le reporting au 30/09/2021, quel est l'indice de référence du fonds EPSENS D.E.F.I.S. ?
+  - **Attendu :** `75` · `MSCI` · `25` · `Bloomberg`
+  - **Source :** EPSENS DEFIS - 100005.pdf
+- [ ] **f14** · `text`
+  - **Q :** Dans le reporting au 30/09/2021, quelle est la classification AMF du fonds EPSENS TRANSITION CLIMAT ?
+  - **Attendu :** `union européenne  _(ou : Union européenne, pays de l'union)_`
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571.pdf
+- [ ] **f15** · `contrast`
+  - **Q :** Quelle est la performance cumulée sur 5 ans du fonds EPSENS OBLIGATIONS VERTES ISR SOLIDAIRE ?
+  - **Attendu :** `30/09/2021` · `31/08/2023` · `30/09/2024`
+- [ ] **f16** · `contrast`
+  - **Q :** Quelle est la volatilité annualisée sur 3 ans du fonds EPSENS RHONE-ALPES - AUVERGNE SOLIDAIRE ?
+  - **Attendu :** `30/09/2021` · `31/08/2023` · `30/09/2024`
+- [ ] **f17** · `contrast`
+  - **Q :** Quel est l'actif net du portefeuille EPSENS TRANSITION CLIMAT ?
+  - **Attendu :** `30/09/2021` · `31/08/2023` · `30/09/2024`
+
+---
+
+## Convention collective (`make eval-convention`)
+
+`convention.jsonl` — 40 entrées
+
+- [ ] **cotation_1** · `table`
+  - **Q :** Quelle est la cotation correspondant à l'emploi de Directeur(trice) ?
+  - **Attendu :** `52 à 54  _(ou : 52-54, 52 et 54, entre 52 et 54)_`
+  - **Source :** Cotation emplois CETIAT 2023_07_27
+- [ ] **cotation_2** · `table`
+  - **Q :** À quelle classe d'emploi appartient un « Chargé d'essais/étalonnages (Niveau 2) » ?
+  - **Attendu :** `classe d'emploi 10  _(ou : classe 10, classe : 10)_` · `groupe E  _(ou : groupe d'emplois E, groupe : E)_`
+  - **Source :** Cotation emplois CETIAT 2023_07_27
+- [ ] **cotation_3** · `table`
+  - **Q :** Quel est le groupe d'emplois pour un « Responsable de Pôle » ?
+  - **Attendu :** `groupe G  _(ou : groupe d'emplois G, groupe : G)_` · `14`
+  - **Source :** Cotation emplois CETIAT 2023_07_27
+- [ ] **glossaire_1** · `factual`
+  - **Q :** Que signifie « Assurer la reconnaissance de son domaine d'activité » dans le glossaire du CETIAT ?
+  - **Attendu :** `promotion  _(ou : promouvoir, rayonnement, notoriété, reconnaissance externe, faire connaître)_`
+  - **Source :** Glossaire CETIAT
+- [ ] **suspension_trimestres_1** · `table`
+  - **Q :** Quel est le nombre de trimestres requis pour le taux plein pour une personne née en 1965 entre le 1er avril et le 31 décembre après suspension de la réforme ?
+  - **Attendu :** `171`
+  - **Source :** Flyer suspension réforme des retraites
+- [ ] **ccn_metallurgie_1** · `factual`
+  - **Q :** À partir de quelle année la nouvelle convention collective nationale de la métallurgie entre-t-elle en vigueur ?
+  - **Attendu :** `2024`
+  - **Source :** Avenant du 11 juillet 2023
+- [ ] **ccn_metallurgie_2** · `factual`
+  - **Q :** Quels salariés sont visés par l'article 62.3 pour l'application des dispositions sur la prévoyance des cadres (article 2.1 de l'ANI) ?
+  - **Attendu :** `au moins F11  _(ou : au moins en F11, classés F11, groupe F classe 11, F11)_`
+  - **Source :** Avenant du 11 juillet 2023
+- [ ] **ccn_metallurgie_3** · `factual`
+  - **Q :** Quelle est la durée du préavis de licenciement pour un salarié de plus de 55 ans relevant des groupes F, G, H ou I avec une ancienneté d'au moins 3 ans ?
+  - **Attendu :** `6 mois calendaires  _(ou : six mois calendaires, 6 mois)_`
+  - **Source :** Convention_Collective_du_7_février_2022
+- [ ] **smh_barème_1** · `table`
+  - **Q :** Quel est le salaire minimum hiérarchique pour la classe d'emploi 4 (groupe B) selon le barème de l'annexe 6 ?
+  - **Attendu :** `21 200  _(ou : 21200, 21.200)_`
+  - **Source :** Avenant du 11 juillet - SMH 2024
+- [ ] **referentiel_1** · `factual`
+  - **Q :** Quels sont les critères classants du référentiel d'analyse des emplois de la métallurgie ?
+  - **Attendu :** `complexité` · `connaissances` · `autonomie` · `contribution` · `encadrement` · `communication`
+  - **Source :** Referentiel
+- [ ] **epargne_interessement_1** · `factual`
+  - **Q :** Quel est le plafond légal du montant global d'intéressement distribué ?
+  - **Attendu :** `20% du total des salaires bruts  _(ou : 20 % du total des salaires bruts, 20% des salaires bruts, 20 % des salaires bruts, 20% de la masse salariale, 20 % de la masse salariale, 20%, 20 %)_`
+  - **Source :** Livret Epargne Salariale 2024 du CETIAT
+- [ ] **epargne_deblocage_1** · `factual`
+  - **Q :** Quels sont les cas de déblocage anticipé pour un PEE ?
+  - **Attendu :** `mariage  _(ou : pacs)_` · `naissance  _(ou : adoption)_` · `invalidité` · `décès` · `rupture du contrat  _(ou : cessation du contrat, fin du contrat, licenciement)_`
+  - **Source :** Livret Epargne Salariale 2024 du CETIAT
+- [ ] **qvt_teletravail_1** · `factual`
+  - **Q :** Quel est le crédit de jours de télétravail accordé par mois selon l'accord Qualité de Vie au Travail ?
+  - **Attendu :** `2 jours  _(ou : deux jours)_`
+  - **Source :** Accord Qualité de Vie au Travail
+- [ ] **qvt_teletravail_2** · `factual`
+  - **Q :** Quelles sont les conditions d'éligibilité au télétravail selon l'accord ?
+  - **Attendu :** `CDI  _(ou : contrat à durée indéterminée)_` · `période d'essai` · `autonomie  _(ou : productivité, activité compatible, compatible avec le télétravail)_`
+  - **Source :** Accord Qualité de Vie au Travail
+- [ ] **prevoyance_2026_1** · `factual`
+  - **Q :** Quel est le taux de la cotisation patronale pour la tranche A du régime de prévoyance 2026 ?
+  - **Attendu :** `1,5 %  _(ou : 1,5%, 1.5 %, 1.5%, 1,50 %, 1,50%, 1.50%)_`
+  - **Source :** DUE Prévoyance 2026
+- [ ] **ppv_interimaires_1** · `factual`
+  - **Q :** Les salariés intérimaires mis à disposition du CETIAT bénéficient-ils de la prime de partage de la valeur ?
+  - **Attendu :** `oui  _(ou : bénéficient de la prime, bénéficient également, sont éligibles, en bénéficient au même titre)_`
+  - **Source :** DUE CETIAT PPV 15.12.2022
+- [ ] **interessement_duree_1** · `factual`
+  - **Q :** Quelle est la durée de l'accord d'intéressement signé en 2022 ?
+  - **Attendu :** `3 ans  _(ou : trois ans, trois exercices)_`
+  - **Source :** ACCORD INTERESSEMENT 05.2022 SIGNE
+- [ ] **interessement_date_1** · `factual`
+  - **Q :** Quelle est la date de signature de l'accord d'intéressement ?
+  - **Attendu :** `14 juin 2022`
+  - **Source :** ACCORD INTERESSEMENT 05.2022 SIGNE
+- [ ] **prevoyance_2022_1** · `table`
+  - **Q :** Quel est le taux de cotisation patronale pour la tranche A dans la DUE prévoyance du 15.12.2022 ?
+  - **Attendu :** `1,50 %  _(ou : 1,50%, 1.50 %, 1.50%, 1,5 %, 1,5%)_`
+  - **Source :** DUE detaillée CETIAT PREVOYANCE 15.12.2022
+- [ ] **avenant_prevoyance_1** · `factual`
+  - **Q :** Quels organismes assurent la prévoyance et la santé à partir de l'avenant n°5 de 2022 ?
+  - **Attendu :** `acte vie  _(ou : camacte)_` · `mutuelle générale de distribution  _(ou : MGD)_`
+  - **Source :** avenant n° 5 à l'accord 3-2016 sur la prévoyance et complémentaire santé
+- [ ] **cse_reunions_1** · `factual`
+  - **Q :** Combien de réunions ordinaires du CSE sont prévues par an selon l'accord de 2022 ?
+  - **Attendu :** `11 réunions  _(ou : onze réunions, 11)_`
+  - **Source :** Accord d'entreprise 07.2022 relatif au CSE et au Dialogue Social
+- [ ] **vote_electronique_1** · `factual`
+  - **Q :** Qui est le prestataire choisi pour organiser le vote électronique ?
+  - **Attendu :** `voxaly`
+  - **Source :** Accord 6.2022 - Modalités d'organisation du vote électronique pour les élections professionnelles
+- [ ] **fmd_cadres_1** · `factual`
+  - **Q :** À partir de quelle date l'avenant sur le forfait mobilités durables pour les cadres s'applique-t-il ?
+  - **Attendu :** `1er mai 2025  _(ou : 1 mai 2025, mai 2025)_`
+  - **Source :** Avenant 1 accord FMD
+- [ ] **egalite_seuil_1** · `factual`
+  - **Q :** Quel est le seuil d'alerte pour un écart de rémunération entre hommes et femmes au CETIAT ?
+  - **Attendu :** `10%  _(ou : 10 %)_`
+  - **Source :** Accord égalité professionnelle femmes hommes - 2016
+- [ ] **cet_conges_1** · `factual`
+  - **Q :** Quel est le nombre maximum de jours de congés payés pouvant être placés sur le CET chaque année ?
+  - **Attendu :** `5 jours  _(ou : cinq jours)_`
+  - **Source :** Accord 35 H du 30 mai 2000
+- [ ] **cet_anciennete_1** · `factual`
+  - **Q :** Quelle est l'ancienneté requise pour bénéficier du Compte Épargne-Temps (CET) ?
+  - **Attendu :** `6 mois  _(ou : six mois)_`
+  - **Source :** Accord 35 H du 30 mai 2000
+- [ ] **seniors_objectif_1** · `factual`
+  - **Q :** Quel est l'objectif chiffré de maintien dans l'emploi des salariés âgés de 55 ans et plus fixé par l'accord de 2010 ?
+  - **Attendu :** `10%  _(ou : 10 %)_`
+  - **Source :** Accord du 10.02.10
+- [ ] **pereco_cet_1** · `factual`
+  - **Q :** Quel est le nombre maximum de jours du CET pouvant être versés par an sur le PERECO ?
+  - **Attendu :** `10 jours  _(ou : dix jours)_`
+  - **Source :** Avenant n°1 accord 35 h 00 19.10.2021
+- [ ] **pereco_sources_1** · `factual`
+  - **Q :** Quelles sont les sources d'alimentation possibles pour un PERECO ?
+  - **Attendu :** `intéressement` · `participation` · `CET  _(ou : compte épargne-temps)_` · `versements volontaires  _(ou : versement volontaire)_` · `transfert`
+  - **Source :** Présentation PERECO
+- [ ] **pereco_cet_revalo_1** · `factual`
+  - **Q :** Que se passe-t-il pour les jours de CET placés sur le PERECO en termes de revalorisation ?
+  - **Attendu :** `pas de revalorisation  _(ou : ne sont pas revalorisés, plus revalorisés, aucune revalorisation)_`
+  - **Source :** Présentation PERECO
+- [ ] **epargne_csg_1** · `table`
+  - **Q :** Quel est le taux des prélèvements sociaux pour les versements volontaires non déductibles en sortie en capital ?
+  - **Attendu :** `17,2 %  _(ou : 17,2%, 17.2 %, 17.2%)_`
+  - **Source :** Livret Epargne Salariale 2021 du CETIAT
+- [ ] **retraite_point_achat_1** · `factual`
+  - **Q :** Quel est le prix d'achat d'un point Agirc-Arrco pour 2024 ?
+  - **Attendu :** `19,6321`
+  - **Source :** Présentation Retraite V4-2024
+- [ ] **retraite_point_valeur_1** · `factual`
+  - **Q :** Quelle est la valeur du point Agirc-Arrco en vigueur à partir du 1er novembre 2025 ?
+  - **Attendu :** `1,4386  _(ou : 1.4386)_`
+  - **Source :** Présentation Retraite V4-2024
+- [ ] **retraite_surcote_parentale_1** · `factual`
+  - **Q :** À quelle condition un salarié peut-il bénéficier d'une surcote parentale ?
+  - **Attendu :** `1964` · `taux plein` · `trimestre`
+  - **Source :** Présentation Retraite V4-2024
+- [ ] **action_sociale_parcours_1** · `factual`
+  - **Q :** Quel est le nom du parcours d'accompagnement dédié à la préparation de la retraite ?
+  - **Attendu :** `vivre sa carrière`
+  - **Source :** Livret Action Sociale 2024 V2
+- [ ] **action_sociale_missions_1** · `factual`
+  - **Q :** Quelles sont les missions de l'Action Sociale KLESIA ?
+  - **Attendu :** `écoute` · `conseil` · `orientation`
+  - **Source :** Livret Action Sociale 2024 V2
+- [ ] **action_sociale_tel_1** · `factual`
+  - **Q :** Quel est le numéro de téléphone de l'Action Sociale KLESIA ?
+  - **Attendu :** `09 69 39 00 54  _(ou : 0969390054, 09.69.39.00.54)_`
+  - **Source :** Livret Action Sociale 2024 V2
+- [ ] **trap_1** · `trap`
+  - **Q :** Quel est le montant de la prime de partage de la valeur pour l'année 2025 ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **trap_2** · `trap`
+  - **Q :** Quelle est la date de la prochaine élection du CSE ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **trap_3** · `trap`
+  - **Q :** Quel est le montant de l'abondement de l'employeur pour le PERECO en 2024 ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+
+---
+
+## Accords d'entreprise (`make eval-accords`)
+
+`accords.jsonl` — 40 entrées
+
+- [ ] **note_info_1** · `factual`
+  - **Q :** À qui s'adresse la note d'information sur le départ à la retraite ?
+  - **Attendu :** `ensemble du personnel  _(ou : tout le personnel, ensemble des salariés, tous les salariés, ensemble des collaborateurs)_`
+  - **Source :** Note d'information - Départ à la retraite et garantie maintien mutuelle
+- [ ] **note_info_2** · `factual`
+  - **Q :** Quel est le délai minimum pour adresser un courrier de demande de départ à la retraite à l'employeur ?
+  - **Attendu :** `deux mois  _(ou : 2 mois)_`
+  - **Source :** Note d'information - Départ à la retraite et garantie maintien mutuelle
+- [ ] **note_info_3** · `factual`
+  - **Q :** Quelle attestation doit fournir le salarié pour confirmer l'ouverture de ses droits à la retraite ?
+  - **Attendu :** `CARSAT`
+  - **Source :** Note d'information - Départ à la retraite et garantie maintien mutuelle
+- [ ] **note_info_4** · `factual`
+  - **Q :** Quelle est la durée maximale du maintien des garanties de mutuelle après le départ à la retraite ?
+  - **Attendu :** `un an  _(ou : 1 an, 12 mois, douze mois)_`
+  - **Source :** Note d'information - Départ à la retraite et garantie maintien mutuelle
+- [ ] **note_info_5** · `factual`
+  - **Q :** La cotisation pour le maintien des garanties de mutuelle est-elle prise en charge par l'employeur ?
+  - **Attendu :** `à sa charge  _(ou : à la charge du salarié, à la charge du retraité, pas prise en charge, non prise en charge, intégralement par le)_`
+  - **Source :** Note d'information - Départ à la retraite et garantie maintien mutuelle
+- [ ] **breve_expert_1** · `table`
+  - **Q :** Quel est l'âge légal de départ à la retraite pour une personne née en 1963 ?
+  - **Attendu :** `62 ans et 9 mois  _(ou : 62 ans 9 mois, 62 ans, 9 mois)_`
+  - **Source :** Brève de l'expert - je prépare ma retraite
+- [ ] **breve_expert_2** · `factual`
+  - **Q :** À partir de quel âge la retraite est-elle calculée au taux maximum de 50% automatiquement ?
+  - **Attendu :** `67 ans`
+  - **Source :** Brève de l'expert - je prépare ma retraite
+- [ ] **breve_expert_3** · `factual`
+  - **Q :** À partir de quel âge est-il recommandé de se préparer plus activement à la retraite ?
+  - **Attendu :** `55 ans`
+  - **Source :** Brève de l'expert - je prépare ma retraite
+- [ ] **breve_expert_4** · `factual`
+  - **Q :** Quel document récapitule l'ensemble des droits acquis auprès des régimes de retraite obligatoires français ?
+  - **Attendu :** `relevé individuel de situation  _(ou : relevé de situation individuelle, (RIS))_`
+  - **Source :** Brève de l'expert - je prépare ma retraite
+- [ ] **breve_expert_5** · `factual`
+  - **Q :** Quel est le nom du simulateur en ligne permettant d'obtenir des estimations personnalisées de retraite ?
+  - **Attendu :** `m@rel  _(ou : marel)_`
+  - **Source :** Brève de l'expert - je prépare ma retraite
+- [ ] **retraite_progressive_1** · `factual`
+  - **Q :** Quelles sont les trois conditions cumulatives pour bénéficier de la retraite progressive ?
+  - **Attendu :** `60 ans` · `150 trimestres` · `40% et 80%  _(ou : 40 % et 80 %, 40% à 80%, 40 % à 80 %, 40 et 80)_`
+  - **Source :** Brève de l'expert - la retraite progressive
+- [ ] **retraite_progressive_2** · `factual`
+  - **Q :** Le versement de la retraite progressive est-il limité dans le temps ?
+  - **Attendu :** `pas limité  _(ou : pas limitée, aucune limite, sans limite, sans limitation, illimité)_`
+  - **Source :** Brève de l'expert - la retraite progressive
+- [ ] **retraite_progressive_3** · `factual`
+  - **Q :** Un employeur peut-il s'opposer à la demande de temps partiel d'un salarié pour une retraite progressive ?
+  - **Attendu :** `incompatible` · `activité économique`
+  - **Source :** Brève de l'expert - la retraite progressive
+- [ ] **cumul_emploi_1** · `factual`
+  - **Q :** Dans quel délai peut-on reprendre une activité chez son dernier employeur pour un cumul emploi-retraite intégral ?
+  - **Attendu :** `6 mois  _(ou : six mois)_`
+  - **Source :** Brève de l'expert - le cumul emploi-retraite
+- [ ] **cumul_emploi_2** · `factual`
+  - **Q :** À compter de quelle date les nouvelles règles de cumul emploi-retraite simplifiées s'appliquent-elles ?
+  - **Attendu :** `1er janvier 2027  _(ou : 1 janvier 2027, janvier 2027)_`
+  - **Source :** Brève de l'expert - le cumul emploi-retraite
+- [ ] **cumul_emploi_3** · `factual`
+  - **Q :** Que se passe-t-il si les revenus d'une reprise d'activité dépassent les seuils autorisés pour le cumul emploi-retraite plafonné ?
+  - **Attendu :** `écrêtée  _(ou : écrêté, écrêtement, réduite, diminuée, suspendue)_`
+  - **Source :** Brève de l'expert - le cumul emploi-retraite
+- [ ] **carriere_longue_1** · `factual`
+  - **Q :** Ce formulaire permet de demander quelle attestation pour la retraite ?
+  - **Attendu :** `retraite anticipée pour carrière longue  _(ou : carrière longue)_`
+  - **Source :** demande-attest-dep-car-long
+- [ ] **carriere_longue_2** · `factual`
+  - **Q :** Selon le formulaire de demande d'attestation, quels âges de départ sont proposés pour une retraite anticipée pour carrière longue ?
+  - **Attendu :** `57, 58 ou 60 ans  _(ou : 57, 58 et 60 ans, 57, 58 ou 60, 57 ans)_`
+  - **Source :** demande-attest-dep-car-long
+- [ ] **carriere_longue_3** · `factual`
+  - **Q :** Les trimestres de rachat d'années d'études sont-ils pris en compte pour l'étude des conditions d'ouverture du droit à une retraite anticipée pour carrière longue ?
+  - **Attendu :** `pas pris en compte  _(ou : non pris en compte, pas retenus, exclus)_`
+  - **Source :** demande-attest-dep-car-long
+- [ ] **flyer_eir_1** · `factual`
+  - **Q :** Qui peut bénéficier d'un entretien personnalisé et gratuit sur la retraite ?
+  - **Attendu :** `salarié du secteur privé  _(ou : salariés du secteur privé, secteur privé)_`
+  - **Source :** Flyer EIR - AA
+- [ ] **flyer_suspension_1** · `table`
+  - **Q :** Quel est l'âge légal après suspension de la réforme pour une personne née en 1964 ?
+  - **Attendu :** `62 ans et 9 mois  _(ou : 62 ans 9 mois, 62 ans, 9 mois)_`
+  - **Source :** Flyer suspension réforme des retraites
+- [ ] **flyer_suspension_2** · `factual`
+  - **Q :** À compter de quelle date la suspension de la réforme des retraites s'applique-t-elle ?
+  - **Attendu :** `1er septembre 2026  _(ou : 1 septembre 2026, septembre 2026)_`
+  - **Source :** Flyer suspension réforme des retraites
+- [ ] **livret_salarie_1** · `factual`
+  - **Q :** Quel est le taux de la surcote pour une personne qui continue à travailler après avoir atteint le taux plein ?
+  - **Attendu :** `1,25% par trimestre  _(ou : 1,25 % par trimestre, 1,25%, 1,25 %, 5% par an, 5 % par an)_`
+  - **Source :** Livret du salarié
+- [ ] **livret_salarie_2** · `factual`
+  - **Q :** Quelle est la condition de ressources pour l'attribution de la pension de réversion Agirc-Arrco ?
+  - **Attendu :** `sans condition de ressources  _(ou : aucune condition de ressources, pas de condition de ressources)_`
+  - **Source :** Livret du salarié
+- [ ] **livret_salarie_3** · `factual`
+  - **Q :** Dans quel délai doit-on faire la demande de retraite avant la date de départ souhaitée ?
+  - **Attendu :** `6 à 4 mois  _(ou : 4 à 6 mois, entre 4 et 6 mois, six à quatre mois)_`
+  - **Source :** Livret du salarié
+- [ ] **presentation_retraite_1** · `factual`
+  - **Q :** La retraite complémentaire Agirc-Arrco est-elle obligatoire ou facultative ?
+  - **Attendu :** `obligatoire`
+  - **Source :** Présentation Retraite V4-2024
+- [ ] **presentation_retraite_2** · `table`
+  - **Q :** À quel âge la retraite progressive est-elle possible pour une personne née en 1965 ?
+  - **Attendu :** `61 ans et 3 mois  _(ou : 61 ans 3 mois, 61 ans, 3 mois)_`
+  - **Source :** Présentation Retraite V4-2024
+- [ ] **action_sociale_1** · `factual`
+  - **Q :** Quel est le numéro de téléphone unique pour contacter l'Action Sociale KLESIA ?
+  - **Attendu :** `0 969 39 00 54  _(ou : 09 69 39 00 54, 0969390054, 09.69.39.00.54)_`
+  - **Source :** Livret Action Sociale 2024 V2
+- [ ] **due_prevoyance_1** · `factual`
+  - **Q :** Qui est le signataire de la DUE relative au régime de prévoyance ?
+  - **Attendu :** `claudel`
+  - **Source :** DUE Prévoyance 2026
+- [ ] **due_fmd_1** · `factual`
+  - **Q :** Quel est le montant mensuel du forfait mobilités durables pour les salariés à temps partiel ?
+  - **Attendu :** `10 euros  _(ou : 10 €, 10€)_`
+  - **Source :** DUE Forfait mobilités durables
+- [ ] **due_fmd_2** · `factual`
+  - **Q :** Le forfait mobilités durables est-il cumulable avec la prime carburant ?
+  - **Attendu :** `pas cumulable  _(ou : non cumulable, pas cumulables, pas être cumulé, pas cumulé)_`
+  - **Source :** DUE Forfait mobilités durables
+- [ ] **accord_fmd_1** · `factual`
+  - **Q :** Quels sont les modes de transport éligibles au forfait mobilité durable ?
+  - **Attendu :** `vélo` · `covoiturage` · `autopartage  _(ou : auto-partage)_`
+  - **Source :** Accord forfait mobilités durables avec annexe signé - 2025
+- [ ] **due_sante_1** · `factual`
+  - **Q :** Quelle est la date d'entrée en vigueur de la DUE relative à la garantie complémentaire de remboursement des frais de santé ?
+  - **Attendu :** `1er juin 2025  _(ou : 1 juin 2025, juin 2025)_`
+  - **Source :** DUE Frais de santé 01.06.2025
+- [ ] **accord_cse_1** · `factual`
+  - **Q :** Combien de réunions ordinaires du CSE sont prévues par an dans l'accord ?
+  - **Attendu :** `11 réunions  _(ou : onze réunions, 11)_`
+  - **Source :** Accord d'entreprise 07.2022 relatif au CSE et au Dialogue Social
+- [ ] **accord_interessement_1** · `factual`
+  - **Q :** Quel est le plafond du montant global d'intéressement distribué par rapport au total des salaires bruts ?
+  - **Attendu :** `20%  _(ou : 20 %)_`
+  - **Source :** ACCORD INTERESSEMENT 05.2022 SIGNE
+- [ ] **accord_pereco_1** · `factual`
+  - **Q :** Jusqu'à quel âge peut-on bénéficier du PERECO ?
+  - **Attendu :** `liquidation de la pension  _(ou : départ en retraite, départ à la retraite)_`
+  - **Source :** ACCORD PERECO CETIAT 19.10.2021
+- [ ] **accord_egalite_1** · `factual`
+  - **Q :** Quel est le seuil d'alerte pour un écart de salaire entre hommes et femmes dans une catégorie de poste ?
+  - **Attendu :** `10%  _(ou : 10 %)_`
+  - **Source :** Accord égalité professionnelle femmes hommes - 2016
+- [ ] **trap_1** · `trap`
+  - **Q :** Quelle est la valeur du point Agirc-Arrco pour l'année 2027 ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **trap_2** · `trap`
+  - **Q :** Combien de jours de télétravail par semaine l'accord PERECO prévoit-il ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+- [ ] **trap_3** · `trap`
+  - **Q :** Quel est le numéro de téléphone du service Action Sociale AG2R indiqué dans le livret ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+
+---
+
+## Figures et graphiques (`make eval-visuals`)
+
+`visuals.jsonl` — 13 entrées
+
+- [ ] **vis_sectorielle** · `figure`
+  - **Q :** Quelle est la répartition sectorielle du portefeuille du fonds Transition Climat ?
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571, page 2
+  - **Note :** bar chart, 11 sectors, portefeuille en turquoise contre indice en gris
+- [ ] **vis_geographique** · `figure`
+  - **Q :** Quelle est la répartition géographique des actions du fonds ?
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571, page 2
+  - **Note :** bar chart, 13 pays/zones
+- [ ] **vis_typologie** · `figure`
+  - **Q :** Quelle est la répartition par typologie de secteurs entre cycliques, défensives et pétrolières ?
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571, page 2
+  - **Note :** doughnut — ses valeurs sont dans la légende dessinée À CÔTÉ de l'anneau
+- [ ] **vis_evolution_vl** · `figure`
+  - **Q :** Comment la valeur liquidative du fonds a-t-elle évolué depuis février 2021 ?
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571, page 1
+  - **Note :** line chart base 100 — AUCUNE valeur n'est étiquetée sur la courbe
+- [ ] **vis_allocation** · `figure`
+  - **Q :** Quelle part du portefeuille est investie en actions et quelle part en monétaire et liquidités ?
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571, page 1
+  - **Note :** bar chart Actions 99,7 / Monétaire 0,3
+- [ ] **vis_notation_esg** · `figure`
+  - **Q :** Quelle est la notation ESG du portefeuille comparée à celle du benchmark ?
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571, page 3
+  - **Note :** barres horizontales 78,7 / 79,5
+- [ ] **vis_echelle_risque** · `figure`
+  - **Q :** Où se situe le fonds sur l'échelle de risque de 1 à 7 ?
+  - **Source :** EPSENS TRANSITION CLIMAT - 810571, page 1
+  - **Note :** LE cas de color coding: la seule chose qui marque le niveau 6 est la case colorée. Si cette question échoue, c'est le signal que la couleur n'est pas indexée.
+- [ ] **vis_profil_prudent** · `figure`
+  - **Q :** Quelle est la grille d'allocation d'actifs du profil PER HORIZON RETRAITE PRUDENT ?
+  - **Source :** Livret Epargne Salariale EPSENS 2021, page 9
+  - **Note :** regression: cette grille et celle du profil EQUILIBRE étaient fusionnées en une seule table de 58 lignes
+- [ ] **vis_profil_equilibre** · `figure`
+  - **Q :** Quelle est la grille d'allocation d'actifs du profil PER HORIZON RETRAITE EQUILIBRE ?
+  - **Source :** Livret Epargne Salariale EPSENS 2021, page 8
+  - **Note :** la moitié EQUILIBRE de la même paire
+- [ ] **vis_fiscalite_perecol** · `figure`
+  - **Q :** Quelle est la fiscalité du PERECOL en cas de sortie en capital ?
+  - **Source :** Livret Epargne Salariale EPSENS 2021, page 7
+  - **Note :** le mot « fiscalité du PERECOL » n'est QUE dans le titre au-dessus du tableau, jamais dans ses cellules
+- [ ] **vis_classification_verres** · `figure`
+  - **Q :** Comment les verres sont-ils classés en verres simples, complexes et très complexes selon la sphère et le cylindre ?
+  - **Source :** Notice Frais de santé - Régime obligatoire, page 9
+  - **Note :** LE cas de color coding pur: la classification n'est portée QUE par la couleur des cases, il n'y a presque aucun texte. Et l'image est placée via un form XObject, donc elle était totalement invisible avant.
+- [ ] **vis_justificatifs_optique** · `figure`
+  - **Q :** Quels justificatifs dois-je fournir pour être remboursé en optique ?
+  - **Source :** Notice Frais de santé - Régime obligatoire, page 15
+  - **Note :** matrice de coches: la réponse est la colonne Optique, lue par le lecteur
+- [ ] **vis_garanties_dentaire** · `figure`
+  - **Q :** Quel est le niveau de remboursement des prothèses dentaires dans le tableau de garantie ?
+  - **Source :** Notice Frais de santé - Régime obligatoire, page 11
+  - **Note :** tableau de garantie, moitié haute (dentaire); la moitié optique/soins courants est page 12
+
+---
+
+## Questions de suite (`make eval-followup`)
+
+`followups.jsonl` — 12 entrées
+
+- [ ] **f1** · `suite` (2 tours)
+  - *Tour 1 :* Quelle est la cotation du poste Comptable ?
+  - *Tour 2 ← **noté** :* Et celle de l'Acheteur(se) ?
+    - **Attendu :** `37 à 39`
+    - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **f2** · `suite` (2 tours)
+  - *Tour 1 :* Quelles classes d'emploi appartiennent au groupe d'emplois H ?
+  - *Tour 2 ← **noté** :* Et au groupe I ?
+    - **Attendu :** `17` · `18`
+    - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **f3** · `suite` (2 tours)
+  - *Tour 1 :* Quel emploi CETIAT correspond à la classe d'emploi 16 ?
+  - *Tour 2 ← **noté** :* Et à la classe d'emploi 10 ?
+    - **Attendu :** `Maintenance  _(ou : Parc Mesure)_`
+    - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **f4** · `suite` (2 tours)
+  - *Tour 1 :* Quel est le salaire minimum hiérarchique de la classe d'emploi 11 dans le barème unique ?
+  - *Tour 2 ← **noté** :* Et pour la classe 16 ?
+    - **Attendu :** `52 000`
+    - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **f5** · `suite` (2 tours)
+  - *Tour 1 :* Quel est le salaire minimum hiérarchique de la classe d'emploi 18 ?
+  - *Tour 2 ← **noté** :* Et celui de la classe 1 ?
+    - **Attendu :** `21 700`
+    - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **f6** · `suite` (2 tours)
+  - *Tour 1 :* Dans le barème adapté du groupe F, quel est le montant pour la classe 11 avec moins de 2 ans d'expérience professionnelle ?
+  - *Tour 2 ← **noté** :* Et pour la classe 12 entre 2 et 4 ans d'expérience ?
+    - **Attendu :** `31 185`
+    - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **f7** · `suite` (2 tours)
+  - *Tour 1 :* Comment le glossaire définit-il le « diagnostic » ?
+  - *Tour 2 ← **noté** :* Et le « contrôle ponctuel » ?
+    - **Attendu :** `aléatoire`
+    - **Source :** Glossaire-Classification.pdf
+- [ ] **f8** · `suite` (2 tours)
+  - *Tour 1 :* Que recouvrent les « connaissances élémentaires » dans le glossaire ?
+  - *Tour 2 ← **noté** :* Et une « négociation complexe » ?
+    - **Attendu :** `acteurs`
+    - **Source :** Glossaire-Classification.pdf
+- [ ] **f9** · `suite` (3 tours)
+  - *Tour 1 :* Quel est le salaire minimum hiérarchique de la classe d'emploi 11 dans le barème unique ?
+  - *Tour 2 :* Et celui de la classe 18 ?
+  - *Tour 3 ← **noté** :* Reviens à la classe 11 : quel est son montant déjà ?
+    - **Attendu :** `34 900`
+    - **Source :** Avenant du 11 juillet 2023.pdf
+- [ ] **f10** · `suite` (3 tours)
+  - *Tour 1 :* Comment le glossaire définit-il le « diagnostic » ?
+  - *Tour 2 :* Et le « contrôle ponctuel » ?
+  - *Tour 3 ← **noté** :* Et les « connaissances élémentaires » ?
+    - **Attendu :** `lire  _(ou : lecture)_` · `compter  _(ou : calcul)_`
+    - **Source :** Glossaire-Classification.pdf
+- [ ] **f11** · `suite` (3 tours)
+  - *Tour 1 :* Quelle est la cotation du poste Comptable ?
+  - *Tour 2 :* Et celle de l'Acheteur(se) ?
+  - *Tour 3 ← **noté** :* Et celle du Directeur(trice) ?
+    - **Attendu :** `52 à 54  _(ou : 52 et 54, entre 52 et 54)_`
+    - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **f12** · `suite` (3 tours)
+  - *Tour 1 :* Quel est le salaire minimum hiérarchique de la classe d'emploi 1 ?
+  - *Tour 2 :* Et le taux de la cotisation garantie de branche pour les cadres ?
+  - *Tour 3 ← **noté** :* Reviens au salaire : et pour la classe 16 ?
+    - **Attendu :** `52 000`
+    - **Source :** Avenant du 11 juillet 2023.pdf
+
+---
+
+## Routage multi-base (`make eval-routing`)
+
+`routing.jsonl` — 11 entrées
+
+- [ ] **r1** · `—`
+  - **Q :** Quelle est la cotation du poste de Comptable ?
+  - **Base attendue :** CETIAT
+- [ ] **r2** · `—`
+  - **Q :** Dans quel groupe d'emplois se situe le poste de Directeur(trice) ?
+  - **Base attendue :** CETIAT
+- [ ] **r3** · `—`
+  - **Q :** Quel est le salaire minimum hiérarchique de la classe d'emploi 11 dans le barème unique ?
+  - **Base attendue :** Avenant
+- [ ] **r4** · `—`
+  - **Q :** À partir de quelle heure commence la période de travail de nuit ?
+  - **Base attendue :** Avenant
+- [ ] **r5** · `—`
+  - **Q :** À quelle date la convention collective nationale de la métallurgie entre-t-elle en vigueur ?
+  - **Base attendue :** Avenant
+- [ ] **r6** · `—`
+  - **Q :** Comment le glossaire définit-il le terme « diagnostic » ?
+  - **Base attendue :** Glossaire
+- [ ] **r7** · `—`
+  - **Q :** Qu'est-ce qu'une « négociation complexe » selon la méthode de classification ?
+  - **Base attendue :** Glossaire
+- [ ] **r8** · `—`
+  - **Q :** Quelles activités relèvent du domaine professionnel « Administration et finance » ?
+  - **Base attendue :** Glossaire
+- [ ] **r9** · `—`
+  - **Q :** Quelle est la cotation du poste d'Acheteur(se), et que signifie l'expression « domaine professionnel » ?
+  - **Base attendue :** CETIAT, Glossaire
+- [ ] **r10** · `—`
+  - **Q :** Quelle est la cotation de l'Ingénieur(e) Commercial(e) et le salaire minimum hiérarchique de sa classe d'emploi ?
+  - **Base attendue :** CETIAT, Avenant
+- [ ] **r11** · `—`
+  - **Q :** Dans le barème adapté du groupe F, quel est le montant pour la classe 12 entre 2 et 4 ans d'expérience ?
+  - **Base attendue :** Avenant
+
+---
+
+## Gabarit d'exemple — non mesuré
+
+`questions.example.jsonl` — 4 entrées
+
+- [ ] **t1** · `table`
+  - **Q :** Quelle est la cotation pour la classe d'emploi 16 ?
+  - **Attendu :** `52 à 54`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **t2** · `table`
+  - **Q :** À quel groupe d'emplois appartient la classe 16 ?
+  - **Attendu :** `H`
+  - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
+- [ ] **x1** · `text`
+  - **Q :** Que signifie « diagnostic » dans le référentiel d'analyse ?
+  - **Attendu :** `dysfonctionnement`
+  - **Source :** Glossaire-Classification.pdf
+- [ ] **p1** · `trap`
+  - **Q :** Quel est le salaire exact d'un Directeur en 2019 ?
+  - **Attendu :** _aucune réponse — le système doit refuser_
+
+---
+
+**Total : 176 entrées à vérifier.**
+
