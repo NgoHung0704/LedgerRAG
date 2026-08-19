@@ -103,10 +103,13 @@ present it as a value the document states.\
 # configuration.
 OVERLAP_RULE = """
 - Some sources are marked as covering THE SAME SUBJECT from different places. \
-Never merge them into a single statement. Give each version with its own \
-citation and say which document (and period, if stated) it comes from. If they \
-disagree, say plainly that they disagree. If the question does not name a \
-document or a period, do NOT choose one for the user — give both, attributed.\
+Read what they actually say before you write. If they give the SAME VALUE, \
+state it ONCE and cite all of them together, e.g. [1][2] — do not repeat the \
+same figure once per document. If any figure, date or term DIFFERS between \
+them, give each version in its own sentence, say which document (and period, \
+if stated) it comes from, and say plainly that they differ. If the question \
+does not name a document or a period, do NOT choose one for the user — give \
+every version, attributed.\
 """
 
 

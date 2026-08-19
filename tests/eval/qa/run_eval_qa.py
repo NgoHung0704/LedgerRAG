@@ -4,10 +4,15 @@ Feeds real questions through the LIVE query pipeline (API SSE endpoint) and
 grades three things per question type:
 
 - table/text: every `expected_answer_contains` string appears in the answer
-- contrast: the corpus holds several editions, so refusing OR naming at
-  least two of the listed markers passes; picking one silently fails
+- contrast: the corpus holds several editions THAT DISAGREE, so refusing OR
+  naming at least two of the listed markers passes; picking one silently fails
   AND `expected_doc` is among the citations (right answer FROM the right
   source).
+- concordant: several editions cover the subject and AGREE. The mirror of
+  contrast, and it grades refusal the other way: refusing FAILS, because there
+  is no ambiguity to be honest about. Passes when every listed string is
+  stated and at least two sources are cited — one citation means the answer
+  picked an edition instead of showing they agree.
 - trap: the system must NOT confidently invent — pass when the number
   verification reports warnings, or no citations were used, or the answer
   contains a refusal marker. Trap grading is heuristic: review failures by
@@ -221,6 +226,29 @@ def grade(item: dict, answer: str, citations: list[dict],
             return True, f"attributed ({', '.join(named)})"
         return False, (f"stated one version without naming the alternatives "
                        f"(named: {named or 'nothing'})")
+
+    if item.get("type") == "concordant":
+        # The mirror of `contrast`: several editions cover this subject and they
+        # AGREE. Refusing is graded as a failure here, which is the opposite of
+        # every other type in this file — deliberately. Elsewhere a refusal is
+        # honesty about a real ambiguity; here there is none to be honest about,
+        # and the corpus answers plainly.
+        #
+        # Citing a single source also fails. The value alone does not show the
+        # editions agree — an answer that read one edition and ignored the rest
+        # is indistinguishable from one that checked, unless both are cited.
+        # That is the whole behaviour this type exists to measure.
+        if is_refusal(claim):
+            return False, "refused although the sources agree"
+        missing = [s for s in item.get("expected_answer_contains", [])
+                   if not any(_norm(variant) in claim or _norm(variant) in bare
+                              for variant in s.split("|"))]
+        if missing:
+            return False, f"did not state {', '.join(missing)}"
+        if len(citations) < 2:
+            return False, "stated it from a single source, so the editions " \
+                          "were never shown to agree"
+        return True, f"merged, {len(citations)} sources cited"
 
     if item.get("type") == "figure":
         # A chart, a diagram, a colour-coded scale. The assistant is NOT asked

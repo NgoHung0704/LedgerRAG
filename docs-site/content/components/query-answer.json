@@ -35,7 +35,7 @@
       "name": "build_system_prompt",
       "decl": "def build_system_prompt(extra_instructions: str = \"\", identity: str = \"\",",
       "file": "tablerag/query/steps/generate.py",
-      "line": 113,
+      "line": 116,
       "note": {
         "vi": "System prompt mã hoá triết lý: chỉ trả lời từ nguồn, chép số y nguyên, trả lời bằng ngôn ngữ người hỏi.",
         "en": "The system prompt encodes the philosophy: answer only from sources, copy numbers exactly, reply in the asker's language."
@@ -45,7 +45,7 @@
       "name": "build_context_block",
       "decl": "def build_context_block(ctx: QueryContext) -> str:",
       "file": "tablerag/query/steps/generate.py",
-      "line": 150,
+      "line": 153,
       "note": {
         "vi": "Dựng khối ngữ cảnh có xuất xứ, để trích dẫn bấm ngược về được.",
         "en": "Builds the context block with provenance, so a citation can click back."
@@ -55,7 +55,7 @@
       "name": "GenerateAnswer",
       "decl": "class GenerateAnswer:",
       "file": "tablerag/query/steps/generate.py",
-      "line": 172,
+      "line": 175,
       "note": {
         "vi": "Chảy câu trả lời về theo SSE ngay khi model sinh ra.",
         "en": "Streams the answer back over SSE as the model produces it."

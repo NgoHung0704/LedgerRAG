@@ -34,3 +34,37 @@ def test_no_groups_means_no_note():
 def test_the_contrast_rule_is_absent_unless_there_is_an_overlap():
     assert OVERLAP_RULE not in build_system_prompt()
     assert OVERLAP_RULE in build_system_prompt(has_overlap=True)
+
+
+# The rule has TWO branches, and the split is the whole point of it. Before,
+# it said "Never merge them into a single statement" unconditionally, so two
+# documents printing the same value were still split into two attributed
+# sentences — noise the reader has to reconcile by hand.
+#
+# These assertions read the prompt's TEXT, which is all a unit test can do to a
+# prompt: whether the model obeys is measured by the `concordant` and
+# `contrast` questions in tests/eval/qa, on the box. What they do guard is a
+# revert or a half-edit that drops one branch and leaves the rule lopsided.
+#
+# Lowercased before matching: the prompt SHOUTS its key terms, and a test that
+# broke when emphasis moved from "SAME VALUE" to "same value" would be guarding
+# typography rather than the rule.
+
+def test_the_rule_lets_agreeing_sources_be_stated_once():
+    rule = build_system_prompt(has_overlap=True).lower()
+    assert "never merge" not in rule, \
+        "the unconditional prohibition is what this change removed"
+    assert "same value" in rule
+
+
+def test_the_rule_still_forbids_merging_sources_that_differ():
+    rule = build_system_prompt(has_overlap=True).lower()
+    assert "differs" in rule
+    # naming the document is what makes a difference legible to the reader
+    assert "which document" in rule
+
+
+def test_agreement_must_still_carry_every_source():
+    # a merged statement cites the whole group; citing one of them would hide
+    # that the others were checked at all
+    assert "cite all of them" in build_system_prompt(has_overlap=True).lower()
