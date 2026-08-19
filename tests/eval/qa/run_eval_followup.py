@@ -43,7 +43,7 @@ from run_eval_qa import grade  # noqa: E402
 
 
 def ask(client: httpx.Client, question: str, session_id: str | None,
-        kb_ids: list[str] | None = None) -> dict:
+        kb_ids: list[str] | None = None, url: str = "/api/chat") -> dict:
     """One turn on the multi-KB endpoint. Returns answer + citations +
     verification + the session to continue + the condensed search query.
 
@@ -57,7 +57,7 @@ def ask(client: httpx.Client, question: str, session_id: str | None,
         body["kb_ids"] = kb_ids
     answer, citations, verification = "", [], None
     search_question, routed = question, []
-    with client.stream("POST", "/api/chat", json=body) as response:
+    with client.stream("POST", url, json=body) as response:
         response.raise_for_status()
         for line in response.iter_lines():
             if not line.startswith("data:"):
@@ -79,6 +79,26 @@ def ask(client: httpx.Client, question: str, session_id: str | None,
             "search_question": search_question, "routed": routed}
 
 
+def chat_url(assistant: str | None) -> str:
+    """The multi-KB endpoint, or one assistant's.
+
+    Default is `/api/chat`, which is what this gate was built on. `--assistant`
+    sends the same conversations to what readers actually type into, whose
+    instructions and KB set the KB endpoints never load."""
+    return f"/api/assistants/{assistant}/chat" if assistant else "/api/chat"
+
+
+def pins_allowed(assistant: str | None) -> bool:
+    """Can this target have its knowledge bases pinned per conversation?
+
+    Not for an assistant: `AssistantChatRequest` carries question, session and
+    verify — no kb_ids — because an assistant's scope IS its attached set.
+    Sending pins anyway would be dropped in silence, and the run would print
+    "routing held constant" over a number where it was not. So the harness
+    refuses to claim it."""
+    return assistant is None
+
+
 def resolve_pins(convo: dict, id_to_name: dict[str, str],
                  auto_route: bool) -> list[str] | None:
     """KB ids to pin for this conversation, from its `kbs` name-substrings
@@ -93,13 +113,14 @@ def resolve_pins(convo: dict, id_to_name: dict[str, str],
 
 def run_conversation(client: httpx.Client, convo: dict,
                      id_to_name: dict[str, str],
-                     pins: list[str] | None) -> list[dict]:
+                     pins: list[str] | None,
+                     url: str = "/api/chat") -> list[dict]:
     """Play a conversation turn by turn, threading the session. Returns one
     graded result per turn that carries expectations."""
     session_id: str | None = None
     graded: list[dict] = []
     for i, turn in enumerate(convo["turns"]):
-        res = ask(client, turn["question"], session_id, kb_ids=pins)
+        res = ask(client, turn["question"], session_id, kb_ids=pins, url=url)
         session_id = res["session_id"]
         if not turn.get("expected_answer_contains"):
             continue  # context-setting turn, not graded
@@ -120,7 +141,7 @@ def run_conversation(client: httpx.Client, convo: dict,
 
 
 def ablate(client: httpx.Client, convo: dict,
-           pins: list[str] | None) -> list[bool]:
+           pins: list[str] | None, url: str = "/api/chat") -> list[bool]:
     """Each graded follow-up asked cold, with NO history — the stateless
     baseline. Same KB pin as the threaded run, so the ONLY difference is memory:
     the gap between them is the lift condensing provides."""
@@ -128,7 +149,7 @@ def ablate(client: httpx.Client, convo: dict,
     for turn in convo["turns"]:
         if not turn.get("expected_answer_contains"):
             continue
-        res = ask(client, turn["question"], None, kb_ids=pins)  # fresh session
+        res = ask(client, turn["question"], None, kb_ids=pins, url=url)  # fresh session
         ok, _ = grade(turn, res["answer"], res["citations"], res["verification"])
         out.append(ok)
     return out
@@ -141,6 +162,11 @@ def main() -> None:
                     default=Path(__file__).parent / "followups.jsonl")
     ap.add_argument("--ablate", action="store_true",
                     help="also ask each follow-up cold (no history) to measure lift")
+    ap.add_argument("--assistant",
+                    help="send the conversations to an assistant instead of "
+                         "the multi-KB endpoint. Its attached KBs become the "
+                         "scope, so per-conversation pinning is dropped and "
+                         "routing is NO LONGER held constant")
     ap.add_argument("--auto-route", action="store_true",
                     help="let the router pick the KB instead of pinning per "
                          "conversation (mixes routing into the score; use "
@@ -158,18 +184,27 @@ def main() -> None:
     with httpx.Client(base_url=args.api, timeout=180) as client:
         id_to_name = {kb["id"]: kb["name"]
                       for kb in client.get("/api/kbs").raise_for_status().json()}
-        mode = "auto-route" if args.auto_route else "KB pinned (routing held constant)"
+        url = chat_url(args.assistant)
+        pinning = pins_allowed(args.assistant)
+        if not pinning:
+            # say it before the numbers, not in a footnote: this run measures
+            # condensing AND the assistant's own routing, mixed
+            mode = (f"assistant {args.assistant} — its own KB set, "
+                    "routing NOT held constant")
+        else:
+            mode = ("auto-route" if args.auto_route
+                    else "KB pinned (routing held constant)")
         print(f"mode: {mode}")
         print(f"{'id':5s} {'verdict':8s} detail")
         print("-" * 72)
         for convo in convos:
-            pins = resolve_pins(convo, id_to_name, args.auto_route)
-            if not args.auto_route and pins is None:
+            pins = resolve_pins(convo, id_to_name, args.auto_route) if pinning else None
+            if pinning and not args.auto_route and pins is None:
                 print(f"{convo.get('id', '?'):5s} {'SKIP':8s} "
                       f"no KB matched {convo.get('kbs')} — check the `kbs` field")
                 continue
             try:
-                results = run_conversation(client, convo, id_to_name, pins)
+                results = run_conversation(client, convo, id_to_name, pins, url)
             except Exception as e:  # noqa: BLE001
                 print(f"{convo.get('id', '?'):5s} {'ERROR':8s} {e}")
                 total += 1
@@ -187,7 +222,7 @@ def main() -> None:
 
             if args.ablate:
                 try:
-                    for ok in ablate(client, convo, pins):
+                    for ok in ablate(client, convo, pins, url):
                         ablate_total += 1
                         ablate_pass += ok
                 except Exception:  # noqa: BLE001 — ablation is diagnostic, not the gate

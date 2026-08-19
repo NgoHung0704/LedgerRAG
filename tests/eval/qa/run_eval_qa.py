@@ -144,11 +144,28 @@ def _norm(s: str) -> str:
     return _WS.sub(" ", s)
 
 
-def ask(api: str, kb_id: str,
+def chat_url(kb: str | None, assistant: str | None) -> str:
+    """Where to send the questions: a knowledge base, or an assistant.
+
+    The gates were built against `/api/kbs/{id}/chat`, which answers with the
+    KB's config and the GLOBAL chat instructions. An assistant is a different
+    thing — its own instructions, escalation contact, verify override and set
+    of knowledge bases — and it is what a colleague actually types into. Both
+    stream the same events, so only the path differs.
+
+    Naming both, or neither, raises rather than picking one: a report whose
+    header names a target that was never asked is worse than no report.
+    """
+    if bool(kb) == bool(assistant):
+        raise ValueError("give exactly one of --kb / --assistant")
+    return f"/api/kbs/{kb}/chat" if kb else f"/api/assistants/{assistant}/chat"
+
+
+def ask(api: str, url: str,
         question: str) -> tuple[str, list[dict], dict | None, list[dict]]:
     answer, citations, verification, see_also = "", [], None, []
     with httpx.Client(base_url=api, timeout=180) as client:
-        with client.stream("POST", f"/api/kbs/{kb_id}/chat",
+        with client.stream("POST", url,
                            json={"question": question}) as response:
             response.raise_for_status()
             for line in response.iter_lines():
@@ -295,7 +312,12 @@ def grade(item: dict, answer: str, citations: list[dict],
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kb", required=True, help="knowledge base id to query")
+    target = ap.add_mutually_exclusive_group(required=True)
+    target.add_argument("--kb", help="knowledge base id to query")
+    target.add_argument("--assistant",
+                        help="assistant id to query instead — measures what "
+                             "readers actually talk to, including its own "
+                             "instructions and its whole set of KBs")
     ap.add_argument("--api", default="http://localhost:8000")
     ap.add_argument("--questions", type=Path,
                     default=Path(__file__).parent / "questions.jsonl")
@@ -308,15 +330,18 @@ def main() -> None:
              args.questions.read_text(encoding="utf-8").splitlines()
              if line.strip()]
 
+    url = chat_url(args.kb, args.assistant)
+
     results: dict[str, list[bool]] = {}
     transcript: list[dict] = []
+    print(f"target: {'assistant ' + args.assistant if args.assistant else 'kb ' + args.kb}")
     print(f"{'id':6s} {'type':6s} {'verdict':8s} detail")
     print("-" * 72)
     for item in items:
         answer, citations, verification, see_also = "", [], None, []
         try:
             answer, citations, verification, see_also = ask(
-                args.api, args.kb, item["question"])
+                args.api, url, item["question"])
             ok, detail = grade(item, answer, citations, verification, see_also)
         except Exception as e:  # noqa: BLE001
             ok, detail = False, f"error: {e}"

@@ -58,6 +58,15 @@ eval-flags:
 eval-qa:
 	python tests/eval/qa/run_eval_qa.py --kb $(KB) $(ARGS)
 
+# Same question sets, but asked of an ASSISTANT rather than a knowledge base.
+# The KB endpoints answer with the KB's config and the GLOBAL chat prompt; an
+# assistant carries its own instructions, escalation contact, verify override
+# and whole set of KBs — which is what a reader actually types into. Expect the
+# score to differ from the KB run: that difference IS the measurement.
+#   make eval-assistant ASSISTANT=<id> ARGS="--questions tests/eval/qa/funds.jsonl"
+eval-assistant:
+	python tests/eval/qa/run_eval_qa.py --assistant $(ASSISTANT) $(ARGS)
+
 # Same gate, ACCORDS question set (retraite / prévoyance / accords CETIAT).
 # Usage: make eval-accords KB=<accords kb id>
 eval-accords:
