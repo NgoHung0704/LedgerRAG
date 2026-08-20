@@ -76,6 +76,19 @@ eval-assistant:
 # point of a full run is the whole picture — then exits non-zero if any set
 # missed its target, so CI and a human read the same verdict.
 #   make eval-assistant-all ASSISTANT=<id>
+# Rebuild and reclaim, in the order that matters. `up` first, so the running
+# containers switch to the new image; only THEN is the previous build
+# unreferenced and removable. Prune first and it is still in use, so nothing is
+# freed and the orphan stays — which is how MIA-82025 reached 387 images and a
+# full disk (docs/DEPLOY.md §6).
+#
+# `docker compose down` does NOT help here and is deliberately absent: the old
+# image is orphaned by the tag moving, not by anything about the containers.
+deploy:
+	docker compose up -d --build
+	docker image prune -f
+	@df -h / | tail -1
+
 EVAL_SETS = questions funds convention accords visuals
 
 eval-assistant-all:

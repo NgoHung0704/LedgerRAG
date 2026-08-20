@@ -118,14 +118,20 @@ on 2026-08-20. The symptoms did not point at disk at all:
   "internal error" — the traceback blamed the model, not the filesystem;
 - `docker compose up --build` dying on `no space left on device`.
 
-Reclaim after upgrading — safe on a shared box, since it only removes images no
-container references:
+`make deploy` does the whole thing in the right order. The order is the point:
 
 ```bash
-docker image prune -f        # the untagged builds this upgrade just orphaned
-docker builder prune -f      # the build cache
-df -h /
+docker compose up -d --build   # containers switch to the NEW image
+docker image prune -f          # only now is the previous build unreferenced
 ```
+
+Pruning first frees nothing — the old image is still in use by the running
+container, so it is skipped and the orphan survives. And `docker compose down`
+does not help either way: the image is orphaned by its tag moving to the new
+build, which has nothing to do with whether containers are up.
+
+Reclaim is safe on a shared box, since it only removes images no container
+references. Add `docker builder prune -f` when the build cache has grown.
 
 `docker system df` shows where the space went. Two cautions, both learned the
 hard way on this box:
