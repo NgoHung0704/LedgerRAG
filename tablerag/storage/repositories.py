@@ -43,6 +43,22 @@ def get_kb(s: Session, kb_id: uuid.UUID) -> KnowledgeBase | None:
     return s.get(KnowledgeBase, kb_id)
 
 
+def get_kb_by_retrieval_key(s: Session, key: str) -> KnowledgeBase | None:
+    """The KB one external-retrieval API key stands for, or None.
+
+    Same rationale as `get_assistant_by_embed_token`: the key lives inside a
+    JSONB blob, compared in Python for Postgres/SQLite portability. A blank
+    key matches nothing, whatever is stored.
+    """
+    wanted = (key or "").strip()
+    if not wanted:
+        return None
+    for kb in s.scalars(select(KnowledgeBase)):
+        if ((kb.config or {}).get("retrieval_key") or "").strip() == wanted:
+            return kb
+    return None
+
+
 def list_kbs(s: Session) -> list[KnowledgeBase]:
     return list(s.scalars(select(KnowledgeBase).order_by(KnowledgeBase.created_at)))
 

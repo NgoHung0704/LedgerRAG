@@ -17,6 +17,9 @@ export type KB = {
     verify?: boolean;
     instructions?: string;
   };
+  // "" when external retrieval (Dify-compatible) was never enabled for this
+  // KB. A new value comes from createKbRetrievalKey, never typed by hand.
+  retrieval_key: string;
   created_at: string;
   doc_status?: KBDocStatus | null; // set by the list endpoint only
 };
@@ -752,12 +755,18 @@ export const updateKb = (
     locale: string;
     verify: boolean;
     instructions: string;
+    retrieval_key: string;
   }>,
 ) =>
   fetch(`${API_URL}/api/kbs/${kbId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(changes),
+  }).then((r) => jsonOrThrow<KB>(r));
+
+export const createKbRetrievalKey = (kbId: string) =>
+  fetch(`${API_URL}/api/kbs/${kbId}/retrieval-key`, {
+    method: "POST",
   }).then((r) => jsonOrThrow<KB>(r));
 
 export const deleteKb = (kbId: string) =>

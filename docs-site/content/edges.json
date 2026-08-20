@@ -40,8 +40,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 32,
-            "to": 32,
+            "from": 42,
+            "to": 42,
             "anchor": "def create_kb(body: KBCreate) -> KBOut:"
           }
         },
@@ -72,8 +72,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 48,
-            "to": 48,
+            "from": 58,
+            "to": 58,
             "anchor": "def list_kbs() -> list[KBOut]:"
           }
         },
@@ -111,8 +111,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 161,
-            "to": 161,
+            "from": 199,
+            "to": 199,
             "anchor": "def get_kb(kb_id: uuid.UUID) -> KBOut:"
           }
         },
@@ -150,8 +150,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 66,
-            "to": 66,
+            "from": 75,
+            "to": 75,
             "anchor": "def update_kb(kb_id: uuid.UUID, body: KBUpdate) -> KBOut:"
           }
         },
@@ -189,8 +189,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 138,
-            "to": 138,
+            "from": 176,
+            "to": 176,
             "anchor": "def delete_kb(kb_id: uuid.UUID, user: User = Depends(current_user)) -> Response:"
           }
         },
@@ -235,8 +235,8 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 94,
-            "to": 94,
+            "from": 132,
+            "to": 132,
             "anchor": "async def suggest_description(kb_id: uuid.UUID) -> dict:"
           }
         },
@@ -274,10 +274,42 @@
           "cite": {
             "kind": "anchor",
             "file": "tablerag/api/routes/kb.py",
-            "from": 124,
-            "to": 124,
+            "from": 162,
+            "to": 162,
             "anchor": "def needs_review(kb_id: uuid.UUID) -> dict:"
           }
+        },
+        {
+          "method": "POST",
+          "path": "/api/kbs/{kb_id}/retrieval-key",
+          "auth": {
+            "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
+            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+          },
+          "request": {
+            "vi": "Không có thân yêu cầu. Bật (hoặc thay) khoá truy xuất bên ngoài cho KB này — mặc định tắt.",
+            "en": "No body. Enables (or replaces) this KB's external-retrieval key — off by default."
+          },
+          "response": {
+            "vi": "KB kèm khoá mới. Khoá cũ chết ngay lúc lệnh này trả về.",
+            "en": "The knowledge base with its new key. The previous one stops working the moment this returns."
+          },
+          "errors": [
+            {
+              "code": "401",
+              "meaning": {
+                "vi": "Không có danh tính nào từ proxy.",
+                "en": "No proxy identity was presented."
+              }
+            },
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Đối tượng được tham chiếu không tồn tại.",
+                "en": "The referenced object does not exist."
+              }
+            }
+          ]
         }
       ]
     },
@@ -3026,6 +3058,60 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "host-api-retrieval",
+      "from": "frontend",
+      "to": "api",
+      "label": {
+        "vi": "Truy xuất bên ngoài",
+        "en": "External retrieval"
+      },
+      "summary": {
+        "vi": "Kết quả truy xuất thô của một KB, phục vụ nền tảng RAG khác (Dify, RAGFlow…) bằng khoá API — hợp đồng External Knowledge API của Dify. Tiền tố mở thứ hai đi qua middleware mà không cần danh tính, cùng cách phòng thủ với embed: 404 chứ không phải 401/403, để không xác nhận KB đó tồn tại. Tắt theo mặc định cho tới khi có người mint khoá cho KB (xem POST /api/kbs/{kb_id}/retrieval-key).",
+        "en": "One KB's raw retrieval results, served to another RAG platform (Dify, RAGFlow…) by API key — Dify's External Knowledge API contract. The second open prefix the middleware lets through without an identity, same defensive stance as embed: 404 rather than 401/403, so it never confirms the KB exists. Off by default until someone mints a key for the KB (see POST /api/kbs/{kb_id}/retrieval-key)."
+      },
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/retrieval/{kb_id}/retrieval",
+          "auth": {
+            "vi": "Khoá Bearer đứng thay danh tính; sai hoặc thiếu khoá trả 404, không phải 401.",
+            "en": "A Bearer key stands in for identity; a wrong or missing key answers 404, not 401."
+          },
+          "request": {
+            "vi": "query, và retrieval_setting {top_k, score_threshold} — đúng hợp đồng External Knowledge API của Dify.",
+            "en": "query, and retrieval_setting {top_k, score_threshold} — Dify's External Knowledge API request shape."
+          },
+          "response": {
+            "vi": "records[]: content, score, title, metadata — chạy Router → Retrieve → Rerank → AssembleContext, bỏ qua ExpandNeighbours và Generate/Verify vì đây là truy xuất thô, không sinh câu trả lời.",
+            "en": "records[]: content, score, title, metadata — runs Router → Retrieve → Rerank → AssembleContext, skipping ExpandNeighbours and Generate/Verify since this returns raw matches, not a generated answer."
+          },
+          "errors": [
+            {
+              "code": "404",
+              "meaning": {
+                "vi": "Khoá lạ, KB chưa bật truy xuất bên ngoài, hoặc khoá không khớp kb_id trên đường dẫn.",
+                "en": "Unknown key, external retrieval not enabled for this KB, or the key does not match the kb_id in the path."
+              }
+            },
+            {
+              "code": "500",
+              "meaning": {
+                "vi": "Lỗi nội bộ trong khi truy xuất; không lộ chi tiết ra ngoài.",
+                "en": "An internal error during retrieval; details are not leaked to the caller."
+              }
+            }
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/retrieval.py",
+            "from": 1,
+            "to": 1,
+            "anchor": "\"\"\"Dify-compatible External Knowledge API: raw retrieval, per KB, by API key."
+          }
         }
       ]
     }

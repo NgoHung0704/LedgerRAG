@@ -52,8 +52,8 @@
         "en": "HTTP contracts"
       },
       "summary": {
-        "vi": "61 endpoint là toàn bộ bề mặt công khai. Mỗi endpoint nói rõ ai được gọi, gửi gì, nhận gì, hỏng thì trả mã nào.",
-        "en": "The 61 endpoints are the entire public surface. Each one states who may call it, what goes in, what comes back and which code it fails with."
+        "vi": "63 endpoint là toàn bộ bề mặt công khai. Mỗi endpoint nói rõ ai được gọi, gửi gì, nhận gì, hỏng thì trả mã nào.",
+        "en": "The 63 endpoints are the entire public surface. Each one states who may call it, what goes in, what comes back and which code it fails with."
       },
       "modules": [
         "tablerag/api/routes/assistants.py",
@@ -65,7 +65,8 @@
         "tablerag/api/routes/kb.py",
         "tablerag/api/routes/me.py",
         "tablerag/api/routes/models.py",
-        "tablerag/api/routes/embed.py"
+        "tablerag/api/routes/embed.py",
+        "tablerag/api/routes/retrieval.py"
       ],
       "phases": [
         {

@@ -63,6 +63,7 @@ def create_app() -> FastAPI:
         kb,
         me,
         models,
+        retrieval,
     )
 
     app.include_router(health.router)
@@ -74,9 +75,10 @@ def create_app() -> FastAPI:
     app.include_router(elements.router)
     app.include_router(models.router)
     app.include_router(diagnostics.router)
-    # last, and its own prefix: the only routes reachable without an
-    # identity, each checking the token it was given
+    # last, and their own prefixes: the only routes reachable without an
+    # identity, each checking the credential it was given
     app.include_router(embed.router)
+    app.include_router(retrieval.router)
     return app
 
 

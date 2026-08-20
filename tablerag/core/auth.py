@@ -20,11 +20,16 @@ from fastapi import Depends, HTTPException, Request
 
 from tablerag.core.config import get_settings
 
-# open paths: health for load balancers, docs/schema for developers, and the
-# embed prefix, whose routes carry their own credential — a token standing for
-# exactly one assistant, checked inside each route. Never gate these, or a proxy
-# health check / the docs / a deployed embed break.
-OPEN_PREFIXES = ("/api/health", "/docs", "/redoc", "/openapi.json", "/api/embed")
+# open paths: health for load balancers, docs/schema for developers, and two
+# routes that carry their own credential, checked inside each route rather
+# than by this middleware: /api/embed (a token standing for one assistant) and
+# /api/retrieval (an API key standing for one KB's Dify-compatible External
+# Knowledge API). These two are also the only prefixes worth exposing past a
+# firewall/reverse proxy boundary if a deployer wants a browser widget or
+# another RAG platform (Dify, RAGFlow) reaching in from outside the intranet.
+# Never gate these, or a proxy health check / the docs / a deployed embed break.
+OPEN_PREFIXES = ("/api/health", "/docs", "/redoc", "/openapi.json", "/api/embed",
+                 "/api/retrieval")
 
 
 @dataclass(frozen=True)

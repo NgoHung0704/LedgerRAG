@@ -34,6 +34,9 @@ class KBUpdate(BaseModel):
     locale: str | None = None
     verify: bool | None = None
     instructions: str | None = None
+    # "" revokes the retrieval key. A new value comes from the mint endpoint,
+    # never typed by hand — same convention as AssistantUpdate.embed_token.
+    retrieval_key: str | None = None
 
 
 class KBDocStatus(BaseModel):
@@ -51,6 +54,9 @@ class KBOut(BaseModel):
     name: str
     description: str
     config: dict = {}
+    # shown in the settings panel so the endpoint+key can be copied; empty
+    # when external retrieval was never enabled for this KB
+    retrieval_key: str = ""
     created_at: datetime
     doc_status: KBDocStatus | None = None
 
@@ -196,6 +202,37 @@ class Citation(BaseModel):
     # pulled in because it neighbours a retrieved source, not because search
     # found it - a reader must be able to tell the two apart
     expanded: bool = False
+
+
+class RetrievalSetting(BaseModel):
+    """Part of Dify's External Knowledge API request contract."""
+
+    top_k: int = Field(default=5, ge=1, le=20)
+    score_threshold: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class ExternalRetrievalRequest(BaseModel):
+    """Dify's External Knowledge API request body.
+
+    https://docs.dify.ai/en/use-dify/knowledge/external-knowledge-api
+    `knowledge_id` is Dify's own label for the connection; unused here since
+    the URL path already names the KB unambiguously.
+    """
+
+    knowledge_id: str = ""
+    query: str = Field(min_length=1)
+    retrieval_setting: RetrievalSetting = Field(default_factory=RetrievalSetting)
+
+
+class ExternalRecord(BaseModel):
+    content: str
+    score: float
+    title: str
+    metadata: dict = Field(default_factory=dict)
+
+
+class ExternalRetrievalResponse(BaseModel):
+    records: list[ExternalRecord]
 
 
 class SeeAlso(BaseModel):

@@ -5,7 +5,7 @@
       "name": "create_kb",
       "decl": "def create_kb(body: KBCreate) -> KBOut:",
       "file": "tablerag/api/routes/kb.py",
-      "line": 32,
+      "line": 42,
       "note": {
         "vi": "Tạo KB — đơn vị cô lập của sản phẩm.",
         "en": "Creates a knowledge base - the product's unit of isolation."
@@ -191,8 +191,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "tablerag/api/routes/kb.py",
-        "from": 138,
-        "to": 143,
+        "from": 176,
+        "to": 181,
         "code": "def delete_kb(kb_id: uuid.UUID, user: User = Depends(current_user)) -> Response:\n    \"\"\"Delete a KB and everything it owns — vectors, files, documents, chat\n    history. External stores are purged BEFORE the Postgres cascade, so a later\n    failure can't leave orphaned vectors serving answers from a deleted KB.\"\"\"\n    from tablerag.storage.object_store import get_object_store, kb_prefix\n    from tablerag.storage.qdrant import get_vector_store"
       }
     }

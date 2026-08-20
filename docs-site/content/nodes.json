@@ -109,8 +109,8 @@
         "en": "FastAPI gateway"
       },
       "summary": {
-        "vi": "Cổng vào duy nhất: 61 endpoint cho KB, tài liệu, element, chat SSE, cấu hình model và sức khoẻ hệ thống.",
-        "en": "The single way in: 61 endpoints covering knowledge bases, documents, elements, SSE chat, model configuration and health."
+        "vi": "Cổng vào duy nhất: 63 endpoint cho KB, tài liệu, element, chat SSE, cấu hình model và sức khoẻ hệ thống.",
+        "en": "The single way in: 63 endpoints covering knowledge bases, documents, elements, SSE chat, model configuration and health."
       },
       "cite": {
         "kind": "anchor",

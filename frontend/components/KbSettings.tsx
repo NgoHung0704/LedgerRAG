@@ -3,8 +3,15 @@
 import { useT } from "@/components/LocaleProvider";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings2, Trash2, Check, ShieldCheck, Sparkles } from "lucide-react";
-import { updateKb, deleteKb, suggestDescription, type KB } from "@/lib/api";
+import { Settings2, Trash2, Check, ShieldCheck, Sparkles, Share2 } from "lucide-react";
+import {
+  updateKb,
+  deleteKb,
+  suggestDescription,
+  createKbRetrievalKey,
+  API_URL,
+  type KB,
+} from "@/lib/api";
 import CopyButton from "@/components/CopyButton";
 import { Button, Spinner } from "@/components/ui";
 
@@ -31,6 +38,8 @@ export default function KbSettings({
   const [instructions, setInstructions] = useState(kb.config?.instructions ?? "");
   const [locale, setLocale] = useState(kb.config?.locale ?? "");
   const [verify, setVerify] = useState(kb.config?.verify ?? true);
+  const [retrievalKey, setRetrievalKey] = useState(kb.retrieval_key ?? "");
+  const [minting, setMinting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +68,8 @@ export default function KbSettings({
     description.trim() !== (kb.description ?? "") ||
     instructions.trim() !== (kb.config?.instructions ?? "") ||
     (locale || "") !== (kb.config?.locale ?? "") ||
-    verify !== (kb.config?.verify ?? true);
+    verify !== (kb.config?.verify ?? true) ||
+    retrievalKey !== (kb.retrieval_key ?? "");
 
   const suggest = async () => {
     setSuggesting(true);
@@ -85,6 +95,7 @@ export default function KbSettings({
         instructions: instructions.trim(),
         locale: locale.trim(),
         verify,
+        retrieval_key: retrievalKey.trim(),
       });
       onUpdated(updated);
       setOpen(false);
@@ -92,6 +103,23 @@ export default function KbSettings({
       setError("Could not save. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  /** The key comes from the server; see createKbRetrievalKey. Minting
+      persists immediately (no Save needed) — revoking clears it locally and
+      takes effect on the next Save, same as the assistant embed token. */
+  const mintRetrievalKey = async () => {
+    setMinting(true);
+    setError(null);
+    try {
+      const updated = await createKbRetrievalKey(kb.id);
+      setRetrievalKey(updated.retrieval_key);
+      onUpdated(updated);
+    } catch {
+      setError("Couldn't create the retrieval key. Please try again.");
+    } finally {
+      setMinting(false);
     }
   };
 
@@ -211,6 +239,39 @@ export default function KbSettings({
               {t("kb.verify_against_sources")}
             </span>
           </label>
+
+          <div className="mt-3 border-t border-line pt-3">
+            <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-subtle">
+              <Share2 size={11} /> {t("kb.retrieval_label")}
+            </label>
+            {retrievalKey ? (
+              <>
+                <textarea
+                  readOnly
+                  rows={3}
+                  className="mt-1 w-full resize-none rounded-lg border border-line-strong px-2.5 py-1.5 font-mono text-[11px] leading-relaxed bg-surface text-ink"
+                  onFocus={(e) => e.currentTarget.select()}
+                  value={`Endpoint: ${API_URL}/api/retrieval/${kb.id}\nAPI Key:  ${retrievalKey}`}
+                />
+                <div className="mt-1 flex items-center gap-2">
+                  <Button size="xs" variant="ghost" loading={minting}
+                          onClick={mintRetrievalKey}>
+                    {t("kb.retrieval_regenerate")}
+                  </Button>
+                  <Button size="xs" variant="ghost"
+                          onClick={() => setRetrievalKey("")}>
+                    {t("kb.retrieval_revoke")}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Button size="xs" variant="tonal" loading={minting}
+                      onClick={mintRetrievalKey}>
+                {t("kb.retrieval_enable")}
+              </Button>
+            )}
+            <p className="mt-1 text-[11px] text-ink-subtle">{t("kb.retrieval_hint")}</p>
+          </div>
 
           {error && <div className="mt-2 text-xs text-red-600">{error}</div>}
 

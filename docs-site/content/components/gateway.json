@@ -25,7 +25,7 @@
       "name": "resolve_user",
       "decl": "def resolve_user(request: Request) -> User | None:",
       "file": "tablerag/core/auth.py",
-      "line": 42,
+      "line": 47,
       "note": {
         "vi": "Đọc danh tính từ header proxy. Ở chế độ disabled thì mọi người là cùng một admin ngầm, dành cho dev.",
         "en": "Reads the identity from the proxy header. In disabled mode everyone is the same implicit admin, for development."
@@ -35,7 +35,7 @@
       "name": "auth_middleware",
       "decl": "async def auth_middleware(request: Request, call_next):",
       "file": "tablerag/core/auth.py",
-      "line": 74,
+      "line": 79,
       "note": {
         "vi": "Chặn mọi đường trừ các đường mở. Đây là chỗ 401 xảy ra, không phải trong từng route.",
         "en": "Gates every path but the open ones. This is where a 401 happens, not inside each route."
@@ -45,7 +45,7 @@
       "name": "require_admin",
       "decl": "def require_admin(user: User = Depends(current_user)) -> User:",
       "file": "tablerag/core/auth.py",
-      "line": 68,
+      "line": 73,
       "note": {
         "vi": "Phân quyền theo route: có danh tính chưa đủ, phải nằm trong danh sách admin.",
         "en": "Per-route authorization: having an identity is not enough, the user must be in the admin list."
@@ -181,8 +181,8 @@
       "cite": {
         "kind": "excerpt",
         "file": "tablerag/core/auth.py",
-        "from": 68,
-        "to": 71,
+        "from": 73,
+        "to": 76,
         "code": "def require_admin(user: User = Depends(current_user)) -> User:\n    if not user.is_admin:\n        raise HTTPException(403, \"admin role required\")\n    return user"
       }
     }

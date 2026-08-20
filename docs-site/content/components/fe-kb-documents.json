@@ -15,7 +15,7 @@
       "name": "KbSettings",
       "decl": "export default function KbSettings({",
       "file": "frontend/components/KbSettings.tsx",
-      "line": 15,
+      "line": 22,
       "note": {
         "vi": "Locale, mức kiểm chứng, tên — những thứ đổi được sau khi tạo.",
         "en": "Locale, verification level, name - what can change after creation."

@@ -1,4 +1,5 @@
 import asyncio
+import secrets
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,6 +11,15 @@ from tablerag.storage import repositories as repo
 from tablerag.storage.db import session_scope
 
 router = APIRouter(prefix="/api/kbs", tags=["knowledge-bases"])
+
+
+def _out(kb, doc_status: KBDocStatus | None = None) -> KBOut:
+    """Build the KB DTO, pulling fields that live in `config` (not real
+    columns) to the top level — same convention as AssistantOut.embed_token."""
+    config = kb.config or {}
+    return KBOut(id=kb.id, name=kb.name, description=kb.description,
+                 config=config, retrieval_key=config.get("retrieval_key", ""),
+                 created_at=kb.created_at, doc_status=doc_status)
 
 _LOCALE_LANGUAGE = {"fr": "French", "de": "German", "en": "English",
                     "es": "Spanish", "it": "Italian", "pt": "Portuguese"}
@@ -38,7 +48,7 @@ def create_kb(body: KBCreate) -> KBOut:
     with session_scope() as s:
         kb = repo.create_kb(s, name=body.name, description=body.description,
                             config=config)
-        return KBOut.model_validate(kb, from_attributes=True)
+        return _out(kb)
 
 
 _PROCESSING_STATES = ("queued", "parsing", "indexing")
@@ -50,15 +60,14 @@ def list_kbs() -> list[KBOut]:
         counts = repo.kb_document_status_counts(s)
         out: list[KBOut] = []
         for kb in repo.list_kbs(s):
-            dto = KBOut.model_validate(kb, from_attributes=True)
             c = counts.get(kb.id, {})
-            dto.doc_status = KBDocStatus(
+            doc_status = KBDocStatus(
                 total=sum(c.values()),
                 processing=sum(c.get(st, 0) for st in _PROCESSING_STATES),
                 done=c.get("done", 0),
                 failed=c.get("failed", 0),
             )
-            out.append(dto)
+            out.append(_out(kb, doc_status))
         return out
 
 
@@ -85,9 +94,38 @@ def update_kb(kb_id: uuid.UUID, body: KBUpdate) -> KBOut:
                 config["instructions"] = text
             else:
                 config.pop("instructions", None)  # cleared
+        if body.retrieval_key is not None:
+            key = body.retrieval_key.strip()
+            if key:
+                config["retrieval_key"] = key
+            else:
+                config.pop("retrieval_key", None)  # revoked
         kb.config = config
         s.flush()
-        return KBOut.model_validate(kb, from_attributes=True)
+        return _out(kb)
+
+
+@router.post("/{kb_id}/retrieval-key", response_model=KBOut)
+def create_retrieval_key(kb_id: uuid.UUID,
+                         user: User = Depends(current_user)) -> KBOut:
+    """Mint a fresh external-retrieval API key, replacing any existing one.
+
+    Enables the Dify-compatible External Knowledge API endpoint
+    (`/api/retrieval/{kb_id}/retrieval`) for this KB — off until this is
+    called. Minted on the server for the same reason as the assistant embed
+    token: no secure-context guarantee on a plain-http intranet deployment.
+    """
+    with session_scope() as s:
+        kb = repo.get_kb(s, kb_id)
+        if kb is None:
+            raise HTTPException(404, "knowledge base not found")
+        config = dict(kb.config or {})
+        config["retrieval_key"] = secrets.token_urlsafe(24)
+        kb.config = config
+        s.flush()
+        repo.log_audit(s, user.username, "kb_retrieval_key", kb_id=kb_id,
+                       detail={"name": kb.name})
+        return _out(kb)
 
 
 @router.post("/{kb_id}/suggest-description")
@@ -163,4 +201,4 @@ def get_kb(kb_id: uuid.UUID) -> KBOut:
         kb = repo.get_kb(s, kb_id)
         if kb is None:
             raise HTTPException(404, "knowledge base not found")
-        return KBOut.model_validate(kb, from_attributes=True)
+        return _out(kb)
