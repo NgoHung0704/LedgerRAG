@@ -39,7 +39,7 @@ import httpx
 # reuse the eval-qa grader verbatim — a multi-turn answer is graded exactly like
 # a single-turn one (right value, right source); only the ASKING differs
 sys.path.insert(0, str(Path(__file__).parent))
-from run_eval_qa import grade  # noqa: E402
+from run_eval_qa import cleanup_conversations, grade  # noqa: E402
 
 
 def ask(client: httpx.Client, question: str, session_id: str | None,
@@ -136,23 +136,30 @@ def run_conversation(client: httpx.Client, convo: dict,
             "condensed": condensed if condensed != turn["question"] else None,
             "routed": [id_to_name.get(k, k) for k in res["routed"]],
             "answer": res["answer"],
+            "session_id": session_id,
         })
     return graded
 
 
-def ablate(client: httpx.Client, convo: dict,
-           pins: list[str] | None, url: str = "/api/chat") -> list[bool]:
+def ablate(client: httpx.Client, convo: dict, pins: list[str] | None,
+           url: str = "/api/chat") -> tuple[list[bool], list[str | None]]:
     """Each graded follow-up asked cold, with NO history — the stateless
     baseline. Same KB pin as the threaded run, so the ONLY difference is memory:
-    the gap between them is the lift condensing provides."""
+    the gap between them is the lift condensing provides.
+
+    Returns the verdicts AND the sessions it opened. Every cold ask starts a
+    fresh thread, so ablation litters twice as fast as the threaded run; losing
+    those ids here would leave exactly the mess the cleanup exists to prevent."""
     out: list[bool] = []
+    opened: list[str | None] = []
     for turn in convo["turns"]:
         if not turn.get("expected_answer_contains"):
             continue
         res = ask(client, turn["question"], None, kb_ids=pins, url=url)  # fresh session
+        opened.append(res["session_id"])
         ok, _ = grade(turn, res["answer"], res["citations"], res["verification"])
         out.append(ok)
-    return out
+    return out, opened
 
 
 def main() -> None:
@@ -162,6 +169,9 @@ def main() -> None:
                     default=Path(__file__).parent / "followups.jsonl")
     ap.add_argument("--ablate", action="store_true",
                     help="also ask each follow-up cold (no history) to measure lift")
+    ap.add_argument("--keep-conversations", action="store_true",
+                    help="leave the chat threads this run created in place "
+                         "(default: delete them)")
     ap.add_argument("--assistant",
                     help="send the conversations to an assistant instead of "
                          "the multi-KB endpoint. Its attached KBs become the "
@@ -181,6 +191,9 @@ def main() -> None:
 
     passed = total = 0
     ablate_pass = ablate_total = 0
+    # one session per CONVERSATION here, not per question: the thread is what
+    # this gate measures, so the same id repeats across its graded turns
+    sessions: list[str | None] = []
     with httpx.Client(base_url=args.api, timeout=180) as client:
         id_to_name = {kb["id"]: kb["name"]
                       for kb in client.get("/api/kbs").raise_for_status().json()}
@@ -212,6 +225,7 @@ def main() -> None:
             for r in results:
                 total += 1
                 passed += r["ok"]
+                sessions.append(r.get("session_id"))
                 print(f"{r['id']:5s} {'PASS' if r['ok'] else 'FAIL':8s} {r['detail']}")
                 if r["condensed"]:
                     print(f"      condensed → {r['condensed']}  [routed: "
@@ -222,7 +236,9 @@ def main() -> None:
 
             if args.ablate:
                 try:
-                    for ok in ablate(client, convo, pins, url):
+                    verdicts, opened = ablate(client, convo, pins, url)
+                    sessions.extend(opened)
+                    for ok in verdicts:
                         ablate_total += 1
                         ablate_pass += ok
                 except Exception:  # noqa: BLE001 — ablation is diagnostic, not the gate
@@ -232,6 +248,13 @@ def main() -> None:
     if total == 0:
         sys.exit("no graded follow-up turns found")
     rate = passed / total
+    with httpx.Client(base_url=args.api, timeout=30) as cleanup_client:
+        removed, stuck = cleanup_conversations(
+            cleanup_client, sessions, keep=args.keep_conversations)
+    if not args.keep_conversations and (removed or stuck):
+        print(f"cleaned {removed} conversation(s)"
+              + (f"; {stuck} could not be removed" if stuck else ""))
+
     if args.ablate and ablate_total:
         base = ablate_pass / ablate_total
         print(f"stateless baseline (no memory): {ablate_pass}/{ablate_total} = {base:.0%}")

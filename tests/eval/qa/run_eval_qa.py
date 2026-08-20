@@ -161,9 +161,41 @@ def chat_url(kb: str | None, assistant: str | None) -> str:
     return f"/api/kbs/{kb}/chat" if kb else f"/api/assistants/{assistant}/chat"
 
 
+def cleanup_conversations(client, session_ids, keep: bool = False) -> tuple[int, int]:
+    """Remove the chat threads this run created. Returns (deleted, failed).
+
+    A question asked without a session_id mints a STORED conversation, so a
+    39-question run leaves 39 threads in somebody's sidebar, indistinguishable
+    from the ones they had on purpose. The harness cleans up after itself.
+
+    This runs AFTER the score is printed, and that governs everything here: it
+    never raises and never stops early. An exception escaping would abort the
+    run and bury the numbers it exists to produce — so a failed delete is
+    counted and reported, and the loop carries on.
+
+    404 counts as cleaned: the thread is not there, which is the goal.
+    """
+    if keep:
+        return (0, 0)
+    deleted = failed = 0
+    # dict.fromkeys de-duplicates and keeps order: the follow-up harness threads
+    # ONE session through a conversation, so its id arrives once per graded turn
+    for sid in dict.fromkeys(s for s in session_ids if s):
+        try:
+            response = client.delete(f"/api/conversations/{sid}")
+            if response.status_code in (204, 404):
+                deleted += 1
+            else:
+                failed += 1
+        except Exception:  # noqa: BLE001 — see the docstring: never raise here
+            failed += 1
+    return deleted, failed
+
+
 def ask(api: str, url: str,
-        question: str) -> tuple[str, list[dict], dict | None, list[dict]]:
+        question: str) -> tuple[str, list[dict], dict | None, list[dict], str | None]:
     answer, citations, verification, see_also = "", [], None, []
+    session_id = None
     with httpx.Client(base_url=api, timeout=180) as client:
         with client.stream("POST", url,
                            json={"question": question}) as response:
@@ -179,9 +211,10 @@ def ask(api: str, url: str,
                 elif event["type"] == "done":
                     verification = event.get("verification")
                     see_also = event.get("see_also") or []
+                    session_id = event.get("session_id")
                 elif event["type"] == "error":
                     raise RuntimeError(event["message"])
-    return answer, citations, verification, see_also
+    return answer, citations, verification, see_also, session_id
 
 
 def cites(citations: list[dict], doc: str | None,
@@ -319,6 +352,10 @@ def main() -> None:
                              "readers actually talk to, including its own "
                              "instructions and its whole set of KBs")
     ap.add_argument("--api", default="http://localhost:8000")
+    ap.add_argument("--keep-conversations", action="store_true",
+                    help="leave the chat threads this run created in place "
+                         "(default: delete them, so a 39-question run does "
+                         "not fill somebody's sidebar with eval questions)")
     ap.add_argument("--questions", type=Path,
                     default=Path(__file__).parent / "questions.jsonl")
     args = ap.parse_args()
@@ -334,14 +371,18 @@ def main() -> None:
 
     results: dict[str, list[bool]] = {}
     transcript: list[dict] = []
+    # every question asked without a session_id mints a STORED conversation;
+    # collected here so the run can remove its own litter afterwards
+    sessions: list[str | None] = []
     print(f"target: {'assistant ' + args.assistant if args.assistant else 'kb ' + args.kb}")
     print(f"{'id':6s} {'type':6s} {'verdict':8s} detail")
     print("-" * 72)
     for item in items:
         answer, citations, verification, see_also = "", [], None, []
         try:
-            answer, citations, verification, see_also = ask(
+            answer, citations, verification, see_also, session_id = ask(
                 args.api, url, item["question"])
+            sessions.append(session_id)
             ok, detail = grade(item, answer, citations, verification, see_also)
         except Exception as e:  # noqa: BLE001
             ok, detail = False, f"error: {e}"
@@ -373,6 +414,19 @@ def main() -> None:
         "\n".join(json.dumps(t, ensure_ascii=False) for t in transcript),
         encoding="utf-8")
     print(f"\nfull transcript: {out_path}")
+
+    # Printed BEFORE the score table on purpose: the verdict is what a reader
+    # came for, so it stays the last thing on screen.
+    with httpx.Client(base_url=args.api, timeout=30) as client:
+        removed, stuck = cleanup_conversations(
+            client, sessions, keep=args.keep_conversations)
+    if args.keep_conversations:
+        print(f"kept {len([s for s in sessions if s])} conversation(s)")
+    elif stuck:
+        print(f"cleaned {removed} conversation(s); {stuck} could not be "
+              f"removed — delete them by hand from the assistant's sidebar")
+    elif removed:
+        print(f"cleaned {removed} conversation(s) this run created")
 
     print("-" * 72)
     exit_code = 0
