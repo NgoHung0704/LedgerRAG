@@ -77,6 +77,35 @@ no error). In order of least pain (SPEC Appendix A.3):
 
 Verify with `ollama ps` (must read 100% GPU) and re-run preflight.
 
+**The second symptom: it uses the GPU, then dies.** Silent CPU fallback is not
+the only way RDNA4 fails. Ollama can offload every layer, allocate its buffers,
+and then abort mid-generation:
+
+```
+load_tensors: offloaded 49/49 layers to GPU
+ROCm0 model buffer 3917 MiB  ·  ROCm1 model buffer 4231 MiB
+Memory access fault by GPU node-1 on address 0x... Reason: Page not present
+```
+
+`ollama ps` says 100% GPU and preflight passes, because both are true right up
+until the fault. What the caller sees is **HTTP 500 on `/api/chat`**, which
+looks like a model problem and is not.
+
+The aggravating factor is the **multi-GPU split** — the fault lands on
+`node-1`, the second card. Least-disruptive fixes, in order:
+
+1. `OLLAMA_VULKAN=1` — the same first answer as above; it leaves ROCm entirely.
+2. `HIP_VISIBLE_DEVICES=0` — one card, no split. Budget first: a 9 GB model plus
+   the KV cache for `chat_num_ctx=32768` came to ~15 GB, which barely fits a
+   16 GB card. Lowering `num_ctx` to fit means lowering `TABLE_HTML_LIMIT` in
+   `query/steps/assemble.py` with it — that constant is budgeted against 32768.
+3. A community ROCm-7 build, as above.
+
+Each crash writes a ~1 GB core dump; see §6 for what ninety of them do to a
+disk. **And every measurement taken while this is happening is suspect** — a
+question that fails because the server aborted mid-stream is scored as a wrong
+answer, not as an outage.
+
 ## 5. Use
 
 Open `http://localhost:3000`, create a knowledge base (set its **number
