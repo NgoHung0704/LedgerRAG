@@ -144,10 +144,37 @@ hard way on this box:
   and a 38 GB vLLM image is a long download to get back.
 
 Check where large models actually live before touching their containers. On
-this box Ollama's weights sit in the **container's writable layer** (118 GB),
-not a volume, so `docker rm ollama` would discard them all. `docker ps -as`
-prints the writable size per container and tells you which containers are
-holding data they should not be.
+this box Ollama's weights sit in the **container's writable layer**, not a
+volume, so `docker rm ollama` would discard them all. `docker ps -as` prints
+the writable size per container and tells you which ones hold data they should
+not. Note the path: the weights were under `/modelfiles` (`OLLAMA_MODELS`), and
+`/root/.ollama` held 4 KB of SSH keys — copying "the obvious" directory to a
+volume would have moved nothing.
+
+### A crashing model server fills the disk with its own crash dumps
+
+The 118 GB in that container was not models. It was **90 core dumps totalling
+85 GB** — one per Ollama crash, ~1 GB each, plus a 16 GB `core.gpu` — written
+into the container's root because the host's `kernel.core_pattern` puts them in
+the working directory. Models were 23 GB of it.
+
+They are crash artefacts and nothing reads them, so deleting is safe:
+
+```bash
+docker exec <container> sh -c 'ls -d /core.* | wc -l'   # count first
+docker exec <container> sh -c 'du -ch /core.* | tail -1'
+docker exec <container> sh -c 'rm -f /core.*'
+```
+
+**The count is the real finding.** Ninety crashes is a systematically unstable
+service, not bad luck, and on RDNA4 it points straight at §4. The disk failure
+was the symptom: each crash wrote a gigabyte, ninety of them filled the disk,
+and a full disk is what finally stopped the restarts from working. Clear the
+dumps and they grow back unless the crashes stop.
+
+Containers that crash should not be allowed to dump at all — `--ulimit core=0`
+at `docker run` (it cannot be changed later with `docker update`). Worth setting
+on any model server, since their core dumps are the size of their VRAM.
 
 ## 7. Backups (GDPR / DR)
 
