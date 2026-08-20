@@ -244,8 +244,8 @@ class AssembleContext:
 
         blocks: list[SourceBlock] = [self._text_block(c, chunk_scores) for c in chunks]
         blocks += [self._table_block(t, table_scores,
-                                     self._rows_for(t.element_id, matched, named,
-                                                    record_texts))
+                                     *self._rows_for(t.element_id, matched,
+                                                     named, record_texts))
                    for t in tables]
         # Does representation 2 take part at all? A table block is summary +
         # the rows that matched + THE WHOLE GRID, and the grid is always there.
@@ -299,16 +299,31 @@ class AssembleContext:
 
     @staticmethod
     def _table_block(t: TableSource, scores: dict,
-                     matched_rows: list[str] | None = None) -> SourceBlock:
+                     matched_rows: list[str] | None = None,
+                     ranked: bool = True) -> SourceBlock:
         parts = []
         if t.summary:
             parts.append(f"Table summary: {t.summary}")
-        # the rows that actually matched the question, ahead of the full grid:
-        # a small model asked for one cell otherwise has to scan a 19-row table
-        # among a dozen sources (run 2: values read off the wrong row/table)
+        # Rows ahead of the full grid: a small model asked for one cell
+        # otherwise has to scan a 19-row table among a dozen sources (run 2:
+        # values read off the wrong row/table).
+        #
+        # The HEADING depends on how they were chosen, and that is not a
+        # nicety. Read rows went in under the ranked rows' wording, "Rows
+        # matching the question", which for a string match is simply false. p6
+        # asks for the AVERAGE salary of the classes in group F; the matcher
+        # surfaced every group-F row, the heading said they matched the
+        # question, and the model stated per-class MINIMA as an average. A trap
+        # that had passed since Phase 4 started failing. The rows were worth
+        # having; the claim about them was not.
         if matched_rows:
-            parts.append("Rows matching the question:\n"
-                         + "\n".join(f"- {row}" for row in matched_rows))
+            parts.append(
+                ("Rows matching the question:\n" if ranked else
+                 "Rows of this table that repeat wording from the question. "
+                 "They were selected by matching text, NOT because they answer "
+                 "what was asked — check the column asked for before quoting "
+                 "one:\n")
+                + "\n".join(f"- {row}" for row in matched_rows))
         if t.html:
             # merged cells expanded: rowspan/colspan are for DISPLAY, and
             # reading them back positionally is exactly how a small model
@@ -326,20 +341,25 @@ class AssembleContext:
 
     @staticmethod
     def _rows_for(element_id, matched: dict, named: dict,
-                  record_texts: dict) -> list[str]:
-        """The rows shown above this table's grid.
+                  record_texts: dict) -> tuple[list[str], bool]:
+        """The rows shown above this table's grid, and whether they were RANKED.
 
         Ranked rows first, capped tight because more of a similarity guess is
         more noise. Only when there were NONE do the read rows stand in, on
         their own larger budget: they are the exact answer to a filter, and
         trimming them to four would turn a complete list into a silently
-        partial one."""
+        partial one.
+
+        The flag travels with the rows because the prompt has to say which kind
+        it got. Ranked rows earned "matching the question"; read rows matched a
+        string, and telling the model otherwise is what made it quote per-class
+        minima as an average."""
         ranked = [record_texts[r] for r in matched.get(element_id, [])
                   if r in record_texts][:MAX_MATCHED_ROWS]
         if ranked:
-            return ranked
+            return ranked, True
         return [record_texts[r] for r in named.get(element_id, [])
-                if r in record_texts][:MAX_NAMED_ROWS]
+                if r in record_texts][:MAX_NAMED_ROWS], False
 
     @staticmethod
     def _fetch(chunk_ids: list[uuid.UUID], table_ids: list[uuid.UUID],

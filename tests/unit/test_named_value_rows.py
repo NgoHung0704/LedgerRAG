@@ -112,23 +112,26 @@ def test_ranked_rows_win_when_retrieval_found_any():
     ranked, ranked_texts = _texts(2, "ranked")
     named, named_texts = _texts(2, "named")
     element = uuid.uuid4()
-    got = AssembleContext._rows_for(
+    got, was_ranked = AssembleContext._rows_for(
         element, {element: ranked}, {element: named},
         {**ranked_texts, **named_texts})
     assert got == ["ranked-0", "ranked-1"]
+    assert was_ranked is True
 
 
 def test_read_rows_stand_in_only_when_nothing_ranked():
     named, named_texts = _texts(2, "named")
     element = uuid.uuid4()
-    got = AssembleContext._rows_for(element, {}, {element: named}, named_texts)
+    got, was_ranked = AssembleContext._rows_for(element, {}, {element: named}, named_texts)
     assert got == ["named-0", "named-1"]
+    # the flag is what stops the prompt claiming these matched the question
+    assert was_ranked is False
 
 
 def test_a_similarity_guess_is_capped_tight():
     ranked, texts = _texts(MAX_MATCHED_ROWS + 3, "r")
     element = uuid.uuid4()
-    got = AssembleContext._rows_for(element, {element: ranked}, {}, texts)
+    got, was_ranked = AssembleContext._rows_for(element, {element: ranked}, {}, texts)
     assert len(got) == MAX_MATCHED_ROWS
 
 
@@ -137,7 +140,7 @@ def test_an_exact_filter_gets_the_larger_budget():
     # complete list into a partial one the reader cannot tell is partial
     named, texts = _texts(MAX_MATCHED_ROWS + 3, "n")
     element = uuid.uuid4()
-    got = AssembleContext._rows_for(element, {}, {element: named}, texts)
+    got, was_ranked = AssembleContext._rows_for(element, {}, {element: named}, texts)
     assert len(got) == MAX_MATCHED_ROWS + 3
     assert MAX_NAMED_ROWS > MAX_MATCHED_ROWS
 
@@ -145,12 +148,72 @@ def test_an_exact_filter_gets_the_larger_budget():
 def test_the_larger_budget_still_has_a_floor_under_it():
     named, texts = _texts(MAX_NAMED_ROWS + 5, "n")
     element = uuid.uuid4()
-    assert len(AssembleContext._rows_for(element, {}, {element: named}, texts)) \
-        == MAX_NAMED_ROWS
+    got, _ = AssembleContext._rows_for(element, {}, {element: named}, texts)
+    assert len(got) == MAX_NAMED_ROWS
 
 
 def test_a_row_whose_text_never_loaded_is_skipped_not_crashed():
     ids = [uuid.uuid4(), uuid.uuid4()]
     element = uuid.uuid4()
-    got = AssembleContext._rows_for(element, {}, {element: ids}, {ids[1]: "only"})
+    got, was_ranked = AssembleContext._rows_for(element, {}, {element: ids}, {ids[1]: "only"})
     assert got == ["only"]
+
+
+# --- what the prompt CLAIMS about those rows --------------------------------
+#
+# The regression this section exists for: read rows were injected under the
+# heading ranked rows already used, "Rows matching the question". For rows
+# chosen by a string match that sentence is false, and the model believed it.
+#
+# p6 asks for the AVERAGE salary of the classes in group F. The matcher saw the
+# column `groupe` named and the value `F` spoken, surfaced every group-F row,
+# and the heading told the model they matched the question. They did not — they
+# are per-class MINIMA. The model stated them as an average and a trap that had
+# passed since Phase 4 began failing.
+#
+# The rows are worth having. The claim about them was not.
+
+from tablerag.storage.repositories import TableSource  # noqa: E402
+
+
+def _source():
+    return TableSource(
+        element_id=uuid.uuid4(), doc_id=uuid.uuid4(), filename="bareme.pdf",
+        page=1, html="<table><tr><td>x</td></tr></table>", summary=None,
+        crop_image_path="c.png", confidence=None, needs_review=False)
+
+
+def test_ranked_rows_are_still_announced_as_matching_the_question():
+    block = AssembleContext._table_block(
+        _source(), {}, ["groupe: F | classe: 11 | smh: 34 900"], ranked=True)
+    assert "matching the question" in block.content
+
+
+def test_read_rows_are_never_announced_as_matching_the_question():
+    block = AssembleContext._table_block(
+        _source(), {}, ["groupe: F | classe: 11 | smh: 34 900"], ranked=False)
+    assert "matching the question" not in block.content
+
+
+def test_read_rows_say_how_they_were_chosen_and_that_it_proves_nothing():
+    block = AssembleContext._table_block(
+        _source(), {}, ["groupe: F | classe: 11 | smh: 34 900"], ranked=False)
+    text = block.content.lower()
+    # the selection method, stated
+    assert "wording" in text
+    # and the warning that it is not an answer
+    assert "not" in text and "answer" in text
+
+
+def test_the_rows_themselves_reach_the_prompt_either_way():
+    for ranked in (True, False):
+        block = AssembleContext._table_block(
+            _source(), {}, ["groupe: F | classe: 11 | smh: 34 900"],
+            ranked=ranked)
+        assert "smh: 34 900" in block.content
+
+
+def test_a_table_with_no_rows_carries_no_heading_at_all():
+    block = AssembleContext._table_block(_source(), {}, [], ranked=False)
+    assert "wording" not in block.content.lower()
+    assert "matching the question" not in block.content
