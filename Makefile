@@ -67,6 +67,20 @@ eval-qa:
 eval-assistant:
 	python tests/eval/qa/run_eval_qa.py --assistant $(ASSISTANT) $(ARGS)
 
+# Every question set against one assistant, in one go. routing.jsonl is NOT
+# here on purpose: it measures choosing among all knowledge bases, and an
+# assistant's are fixed, so running it would answer a different question under
+# the same name.
+#
+# Keeps going past a failing gate instead of stopping at the first one — the
+# point of a full run is the whole picture — then exits non-zero if any set
+# missed its target, so CI and a human read the same verdict.
+#   make eval-assistant-all ASSISTANT=<id>
+EVAL_SETS = questions funds convention accords visuals
+
+eval-assistant-all:
+	@fail=0; for set in $(EVAL_SETS); do 	  echo ""; echo "======== $$set ========"; 	  python tests/eval/qa/run_eval_qa.py --assistant $(ASSISTANT) 	    --questions tests/eval/qa/$$set.jsonl $(ARGS) || fail=1; 	done; 	echo ""; echo "======== follow-ups ========"; 	python tests/eval/qa/run_eval_followup.py --assistant $(ASSISTANT) $(ARGS) || fail=1; 	echo ""; 	if [ $$fail -eq 0 ]; then echo "all sets met their targets"; 	else echo "at least one set missed its target (see the blocks above)"; fi; 	exit $$fail
+
 # Same gate, ACCORDS question set (retraite / prévoyance / accords CETIAT).
 # Usage: make eval-accords KB=<accords kb id>
 eval-accords:

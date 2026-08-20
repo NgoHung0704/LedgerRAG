@@ -48,3 +48,7 @@ docs-site/shots/
 
 # real customer PDFs for the detection gate — never committed
 tests/eval/tables/pdfs/*.pdf
+# eval transcripts: run artefacts, rewritten every run, and they quote the
+# customer documents verbatim — answers, cited passages, the lot. Untracked but
+# not ignored meant one `git add -A` away from publishing them.
+tests/eval/qa/results/
