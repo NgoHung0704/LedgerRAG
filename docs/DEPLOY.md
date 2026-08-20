@@ -107,6 +107,42 @@ docker compose build --no-cache api worker && docker compose up -d
 docker compose exec api python -m tablerag.scripts.reindex_all
 ```
 
+### Every build leaves the old images behind — reclaim, or the box fills up
+
+`docker compose up --build` retags the new image and leaves the previous one
+**untagged**, not deleted. Three services at ~940 MB each, rebuilt through a
+working week, is how MIA-82025 reached 387 images and **100 % of a 466 GB disk**
+on 2026-08-20. The symptoms did not point at disk at all:
+
+- Ollama answering **HTTP 500** on `/api/chat`, so every question failed with
+  "internal error" — the traceback blamed the model, not the filesystem;
+- `docker compose up --build` dying on `no space left on device`.
+
+Reclaim after upgrading — safe on a shared box, since it only removes images no
+container references:
+
+```bash
+docker image prune -f        # the untagged builds this upgrade just orphaned
+docker builder prune -f      # the build cache
+df -h /
+```
+
+`docker system df` shows where the space went. Two cautions, both learned the
+hard way on this box:
+
+- **Never `docker system prune --volumes`.** `pgdata`, `qdrant_data` and
+  `minio_data` are named volumes: that flag deletes every knowledge base,
+  parsed document and vector, unrecoverably.
+- **`docker image prune -a` is not safe on a shared machine.** It removes any
+  image without a *running* container, including other projects' stopped ones —
+  and a 38 GB vLLM image is a long download to get back.
+
+Check where large models actually live before touching their containers. On
+this box Ollama's weights sit in the **container's writable layer** (118 GB),
+not a volume, so `docker rm ollama` would discard them all. `docker ps -as`
+prints the writable size per container and tells you which containers are
+holding data they should not be.
+
 ## 7. Backups (GDPR / DR)
 
 ```bash

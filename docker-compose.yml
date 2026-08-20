@@ -57,10 +57,22 @@ x-backend-env: &backend-env
 # and every later job fails with "Temporary failure in name resolution".
 x-restart: &restart unless-stopped
 
+# Log rotation. Without it json-file grows without limit, and a container's
+# logs count against the same disk as its writable layer and every image —
+# which is the disk that hit 100% on 2026-08-20 (see docs/DEPLOY.md §6). Logs
+# were not the cause that time (~535 MB across every container), but nothing
+# was stopping them, and the API logs a line per assembled context.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:16-alpine
     restart: *restart
+    logging: *logging
     environment:
       POSTGRES_USER: ledgerrag
       POSTGRES_PASSWORD: ledgerrag
@@ -76,6 +88,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: *restart
+    logging: *logging
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -85,6 +98,7 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.12.4
     restart: *restart
+    logging: *logging
     # Qdrant memory-maps every storage segment (several files each) and runs
     # one actix worker per CPU. Docker's default open-files limit (often 1024)
     # trips once segments accumulate -> startup panic "Too many open files"
@@ -100,6 +114,7 @@ services:
   minio:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
     restart: *restart
+    logging: *logging
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ledgerrag
@@ -115,6 +130,7 @@ services:
   api:
     build: .
     restart: *restart
+    logging: *logging
     environment: *backend-env
     ports:
       - "8000:8000"
@@ -129,6 +145,7 @@ services:
   worker:
     build: .
     restart: *restart
+    logging: *logging
     # concurrency = how many documents ingest at once. 1 is safest on a single
     # box (scanned-PDF VLM + Qdrant writes + Postgres + MinIO all co-located):
     # it stops the write contention / memory spikes that time out or OOM-crash
@@ -150,6 +167,7 @@ services:
   consumer:
     build: .
     restart: *restart
+    logging: *logging
     command: python -m tablerag.ingestion.consumer
     environment:
       <<: *backend-env
@@ -170,6 +188,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     restart: *restart
+    logging: *logging
     # who may iframe an embedded assistant. Empty = nobody, which is what the
     # middleware renders as frame-ancestors 'none'.
     environment:
@@ -191,6 +210,7 @@ services:
   # (:1.5 CUDA / :rocm-1.5) and add the matching device reservation.
   reranker:
     profiles: ["reranker"]
+    logging: *logging
     # cpu-1.5 ships a broken downloader ("relative URL without a base" on a
     # reachable Hub); newer tags fix it. Overridable so a box can try tags
     # without editing this file:  TEI_TAG=cpu-1.7 docker compose ... up reranker

@@ -2592,8 +2592,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 178,
-        "to": 178,
+        "from": 197,
+        "to": 197,
         "anchor": "- \"3000:3000\""
       }
     },
@@ -2655,8 +2655,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 149,
-        "to": 149,
+        "from": 166,
+        "to": 166,
         "anchor": "in a subfolder named after the target KB; a PDF in the root is ignored"
       }
     },
@@ -2676,8 +2676,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 153,
-        "to": 153,
+        "from": 171,
+        "to": 171,
         "anchor": "python -m tablerag.ingestion.consumer"
       }
     },
@@ -2739,8 +2739,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 77,
-        "to": 77,
+        "from": 89,
+        "to": 89,
         "anchor": "image: redis:7-alpine"
       }
     },
@@ -2760,8 +2760,8 @@
       "cite": {
         "kind": "anchor",
         "file": "docker-compose.yml",
-        "from": 136,
-        "to": 136,
+        "from": 153,
+        "to": 153,
         "anchor": "celery -A tablerag.ingestion.worker worker"
       }
     },
