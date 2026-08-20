@@ -217,3 +217,33 @@ def test_a_table_with_no_rows_carries_no_heading_at_all():
     block = AssembleContext._table_block(_source(), {}, [], ranked=False)
     assert "wording" not in block.content.lower()
     assert "matching the question" not in block.content
+
+
+# --- an enhancement must not be able to kill the answer ---------------------
+#
+# Reading a table's rows is auxiliary: without it the grid is still in context
+# and the model still answers. So a failure here must cost the feature, never
+# the reply. group_overlapping sets the precedent two steps away, in the same
+# file, with the reason written out: "an answer must survive this".
+#
+# Shipped without it, which was wrong on its own terms — an outage on the box
+# came from Ollama, not from here, but the next one need not be so kind.
+
+class _AngrySession:
+    def scalars(self, *_args, **_kwargs):
+        raise RuntimeError("connection reset while reading records")
+
+
+def test_a_failed_row_lookup_costs_the_rows_not_the_answer():
+    got = AssembleContext._named_rows(
+        _AngrySession(), [uuid.uuid4()], "la classe d'emploi 10")
+    assert got == {}
+
+
+def test_nothing_is_looked_up_when_there_is_no_question():
+    # a blank question cannot name a value, so the query is pointless work
+    assert AssembleContext._named_rows(_AngrySession(), [uuid.uuid4()], "") == {}
+
+
+def test_nothing_is_looked_up_when_every_table_already_ranked_rows():
+    assert AssembleContext._named_rows(_AngrySession(), [], "la classe 10") == {}

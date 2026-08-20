@@ -340,6 +340,30 @@ class AssembleContext:
             needs_review=t.needs_review, context=t.context)
 
     @staticmethod
+    def _named_rows(s, unranked: list[uuid.UUID],
+                    question: str) -> dict[uuid.UUID, list[uuid.UUID]]:
+        """Rows read off the tables that reached context without ranking any.
+
+        Auxiliary by construction: without it the full grid is still in the
+        prompt and the model still answers, just less reliably. So a failure
+        here costs the ROWS, never the reply — the same contract
+        group_overlapping states two steps away in this pipeline, and the one
+        this shipped without.
+        """
+        if not unranked or not question:
+            return {}
+        named: dict[uuid.UUID, list[uuid.UUID]] = {}
+        try:
+            for element_id, rows in get_record_dimensions(s, unranked).items():
+                hits = rows_by_named_value(question, rows)[:MAX_NAMED_ROWS]
+                if hits:
+                    named[element_id] = hits
+        except Exception:  # noqa: BLE001 — see the docstring: never fatal
+            logger.exception("named-row lookup failed (non-fatal)")
+            return {}
+        return named
+
+    @staticmethod
     def _rows_for(element_id, matched: dict, named: dict,
                   record_texts: dict) -> tuple[list[str], bool]:
         """The rows shown above this table's grid, and whether they were RANKED.
@@ -374,14 +398,9 @@ class AssembleContext:
         # and the assistant reads the grid and guesses. These rows are read
         # instead of ranked.
         unranked = [t for t in table_ids if not matched.get(t)]
-        named: dict[uuid.UUID, list[uuid.UUID]] = {}
         with session_scope() as s:
-            if unranked and question:
-                for element_id, rows in get_record_dimensions(s, unranked).items():
-                    hits = rows_by_named_value(question, rows)[:MAX_NAMED_ROWS]
-                    if hits:
-                        named[element_id] = hits
-                record_ids += [r for rows in named.values() for r in rows]
+            named = AssembleContext._named_rows(s, unranked, question)
+            record_ids += [r for rows in named.values() for r in rows]
             return (get_chunk_contexts(s, chunk_ids),
                     get_table_sources(s, table_ids),
                     get_record_texts(s, record_ids),
