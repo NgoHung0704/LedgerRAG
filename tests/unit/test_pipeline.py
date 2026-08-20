@@ -181,14 +181,15 @@ async def _assemble(hits, monkeypatch):
     step = AssembleContext()
     ids = {h.payload.get("chunk_id") or h.payload["element_id"] for h in hits}
 
-    def fake_fetch(chunk_ids, table_ids, matched, expanded_elements=None):
+    def fake_fetch(chunk_ids, table_ids, matched, expanded_elements=None,
+                   question=""):
         from tablerag.storage.repositories import ChunkContext
 
         chunks = [ChunkContext(chunk_id=c, text=f"text-{c}", element_id=c,
                                page=1, crop_image_path="k", confidence=None,
                                needs_review=False, doc_id=uuid.uuid4(),
                                filename=f"{c}.pdf") for c in chunk_ids]
-        return chunks, [], {}, []
+        return chunks, [], {}, [], {}
 
     monkeypatch.setattr(AssembleContext, "_fetch", staticmethod(fake_fetch))
     ctx = QueryContext(kb_id=uuid.uuid4(), question="q")

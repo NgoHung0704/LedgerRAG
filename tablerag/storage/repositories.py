@@ -456,6 +456,30 @@ def get_record_texts(s: Session,
             s.scalars(select(Record).where(Record.id.in_(record_ids)))}
 
 
+def get_record_dimensions(
+        s: Session, element_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, list[tuple[uuid.UUID, dict]]]:
+    """Every row of these tables, as (record id, dimensions), keyed by table.
+
+    Retrieval only ever knew the rows its own ranking surfaced, which is no use
+    to a question that filters ("the employments in class 10"): ranking cannot
+    find those rows, so nothing asked for them. Once the table is in context its
+    rows can simply be read, and this is what reads them.
+
+    Keyed BY ELEMENT rather than flattened: two tables are often in context at
+    once, and offering a row of the grading grid as a row of the pay scale is
+    the exact look-alike confusion this area keeps producing. Tables with no
+    records are absent from the result rather than present and empty."""
+    if not element_ids:
+        return {}
+    out: dict[uuid.UUID, list[tuple[uuid.UUID, dict]]] = {}
+    for record in s.scalars(select(Record).where(
+            Record.table_element_id.in_(element_ids))):
+        out.setdefault(record.table_element_id, []).append(
+            (record.id, record.dimensions or {}))
+    return out
+
+
 def get_document_view(s: Session, doc_id: uuid.UUID,
                       records_preview: int = 8) -> list[dict]:
     """Everything ingestion produced for one document, element by element —

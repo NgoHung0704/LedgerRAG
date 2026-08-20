@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
+import unicodedata
 import uuid
 
 from tablerag.core.schemas import Citation
@@ -25,11 +27,74 @@ from tablerag.storage.repositories import (
     TableSource,
     get_chunk_contexts,
     get_element_chunk_contexts,
+    get_record_dimensions,
     get_record_texts,
     get_table_sources,
 )
 
 logger = logging.getLogger(__name__)
+
+_WORD_CHARS = re.compile(r"[^0-9a-z]+")
+
+
+def _fold(text: str) -> str:
+    """Lowercase, strip accents, keep letters and DIGITS.
+
+    Unlike overlap._fold, which drops everything that is not a letter: the
+    values matched here are mostly numbers, so folding them away would leave
+    nothing to match on."""
+    stripped = unicodedata.normalize("NFKD", str(text).lower())
+    return "".join(c for c in stripped if not unicodedata.combining(c))
+
+
+def _spoken(needle: str, haystack: str) -> bool:
+    """Is `needle` said in `haystack`, on whole-word boundaries?
+
+    Boundaries are the point: without them "la classe 10" matches a row whose
+    class is 100, and the answer names employments from a class nobody asked
+    about."""
+    needle = _WORD_CHARS.sub(" ", _fold(needle)).strip()
+    if not needle:
+        return False
+    return re.search(rf"(?<![0-9a-z]){re.escape(needle)}(?![0-9a-z])",
+                     _WORD_CHARS.sub(" ", _fold(haystack))) is not None
+
+
+def rows_by_named_value(question: str, records) -> list:
+    """Ids of the rows the question names by value — read, not ranked.
+
+    A question like "les emplois de la classe d'emploi 10" is a FILTER: it
+    wants every row whose `classe` is 10. Dense retrieval cannot serve it —
+    `classe: 10` and `classe: 11` embed almost identically, and every row of a
+    table shares its filename, heading and column names — so no record ranks,
+    the table arrives through its summary alone, and the assistant reads the
+    flattened grid and guesses. Measured on the box: rows=0 answered with two
+    employments from the wrong class; rows=1, twenty-five seconds later,
+    answered correctly.
+
+    The table is already retrieved when this runs, so its own rows can simply
+    be read. No model, no threshold, no drift.
+
+    BOTH halves must be present — the column's NAME and its VALUE. A table of
+    gradings is full of bare numbers, so matching on the value alone would pull
+    in every row with a cotation of 10, which is the look-alike failure this
+    exists to end. Only `dimensions` are searched: metrics are the figures an
+    answer quotes, and matching on them would select a row because the question
+    mentioned a salary rather than because it named that row.
+
+    `records` is (id, dimensions) pairs, so this stays a pure function the
+    tests can drive without a database.
+    """
+    if not question:
+        return []
+    out = []
+    for record_id, dimensions in records:
+        for column, value in (dimensions or {}).items():
+            if _spoken(column, question) and _spoken(value, question):
+                out.append(record_id)
+                break
+    return out
+
 
 SNIPPET_CHARS = 240
 # must hold a full multi-page merged table: truncating mid-table silently
@@ -38,6 +103,12 @@ SNIPPET_CHARS = 240
 TABLE_HTML_LIMIT = 24000
 # how many matched rows to surface above a table before it becomes noise again
 MAX_MATCHED_ROWS = 4
+# Rows selected by rows_by_named_value get their own, larger budget. Those four
+# are a similarity guess and more of them are more noise; these are the exact
+# answer to a filter ("which employments are in class 10"), and cutting the
+# list at four turns a complete answer into a silently partial one — the reader
+# sees a confident list and cannot tell rows were dropped.
+MAX_NAMED_ROWS = 12
 # Under French's real ~3.5-4 chars/token on purpose: the cost of guessing low
 # is a slightly smaller context, the cost of guessing high is that Ollama
 # truncates from the TOP of the prompt and silently deletes every safety rule
@@ -158,8 +229,8 @@ class AssembleContext:
                     if record_id not in rows:
                         rows.append(record_id)
 
-        chunks, tables, record_texts, expanded_chunks = await asyncio.to_thread(
-            self._fetch, chunk_ids, table_ids, matched, expanded_elements)
+        chunks, tables, record_texts, expanded_chunks, named =             await asyncio.to_thread(self._fetch, chunk_ids, table_ids, matched,
+                                    expanded_elements, ctx.question)
 
         # an expanded chunk scores 0.0: it was never retrieved, and giving it a
         # borrowed score would let it compete with what search actually found
@@ -173,8 +244,8 @@ class AssembleContext:
 
         blocks: list[SourceBlock] = [self._text_block(c, chunk_scores) for c in chunks]
         blocks += [self._table_block(t, table_scores,
-                                     [record_texts[r] for r in matched.get(t.element_id, [])
-                                      if r in record_texts][:MAX_MATCHED_ROWS])
+                                     self._rows_for(t.element_id, matched, named,
+                                                    record_texts))
                    for t in tables]
         # Does representation 2 take part at all? A table block is summary +
         # the rows that matched + THE WHOLE GRID, and the grid is always there.
@@ -186,6 +257,7 @@ class AssembleContext:
         if tables:
             logger.info("tables: %s", " | ".join(
                 f"{t.filename[:26]} p{t.page} rows={len(matched.get(t.element_id, []))}"
+                f" named={len(named.get(t.element_id, []))}"
                 f" grid={len(t.html or '')}" for t in tables))
 
         for block in blocks:
@@ -253,14 +325,45 @@ class AssembleContext:
             needs_review=t.needs_review, context=t.context)
 
     @staticmethod
+    def _rows_for(element_id, matched: dict, named: dict,
+                  record_texts: dict) -> list[str]:
+        """The rows shown above this table's grid.
+
+        Ranked rows first, capped tight because more of a similarity guess is
+        more noise. Only when there were NONE do the read rows stand in, on
+        their own larger budget: they are the exact answer to a filter, and
+        trimming them to four would turn a complete list into a silently
+        partial one."""
+        ranked = [record_texts[r] for r in matched.get(element_id, [])
+                  if r in record_texts][:MAX_MATCHED_ROWS]
+        if ranked:
+            return ranked
+        return [record_texts[r] for r in named.get(element_id, [])
+                if r in record_texts][:MAX_NAMED_ROWS]
+
+    @staticmethod
     def _fetch(chunk_ids: list[uuid.UUID], table_ids: list[uuid.UUID],
                matched: dict[uuid.UUID, list[uuid.UUID]],
-               expanded_elements: list[uuid.UUID] | None = None
-               ) -> tuple[list, list, dict, list]:
+               expanded_elements: list[uuid.UUID] | None = None,
+               question: str = "") -> tuple[list, list, dict, list, dict]:
         record_ids = [r for rows in matched.values()
                       for r in rows[:MAX_MATCHED_ROWS]]
+        # Tables that reached the context WITHOUT a row of their own. A filter
+        # question cannot rank rows — every row of a table shares its filename,
+        # heading and column names — so the table arrives through its summary
+        # and the assistant reads the grid and guesses. These rows are read
+        # instead of ranked.
+        unranked = [t for t in table_ids if not matched.get(t)]
+        named: dict[uuid.UUID, list[uuid.UUID]] = {}
         with session_scope() as s:
+            if unranked and question:
+                for element_id, rows in get_record_dimensions(s, unranked).items():
+                    hits = rows_by_named_value(question, rows)[:MAX_NAMED_ROWS]
+                    if hits:
+                        named[element_id] = hits
+                record_ids += [r for rows in named.values() for r in rows]
             return (get_chunk_contexts(s, chunk_ids),
                     get_table_sources(s, table_ids),
                     get_record_texts(s, record_ids),
-                    get_element_chunk_contexts(s, expanded_elements or []))
+                    get_element_chunk_contexts(s, expanded_elements or []),
+                    named)

@@ -128,7 +128,8 @@ async def _assemble_with(monkeypatch, hits, expanded_chunk_element=None):
 
     from tablerag.query.steps.assemble import AssembleContext
 
-    def fake_fetch(chunk_ids, table_ids, matched, expanded_elements=None):
+    def fake_fetch(chunk_ids, table_ids, matched, expanded_elements=None,
+                   question=""):
         def _ctx(element_id):
             return ChunkContext(chunk_id=uuid.uuid4(), text=f"text of {element_id}",
                                 element_id=element_id, page=1,
@@ -138,7 +139,8 @@ async def _assemble_with(monkeypatch, hits, expanded_chunk_element=None):
 
         return ([], [], {},
                 [_ctx(e) for e in (expanded_elements or [])
-                 if expanded_chunk_element is None or e == expanded_chunk_element])
+                 if expanded_chunk_element is None or e == expanded_chunk_element],
+                {})
 
     monkeypatch.setattr(AssembleContext, "_fetch", staticmethod(fake_fetch))
     ctx = QueryContext(kb_id=uuid.uuid4(), question="q")
