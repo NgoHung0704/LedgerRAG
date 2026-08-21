@@ -335,8 +335,8 @@
       "cite": {
         "kind": "anchor",
         "file": ".env.example",
-        "from": 84,
-        "to": 84,
+        "from": 89,
+        "to": 89,
         "anchor": "LEDGERRAG_MODELS__RERANKER__PROVIDER=disabled"
       }
     }
