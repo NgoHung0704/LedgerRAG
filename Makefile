@@ -84,6 +84,11 @@ eval-assistant:
 #
 # `docker compose down` does NOT help here and is deliberately absent: the old
 # image is orphaned by the tag moving, not by anything about the containers.
+#
+# On a box whose buildx plugin is older than its compose version, `--build`
+# fails with "compose build requires buildx 0.17.0 or later". Prefix the call —
+# make passes the environment through to the recipe:
+#     DOCKER_BUILDKIT=0 make deploy
 deploy:
 	docker compose up -d --build
 	docker image prune -f

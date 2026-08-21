@@ -200,7 +200,13 @@ on 2026-08-20. The symptoms did not point at disk at all:
   "internal error" — the traceback blamed the model, not the filesystem;
 - `docker compose up --build` dying on `no space left on device`.
 
-`make deploy` does the whole thing in the right order. The order is the point:
+`make deploy` does the whole thing in the right order. Two things that bite
+first: the eval and script targets need the project's virtualenv on PATH
+(`source .venv/bin/activate`), and a box whose buildx plugin predates its
+compose version needs `DOCKER_BUILDKIT=0 make deploy` — otherwise `--build`
+fails with "compose build requires buildx 0.17.0 or later".
+
+The order is the point:
 
 ```bash
 docker compose up -d --build   # containers switch to the NEW image
