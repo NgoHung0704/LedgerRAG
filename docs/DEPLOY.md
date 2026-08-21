@@ -77,6 +77,38 @@ no error). In order of least pain (SPEC Appendix A.3):
 
 Verify with `ollama ps` (must read 100% GPU) and re-run preflight.
 
+**First, turn off mmap.** Ollama memory-maps model files, leaving the tensors
+in file-backed pages that amdgpu cannot pin for the GPU. `dmesg` fills with
+
+```
+amdgpu: init_user_pages: Failed to get user pages: -1        (dozens)
+amdgpu [gfxhub] page fault ... PERMISSION_FAULTS: 0x3   in process ollama
+```
+
+and the request hangs until the runner gives up. Every model load does it, so
+it is systematic: on the reference box it produced 90 crashes, ~1 GB of core
+dump each, a full disk, and from there HTTP 500 on `/api/chat` and a reranker
+that could no longer load — one flag under all of it. Measured 2026-08-21: a
+question that returned 500 after 12m40s answered in seconds without mmap, with
+no new fault in `dmesg`.
+
+```bash
+LEDGERRAG_MODELS__CHAT__USE_MMAP=false
+LEDGERRAG_MODELS__PARSER__USE_MMAP=false
+```
+
+Confirm it against the endpoint before blaming anything else — the option works
+per request, so it needs no restart to test:
+
+```bash
+curl -s --max-time 120 localhost:11434/api/chat -d '{"model":"<yours>",
+  "messages":[{"role":"user","content":"Bonjour"}],"stream":false,
+  "options":{"use_mmap":false}}'
+dmesg -T | grep -iE "init_user_pages|page fault" | tail -3
+```
+
+An answer, and no `dmesg` line newer than the request, means this was it.
+
 **The second symptom: it uses the GPU, then dies.** Silent CPU fallback is not
 the only way RDNA4 fails. Ollama can offload every layer, allocate its buffers,
 and then abort mid-generation:

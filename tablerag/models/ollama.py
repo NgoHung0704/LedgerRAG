@@ -26,6 +26,7 @@ class OllamaProvider:
     def __init__(self, cfg: EndpointConfig):
         self.base_url = cfg.base_url.rstrip("/")
         self.model = cfg.model_name
+        self.use_mmap = cfg.use_mmap
 
     async def parse_table(self, image: bytes, prompt_ctx: TableCtx) -> TableParse:
         from tablerag.models.table_parsing import run_table_parse
@@ -46,6 +47,10 @@ class OllamaProvider:
         opts = dict(options or {})
         if temperature is not None:
             opts.setdefault("temperature", temperature)
+        # setdefault, not assignment: this is a default the deployment states,
+        # and a caller that knows better for one request still wins
+        if not self.use_mmap:
+            opts.setdefault("use_mmap", False)
         payload = {
             "model": self.model,
             "messages": [m.model_dump(exclude_defaults=True) for m in messages],

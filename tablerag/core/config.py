@@ -29,6 +29,23 @@ class EndpointConfig(BaseModel):
     base_url: str = ""
     model_name: str = ""
     api_key: str | None = None
+    # Ollama memory-maps model files by default, which leaves the tensors in
+    # file-backed pages. amdgpu cannot pin those for the GPU — dozens of
+    # `init_user_pages: Failed to get user pages: -1` — and the GPU then reads
+    # memory that was never mapped:
+    #
+    #   amdgpu [gfxhub] page fault ... PERMISSION_FAULTS: 0x3  in process ollama
+    #
+    # Every model load did it, so it was systematic rather than unlucky: on the
+    # reference AMD box that meant 90 crashes, ~1 GB of core dump each, a full
+    # disk, and from there HTTP 500 on /api/chat plus a reranker that could not
+    # load either. Measured 2026-08-21: a question that returned 500 after
+    # 12m40s answered in seconds with this False, and dmesg logged no new fault.
+    #
+    # Default True because mmap is right where it works — lazy loading, page
+    # cache shared between processes. Turning it off is the AMD reference
+    # configuration's business (SPEC Appendix A), not a global downgrade.
+    use_mmap: bool = True
 
 
 class ModelsConfig(BaseModel):
