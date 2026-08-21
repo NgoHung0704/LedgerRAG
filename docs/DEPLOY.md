@@ -119,32 +119,43 @@ dmesg -T | grep -iE "init_user_pages|page fault" | tail -3
 
 An answer, and no `dmesg` line newer than the request, means this was it.
 
-**The second symptom: it uses the GPU, then dies.** Silent CPU fallback is not
-the only way RDNA4 fails. Ollama can offload every layer, allocate its buffers,
-and then abort mid-generation:
+**If requests HANG rather than fail, suspect the queue, not the hardware.**
+`OLLAMA_NUM_PARALLEL=1` serialises everything, so one stuck request blocks every
+later one — and a client that gave up with Ctrl-C does not necessarily stop the
+generation behind it. Symptoms look damning and are not:
 
 ```
-load_tensors: offloaded 49/49 layers to GPU
-ROCm0 model buffer 3917 MiB  ·  ROCm1 model buffer 4231 MiB
-Memory access fault by GPU node-1 on address 0x... Reason: Page not present
+[GIN] 500 | 12m40s | POST "/api/chat"
 ```
 
-`ollama ps` says 100% GPU and preflight passes, because both are true right up
-until the fault. What the caller sees is **HTTP 500 on `/api/chat`**, which
-looks like a model problem and is not.
+Measured on this box: after recreating the container, the same 14 B model that
+had produced those answered **in 2.1 s with zero faults**, split across two
+cards exactly as before. So do not reach for the tempting explanations first —
+a multi-GPU split, VRAM pressure, `num_ctx` — all three were investigated here
+and none was the cause. Recreate the container and re-measure before changing
+anything:
 
-The aggravating factor is the **multi-GPU split** — the fault lands on
-`node-1`, the second card. Least-disruptive fixes, in order:
+```bash
+docker rm -f ollama && systemctl daemon-reload && docker run -d ... # same args
+```
 
-1. `OLLAMA_VULKAN=1` — the same first answer as above; it leaves ROCm entirely.
-2. `HIP_VISIBLE_DEVICES=0` — one card, no split. Budget first: a 9 GB model plus
-   the KV cache for `chat_num_ctx=32768` came to ~15 GB, which barely fits a
-   16 GB card. Lowering `num_ctx` to fit means lowering `TABLE_HTML_LIMIT` in
-   `query/steps/assemble.py` with it — that constant is budgeted against 32768.
-3. A community ROCm-7 build, as above.
+(`docker restart` can fail with `Unit docker-<id>.scope was already loaded`
+after a disk-full event; `daemon-reload` plus a fresh container works, and the
+new container id sidesteps the stale unit.)
 
-Each crash writes a ~1 GB core dump; see §6 for what ninety of them do to a
-disk. **And every measurement taken while this is happening is suspect** — a
+**The fault to take seriously is the one in `dmesg`**, not the one in the HTTP
+status:
+
+```
+amdgpu 0000:43:00.0: [gfxhub] page fault ... in process ollama
+Memory access fault by GPU node-1 ... Reason: Page not present
+```
+
+That is the mmap problem above. It lands on whichever card the tensors were on,
+which is why it reads as a second-GPU problem and is not one. Each fatal one
+writes a ~1 GB core dump; see §6 for what ninety of them do to a disk.
+
+**And every measurement taken while any of this is happening is suspect** — a
 question that fails because the server aborted mid-stream is scored as a wrong
 answer, not as an outage.
 
