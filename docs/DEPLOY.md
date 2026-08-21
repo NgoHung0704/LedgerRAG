@@ -85,12 +85,22 @@ amdgpu: init_user_pages: Failed to get user pages: -1        (dozens)
 amdgpu [gfxhub] page fault ... PERMISSION_FAULTS: 0x3   in process ollama
 ```
 
-and the request hangs until the runner gives up. Every model load does it, so
-it is systematic: on the reference box it produced 90 crashes, ~1 GB of core
-dump each, a full disk, and from there HTTP 500 on `/api/chat` and a reranker
-that could no longer load — one flag under all of it. Measured 2026-08-21: a
-question that returned 500 after 12m40s answered in seconds without mmap, with
-no new fault in `dmesg`.
+Every model load does it, so it is systematic rather than unlucky. Measured
+2026-08-21, same model, same question, only the flag differing:
+
+| | answered in | new faults in `dmesg` |
+|---|---|---|
+| mmap on | 1.98 s | **34** |
+| mmap off | 1.45 s | **0** |
+
+**Note what this does NOT say.** Both answered. The faults are mostly survivable
+— Ollama recovers and replies — so mmap is not why a request hangs, and if
+requests are hanging the cause is elsewhere (see below). What mmap costs you is
+34 faults per model load, of which one occasionally escalates to a fatal
+`Memory access fault`: on this box, 90 crashes, ~1 GB of core dump each, 85 GB,
+a full disk, and only then HTTP 500 plus a reranker whose model could not load.
+The damage is cumulative, not immediate, which is exactly why it took weeks to
+notice and looked like bad hardware.
 
 ```bash
 LEDGERRAG_MODELS__CHAT__USE_MMAP=false
