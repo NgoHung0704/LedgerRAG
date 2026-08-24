@@ -41,7 +41,7 @@ dans la lecture fidèle des tableaux PDF complexes.
 | Nombre d'utilisateurs finaux visés | `[À COMPLÉTER]` |
 | Le rapport doit-il inclure des captures d'écran ? | `[À COMPLÉTER]` |
 
-**Mise à jour de ce dossier** — voir §12. Les chiffres se régénèrent en une
+**Mise à jour de ce dossier** — voir §13. Les chiffres se régénèrent en une
 commande ; à relancer avant chaque version du rapport.
 
 ---
@@ -95,7 +95,7 @@ Reprises de `SPEC.md` §1 :
 
 ## 2. Chronologie
 
-Le dépôt Git couvre **du 03/07/2026 au 18/08/2026** : 278 commits. Les sept
+Le dépôt Git couvre **du 03/07/2026 au 24/08/2026** : 299 commits. Les sept
 premières semaines du stage (11/05 → 03/07) précèdent le dépôt et correspondent
 à l'étude préalable, au recueil du besoin et à la mise en place de
 l'infrastructure — ce travail n'a pas laissé de trace dans l'historique Git mais
@@ -114,19 +114,21 @@ conditionne tout le reste.
 | 09/08 → 12/08 | Complétude des réponses | Site de documentation d'architecture auto-vérifié. Budget de contexte qui défend sa propre promesse. Correction du reranker (§7.5). |
 | 13/08 → 17/08 | **Détection des tableaux** | Découverte que 88,4 % mesurait la mauvaise chose (§3.2). Nouveau détecteur fondé sur les coordonnées des mots : **25 % → 100 %**. |
 | 17/08 → 18/08 | Internationalisation & diffusion | Interface en 5 langues. Citations cliquables dans le corps de la réponse. Intégration de l'assistant dans une application tierce par `<iframe>`. |
+| 19/08 → 20/08 | Ouverture & mesure | API External Knowledge compatible Dify : une base devient le moteur de recherche d'une autre plateforme RAG. Contraste entre documents concordants/divergents. Le banc d'essai peut interroger un **assistant** et plus seulement une base — jusque-là aucun chiffre ne mesurait ce que les lecteurs utilisent vraiment. |
+| 21/08 → 24/08 | Incident d'exploitation | Trois jours de panne et de diagnostic sur le serveur (§7.9). Rien de ce qui avait été mesuré n'était valide : le reclasseur était hors service depuis longtemps sans que rien ne le signale. |
 
-**Volume produit** (au 18/08/2026) :
+**Volume produit** (au 24/08/2026) :
 
 | | |
 |---|---|
-| Commits | 278 |
-| Modules Python (`tablerag/`) | 79 fichiers, ~14 000 lignes |
-| Code de test (`tests/`) | 90 fichiers, ~12 400 lignes |
-| Tests unitaires | **1 052** |
-| Frontend (Next.js) | 61 fichiers TS/TSX, ~11 000 lignes |
+| Commits | 299 |
+| Modules Python (`tablerag/`) | 80 fichiers, ~14 400 lignes |
+| Code de test (`tests/`) | 98 fichiers, ~13 600 lignes |
+| Tests unitaires | **1 118** |
+| Frontend (Next.js) | 61 fichiers TS/TSX, ~11 100 lignes |
 | Tests frontend (vitest) | 39, en 8 fichiers |
-| Clés de traduction × 5 langues | 256 × 5 |
-| Jeux d'évaluation (`make eval-*`) | 14 |
+| Clés de traduction × 5 langues | 261 × 5 |
+| Cibles d'évaluation (`make eval-*`) | 16, sur 8 jeux de questions |
 
 > Le code de test Python représente **~88 % du volume du code Python applicatif**
 > (12 400 lignes contre 14 000). Ce n'est pas un accident : c'est la conséquence
@@ -243,6 +245,31 @@ Infrastructure : PostgreSQL (JSONB), Redis + Celery, Qdrant (vecteurs denses et
 creux), MinIO (stockage objet), Ollama et vLLM (inférence), le tout en
 composition Docker.
 
+**Le chemin d'une question**, figé depuis la Phase 1 — chaque étape est
+remplaçable sans toucher aux autres :
+
+```mermaid
+flowchart LR
+    Q[Question] --> C[Condense<br/>replie un fragment<br/>en question autonome]
+    C --> R[Router<br/>quelles bases,<br/>d'après leurs descriptions]
+    R --> S[Retrieve<br/>dense + lexical<br/>fusion RRF]
+    S --> K[Rerank<br/>50 candidats → 8]
+    K --> A[AssembleContext<br/>résumé + lignes trouvées<br/>+ grille complète]
+    A --> G[Generate<br/>réponse en flux<br/>avec citations]
+    G --> V[Verify<br/>chaque chiffre est-il<br/>dans une source citée ?]
+    V --> Rep[Réponse + sources<br/>+ avertissements]
+```
+
+Trois choses à retenir de ce schéma pour le rapport :
+
+- **`Rerank` est facultatif et dégrade en silence.** C'est exactement ce qui
+  s'est produit pendant des semaines (§7.9) : le pipeline continuait de
+  répondre, avec 12 blocs au lieu de 8, sans que rien ne le signale.
+- **`Verify` est mécanique, pas un jugement de modèle.** Il cherche les chiffres
+  de la réponse dans les sources citées, en tenant compte de la locale.
+- **`Router` dégrade vers « toutes les bases »** quand il échoue, plutôt que de
+  ne rien chercher.
+
 ### 4.3 Choix techniques et leur justification
 
 | Choix | Pourquoi |
@@ -296,27 +323,173 @@ aussi ») a été retenue à la place.
 
 ---
 
-## 6. Fonctionnalités livrées
+## 6. Ce que le produit sait faire
 
-- **Bases de connaissances** multiples, chacune avec sa langue déclarée, ses
-  consignes propres et sa vérification des nombres activable.
-- **Ingestion** PDF et bureautique : extraction, détection et lecture des
-  tableaux, description des figures, ordonnancement spatial du texte.
-- **Inspecteur de document** : visualisation page par page, édition manuelle d'un
-  élément mal lu avec ré-indexation immédiate, « seconde lecture » d'un tableau
-  par le VLM, promotion d'un texte en tableau, jonction de deux tableaux
-  séparés à tort.
-- **Chat** mono et multi-base, avec routeur automatique sur les descriptions de
-  bases et sélection manuelle possible.
-- **Citations cliquables dans le corps de la réponse**, hiérarchisées
-  visuellement selon la similarité (fortes en gras, faibles atténuées).
-- **Assistants** : périmètre documentaire, consigne système, message d'accueil,
-  contact d'escalade.
-- **Intégration externe** : un assistant s'expose en `<iframe>` dans une autre
-  application intranet, via un jeton révocable.
-- **File de relecture** au niveau base, retours 👍/👎.
-- **Administration** : santé des modèles, diagnostic, journal d'audit RGPD,
-  authentification par proxy inverse.
+> Section à développer largement dans le rapport : c'est la description du
+> livrable. Les trois sous-sections qui comptent sont 6.2 (l'analyse
+> documentaire, le cœur du projet), 6.4 (les signaux de confiance) et 6.5 (la
+> correction humaine, qui distingue ce produit d'un démonstrateur).
+
+### 6.1 Les bases de connaissances
+
+Une base est un corpus isolé. Rien n'est partagé entre deux bases : ni
+documents, ni index, ni historique. Chacune porte :
+
+| Réglage | Rôle |
+|---|---|
+| **Nom** | Ce que voit l'utilisateur. |
+| **Description** | Ce que lit le **routeur** pour décider si une question concerne cette base. Ce n'est pas un commentaire : c'est un champ fonctionnel, et `make eval-routing` le mesure. Un bouton en rédige un brouillon à partir des documents présents. |
+| **Format numérique** | `fr`, `en`… Déclaré plutôt que deviné — se tromper de séparateur de milliers produit une erreur d'un facteur 1000. |
+| **Consignes** | Ton, format, priorités. S'ajoutent au noyau de sécurité, ne le remplacent jamais. |
+| **Vérification des chiffres** | Active par défaut : chaque nombre d'une réponse est recherché dans les sources citées. |
+| **Clé d'API externe** | Optionnelle, absente par défaut. Expose la base comme moteur de recherche pour une autre plateforme RAG (contrat Dify External Knowledge). |
+
+### 6.2 La chaîne d'analyse documentaire
+
+C'est le cœur du projet et ce qui le sépare des plateformes existantes. Formats
+acceptés : PDF, Word, PowerPoint, Excel — les fichiers bureautiques sont
+convertis en PDF une fois, pour suivre exactement le même chemin vérifié et
+garder la même provenance page par page.
+
+```mermaid
+flowchart TD
+    A[Dépôt du fichier] --> B[Stockage objet<br/>l'original est conservé]
+    B --> C{Bureautique ?}
+    C -- oui --> D[Conversion PDF<br/>LibreOffice]
+    C -- non --> E[Analyse de mise en page<br/>page par page]
+    D --> E
+
+    E --> F[Détection des régions]
+    F --> F1[traits imprimés]
+    F --> F2[coordonnées des mots<br/>quand rien n'est tracé]
+    F1 --> G{Une frontière coupe-t-elle<br/>un nombre ?}
+    F2 --> G
+    G -- oui --> G1[Région REFUSÉE<br/>quel que soit ce qui l'a dessinée]
+    G -- non --> H[Région retenue]
+
+    H --> I{Type}
+    I -- tableau --> J[Découpe de l'image<br/>puis lecture par le VLM]
+    I -- figure --> K[Mesure des couleurs<br/>puis description par le VLM]
+    I -- texte --> L[Ordonnancement spatial<br/>détection en-têtes et pieds répétés]
+
+    J --> M[3 représentations]
+    M --> N[3 signaux de confiance]
+    N -- doute --> O[File de relecture]
+
+    L --> P[Découpage puis vectorisation]
+    K --> P
+    M --> P
+    P --> Q[(Postgres<br/>la vérité analysée)]
+    P --> R[(Qdrant<br/>chunks · records · résumés)]
+    B --> S[(MinIO<br/>original et images découpées)]
+```
+
+Deux points à souligner dans le rapport :
+
+- **La détection ne fait pas confiance aux traits.** Un tableau peut n'avoir
+  aucune bordure, et un trait peut ne pas être imprimé. Le détecteur travaille
+  donc aussi sur les positions des mots (§3.3).
+- **Une région dont une frontière tombe à l'intérieur d'un nombre est refusée**,
+  même si c'est un trait du document qui l'a dessinée. `1 234,56` coupé en `1`
+  et `234,56` produit un chiffre plausible et faux — le pire résultat possible
+  pour ce produit.
+
+L'ingestion est **idempotente par document** : relancer efface d'abord tout ce
+que le passage précédent avait produit, il n'y a donc jamais de doublons.
+
+### 6.3 Les trois représentations d'un tableau
+
+Un même tableau est stocké trois fois, parce que trois usages ne peuvent pas
+être servis par une seule forme :
+
+| Représentation | Sert à | Sans elle |
+|---|---|---|
+| **Enregistrements** (`dimensions` / `metrics` / `raw_values`) | Répondre exactement : « ligne *classe 11*, colonne *SMH* » | Le modèle lit une grille à plat et se trompe de ligne |
+| **HTML** | Montrer le tableau au lecteur, et le lui faire relire | Rien à afficher ni à vérifier |
+| **Résumé en langue naturelle** | Être **trouvé** par une recherche sémantique | Le tableau existe mais reste inatteignable |
+
+`raw_values` conserve la chaîne **telle qu'imprimée**. On peut donc toujours
+revenir à ce que le document disait, indépendamment de l'interprétation.
+
+### 6.4 Les trois signaux de confiance
+
+Calculés à l'ingestion, ils décident si un tableau part en relecture :
+
+1. **Cohérence structurelle** — le nombre d'enregistrements est-il compatible
+   avec la forme du tableau lue en HTML ?
+2. **Double lecture** — le tableau est lu deux fois ; les deux lectures
+   s'accordent-elles (Jaccard sur les dimensions) ?
+3. **Contrôle arithmétique** — quand une ligne « total » existe, la somme des
+   composantes tombe-t-elle dessus ?
+
+Faux positifs mesurés : **0 %**. Rappel : faible, et non atteignable sur ce
+matériel (§9.2).
+
+### 6.5 La correction humaine — 16 opérations
+
+**C'est ce qui sépare ce produit d'un démonstrateur.** Un analyseur se trompe ;
+la question est ce qu'un humain peut faire ensuite. L'inspecteur de document
+expose, sur chaque élément analysé :
+
+**Corriger le contenu**
+
+| Opération | Ce qu'elle fait |
+|---|---|
+| Modifier | Corriger texte, HTML, enregistrements ou résumé. Ré-indexé immédiatement. |
+| Annuler | Revenir à l'état d'avant la dernière modification. |
+| Supprimer | Écarter un en-tête courant, un fragment parasite — ce qui ne fait que diluer la recherche. |
+| Recalculer | Reconstruire enregistrements et résumé depuis le HTML corrigé à la main. Sans cela une correction du HTML resterait cosmétique. |
+
+**Redemander au modèle**
+
+| Opération | Ce qu'elle fait |
+|---|---|
+| Relire la page | Le VLM relit la **page entière** — utile quand la mise en page est en colonnes et que l'ordre du texte est douteux. Plusieurs modes de restitution. |
+| Réanalyser plus fort | Le tableau est re-rendu depuis le PDF en double résolution et relu. **Proposition seulement : rien n'est écrit.** |
+| Assistant d'édition | Demander une transformation en langue naturelle sur le contenu **non enregistré** ouvert dans l'éditeur. |
+
+**Corriger la découpe** — c'est-à-dire corriger la détection elle-même
+
+| Opération | Ce qu'elle fait |
+|---|---|
+| Séparer | « Ce sont deux tableaux » : la détection en a entouré deux. |
+| Fusionner | « C'est un seul tableau » : la détection l'a coupé, typiquement entre deux pages. |
+| Promouvoir en tableau | « Ce texte est un tableau », depuis du markdown ou du HTML. |
+| Rétrograder en texte | « Ce n'est pas un tableau » : la détection s'est déclenchée sur de la prose mise en page. |
+| Cellules fusionnées | Afficher une valeur répétée comme une cellule fusionnée, ou une par ligne. Affichage seulement. |
+
+**Trancher la relecture**
+
+| Opération | Ce qu'elle fait |
+|---|---|
+| Valider | Le relecteur confirme l'analyse ; l'alerte disparaît et les réponses citent ce tableau normalement. |
+| Rejeter | L'analyse est fausse : les enregistrements **sortent de la recherche**, l'image d'origine reste comme repli honnête. |
+| Voir l'image | L'image découpée, qui est l'autorité contre laquelle le relecteur juge. |
+
+### 6.6 Interroger
+
+- Chat **mono-base**, ou **multi-base** avec routeur automatique sur les
+  descriptions (sélection manuelle possible).
+- **Citations à l'intérieur des phrases**, cliquables, hiérarchisées selon la
+  similarité (fortes en gras, faibles atténuées) ; liste complète en bas.
+- **« Voir aussi »** : une figure présente sur une page utilisée, proposée à
+  regarder — délibérément distinguée des sources (§4.3).
+- **Questions de suite** : un fragment (« et pour 2024 ? ») est replié en
+  question autonome avant recherche.
+- **Assistants** : périmètre documentaire, consigne, message d'accueil, contact
+  vers qui orienter en cas de doute.
+- **Avertissements** : lecture d'image, confiance faible, à vérifier, chiffre
+  non retrouvé dans les sources.
+
+### 6.7 Ouverture et administration
+
+- **Intégration `<iframe>`** d'un assistant dans une autre application, par
+  jeton révocable, avec liste d'origines autorisées fermée par défaut.
+- **API External Knowledge** compatible Dify : une base sert de moteur de
+  recherche à une autre plateforme RAG.
+- **Administration** : santé des modèles (avec *quelle couche a décidé* et la
+  dernière erreur réelle), diagnostics, journal d'audit RGPD, authentification
+  par proxy inverse.
 - **Interface en 5 langues** (en, fr, vi, es, de).
 
 ---
@@ -423,6 +596,74 @@ Deux erreurs de discipline, à assumer dans le rapport :
   passait quand même. Pratique abandonnée ensuite.
 - **Avoir annoncé une correction sans vérifier que le correctif s'appliquait**
   réellement au bon endroit.
+
+---
+
+### 7.9 Trois jours de panne, et ce qu'elle a révélé (21–24/08)
+
+L'incident le plus instructif du stage, parce que la cause finale n'a rien à
+voir avec le symptôme et que chaque étape du diagnostic a démenti la
+précédente.
+
+**Ce que voyait l'utilisateur :** « The assistant could not answer this question
+due to an internal error. »
+
+**La chaîne réelle, remontée à l'envers :**
+
+| # | Fait | Comment il a été établi |
+|---|---|---|
+| 1 | Ollama mémorise les fichiers de modèles par `mmap`, laissant les tenseurs dans des pages adossées à un fichier | Log de chargement (`mmap = true`) |
+| 2 | amdgpu ne peut pas épingler ces pages pour le GPU → **34 fautes de page par chargement** | A/B contrôlé : `mmap` activé = 34 fautes, désactivé = 0 |
+| 3 | Une de ces fautes finit par être fatale → ~1 Go de vidage mémoire | 90 fichiers `core.*` dans le conteneur |
+| 4 | 90 plantages = **85 Go** | `du` dans le conteneur |
+| 5 | Plus 387 images Docker orphelines (**~95 Go**) : `--build` retire l'étiquette de l'ancienne image sans la supprimer | `docker system df` |
+| 6 | **Disque plein à 100 %** (4,6 Mo libres sur 466 Go) | `df -h` |
+| 7 | Disque plein → Ollama répond 500, et vLLM ne peut plus charger le reclasseur | Traces des deux services |
+
+**Ce qui a rendu le diagnostic long — à raconter dans le rapport, c'est la
+partie utile :**
+
+- La trace d'exécution accusait Ollama ; le mot « disque » n'y figurait pas.
+- `du ~/.ollama` sur l'hôte affichait **16 Ko** : les poids étaient dans un
+  point de montage, l'hôte semblait innocent.
+- `docker system df` annonçait 6 % d'images récupérables ; la purge en a libéré
+  95 Go — l'outil sous-estime d'un facteur six à cause des couches partagées.
+- **Quatre hypothèses successives se sont révélées fausses** : les journaux des
+  conteneurs (535 Mo, pas 123 Go), la répartition sur deux GPU, la pression sur
+  la VRAM, un pilote GPU bloqué. Chacune était plausible et chacune a coûté du
+  temps.
+- La machine était en outre **coincée dans une mise en veille inachevée**, ce
+  qui empêchait systemd de créer de nouvelles unités : les conteneurs restaient
+  « Starting » indéfiniment. Un serveur de modèles ne devrait jamais pouvoir se
+  mettre en veille.
+
+**La découverte la plus coûteuse est ailleurs.** En redémarrant le reclasseur,
+sa propre trace disait :
+
+```
+VLLMNotFoundError: The model `BAAI/bge-reranker-v2-m3` does not exist.
+POST /v1/rerank → 404
+```
+
+vLLM le sert sous l'identifiant `bge-reranker-v2-m3`, sans le préfixe. **Le
+reclasseur était configuré, joignable, affiché « healthy », et n'avait jamais
+reclassé quoi que ce soit** — la sonde de santé interroge `/v1/models`, qui
+répond 200, alors que l'appel réel échouait. Corrigé, l'effet est immédiat :
+`50 candidats → 8 retenus`, et les enregistrements de tableaux passent de
+`rows=0` à `rows=4`.
+
+**Conséquence méthodologique, la vraie leçon :** toutes les mesures antérieures
+ont été prises sur une chaîne dégradée. Le nombre de blocs cités le disait
+depuis le début — 12 (`retrieve_top_k`, sans reclassement) au lieu de 8
+(`rerank_top_k`) — et personne ne l'avait lu. **Un banc d'essai doit refuser de
+noter quand une étape du pipeline est en panne**, plutôt que produire un chiffre
+qui a l'air normal.
+
+**Ce qui a été corrigé pour que cela ne se reproduise pas :** `USE_MMAP=false`
+côté configuration, `--ulimit core=0` sur le conteneur, `make deploy` qui purge
+les images dans le bon ordre, rotation des journaux, et `docs/DEPLOY.md` §4 et
+§6 qui consignent chaque piège — y compris les quatre fausses pistes, pour que
+le prochain lecteur ne les reparcoure pas.
 
 ---
 
@@ -546,54 +787,144 @@ casser les intégrations existantes, pas la confidentialité.
 
 ---
 
-## 10. Perspectives
+## 10. Perspectives — ce qu'il reste à faire
 
 ### 10.1 Court terme — avant toute remise en production
 
-1. **Corriger les deux défauts du détecteur** (§9.1) et lever les `xfail`. Tant
+1. **Re-mesurer tous les gates**, maintenant que le reclasseur fonctionne
+   (§7.9). Aucun chiffre du dépôt n'a été pris sur une chaîne complète : le
+   `README` annonce `eval-qa` = 19/20 « avec reclasseur », ce qui est désormais
+   douteux. C'est la première tâche, avant toute nouvelle fonctionnalité.
+2. **Faire refuser le banc d'essai** quand une étape du pipeline est en panne,
+   au lieu de produire un score. Le signal existait (12 blocs cités au lieu de
+   8) et personne ne l'a lu pendant des semaines.
+3. **Corriger les deux défauts du détecteur** (§9.1) et lever les `xfail`. Tant
    que ce n'est pas fait, l'interdiction de ré-analyser tient.
-2. **Exécuter la validation de déploiement** (§9.6), en particulier la session
-   utilisateur sans assistance — c'est la seule mesure d'utilisabilité réelle.
-3. **Attribuer le 4/8 de `eval-funds`** (§9.4).
+4. **Auditer la vérité de référence** avec `tests/eval/qa/CHECKLIST.md` : 176
+   attentes écrites à la main, dont on sait maintenant qu'au moins quatre
+   notaient une bonne réponse comme fausse.
+5. **Exécuter la validation de déploiement** (§9.6), en particulier la session
+   utilisateur sans assistance.
 
 ### 10.2 Moyen terme
 
-4. **Changer de modèle d'analyse** pour viser les 95 % de transcription. Le coût
-   est faible par construction ; il faut re-passer `eval-tables` en A/B.
-5. **Introduire des migrations** (Alembic) pour sortir de la configuration en
-   JSONB.
-6. **Comparaison entre documents** : rendre le regroupement des passages sensible
-   à la question posée.
-7. **Tableaux côte à côte** : étendre le détecteur au cas de deux tableaux
-   partageant une bande horizontale.
-8. **Activer l'authentification** (§9.8).
+6. **Surveiller le disque.** L'incident s'est constitué pendant des semaines
+   sans que rien n'alerte ; une alarme à 85 % l'aurait pris très tôt.
+7. **Introduire des migrations** (Alembic) pour sortir de la configuration en
+   JSONB (§9.5).
+8. **Comparaison entre documents** : rendre le regroupement des passages
+   sensible à la question posée.
+9. **Tableaux côte à côte** : deux tableaux partageant une bande horizontale
+   sont lus comme un seul.
+10. **Activer l'authentification** (§9.8).
 
 ### 10.3 Long terme
 
-9. **Ingestion incrémentale** : ne ré-analyser que les pages modifiées.
-10. **Exposition des bases à d'autres applications** au-delà de l'`<iframe>` :
-    une interface programmatique documentée, ou un serveur MCP.
-11. **Boucle de retour** : exploiter les 👍/👎 déjà collectés pour prioriser la
+11. **Ingestion incrémentale** : ne ré-analyser que les pages modifiées.
+12. **Boucle de retour** : exploiter les 👍/👎 déjà collectés pour prioriser la
     relecture humaine.
+13. **Serveur MCP** pour exposer les bases aux outils qui parlent ce protocole,
+    au-delà de l'`<iframe>` et de l'API External Knowledge.
 
 ---
 
-## 11. Technologies à surveiller
+## 11. Avec plus de GPU : quels modèles
+
+> Question posée explicitement pour le rapport. Le principe d'agnosticité (C3)
+> rend chacun de ces changements **une modification de configuration**, jamais
+> de code — c'est précisément ce que cette contrainte achetait.
+
+### 11.1 L'état actuel et sa contrainte
+
+3× RX 9070 XT, **16 Go chacune**, en ROCm. Deux limites en découlent :
+
+- **16 Go par carte** plafonne la taille des modèles. Répartir un modèle sur
+  deux cartes fonctionne (mesuré) mais ajoute du trafic PCIe.
+- **ROCm sur RDNA4** reste fragile : c'est la source des pannes du §7.1 et du
+  §7.9.
+
+Rôles actuels : parser `qwen3-vl:8b-instruct`, chat `qwen2.5:14b`, embedder
+`bge-m3`, reclasseur `bge-reranker-v2-m3`.
+
+### 11.2 Le levier le plus rentable : le parser (VLM)
+
+**C'est ici que se joue le produit.** `eval-tables` plafonne à **88,4 %** contre
+un objectif de 95 %, et les erreurs restantes sont des mauvaises attributions de
+sous-lignes dans les tableaux croisés profonds — exactement ce qu'un modèle plus
+grand lit mieux.
+
+| VRAM disponible | Piste | Attendu |
+|---|---|---|
+| 24–32 Go | `qwen3-vl:32b` quantifié, ou un VLM document spécialisé | Le saut le plus probable vers 95 % |
+| 48 Go+ | VLM 70B+ quantifié | Rendements décroissants pour ce type de document |
+| inchangé | **Décodage contraint** (grammaire / schéma JSON imposé) | Gain sans matériel : supprime les sorties structurellement invalides |
+
+**Protocole obligatoire :** tout changement de parser passe par un A/B isolé sur
+`make eval-tables`. Le `README` porte cet avertissement parce qu'une simple
+reformulation du prompt fait basculer des tableaux sans rapport entre 0 % et
+100 %.
+
+### 11.3 Le modèle de chat
+
+`qwen2.5:14b` occupe ~15 Go avec son cache d'attention à 32k de contexte, soit
+la totalité d'une carte. Avec plus de VRAM :
+
+- **32B en 24–32 Go** — meilleur suivi d'instructions, ce qui viserait
+  directement les échecs restants : les refus injustifiés (`a8`, `a10`, `a15`)
+  et le piège `p6`, où le modèle calcule une moyenne à partir de minima malgré
+  une règle explicite l'interdisant.
+- **Un modèle européen** (famille Mistral/Ministral) — qualité en français, et
+  argument de souveraineté pertinent au CETIAT.
+- **Contexte plus long** sans compromis : aujourd'hui `TABLE_HTML_LIMIT` est
+  calibré contre `chat_num_ctx=32768`, et un grand tableau consomme une part
+  disproportionnée du budget.
+
+### 11.4 Embedder et reclasseur
+
+Les moins prioritaires : ils tiennent déjà largement en VRAM et le principe #1
+rend leur remplacement peu coûteux (ré-encodage seul, **sans ré-analyse des
+PDF**).
+
+- Successeurs de `bge-m3`, ou approches à **interaction tardive** (ColBERT) —
+  potentiellement décisives pour le point faible identifié : une question qui
+  filtre par valeur (« les emplois de la classe 10 ») que les vecteurs denses
+  ne savent pas servir (§3.2 et suivants).
+- Un reclasseur plus grand ne servirait à rien tant que celui en place n'a pas
+  été mesuré **une seule fois** en état de marche (§7.9).
+
+### 11.5 Ce qu'il faut mesurer avant d'acheter quoi que ce soit
+
+Une carte de plus ne résout rien si le goulot n'est pas là. Dans l'ordre :
+
+1. Refaire tourner tous les gates avec la chaîne complète (§10.1) — la ligne de
+   base actuelle n'est pas fiable.
+2. Attribuer les échecs par étape : détection, transcription, recherche,
+   génération. `make eval-detection` et `make eval-tables` séparent déjà les
+   deux premières.
+3. **Alors seulement** décider quel rôle mérite la VRAM supplémentaire.
+
+Sur les données disponibles aujourd'hui, le parser est le candidat le plus
+probable — c'est le seul gate qui échoue pour une raison purement liée au
+modèle.
+
+---
+
+## 12. Technologies à surveiller
 
 | Sujet | Pourquoi ça compte ici |
 |---|---|
-| **Modèles VLM de lecture de documents** (nouvelles générations Qwen-VL, InternVL, modèles spécialisés document) | C'est le levier direct des 88,4 % → 95 %. À réévaluer avec `eval-tables` à chaque sortie. |
-| **Décodage contraint / sortie structurée** (grammaires, schéma JSON imposé au décodage) | Supprimerait toute une classe d'erreurs : le modèle ne *peut plus* produire une structure invalide. Rendrait aussi le prompt moins fragile (§7.3). |
-| **Analyseurs de mise en page dédiés** (Docling, Marker, Table Transformer) | Alternatives ou compléments au détecteur maison. À comparer sur `eval-detection`, qui existe maintenant et fournit une base de comparaison honnête. |
-| **ROCm 7 / maturité RDNA4** | Supprimerait la cause racine du §7.1. À suivre côté Ollama et llama.cpp. |
-| **vLLM en service multi-GPU** | Déjà utilisé sur le serveur pour le reranker ; pourrait unifier le service des trois rôles. |
-| **Modèles d'embedding multilingues** (successeurs de bge-m3, approches à interaction tardive type ColBERT) | Le principe #1 rend le remplacement peu coûteux : ré-encodage seul, sans ré-analyse. |
-| **MCP (Model Context Protocol)** | Voie normalisée pour exposer les bases de connaissances à d'autres outils. |
-| **Modèles de langue européens** (familles Mistral/Ministral) | Qualité en français, et argument de souveraineté pertinent dans le contexte du CETIAT. |
+| **VLM de lecture de documents** (Qwen-VL, InternVL, modèles document dédiés) | Levier direct des 88,4 % → 95 %. À réévaluer sur `eval-tables` à chaque sortie. |
+| **Décodage contraint / sortie structurée** | Supprimerait une classe entière d'erreurs sans matériel supplémentaire, et rendrait le prompt moins fragile (§7.3). |
+| **Analyseurs de mise en page dédiés** (Docling, Marker, Table Transformer) | Alternatives ou compléments au détecteur maison. `eval-detection` existe désormais et fournit une base de comparaison honnête. |
+| **ROCm 7 / maturité RDNA4** | Supprimerait la cause racine des §7.1 et §7.9. À suivre côté Ollama et llama.cpp. |
+| **Backends Vulkan** | Voie de sortie de ROCm sur ce matériel, sans changer de cartes. |
+| **Recherche à interaction tardive** (ColBERT et successeurs) | Vise le point faible démontré : les questions qui filtrent par valeur. |
+| **MCP (Model Context Protocol)** | Voie normalisée pour exposer les bases aux outils tiers. |
+| **Modèles de langue européens** (Mistral/Ministral) | Français et souveraineté, dans un contexte CETIAT. |
 
 ---
 
-## 12. Mise à jour de ce dossier
+## 13. Mise à jour de ce dossier
 
 Ce document doit être régénéré à chaque évolution significative du code.
 
@@ -620,6 +951,14 @@ grep -oE '\*\*[^*]*[0-9]+([.,][0-9]+)? ?%[^*]*\*\*' README.md
 symptôme / cause / moyen de détection, et **retirer du §9 ce qui a été corrigé** —
 une limite listée alors qu'elle est résolue décrédibilise toutes les autres.
 
+**Avant de citer un chiffre de §3, vérifier que la chaîne était complète quand
+il a été pris.** Le nombre de blocs cités le dit : 8 avec reclassement, 12 sans.
+C'est ce contrôle qui manquait pendant des semaines (§7.9), et sans lui tout le
+reste du dossier repose sur des mesures qui ont l'air normales.
+
+Le §6 (fonctionnalités) et le §11 (matériel et modèles) ne se régénèrent pas :
+ils se relisent quand une capacité est ajoutée ou quand le parc GPU change.
+
 ---
 
 ## Annexe A — Glossaire
@@ -641,15 +980,25 @@ une limite listée alors qu'elle est résolue décrédibilise toutes les autres.
 
 ```
 Stage             11/05/2026 → 28/08/2026  (16 semaines)
-Dépôt Git         03/07/2026 → 18/08/2026  (278 commits)
-Code applicatif   ~14 000 lignes Python + ~11 000 lignes TS/TSX
-Code de test      ~12 400 lignes, 1 052 tests unitaires + 39 frontend
-Bancs d'essai     14
+Dépôt Git         03/07/2026 → 24/08/2026  (299 commits)
+Code applicatif   ~14 400 lignes Python + ~11 100 lignes TS/TSX
+Code de test      ~13 600 lignes, 1 118 tests unitaires + 39 frontend
+Cibles eval       16, sur 8 jeux de questions (176 attentes)
+Opérations de
+correction        16, sur chaque élément analysé
+Langues UI        5
+
+--- mesures, à REFAIRE : toutes prises sans reclassement (§7.9) ---
 Transcription     88,4 %          (objectif 95 % — non atteint)
 Détection         100 % (12/12)   (25 % avant refonte)
 Q/R tableaux      19/20 = 95 %
 Q/R texte         12/12 = 100 %
 Q/R pièges        7/7   = 100 %
 Faux positifs     0 %
-Langues UI        5
 ```
+
+> **Avertissement à répercuter dans le rapport :** le bloc de mesures ci-dessus
+> date d'avant la découverte du §7.9. Le reclasseur était hors service quand il
+> a été produit. Les chiffres de détection et de transcription ne dépendent pas
+> de lui et restent valides ; **ceux de question/réponse doivent être refaits**
+> avant d'être cités comme résultat.
