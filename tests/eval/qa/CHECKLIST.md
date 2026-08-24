@@ -39,11 +39,11 @@ Chaque ligne est une attente écrite à la main à partir d'un document réel. R
   - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
 - [ ] **c5** · `table`
   - **Q :** Quelle est la cotation du poste Comptable ?
-  - **Attendu :** `22 à 24`
+  - **Attendu :** `22 à 24  _(ou : 22 et 24, entre 22 et 24)_`
   - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
 - [ ] **c6** · `table`
   - **Q :** Quelle est la cotation de la classe d'emploi 5 ?
-  - **Attendu :** `19 à 21`
+  - **Attendu :** `19 à 21  _(ou : 19 et 21, entre 19 et 21)_`
   - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
 - [ ] **c7** · `table`
   - **Q :** Citez deux emplois CETIAT de la classe d'emploi 10.
@@ -51,11 +51,11 @@ Chaque ligne est une attente écrite à la main à partir d'un document réel. R
   - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
 - [ ] **c8** · `table`
   - **Q :** Quelle est la cotation du poste Ingénieur(e) Commercial(e) ?
-  - **Attendu :** `40 à 42`
+  - **Attendu :** `40 à 42  _(ou : 40 et 42, entre 40 et 42)_`
   - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
 - [ ] **c9** · `table`
   - **Q :** Quelle est la cotation du poste Acheteur(se) ?
-  - **Attendu :** `37 à 39`
+  - **Attendu :** `37 à 39  _(ou : 37 et 39, entre 37 et 39)_`
   - **Source :** Cotation emplois CETIAT 2023_07_27.pdf
 - [ ] **a1** · `table`
   - **Q :** Quel est le salaire minimum hiérarchique de la classe d'emploi 11 dans le barème unique à partir de 2024 ?

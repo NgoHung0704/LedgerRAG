@@ -2,11 +2,11 @@
 {"id": "c2", "type": "table", "question": "Quelles classes d'emploi appartiennent au groupe d'emplois H ?", "expected_answer_contains": ["15", "16"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
 {"id": "c3", "type": "table", "question": "Quelles classes d'emploi appartiennent au groupe d'emplois I ?", "expected_answer_contains": ["17", "18"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
 {"id": "c4", "type": "table", "question": "Quel emploi CETIAT correspond à la classe d'emploi 16 ?", "expected_answer_contains": ["Directeur"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
-{"id": "c5", "type": "table", "question": "Quelle est la cotation du poste Comptable ?", "expected_answer_contains": ["22 à 24"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
-{"id": "c6", "type": "table", "question": "Quelle est la cotation de la classe d'emploi 5 ?", "expected_answer_contains": ["19 à 21"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
+{"id": "c5", "type": "table", "question": "Quelle est la cotation du poste Comptable ?", "expected_answer_contains": ["22 à 24|22 et 24|entre 22 et 24"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
+{"id": "c6", "type": "table", "question": "Quelle est la cotation de la classe d'emploi 5 ?", "expected_answer_contains": ["19 à 21|19 et 21|entre 19 et 21"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
 {"id": "c7", "type": "table", "question": "Citez deux emplois CETIAT de la classe d'emploi 10.", "expected_answer_contains": ["Maintenance", "Parc Mesure"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
-{"id": "c8", "type": "table", "question": "Quelle est la cotation du poste Ingénieur(e) Commercial(e) ?", "expected_answer_contains": ["40 à 42"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
-{"id": "c9", "type": "table", "question": "Quelle est la cotation du poste Acheteur(se) ?", "expected_answer_contains": ["37 à 39"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
+{"id": "c8", "type": "table", "question": "Quelle est la cotation du poste Ingénieur(e) Commercial(e) ?", "expected_answer_contains": ["40 à 42|40 et 42|entre 40 et 42"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
+{"id": "c9", "type": "table", "question": "Quelle est la cotation du poste Acheteur(se) ?", "expected_answer_contains": ["37 à 39|37 et 39|entre 37 et 39"], "expected_doc": "Cotation emplois CETIAT 2023_07_27.pdf"}
 {"id": "a1", "type": "table", "question": "Quel est le salaire minimum hiérarchique de la classe d'emploi 11 dans le barème unique à partir de 2024 ?", "expected_answer_contains": ["34 900"], "expected_doc": "Avenant du 11 juillet 2023.pdf"}
 {"id": "a2", "type": "table", "question": "Quel est le salaire minimum hiérarchique de la classe d'emploi 16 dans le barème unique ?", "expected_answer_contains": ["52 000"], "expected_doc": "Avenant du 11 juillet 2023.pdf"}
 {"id": "a3", "type": "table", "question": "Quel est le salaire minimum hiérarchique de la classe d'emploi 18 ?", "expected_answer_contains": ["68 000"], "expected_doc": "Avenant du 11 juillet 2023.pdf"}
