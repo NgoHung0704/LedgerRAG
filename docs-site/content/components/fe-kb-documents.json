@@ -8,7 +8,8 @@
       "line": 35,
       "note": {
         "vi": "Tải lên, theo dõi trạng thái tới done, chọn nhiều để xoá hoặc chạy lại.",
-        "en": "Upload, watch the status reach done, select many to delete or reprocess."
+        "en": "Upload, watch the status reach done, select many to delete or reprocess.",
+        "fr": "Téléverser, suivre le statut jusqu'à done, en sélectionner plusieurs pour les supprimer ou les retraiter."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 22,
       "note": {
         "vi": "Locale, mức kiểm chứng, tên — những thứ đổi được sau khi tạo.",
-        "en": "Locale, verification level, name - what can change after creation."
+        "en": "Locale, verification level, name - what can change after creation.",
+        "fr": "Locale, niveau de vérification, nom - ce qui peut changer après la création."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 9,
       "note": {
         "vi": "Mô tả KB, thứ duy nhất router đọc để định tuyến.",
-        "en": "The knowledge-base description, the only thing the router reads."
+        "en": "The knowledge-base description, the only thing the router reads.",
+        "fr": "La description de la base de connaissances, la seule chose que lit le routeur."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 13,
       "note": {
         "vi": "Hàng đợi duyệt ở mức KB, để người không phải kỹ sư cũng thấy việc cần làm.",
-        "en": "The KB-level review queue, so a non-engineer sees what needs doing."
+        "en": "The KB-level review queue, so a non-engineer sees what needs doing.",
+        "fr": "La file de relecture au niveau de la base, pour qu'une personne non technique voie ce qu'il y a à faire."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 13,
       "note": {
         "vi": "Các hành động phá huỷ đều đi qua hộp xác nhận dùng chung.",
-        "en": "Every destructive action goes through the shared confirmation dialog."
+        "en": "Every destructive action goes through the shared confirmation dialog.",
+        "fr": "Toute action destructrice passe par la boîte de confirmation commune."
       }
     }
   ],
@@ -58,28 +63,32 @@
         "id": "kb",
         "label": {
           "vi": "Màn hình KB",
-          "en": "The knowledge-base screen"
+          "en": "The knowledge-base screen",
+          "fr": "L'écran de la base de connaissances"
         }
       },
       {
         "id": "upload",
         "label": {
           "vi": "Tải PDF lên",
-          "en": "Upload a PDF"
+          "en": "Upload a PDF",
+          "fr": "Téléverser un PDF"
         }
       },
       {
         "id": "poll",
         "label": {
           "vi": "Theo dõi trạng thái",
-          "en": "Poll the status"
+          "en": "Poll the status",
+          "fr": "Interroger le statut"
         }
       },
       {
         "id": "review",
         "label": {
           "vi": "Hàng đợi duyệt",
-          "en": "The review queue"
+          "en": "The review queue",
+          "fr": "La file de relecture"
         }
       }
     ],
@@ -101,7 +110,8 @@
         "to": "x-done",
         "label": {
           "vi": "done",
-          "en": "done"
+          "en": "done",
+          "fr": "done"
         }
       },
       {
@@ -109,7 +119,8 @@
         "to": "review",
         "label": {
           "vi": "có element bị gắn cờ",
-          "en": "some elements were flagged"
+          "en": "some elements were flagged",
+          "fr": "des éléments ont été signalés"
         }
       },
       {
@@ -117,7 +128,8 @@
         "to": "x-failed",
         "label": {
           "vi": "failed",
-          "en": "failed"
+          "en": "failed",
+          "fr": "failed"
         }
       },
       {
@@ -130,7 +142,8 @@
         "id": "g",
         "label": {
           "vi": "Ingestion kết thúc thế nào?",
-          "en": "How did ingestion end?"
+          "en": "How did ingestion end?",
+          "fr": "Comment l'ingestion s'est-elle terminée ?"
         }
       }
     ],
@@ -139,21 +152,24 @@
         "id": "x-done",
         "label": {
           "vi": "Sẵn sàng hỏi",
-          "en": "Ready to be asked"
+          "en": "Ready to be asked",
+          "fr": "Prête à être interrogée"
         }
       },
       {
         "id": "x-failed",
         "label": {
           "vi": "Hỏng, xem lý do",
-          "en": "Failed, with a reason to read"
+          "en": "Failed, with a reason to read",
+          "fr": "En échec, avec un motif à lire"
         }
       },
       {
         "id": "x-fixed",
         "label": {
           "vi": "Đã duyệt xong",
-          "en": "Reviewed"
+          "en": "Reviewed",
+          "fr": "Relu"
         }
       }
     ]

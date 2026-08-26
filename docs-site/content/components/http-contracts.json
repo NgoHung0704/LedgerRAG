@@ -8,7 +8,8 @@
       "line": 42,
       "note": {
         "vi": "Tạo KB — đơn vị cô lập của sản phẩm.",
-        "en": "Creates a knowledge base - the product's unit of isolation."
+        "en": "Creates a knowledge base - the product's unit of isolation.",
+        "fr": "Crée une base de connaissances - l'unité d'isolement du produit."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 36,
       "note": {
         "vi": "Trả 202 ngay và đẩy việc vào hàng đợi; không parse trong request.",
-        "en": "Answers 202 immediately and queues the work; nothing is parsed inside the request."
+        "en": "Answers 202 immediately and queues the work; nothing is parsed inside the request.",
+        "fr": "Répond 202 immédiatement et met le travail en file ; rien n'est analysé dans la requête."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 146,
       "note": {
         "vi": "Gộp lô: một lần xoá vector MatchAny mỗi collection thay vì N vòng round-trip.",
-        "en": "Batched: one MatchAny vector delete per collection instead of N round-trips."
+        "en": "Batched: one MatchAny vector delete per collection instead of N round-trips.",
+        "fr": "Par lots : une seule suppression vectorielle MatchAny par collection au lieu de N allers-retours."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 98,
       "note": {
         "vi": "Trả về ĐỀ XUẤT chứ không ghi — người duyệt so với ảnh gốc rồi mới lưu.",
-        "en": "Returns a PROPOSAL and writes nothing - the reviewer compares it with the original image first."
+        "en": "Returns a PROPOSAL and writes nothing - the reviewer compares it with the original image first.",
+        "fr": "Renvoie une PROPOSITION et n'écrit rien - le relecteur la compare d'abord à l'image d'origine."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 254,
       "note": {
         "vi": "Gộp đúng những bảng người duyệt chọn, không đoán \"bảng kế tiếp\".",
-        "en": "Merges exactly the tables the reviewer chose, with no guessing at \"the next one\"."
+        "en": "Merges exactly the tables the reviewer chose, with no guessing at \"the next one\".",
+        "fr": "Fusionne exactement les tableaux choisis par le relecteur, sans deviner « le suivant »."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 129,
       "note": {
         "vi": "Chat nhiều KB: router chọn, hoặc người dùng ghim tay đè lên.",
-        "en": "Multi-KB chat: the router picks, or the user pins the scope over it."
+        "en": "Multi-KB chat: the router picks, or the user pins the scope over it.",
+        "fr": "Chat multi-bases : le routeur choisit, ou l'utilisateur fige la portée par-dessus."
       }
     },
     {
@@ -68,7 +74,8 @@
       "line": 77,
       "note": {
         "vi": "Đổi endpoint của một vai trò model lúc chạy — ràng buộc C3 thành thao tác.",
-        "en": "Repoints a model role at runtime - constraint C3 as an action."
+        "en": "Repoints a model role at runtime - constraint C3 as an action.",
+        "fr": "Redirige un rôle de modèle à chaud - la contrainte C3 rendue actionnable."
       }
     }
   ],
@@ -78,21 +85,24 @@
         "id": "req",
         "label": {
           "vi": "Request đã xác thực",
-          "en": "Authenticated request"
+          "en": "Authenticated request",
+          "fr": "Requête authentifiée"
         }
       },
       {
         "id": "validate",
         "label": {
           "vi": "Kiểm tra body và tham số",
-          "en": "Validate body and parameters"
+          "en": "Validate body and parameters",
+          "fr": "Valider le corps et les paramètres"
         }
       },
       {
         "id": "work",
         "label": {
           "vi": "Gọi repository hoặc xếp hàng",
-          "en": "Call a repository, or queue the work"
+          "en": "Call a repository, or queue the work",
+          "fr": "Appeler un dépôt, ou mettre le travail en file"
         }
       }
     ],
@@ -110,7 +120,8 @@
         "to": "work",
         "label": {
           "vi": "tìm thấy",
-          "en": "found"
+          "en": "found",
+          "fr": "trouvé"
         }
       },
       {
@@ -118,7 +129,8 @@
         "to": "x404",
         "label": {
           "vi": "không tồn tại",
-          "en": "does not exist"
+          "en": "does not exist",
+          "fr": "n'existe pas"
         }
       },
       {
@@ -130,7 +142,8 @@
         "to": "x-ok",
         "label": {
           "vi": "trạng thái cho phép",
-          "en": "state allows it"
+          "en": "state allows it",
+          "fr": "l'état le permet"
         }
       },
       {
@@ -138,7 +151,8 @@
         "to": "x409",
         "label": {
           "vi": "đang chạy dở",
-          "en": "already in flight"
+          "en": "already in flight",
+          "fr": "déjà en cours"
         }
       }
     ],
@@ -147,14 +161,16 @@
         "id": "g-found",
         "label": {
           "vi": "Đối tượng có tồn tại không?",
-          "en": "Does the object exist?"
+          "en": "Does the object exist?",
+          "fr": "L'objet existe-t-il ?"
         }
       },
       {
         "id": "g-conflict",
         "label": {
           "vi": "Trạng thái hiện tại có cho phép không?",
-          "en": "Does the current state allow it?"
+          "en": "Does the current state allow it?",
+          "fr": "L'état actuel le permet-il ?"
         }
       }
     ],
@@ -163,21 +179,24 @@
         "id": "x404",
         "label": {
           "vi": "404 không tìm thấy",
-          "en": "404 not found"
+          "en": "404 not found",
+          "fr": "404 introuvable"
         }
       },
       {
         "id": "x409",
         "label": {
           "vi": "409 xung đột",
-          "en": "409 conflict"
+          "en": "409 conflict",
+          "fr": "409 conflit"
         }
       },
       {
         "id": "x-ok",
         "label": {
           "vi": "2xx kèm kết quả",
-          "en": "2xx with the result"
+          "en": "2xx with the result",
+          "fr": "2xx avec le résultat"
         }
       }
     ]
@@ -186,7 +205,8 @@
     {
       "caption": {
         "vi": "Kho ngoài bị dọn TRƯỚC cascade Postgres — thứ tự này là nội dung, không phải hình thức.",
-        "en": "The external stores are purged BEFORE the Postgres cascade - that order is the substance, not a formality."
+        "en": "The external stores are purged BEFORE the Postgres cascade - that order is the substance, not a formality.",
+        "fr": "Les entrepôts externes sont purgés AVANT la cascade Postgres - cet ordre est le fond, pas une formalité."
       },
       "cite": {
         "kind": "excerpt",
@@ -201,7 +221,8 @@
     {
       "text": {
         "vi": "Streaming có từ ngày đầu vì lắp thêm về sau rất đau; nó ở trong bộ khung chứ không phải phần thêm.",
-        "en": "Streaming ships on day one because retrofitting it later is painful; it is in the skeleton rather than bolted on."
+        "en": "Streaming ships on day one because retrofitting it later is painful; it is in the skeleton rather than bolted on.",
+        "fr": "Le streaming est livré dès le premier jour parce que le rajouter après coup est pénible ; il fait partie du squelette au lieu d'être greffé."
       },
       "cite": {
         "kind": "anchor",
@@ -214,7 +235,8 @@
     {
       "text": {
         "vi": "Mỗi element phải bấm ngược về được tới ảnh crop rồi tới trang PDF — đó là nguyên tắc số 3.",
-        "en": "Every element must click through to its crop and then to the PDF page - that is principle 3."
+        "en": "Every element must click through to its crop and then to the PDF page - that is principle 3.",
+        "fr": "Chaque élément doit mener d'un clic à son image découpée puis à la page du PDF - c'est le principe 3."
       },
       "cite": {
         "kind": "anchor",
@@ -227,7 +249,8 @@
     {
       "text": {
         "vi": "Trợ lý THAM CHIẾU tới KB chứ không sở hữu tài liệu, nên sự cô lập giữa các KB vẫn nguyên vẹn.",
-        "en": "An assistant REFERENCES knowledge bases and never owns documents, so KB isolation stays intact."
+        "en": "An assistant REFERENCES knowledge bases and never owns documents, so KB isolation stays intact.",
+        "fr": "Un assistant RÉFÉRENCE des bases de connaissances et ne possède jamais de documents, donc l'isolement des bases reste intact."
       },
       "cite": {
         "kind": "anchor",

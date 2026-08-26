@@ -5,11 +5,13 @@
       "group": "api",
       "label": {
         "vi": "Cổng vào",
-        "en": "Gateway"
+        "en": "Gateway",
+        "fr": "Passerelle"
       },
       "summary": {
         "vi": "Dựng ứng dụng FastAPI, gắn middleware xác thực và các header cache. Không có logic nghiệp vụ nào ở đây — chỉ là cửa.",
-        "en": "Builds the FastAPI app and wires the authentication middleware and cache headers. No business logic lives here - it is the door."
+        "en": "Builds the FastAPI app and wires the authentication middleware and cache headers. No business logic lives here - it is the door.",
+        "fr": "Construit l'application FastAPI et branche le middleware d'authentification et les en-têtes de cache. Aucune logique métier ici - c'est la porte."
       },
       "modules": [
         "tablerag/__init__.py",
@@ -49,11 +51,13 @@
       "group": "api",
       "label": {
         "vi": "Hợp đồng HTTP",
-        "en": "HTTP contracts"
+        "en": "HTTP contracts",
+        "fr": "Contrats HTTP"
       },
       "summary": {
-        "vi": "63 endpoint là toàn bộ bề mặt công khai. Mỗi endpoint nói rõ ai được gọi, gửi gì, nhận gì, hỏng thì trả mã nào.",
-        "en": "The 63 endpoints are the entire public surface. Each one states who may call it, what goes in, what comes back and which code it fails with."
+        "vi": "66 endpoint là toàn bộ bề mặt công khai. Mỗi endpoint nói rõ ai được gọi, gửi gì, nhận gì, hỏng thì trả mã nào.",
+        "en": "The 66 endpoints are the entire public surface. Each one states who may call it, what goes in, what comes back and which code it fails with.",
+        "fr": "Les 66 points de terminaison forment toute la surface publique. Chacun dit qui peut l'appeler, ce qui entre, ce qui sort et avec quel code il échoue."
       },
       "modules": [
         "tablerag/api/routes/assistants.py",
@@ -131,11 +135,13 @@
       "group": "ingestion",
       "label": {
         "vi": "Tiếp nhận tài liệu",
-        "en": "Document intake"
+        "en": "Document intake",
+        "fr": "Réception des documents"
       },
       "summary": {
         "vi": "Nhận PDF từ endpoint tải lên hoặc từ thư mục nạp, chuyển định dạng, và chạy ingestion idempotent theo từng tài liệu.",
-        "en": "Takes a PDF from the upload endpoint or the watched directory, converts it, and runs ingestion idempotently per document."
+        "en": "Takes a PDF from the upload endpoint or the watched directory, converts it, and runs ingestion idempotently per document.",
+        "fr": "Prend un PDF depuis le point de téléversement ou le dossier surveillé, le convertit, et lance une ingestion idempotente par document."
       },
       "modules": [
         "tablerag/ingestion/__init__.py",
@@ -174,11 +180,13 @@
       "group": "ingestion",
       "label": {
         "vi": "Phân tích trang",
-        "en": "Page analysis"
+        "en": "Page analysis",
+        "fr": "Analyse de page"
       },
       "summary": {
         "vi": "Đọc từng trang: bố cục, vùng bảng, boilerplate lặp lại, OCR khi cần, và render ảnh trang để mọi trích dẫn sau này bấm ngược về được.",
-        "en": "Reads each page: layout, table regions, repeated boilerplate, OCR where needed, and the page render every later citation clicks back to."
+        "en": "Reads each page: layout, table regions, repeated boilerplate, OCR where needed, and the page render every later citation clicks back to.",
+        "fr": "Lit chaque page : mise en page, régions de tableau, éléments répétés, OCR au besoin, et le rendu de page vers lequel ramènera chaque citation."
       },
       "modules": [
         "tablerag/ingestion/extract.py",
@@ -218,11 +226,13 @@
       "group": "ingestion",
       "label": {
         "vi": "Sub-pipeline bảng",
-        "en": "Table sub-pipeline"
+        "en": "Table sub-pipeline",
+        "fr": "Sous-chaîne des tableaux"
       },
       "summary": {
         "vi": "Moat của sản phẩm: mỗi bảng giữ đồng thời ba biểu diễn — ảnh crop gốc, lưới HTML dựng lại, và bản ghi dimensions/metrics.",
-        "en": "The product's moat: every table is kept in three representations at once - the original crop, the reconstructed HTML grid, and dimensions/metrics records."
+        "en": "The product's moat: every table is kept in three representations at once - the original crop, the reconstructed HTML grid, and dimensions/metrics records.",
+        "fr": "Le fossé défensif du produit : chaque tableau est conservé en trois représentations à la fois - la découpe d'origine, la grille HTML reconstruite et les enregistrements dimensions/métriques."
       },
       "modules": [
         "tablerag/ingestion/table_pipeline.py",
@@ -261,11 +271,13 @@
       "group": "ingestion",
       "label": {
         "vi": "Hình và biểu đồ",
-        "en": "Figures and charts"
+        "en": "Figures and charts",
+        "fr": "Figures et graphiques"
       },
       "summary": {
         "vi": "Nhận ra một hình là biểu đồ và đo bảng màu của nó, để phần mô tả không phải đoán màu nào ứng với chuỗi nào.",
-        "en": "Recognises when a figure is a chart and measures its palette, so the description does not have to guess which colour is which series."
+        "en": "Recognises when a figure is a chart and measures its palette, so the description does not have to guess which colour is which series.",
+        "fr": "Reconnaît qu'une figure est un graphique et mesure sa palette, pour que la description n'ait pas à deviner quelle couleur correspond à quelle série."
       },
       "modules": [
         "tablerag/ingestion/chart_check.py",
@@ -290,11 +302,13 @@
       "group": "ingestion",
       "label": {
         "vi": "Tín hiệu tin cậy",
-        "en": "Confidence signals"
+        "en": "Confidence signals",
+        "fr": "Signaux de confiance"
       },
       "summary": {
         "vi": "Ba tín hiệu — cấu trúc, đọc hai lần, số học — quyết định một bảng có bị gắn cờ cần người duyệt hay không. Đây là chỗ 'thất bại trung thực' thành mã.",
-        "en": "Three signals - structural, double-read, arithmetic - decide whether a table is flagged for review. This is where honest failure becomes code."
+        "en": "Three signals - structural, double-read, arithmetic - decide whether a table is flagged for review. This is where honest failure becomes code.",
+        "fr": "Trois signaux - structurel, double lecture, arithmétique - décident si un tableau part en relecture. C'est ici que l'échec honnête devient du code."
       },
       "modules": [
         "tablerag/ingestion/confidence.py"
@@ -318,11 +332,13 @@
       "group": "ingestion",
       "label": {
         "vi": "Chunk và ghi chỉ mục",
-        "en": "Chunking and index write"
+        "en": "Chunking and index write",
+        "fr": "Fragmentation et écriture d'index"
       },
       "summary": {
         "vi": "Cắt chunk, sinh vector, và ghi vào cả Postgres lẫn Qdrant. Cũng là nơi chứa migration reindex_all mà Phase 4 đòi hỏi.",
-        "en": "Cuts the chunks, produces the vectors and writes both Postgres and Qdrant. It also holds the reindex_all migration Phase 4 requires."
+        "en": "Cuts the chunks, produces the vectors and writes both Postgres and Qdrant. It also holds the reindex_all migration Phase 4 requires.",
+        "fr": "Découpe les fragments, produit les vecteurs et écrit dans Postgres comme dans Qdrant. Il porte aussi la migration reindex_all qu'exige la Phase 4."
       },
       "modules": [
         "tablerag/ingestion/chunking.py",
@@ -370,11 +386,13 @@
       "group": "query",
       "label": {
         "vi": "Khung pipeline truy vấn",
-        "en": "Query pipeline frame"
+        "en": "Query pipeline frame",
+        "fr": "Cadre de la chaîne de requête"
       },
       "summary": {
         "vi": "Sáu bước cố định: Router → Retrieve → Rerank → AssembleContext → Generate → Verify. Khung này có từ Phase 1 và không đổi; chỉ ruột từng bước đổi.",
-        "en": "Six fixed steps: Router, Retrieve, Rerank, AssembleContext, Generate, Verify. The frame ships in Phase 1 and never changes; only the insides of the steps do."
+        "en": "Six fixed steps: Router, Retrieve, Rerank, AssembleContext, Generate, Verify. The frame ships in Phase 1 and never changes; only the insides of the steps do.",
+        "fr": "Six étapes fixes : Router, Retrieve, Rerank, AssembleContext, Generate, Verify. Le cadre est livré en Phase 1 et ne change jamais ; seul l'intérieur des étapes change."
       },
       "modules": [
         "tablerag/query/__init__.py",
@@ -424,11 +442,13 @@
       "group": "query",
       "label": {
         "vi": "Định tuyến và truy hồi",
-        "en": "Routing and retrieval"
+        "en": "Routing and retrieval",
+        "fr": "Routage et recherche"
       },
       "summary": {
         "vi": "Chọn KB nào để tìm, rồi tìm bằng dense cộng sparse hợp nhất RRF, rồi rerank. Khi router hỏng nó suy biến về tìm TẤT CẢ, không bao giờ tìm rỗng.",
-        "en": "Picks which knowledge bases to search, retrieves with dense plus sparse fused by RRF, then reranks. When the router fails it degrades to searching ALL, never to searching none."
+        "en": "Picks which knowledge bases to search, retrieves with dense plus sparse fused by RRF, then reranks. When the router fails it degrades to searching ALL, never to searching none.",
+        "fr": "Choisit les bases où chercher, récupère en dense plus creux fusionnés par RRF, puis réordonne. Quand le routeur échoue, il se rabat sur TOUTES, jamais sur aucune."
       },
       "modules": [
         "tablerag/query/steps/router.py",
@@ -478,11 +498,13 @@
       "group": "query",
       "label": {
         "vi": "Dựng ngữ cảnh và sinh câu trả lời",
-        "en": "Context and answer generation"
+        "en": "Context and answer generation",
+        "fr": "Contexte et génération de la réponse"
       },
       "summary": {
         "vi": "Cô đọng lịch sử hội thoại, lắp ngữ cảnh kèm nguồn, sinh câu trả lời có trích dẫn — và tách riêng đường nói chuyện phiếm để nó không đi tìm tài liệu.",
-        "en": "Condenses the history, assembles the context with its sources, and generates a cited answer - with small talk split off so it never goes looking for documents."
+        "en": "Condenses the history, assembles the context with its sources, and generates a cited answer - with small talk split off so it never goes looking for documents.",
+        "fr": "Condense l'historique, assemble le contexte avec ses sources et génère une réponse sourcée - les banalités étant mises à part pour qu'elles n'aillent jamais chercher de documents."
       },
       "modules": [
         "tablerag/query/steps/condense.py",
@@ -520,11 +542,13 @@
       "group": "query",
       "label": {
         "vi": "Kiểm chứng câu trả lời",
-        "en": "Answer verification"
+        "en": "Answer verification",
+        "fr": "Vérification de la réponse"
       },
       "summary": {
         "vi": "Mọi con số trong câu trả lời phải tìm lại được trong nguồn, có nhận diện định dạng số theo locale và một danh sách trắng phép tính. Không tìm thấy thì gắn cờ.",
-        "en": "Every number in the answer must be found again in the sources, with locale-aware number parsing and an arithmetic whitelist. What cannot be found gets flagged."
+        "en": "Every number in the answer must be found again in the sources, with locale-aware number parsing and an arithmetic whitelist. What cannot be found gets flagged.",
+        "fr": "Chaque chiffre de la réponse doit se retrouver dans les sources, avec une lecture des nombres sensible à la locale et une liste blanche arithmétique. Ce qui reste introuvable est signalé."
       },
       "modules": [
         "tablerag/query/steps/verify.py",
@@ -562,11 +586,13 @@
       "group": "platform",
       "label": {
         "vi": "Vai trò model và provider",
-        "en": "Model roles and providers"
+        "en": "Model roles and providers",
+        "fr": "Rôles de modèle et fournisseurs"
       },
       "summary": {
         "vi": "Bốn vai trò trừu tượng sau một interface duy nhất. Đổi model là đổi cấu hình, không phải sửa code — đó là ràng buộc C3.",
-        "en": "Four abstract roles behind a single interface. Swapping a model is a configuration change, not a code change - that is constraint C3."
+        "en": "Four abstract roles behind a single interface. Swapping a model is a configuration change, not a code change - that is constraint C3.",
+        "fr": "Quatre rôles abstraits derrière une seule interface. Changer de modèle est un changement de configuration, pas de code - c'est la contrainte C3."
       },
       "modules": [
         "tablerag/models/__init__.py",
@@ -617,11 +643,13 @@
       "group": "platform",
       "label": {
         "vi": "Tầng lưu trữ",
-        "en": "Storage layer"
+        "en": "Storage layer",
+        "fr": "Couche de stockage"
       },
       "summary": {
         "vi": "Hợp đồng duy nhất giữa hai pipeline. ingestion/ và query/ không bao giờ import nhau; chúng chỉ gặp nhau ở Postgres, Qdrant và object store.",
-        "en": "The only contract between the two pipelines. ingestion/ and query/ never import each other; they meet in Postgres, Qdrant and the object store alone."
+        "en": "The only contract between the two pipelines. ingestion/ and query/ never import each other; they meet in Postgres, Qdrant and the object store alone.",
+        "fr": "Le seul contrat entre les deux chaînes. ingestion/ et query/ ne s'importent jamais ; elles ne se rencontrent que dans Postgres, Qdrant et l'entrepôt d'objets."
       },
       "modules": [
         "tablerag/storage/__init__.py",
@@ -672,11 +700,13 @@
       "group": "platform",
       "label": {
         "vi": "Cấu hình và lược đồ lõi",
-        "en": "Core configuration and schemas"
+        "en": "Core configuration and schemas",
+        "fr": "Configuration et schémas du noyau"
       },
       "summary": {
         "vi": "Cấu hình bằng pydantic-settings, lược đồ dùng chung, log, hàng đợi. Giá trị mặc định của vai trò parser chính là kết quả chiến dịch đo Phase 0.",
-        "en": "pydantic-settings configuration, the shared schemas, logging and the queue. The parser role's default is the outcome of the Phase 0 campaign."
+        "en": "pydantic-settings configuration, the shared schemas, logging and the queue. The parser role's default is the outcome of the Phase 0 campaign.",
+        "fr": "Configuration pydantic-settings, schémas partagés, journalisation et file d'attente. La valeur par défaut du rôle parser est le résultat de la campagne de la Phase 0."
       },
       "modules": [
         "tablerag/core/__init__.py",
@@ -727,11 +757,13 @@
       "group": "platform",
       "label": {
         "vi": "MCP và công cụ vận hành",
-        "en": "MCP and operator tooling"
+        "en": "MCP and operator tooling",
+        "fr": "MCP et outils d'exploitation"
       },
       "summary": {
         "vi": "Mở KB ra cho MCP client, và các script gỡ rối. MCP luôn đi qua HTTP API, không bao giờ chạm thẳng vào kho dữ liệu.",
-        "en": "Exposes the knowledge bases to MCP clients, plus the debugging scripts. MCP always goes through the HTTP API and never touches a store directly."
+        "en": "Exposes the knowledge bases to MCP clients, plus the debugging scripts. MCP always goes through the HTTP API and never touches a store directly.",
+        "fr": "Expose les bases de connaissances aux clients MCP, plus les scripts de débogage. MCP passe toujours par l'API HTTP et ne touche jamais un entrepôt directement."
       },
       "modules": [
         "tablerag/mcp/__init__.py",
@@ -770,11 +802,13 @@
       "group": "frontend",
       "label": {
         "vi": "Vỏ giao diện",
-        "en": "Interface shell"
+        "en": "Interface shell",
+        "fr": "Coque de l'interface"
       },
       "summary": {
         "vi": "Bố cục, điều hướng, bộ điều khiển dùng chung và lớp gọi API. Mọi màn hình khác dựng trên đúng bộ này.",
-        "en": "Layout, navigation, the shared controls and the API layer. Every other screen is built out of exactly these."
+        "en": "Layout, navigation, the shared controls and the API layer. Every other screen is built out of exactly these.",
+        "fr": "Mise en page, navigation, contrôles communs et couche API. Tous les autres écrans sont bâtis exactement avec cela."
       },
       "modules": [
         "frontend/app/layout.tsx",
@@ -821,11 +855,13 @@
       "group": "frontend",
       "label": {
         "vi": "Màn hình KB và tài liệu",
-        "en": "Knowledge base and document screens"
+        "en": "Knowledge base and document screens",
+        "fr": "Écrans des bases et des documents"
       },
       "summary": {
         "vi": "Tạo KB, tải tài liệu lên và theo dõi tới trạng thái done, cùng hàng đợi duyệt ở mức KB để người không phải kỹ sư cũng thấy việc cần làm.",
-        "en": "Create a knowledge base, upload documents and watch them reach done, plus the KB-level review queue that shows a non-engineer what needs attention."
+        "en": "Create a knowledge base, upload documents and watch them reach done, plus the KB-level review queue that shows a non-engineer what needs attention.",
+        "fr": "Créer une base, téléverser des documents et les suivre jusqu'à done, plus la file de relecture au niveau de la base qui montre à une personne non technique ce qui demande attention."
       },
       "modules": [
         "frontend/app/page.tsx",
@@ -877,11 +913,13 @@
       "group": "frontend",
       "label": {
         "vi": "Trình soi và sửa bản parse",
-        "en": "Parse inspector and editor"
+        "en": "Parse inspector and editor",
+        "fr": "Inspecteur et éditeur d'analyse"
       },
       "summary": {
         "vi": "Nơi con người đối chiếu bản parse với ảnh crop rồi sửa: tách, gộp, hạ cấp, đọc lại. Ảnh gốc luôn nằm cạnh, vì nó mới là thẩm quyền.",
-        "en": "Where a human reads the parse against its crop and corrects it: split, merge, demote, reread. The original image is always beside it, because that is the authority."
+        "en": "Where a human reads the parse against its crop and corrects it: split, merge, demote, reread. The original image is always beside it, because that is the authority.",
+        "fr": "Là où un humain lit l'analyse face à sa découpe et la corrige : scinder, fusionner, rétrograder, relire. L'image d'origine est toujours à côté, parce que c'est elle qui fait autorité."
       },
       "modules": [
         "frontend/app/doc/[docId]/page.tsx",
@@ -921,11 +959,13 @@
       "group": "frontend",
       "label": {
         "vi": "Chat và trợ lý",
-        "en": "Chat and assistants"
+        "en": "Chat and assistants",
+        "fr": "Chat et assistants"
       },
       "summary": {
         "vi": "Hỏi và nhận câu trả lời chảy về kèm trích dẫn bấm được, chọn phạm vi KB, và thấy router đã chọn KB nào.",
-        "en": "Ask, and watch the answer stream back with clickable citations, choose the knowledge-base scope, and see which ones the router picked."
+        "en": "Ask, and watch the answer stream back with clickable citations, choose the knowledge-base scope, and see which ones the router picked.",
+        "fr": "Poser une question et voir la réponse arriver en flux avec des citations cliquables, choisir la portée en bases, et voir lesquelles le routeur a retenues."
       },
       "modules": [
         "frontend/app/ask/page.tsx",
@@ -982,11 +1022,13 @@
       "group": "frontend",
       "label": {
         "vi": "Màn hình vận hành",
-        "en": "Operator screens"
+        "en": "Operator screens",
+        "fr": "Écrans d'exploitation"
       },
       "summary": {
         "vi": "Cấu hình model lúc chạy, nhật ký kiểm toán GDPR, và công cụ chẩn đoán nhận diện bảng — ba màn hình dành cho người vận hành chứ không phải người hỏi.",
-        "en": "Runtime model configuration, the GDPR audit log, and the table-detection diagnostic - three screens for the operator rather than the asker."
+        "en": "Runtime model configuration, the GDPR audit log, and the table-detection diagnostic - three screens for the operator rather than the asker.",
+        "fr": "Configuration des modèles à chaud, journal d'audit RGPD et diagnostic de détection de tableaux - trois écrans pour l'exploitant plutôt que pour celui qui interroge."
       },
       "modules": [
         "frontend/app/models/page.tsx",

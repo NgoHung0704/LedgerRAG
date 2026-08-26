@@ -8,7 +8,8 @@
       "line": 30,
       "note": {
         "vi": "Rút text từng trang và render PNG cho mọi trang, kể cả trang có text layer.",
-        "en": "Extracts the text per page and renders a PNG for every page, text layer or not."
+        "en": "Extracts the text per page and renders a PNG for every page, text layer or not.",
+        "fr": "Extrait le texte page par page et produit un PNG pour chaque page, couche de texte ou non."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 831,
       "note": {
         "vi": "Chia một trang thành vùng text, bảng, hình.",
-        "en": "Splits one page into text, table and figure regions."
+        "en": "Splits one page into text, table and figure regions.",
+        "fr": "Découpe une page en régions de texte, de tableau et de figure."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 312,
       "note": {
         "vi": "Quyết định một lưới find_tables có thật là bảng hay chỉ là văn bản chia cột.",
-        "en": "Decides whether a find_tables grid is really a table or just column-laid-out prose."
+        "en": "Decides whether a find_tables grid is really a table or just column-laid-out prose.",
+        "fr": "Décide si une grille de find_tables est vraiment un tableau ou seulement de la prose mise en colonnes."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 172,
       "note": {
         "vi": "Vá lưới trước khi VLM chép lại lỗi của nó.",
-        "en": "Repairs the grid before the VLM copies its faults."
+        "en": "Repairs the grid before the VLM copies its faults.",
+        "fr": "Répare la grille avant que le VLM n'en recopie les défauts."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 1060,
       "note": {
         "vi": "Nối bảng bị cắt qua trang, để nửa số dòng không trả lời thay cả bảng.",
-        "en": "Joins a table cut across pages, so half its rows do not answer for the whole."
+        "en": "Joins a table cut across pages, so half its rows do not answer for the whole.",
+        "fr": "Recolle un tableau coupé entre deux pages, pour que la moitié de ses lignes ne réponde pas pour l'ensemble."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 141,
       "note": {
         "vi": "Trang scan không có text layer thì hỏi thẳng VLM vùng bảng nằm đâu.",
-        "en": "On a scan with no text layer, the VLM is asked where the tables are."
+        "en": "On a scan with no text layer, the VLM is asked where the tables are.",
+        "fr": "Sur un scan sans couche de texte, on demande au VLM où sont les tableaux."
       }
     },
     {
@@ -68,7 +74,8 @@
       "line": 60,
       "note": {
         "vi": "Header/footer lặp lại ở cùng vị trí lề — tín hiệu chính xác cao, dòng duy nhất không bao giờ bị gắn cờ.",
-        "en": "Headers and footers repeated at a consistent margin - a high-precision signal, and a unique line is never flagged."
+        "en": "Headers and footers repeated at a consistent margin - a high-precision signal, and a unique line is never flagged.",
+        "fr": "En-têtes et pieds de page répétés à une marge constante - un signal de haute précision, et une ligne unique n'est jamais signalée."
       }
     },
     {
@@ -78,7 +85,8 @@
       "line": 283,
       "note": {
         "vi": "Đọc trang scan bằng chính VLM parser, kèm dòng cuối cho biết trang có bảng hay không.",
-        "en": "Reads a scanned page with the same parser VLM, with a last line saying whether the page holds tables."
+        "en": "Reads a scanned page with the same parser VLM, with a last line saying whether the page holds tables.",
+        "fr": "Lit une page scannée avec le même VLM d'analyse, avec une dernière ligne indiquant si la page contient des tableaux."
       }
     }
   ],
@@ -88,35 +96,40 @@
         "id": "page",
         "label": {
           "vi": "Một trang",
-          "en": "One page"
+          "en": "One page",
+          "fr": "Une page"
         }
       },
       {
         "id": "text",
         "label": {
           "vi": "Rút text layer",
-          "en": "Extract the text layer"
+          "en": "Extract the text layer",
+          "fr": "Extraire la couche de texte"
         }
       },
       {
         "id": "find",
         "label": {
           "vi": "find_tables",
-          "en": "find_tables"
+          "en": "find_tables",
+          "fr": "find_tables"
         }
       },
       {
         "id": "vlm",
         "label": {
           "vi": "VLM tìm vùng bảng",
-          "en": "VLM region detection"
+          "en": "VLM region detection",
+          "fr": "Détection de régions par le VLM"
         }
       },
       {
         "id": "regions",
         "label": {
           "vi": "Vùng đã chấp nhận",
-          "en": "Accepted regions"
+          "en": "Accepted regions",
+          "fr": "Régions retenues"
         }
       }
     ],
@@ -134,7 +147,8 @@
         "to": "find",
         "label": {
           "vi": "có text layer",
-          "en": "a text layer exists"
+          "en": "a text layer exists",
+          "fr": "une couche de texte existe"
         }
       },
       {
@@ -142,7 +156,8 @@
         "to": "vlm",
         "label": {
           "vi": "trang scan",
-          "en": "a scanned page"
+          "en": "a scanned page",
+          "fr": "une page scannée"
         }
       },
       {
@@ -158,7 +173,8 @@
         "to": "regions",
         "label": {
           "vi": "đúng là bảng",
-          "en": "really a table"
+          "en": "really a table",
+          "fr": "vraiment un tableau"
         }
       },
       {
@@ -166,7 +182,8 @@
         "to": "x-text",
         "label": {
           "vi": "chỉ là văn bản chia cột",
-          "en": "just column-laid-out prose"
+          "en": "just column-laid-out prose",
+          "fr": "seulement de la prose en colonnes"
         }
       }
     ],
@@ -175,14 +192,16 @@
         "id": "g-layer",
         "label": {
           "vi": "Trang này có text layer không?",
-          "en": "Does this page have a text layer?"
+          "en": "Does this page have a text layer?",
+          "fr": "Cette page a-t-elle une couche de texte ?"
         }
       },
       {
         "id": "g-accept",
         "label": {
           "vi": "Lưới này có phải bảng không?",
-          "en": "Is this grid a table?"
+          "en": "Is this grid a table?",
+          "fr": "Cette grille est-elle un tableau ?"
         }
       }
     ],
@@ -191,7 +210,8 @@
         "id": "x-text",
         "label": {
           "vi": "Coi như văn bản thường",
-          "en": "Treated as ordinary text"
+          "en": "Treated as ordinary text",
+          "fr": "Traitée comme du texte ordinaire"
         }
       }
     ]
@@ -200,7 +220,8 @@
     {
       "caption": {
         "vi": "Chữ ký của một hàm thuần: không I/O, nên chạy lại được và kiểm thử được.",
-        "en": "The signature of a pure function: no I/O, so it can be rerun and unit-tested."
+        "en": "The signature of a pure function: no I/O, so it can be rerun and unit-tested.",
+        "fr": "La signature d'une fonction pure : aucune entrée-sortie, donc réexécutable et testable unitairement."
       },
       "cite": {
         "kind": "excerpt",
@@ -215,7 +236,8 @@
     {
       "text": {
         "vi": "Mọi trang đều được render ảnh, kể cả trang có text — vì nguyên tắc số 3 đòi element nào cũng có ảnh nguồn.",
-        "en": "Every page is rendered, text layer or not, because principle 3 requires every element to have a source image."
+        "en": "Every page is rendered, text layer or not, because principle 3 requires every element to have a source image.",
+        "fr": "Chaque page est rendue, couche de texte ou non, parce que le principe 3 exige que chaque élément ait une image source."
       },
       "cite": {
         "kind": "anchor",
@@ -228,7 +250,8 @@
     {
       "text": {
         "vi": "Cố tình lệch khỏi mặc định PP-Structure của SPEC: với trang có text layer, find_tables rẻ hơn và cho luôn nội dung lưới.",
-        "en": "A deliberate deviation from the spec's PP-Structure default: on a page with a text layer, find_tables is cheaper and hands over the grid content as well."
+        "en": "A deliberate deviation from the spec's PP-Structure default: on a page with a text layer, find_tables is cheaper and hands over the grid content as well.",
+        "fr": "Un écart assumé au défaut PP-Structure de la spécification : sur une page avec couche de texte, find_tables coûte moins cher et fournit en prime le contenu de la grille."
       },
       "cite": {
         "kind": "anchor",
@@ -241,7 +264,8 @@
     {
       "text": {
         "vi": "Chỉ lặp lại nguyên văn ở vị trí nhất quán mới bị gắn cờ, nên nội dung thân bài không bị cắt nhầm.",
-        "en": "Only verbatim repetition at a consistent position is flagged, so body content is never cut by mistake."
+        "en": "Only verbatim repetition at a consistent position is flagged, so body content is never cut by mistake.",
+        "fr": "Seule une répétition mot pour mot à une position constante est signalée, donc le corps du texte n'est jamais coupé par erreur."
       },
       "cite": {
         "kind": "anchor",

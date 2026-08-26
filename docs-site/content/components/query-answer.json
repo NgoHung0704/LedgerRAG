@@ -8,7 +8,8 @@
       "line": 44,
       "note": {
         "vi": "Gộp mấy lượt gần nhất thành một câu hỏi tự đứng được, trước khi định tuyến.",
-        "en": "Folds the recent turns into one self-contained question, before routing."
+        "en": "Folds the recent turns into one self-contained question, before routing.",
+        "fr": "Replie les derniers échanges en une question autonome, avant le routage."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 151,
       "note": {
         "vi": "Nhận ra lời chào để trả lời như lời chào, không phải như một lần tìm thất bại.",
-        "en": "Recognises a greeting so it is answered as a greeting, not as a failed search."
+        "en": "Recognises a greeting so it is answered as a greeting, not as a failed search.",
+        "fr": "Reconnaît une salutation pour y répondre comme à une salutation, non comme à une recherche infructueuse."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 165,
       "note": {
         "vi": "Một hit vào bản ghi thì kéo về CẢ bảng cha, không bao giờ một dòng lẻ.",
-        "en": "A record hit pulls in the WHOLE parent table, never a lone row."
+        "en": "A record hit pulls in the WHOLE parent table, never a lone row.",
+        "fr": "Un enregistrement trouvé ramène le tableau parent ENTIER, jamais une ligne isolée."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 116,
       "note": {
         "vi": "System prompt mã hoá triết lý: chỉ trả lời từ nguồn, chép số y nguyên, trả lời bằng ngôn ngữ người hỏi.",
-        "en": "The system prompt encodes the philosophy: answer only from sources, copy numbers exactly, reply in the asker's language."
+        "en": "The system prompt encodes the philosophy: answer only from sources, copy numbers exactly, reply in the asker's language.",
+        "fr": "L'invite système encode la philosophie : ne répondre qu'à partir des sources, recopier les chiffres à l'identique, répondre dans la langue de celui qui demande."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 153,
       "note": {
         "vi": "Dựng khối ngữ cảnh có xuất xứ, để trích dẫn bấm ngược về được.",
-        "en": "Builds the context block with provenance, so a citation can click back."
+        "en": "Builds the context block with provenance, so a citation can click back.",
+        "fr": "Construit le bloc de contexte avec sa provenance, pour qu'une citation puisse ramener à la source."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 175,
       "note": {
         "vi": "Chảy câu trả lời về theo SSE ngay khi model sinh ra.",
-        "en": "Streams the answer back over SSE as the model produces it."
+        "en": "Streams the answer back over SSE as the model produces it.",
+        "fr": "Renvoie la réponse en flux SSE au fur et à mesure que le modèle la produit."
       }
     }
   ],
@@ -68,28 +74,32 @@
         "id": "q",
         "label": {
           "vi": "Câu hỏi",
-          "en": "The question"
+          "en": "The question",
+          "fr": "La question"
         }
       },
       {
         "id": "condense",
         "label": {
           "vi": "Cô đọng lịch sử",
-          "en": "Condense the history"
+          "en": "Condense the history",
+          "fr": "Condenser l'historique"
         }
       },
       {
         "id": "assemble",
         "label": {
           "vi": "Lắp ngữ cảnh",
-          "en": "Assemble the context"
+          "en": "Assemble the context",
+          "fr": "Assembler le contexte"
         }
       },
       {
         "id": "generate",
         "label": {
           "vi": "Sinh câu trả lời",
-          "en": "Generate"
+          "en": "Generate",
+          "fr": "Générer"
         }
       }
     ],
@@ -103,7 +113,8 @@
         "to": "x-greet",
         "label": {
           "vi": "là lời chào",
-          "en": "it is small talk"
+          "en": "it is small talk",
+          "fr": "c'est une banalité"
         }
       },
       {
@@ -111,7 +122,8 @@
         "to": "condense",
         "label": {
           "vi": "là câu hỏi tài liệu",
-          "en": "it is a document question"
+          "en": "it is a document question",
+          "fr": "c'est une question sur les documents"
         }
       },
       {
@@ -127,7 +139,8 @@
         "to": "generate",
         "label": {
           "vi": "có nguồn",
-          "en": "sources exist"
+          "en": "sources exist",
+          "fr": "des sources existent"
         }
       },
       {
@@ -135,7 +148,8 @@
         "to": "x-none",
         "label": {
           "vi": "không có nguồn",
-          "en": "no sources"
+          "en": "no sources",
+          "fr": "aucune source"
         }
       },
       {
@@ -148,14 +162,16 @@
         "id": "g-small",
         "label": {
           "vi": "Đây có phải câu hỏi về tài liệu không?",
-          "en": "Is this a question about the documents?"
+          "en": "Is this a question about the documents?",
+          "fr": "Est-ce une question sur les documents ?"
         }
       },
       {
         "id": "g-src",
         "label": {
           "vi": "Có nguồn nào để trả lời không?",
-          "en": "Is there any source to answer from?"
+          "en": "Is there any source to answer from?",
+          "fr": "Existe-t-il une source pour répondre ?"
         }
       }
     ],
@@ -164,21 +180,24 @@
         "id": "x-greet",
         "label": {
           "vi": "Trả lời chào hỏi, không tìm kiếm",
-          "en": "Answered as a greeting, with no search"
+          "en": "Answered as a greeting, with no search",
+          "fr": "Répondu comme à une salutation, sans recherche"
         }
       },
       {
         "id": "x-none",
         "label": {
           "vi": "Nói thẳng là không tìm thấy",
-          "en": "Says plainly that nothing was found"
+          "en": "Says plainly that nothing was found",
+          "fr": "Dit franchement que rien n'a été trouvé"
         }
       },
       {
         "id": "x-answer",
         "label": {
           "vi": "Câu trả lời có trích dẫn",
-          "en": "A cited answer"
+          "en": "A cited answer",
+          "fr": "Une réponse sourcée"
         }
       }
     ]
@@ -187,7 +206,8 @@
     {
       "caption": {
         "vi": "Lời chào không cần một lượt định tuyến, một lần embed và ba lần tìm vector.",
-        "en": "A greeting does not need a routing call, an embedding and three vector searches."
+        "en": "A greeting does not need a routing call, an embedding and three vector searches.",
+        "fr": "Une salutation n'a pas besoin d'un appel de routage, d'un encodage et de trois recherches vectorielles."
       },
       "cite": {
         "kind": "excerpt",
@@ -202,7 +222,8 @@
     {
       "text": {
         "vi": "Câu hỏi nối tiếp là một mảnh vụn; truy hồi và định tuyến chỉ nhìn text nên mảnh vụn sẽ tìm nhầm bảng hoặc nhầm KB.",
-        "en": "A follow-up is a fragment; retrieval and routing act on the text alone, so a fragment retrieves the wrong table or routes to the wrong knowledge base."
+        "en": "A follow-up is a fragment; retrieval and routing act on the text alone, so a fragment retrieves the wrong table or routes to the wrong knowledge base.",
+        "fr": "Une relance est un fragment ; la recherche et le routage n'agissent que sur le texte, donc un fragment ramène le mauvais tableau ou route vers la mauvaise base."
       },
       "cite": {
         "kind": "anchor",
@@ -215,7 +236,8 @@
     {
       "text": {
         "vi": "Không bao giờ đưa một bản ghi lẻ vào ngữ cảnh: một dòng tách khỏi bảng của nó đọc thế nào cũng được.",
-        "en": "A lone record never enters the context: a row torn out of its table can be read to mean anything."
+        "en": "A lone record never enters the context: a row torn out of its table can be read to mean anything.",
+        "fr": "Un enregistrement isolé n'entre jamais dans le contexte : une ligne arrachée à son tableau peut vouloir dire n'importe quoi."
       },
       "cite": {
         "kind": "anchor",
@@ -228,7 +250,8 @@
     {
       "text": {
         "vi": "Đẩy lời chào qua toàn bộ pipeline vừa chậm vừa trả về \"không tìm thấy đoạn nào phù hợp\", nghe như một lời từ chối.",
-        "en": "Running a greeting through the whole pipeline is slow and answers \"no relevant passages were found\", which reads as a rebuff."
+        "en": "Running a greeting through the whole pipeline is slow and answers \"no relevant passages were found\", which reads as a rebuff.",
+        "fr": "Faire passer une salutation dans toute la chaîne est lent et répond « aucun passage pertinent n'a été trouvé », ce qui sonne comme une rebuffade."
       },
       "cite": {
         "kind": "anchor",

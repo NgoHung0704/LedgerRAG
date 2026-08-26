@@ -8,7 +8,8 @@
       "line": 204,
       "note": {
         "vi": "Tổng hợp ba tín hiệu thành một quyết định: có cần người duyệt hay không.",
-        "en": "Folds the three signals into one decision: does a human need to look?"
+        "en": "Folds the three signals into one decision: does a human need to look?",
+        "fr": "Réunit les trois signaux en une décision : faut-il qu'un humain regarde ?"
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 71,
       "note": {
         "vi": "Số ô mà HTML ngụ ý có khớp với số ô thật không.",
-        "en": "Whether the cell count the HTML implies matches the cells that are there."
+        "en": "Whether the cell count the HTML implies matches the cells that are there.",
+        "fr": "Si le nombre de cellules qu'implique le HTML correspond aux cellules réellement présentes."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 118,
       "note": {
         "vi": "Đọc hai lần rồi so — bất đồng là dấu hiệu bản parse không đáng tin.",
-        "en": "Two reads compared - disagreement is the sign that a parse cannot be trusted."
+        "en": "Two reads compared - disagreement is the sign that a parse cannot be trusted.",
+        "fr": "Deux lectures comparées - le désaccord est le signe qu'une analyse n'est pas fiable."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 158,
       "note": {
         "vi": "Cột tổng có thật sự bằng tổng các dòng không.",
-        "en": "Whether a total column really is the sum of its rows."
+        "en": "Whether a total column really is the sum of its rows.",
+        "fr": "Si une colonne de total est vraiment la somme de ses lignes."
       }
     }
   ],
@@ -48,28 +52,32 @@
         "id": "table",
         "label": {
           "vi": "Một bảng đã parse",
-          "en": "A parsed table"
+          "en": "A parsed table",
+          "fr": "Un tableau analysé"
         }
       },
       {
         "id": "s1",
         "label": {
           "vi": "Nhất quán cấu trúc",
-          "en": "Structural consistency"
+          "en": "Structural consistency",
+          "fr": "Cohérence structurelle"
         }
       },
       {
         "id": "s2",
         "label": {
           "vi": "Đồng thuận hai lần đọc",
-          "en": "Double-read agreement"
+          "en": "Double-read agreement",
+          "fr": "Accord entre deux lectures"
         }
       },
       {
         "id": "s3",
         "label": {
           "vi": "Kiểm tra số học",
-          "en": "Arithmetic check"
+          "en": "Arithmetic check",
+          "fr": "Contrôle arithmétique"
         }
       }
     ],
@@ -103,7 +111,8 @@
         "to": "x-ok",
         "label": {
           "vi": "mọi tín hiệu đều ổn",
-          "en": "every signal is clean"
+          "en": "every signal is clean",
+          "fr": "tous les signaux sont bons"
         }
       },
       {
@@ -111,7 +120,8 @@
         "to": "x-review",
         "label": {
           "vi": "có tín hiệu xấu",
-          "en": "a signal is bad"
+          "en": "a signal is bad",
+          "fr": "un signal est mauvais"
         }
       }
     ],
@@ -120,7 +130,8 @@
         "id": "g",
         "label": {
           "vi": "Có tín hiệu nào nói bản parse này sai không?",
-          "en": "Does any signal say this parse is wrong?"
+          "en": "Does any signal say this parse is wrong?",
+          "fr": "Un signal dit-il que cette analyse est fausse ?"
         }
       }
     ],
@@ -129,14 +140,16 @@
         "id": "x-ok",
         "label": {
           "vi": "Dùng bình thường",
-          "en": "Used normally"
+          "en": "Used normally",
+          "fr": "Utilisé normalement"
         }
       },
       {
         "id": "x-review",
         "label": {
           "vi": "Vào hàng đợi duyệt, câu trả lời không khẳng định số từ nó",
-          "en": "Into the review queue; answers assert no number from it"
+          "en": "Into the review queue; answers assert no number from it",
+          "fr": "Vers la file de relecture ; aucune réponse n'en affirme de chiffre"
         }
       }
     ]
@@ -145,7 +158,8 @@
     {
       "caption": {
         "vi": "Tín hiệu thứ ba: bảng tự mâu thuẫn với chính nó.",
-        "en": "The third signal: the table contradicting itself."
+        "en": "The third signal: the table contradicting itself.",
+        "fr": "Le troisième signal : le tableau qui se contredit lui-même."
       },
       "cite": {
         "kind": "excerpt",
@@ -160,7 +174,8 @@
     {
       "text": {
         "vi": "Lúc chạy không có đáp án đúng, nên độ tin cậy chỉ suy được từ tính nhất quán nội tại — đó là lý do có ba tín hiệu độc lập chứ không phải một.",
-        "en": "At runtime there is no ground truth, so confidence can only be inferred from internal consistency - which is why there are three independent signals rather than one."
+        "en": "At runtime there is no ground truth, so confidence can only be inferred from internal consistency - which is why there are three independent signals rather than one.",
+        "fr": "À l'exécution il n'existe pas de vérité de référence, la confiance ne peut donc s'inférer que de la cohérence interne - d'où trois signaux indépendants plutôt qu'un seul."
       },
       "cite": {
         "kind": "anchor",
@@ -175,7 +190,8 @@
     {
       "text": {
         "vi": "Recall tự động trên các lỗi đọc có hệ thống vốn dĩ thấp: một model nhỏ không tự phát hiện được lỗi mà nó tự tin.",
-        "en": "Auto-recall on systematic misreads is fundamentally low: a single small model cannot self-detect the errors it is confident about."
+        "en": "Auto-recall on systematic misreads is fundamentally low: a single small model cannot self-detect the errors it is confident about.",
+        "fr": "Le rappel automatique sur les erreurs de lecture systématiques est fondamentalement faible : un petit modèle seul ne détecte pas les erreurs dont il est sûr."
       },
       "cite": {
         "kind": "anchor",

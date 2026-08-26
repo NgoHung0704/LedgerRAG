@@ -8,7 +8,8 @@
       "line": 115,
       "note": {
         "vi": "Cấu hình env làm nền, phủ lên bằng bản ghi app_setting; đọc DB mỗi lần nên API và worker cùng nhận thay đổi.",
-        "en": "The env config as the base, overlaid with the app_setting row; the DB is read every time so the API and the worker both pick up changes."
+        "en": "The env config as the base, overlaid with the app_setting row; the DB is read every time so the API and the worker both pick up changes.",
+        "fr": "La configuration d'environnement comme base, recouverte par la ligne app_setting ; la base est lue à chaque fois, donc l'API comme le worker voient les changements."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 151,
       "note": {
         "vi": "Trả provider cho một vai trò, cache theo đúng cấu hình endpoint đang có hiệu lực.",
-        "en": "Returns the provider for a role, cached by the effective endpoint config."
+        "en": "Returns the provider for a role, cached by the effective endpoint config.",
+        "fr": "Renvoie le fournisseur d'un rôle, mis en cache selon la configuration effective du point de terminaison."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 184,
       "note": {
         "vi": "Kiểm tra sức khoẻ từng vai trò — góc nhìn preflight của người triển khai.",
-        "en": "Health per role - the deployer's preflight view."
+        "en": "Health per role - the deployer's preflight view.",
+        "fr": "Santé par rôle - la vue de contrôle avant vol de celui qui déploie."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 161,
       "note": {
         "vi": "Provider thứ hai cho lần đọc lại, phục vụ tín hiệu đồng thuận của Phase 3.",
-        "en": "The second provider for the second read, feeding the Phase 3 agreement signal."
+        "en": "The second provider for the second read, feeding the Phase 3 agreement signal.",
+        "fr": "Le second fournisseur pour la seconde lecture, qui alimente le signal d'accord de la Phase 3."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 85,
       "note": {
         "vi": "Trợ lý sửa nội dung: được SẮP XẾP LẠI nhưng không bao giờ được THÊM dữ kiện.",
-        "en": "The editing assistant: it may REARRANGE but never ADD a fact."
+        "en": "The editing assistant: it may REARRANGE but never ADD a fact.",
+        "fr": "L'assistant de correction : il peut RÉORGANISER mais jamais AJOUTER un fait."
       }
     }
   ],
@@ -58,21 +63,24 @@
         "id": "call",
         "label": {
           "vi": "Một lời gọi model",
-          "en": "A model call"
+          "en": "A model call",
+          "fr": "Un appel de modèle"
         }
       },
       {
         "id": "resolve",
         "label": {
           "vi": "Giải cấu hình vai trò",
-          "en": "Resolve the role's config"
+          "en": "Resolve the role's config",
+          "fr": "Résoudre la configuration du rôle"
         }
       },
       {
         "id": "provider",
         "label": {
           "vi": "Dựng hoặc lấy provider",
-          "en": "Build or fetch the provider"
+          "en": "Build or fetch the provider",
+          "fr": "Construire ou récupérer le fournisseur"
         }
       }
     ],
@@ -90,7 +98,8 @@
         "to": "provider",
         "label": {
           "vi": "provider là ollama hoặc openai_compat",
-          "en": "the provider is ollama or openai_compat"
+          "en": "the provider is ollama or openai_compat",
+          "fr": "le fournisseur est ollama ou openai_compat"
         }
       },
       {
@@ -98,7 +107,8 @@
         "to": "x-disabled",
         "label": {
           "vi": "provider là disabled",
-          "en": "the provider is disabled"
+          "en": "the provider is disabled",
+          "fr": "le fournisseur est disabled"
         }
       },
       {
@@ -111,7 +121,8 @@
         "id": "g",
         "label": {
           "vi": "Vai trò này có được cấu hình không?",
-          "en": "Is this role configured at all?"
+          "en": "Is this role configured at all?",
+          "fr": "Ce rôle est-il seulement configuré ?"
         }
       }
     ],
@@ -120,14 +131,16 @@
         "id": "x-ok",
         "label": {
           "vi": "Gọi endpoint",
-          "en": "The endpoint is called"
+          "en": "The endpoint is called",
+          "fr": "Le point de terminaison est appelé"
         }
       },
       {
         "id": "x-disabled",
         "label": {
           "vi": "Suy biến trung thực chứ không giả vờ trả lời",
-          "en": "Degrades honestly rather than pretending to answer"
+          "en": "Degrades honestly rather than pretending to answer",
+          "fr": "Se dégrade honnêtement au lieu de faire semblant de répondre"
         }
       }
     ]
@@ -136,7 +149,8 @@
     {
       "caption": {
         "vi": "Ghi đè lúc chạy được đọc lại mỗi lần giải cấu hình — đó là lý do không cần khởi động lại.",
-        "en": "The runtime override is read on every resolution - which is why no restart is needed."
+        "en": "The runtime override is read on every resolution - which is why no restart is needed.",
+        "fr": "La surcharge est relue à chaque résolution - c'est pourquoi aucun redémarrage n'est nécessaire."
       },
       "cite": {
         "kind": "excerpt",
@@ -151,7 +165,8 @@
     {
       "text": {
         "vi": "Đọc DB mỗi lần giải cấu hình, nên đổi endpoint trên giao diện là cả API lẫn worker nhận ngay.",
-        "en": "The database is read on every resolution, so repointing an endpoint in the interface reaches both the API and the worker at once."
+        "en": "The database is read on every resolution, so repointing an endpoint in the interface reaches both the API and the worker at once.",
+        "fr": "La base est lue à chaque résolution, donc rediriger un point de terminaison depuis l'interface atteint l'API et le worker d'un seul coup."
       },
       "cite": {
         "kind": "anchor",
@@ -164,7 +179,8 @@
     {
       "text": {
         "vi": "Luật chịu lực: được sắp xếp lại, không được thêm. Một bản viết lại lặng lẽ bịa ra con số sẽ đầu độc đúng thứ mà trang này tồn tại để bảo vệ.",
-        "en": "The load-bearing rule: rearrange, never add. A rewrite that quietly invents a figure would poison exactly what this system exists to protect."
+        "en": "The load-bearing rule: rearrange, never add. A rewrite that quietly invents a figure would poison exactly what this system exists to protect.",
+        "fr": "La règle porteuse : réorganiser, jamais ajouter. Une réécriture qui inventerait discrètement un chiffre empoisonnerait précisément ce que ce système existe pour protéger."
       },
       "cite": {
         "kind": "anchor",

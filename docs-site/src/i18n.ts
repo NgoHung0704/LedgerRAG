@@ -1,10 +1,10 @@
 import type { Lang } from "./route";
 
-/** A localized string is a pair. There is no third state, and no fallback:
- *  a missing half is a guard failure in tests/unit/test_docs_content.py, not
- *  something the UI papers over at runtime. */
-export type L = { vi: string; en: string };
+/** A localized string is one value per language the page is written in.
+ *  There is no fallback: a missing language is a guard failure in
+ *  tests/unit/test_docs_content.py, not something the UI papers over. */
+export type L = { vi: string; en: string; fr: string };
+
+export const LANGS = ["vi", "en", "fr"] as const;
 
 export const pick = (value: L, lang: Lang): string => value[lang];
-
-export const other = (lang: Lang): Lang => (lang === "vi" ? "en" : "vi");

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { wrapLabel, boxHeight, nodeHeight, laneOffsets, columnGap } from "../src/svg/layout";
 import { content } from "../src/content";
-import { pick } from "../src/i18n";
+import { LANGS, pick } from "../src/i18n";
 
 describe("svg text", () => {
   it("wraps a long label instead of letting it run out of its box", () => {
@@ -15,12 +15,14 @@ describe("svg text", () => {
       boxHeight(wrapLabel("Reverse proxy and single sign-on, header trusted", 18)));
   });
 
-  it("sizes every node for whichever language is longer", () => {
-    // counted from the content, never hardcoded
+  it("sizes every node for the LONGEST language, not just two of them", () => {
+    // Counted from the content and from LANGS, never hardcoded: adding a
+    // language must widen this assertion by itself. French made some labels
+    // wrap onto a third line, which is exactly what this catches.
     content.nodes.nodes.forEach((node) => {
-      const vi = boxHeight(wrapLabel(pick(node.label, "vi"), 18));
-      const en = boxHeight(wrapLabel(pick(node.label, "en"), 18));
-      expect(nodeHeight(node)).toBe(Math.max(vi, en));
+      const each = LANGS.map((lang) =>
+        boxHeight(wrapLabel(pick(node.label, lang), 18)));
+      expect(nodeHeight(node)).toBe(Math.max(...each));
     });
   });
 });

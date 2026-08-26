@@ -3,7 +3,7 @@ import {
   formatRoute, navigate, parseRoute, popOne, type Lang, type Route, type View,
 } from "./route";
 import { content } from "./content";
-import { other, pick } from "./i18n";
+import { pick } from "./i18n";
 import { SystemMap } from "./views/SystemMap";
 import { ComponentGrid } from "./views/ComponentGrid";
 import { ComponentDetail } from "./views/ComponentDetail";
@@ -56,39 +56,55 @@ export function App() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
   const go = useCallback((next: Route) => navigate(next), []);
 
   return (
     <div className="app">
       <header className="topbar">
-        <h1 className="site-title">{pick(content.ui.siteTitle, lang)}</h1>
+        <div className="brand">
+          <span className="mark" aria-hidden="true" />
+          <h1 className="site-title">{pick(content.ui.siteTitle, lang)}</h1>
+        </div>
+
         <nav className="nav">
           {NAV.map(({ view, key }) => (
             <button
               key={view}
               type="button"
               className="nav-item"
-              aria-current={route.view === view || (view === "grid" && route.view === "c")
-                ? "page" : undefined}
+              aria-current={route.view === view
+                || (view === "grid" && route.view === "c") ? "page" : undefined}
               onClick={() => go({ ...route, view, id: null, sub: null })}
             >
               {pick(content.ui.nav[key], lang)}
             </button>
           ))}
         </nav>
-        <button
-          type="button"
-          className="lang-switch"
+
+        {/* Three buttons rather than one that cycles: with three languages a
+            cycling switch makes a reader press it twice to go back, and its
+            label can only name one destination. */}
+        <div
+          className="langs" role="group"
           aria-label={pick(content.ui.aria.languageSwitch, lang)}
-          onClick={() => go({ ...route, lang: other(lang) })}
         >
-          {pick(content.ui.actions.switchLanguage, lang)}
-        </button>
+          {content.ui.languages.map((entry) => (
+            <button
+              key={entry.code}
+              type="button"
+              className="lang"
+              aria-pressed={entry.code === lang}
+              onClick={() => go({ ...route, lang: entry.code as Lang })}
+            >
+              {pick(entry.label, lang)}
+            </button>
+          ))}
+        </div>
       </header>
+
+      <p className="tagline">{pick(content.ui.tagline, lang)}</p>
 
       <main className="main">
         {route.view === "map" && (

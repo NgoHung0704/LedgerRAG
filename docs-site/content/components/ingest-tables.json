@@ -8,7 +8,8 @@
       "line": 223,
       "note": {
         "vi": "Một vùng bảng vào, ba biểu diễn ra.",
-        "en": "One table region in, three representations out."
+        "en": "One table region in, three representations out.",
+        "fr": "Une région de tableau en entrée, trois représentations en sortie."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 141,
       "note": {
         "vi": "Dựng bản ghi dimensions/metrics tất định từ lưới, không nhờ model.",
-        "en": "Builds the dimensions/metrics records deterministically from the grid, with no model involved."
+        "en": "Builds the dimensions/metrics records deterministically from the grid, with no model involved.",
+        "fr": "Construit les enregistrements dimensions/métriques de façon déterministe à partir de la grille, sans aucun modèle."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 49,
       "note": {
         "vi": "Dạng text của một bản ghi — chính là thứ được index và đem đối chiếu với câu hỏi.",
-        "en": "The text form of a record - the very thing that gets indexed and matched against a question."
+        "en": "The text form of a record - the very thing that gets indexed and matched against a question.",
+        "fr": "La forme textuelle d'un enregistrement - précisément ce qui est indexé et confronté à une question."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 329,
       "note": {
         "vi": "Một hai câu mô tả bảng, để router tìm được bảng trước khi tìm dòng.",
-        "en": "One or two sentences about the table, so the router finds the table before the row."
+        "en": "One or two sentences about the table, so the router finds the table before the row.",
+        "fr": "Une ou deux phrases sur le tableau, pour que le routeur trouve le tableau avant la ligne."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 540,
       "note": {
         "vi": "Hợp đồng parse dùng chung: prompt, kiểm tra, thử lại — provider chỉ lo phần truyền tải.",
-        "en": "The shared parse contract: prompt, validation, retry - a provider supplies only the transport."
+        "en": "The shared parse contract: prompt, validation, retry - a provider supplies only the transport.",
+        "fr": "Le contrat d'analyse commun : invite, validation, nouvelle tentative - un fournisseur n'apporte que le transport."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 186,
       "note": {
         "vi": "Điền xuôi nhãn nhóm để mọi dòng bị gộp đều mang nhãn của nó.",
-        "en": "Forward-fills the group label so every spanned row carries its own."
+        "en": "Forward-fills the group label so every spanned row carries its own.",
+        "fr": "Propage l'étiquette de groupe vers le bas pour que chaque ligne fusionnée porte la sienne."
       }
     },
     {
@@ -68,7 +74,8 @@
       "line": 93,
       "note": {
         "vi": "Gộp lại các ô lặp thành rowspan để bảng hiển thị giống bản gốc.",
-        "en": "Collapses repeated cells back into rowspans so the rendered table matches the original."
+        "en": "Collapses repeated cells back into rowspans so the rendered table matches the original.",
+        "fr": "Refusionne les cellules répétées en rowspan pour que le tableau affiché ressemble à l'original."
       }
     },
     {
@@ -78,7 +85,8 @@
       "line": 93,
       "note": {
         "vi": "Trải bảng thành text cho ngữ cảnh model — nằm ở core vì cả hai pipeline đều cần.",
-        "en": "Flattens a table into text for the model context - it lives in core because both pipelines need it."
+        "en": "Flattens a table into text for the model context - it lives in core because both pipelines need it.",
+        "fr": "Aplatit un tableau en texte pour le contexte du modèle - il vit dans core parce que les deux chaînes en ont besoin."
       }
     }
   ],
@@ -88,42 +96,48 @@
         "id": "region",
         "label": {
           "vi": "Vùng bảng",
-          "en": "A table region"
+          "en": "A table region",
+          "fr": "Une région de tableau"
         }
       },
       {
         "id": "hint",
         "label": {
           "vi": "Lưới text-layer làm gợi ý",
-          "en": "The text-layer grid as a hint"
+          "en": "The text-layer grid as a hint",
+          "fr": "La grille de la couche de texte comme indice"
         }
       },
       {
         "id": "vlm",
         "label": {
           "vi": "VLM đọc bảng",
-          "en": "The VLM reads the table"
+          "en": "The VLM reads the table",
+          "fr": "Le VLM lit le tableau"
         }
       },
       {
         "id": "validate",
         "label": {
           "vi": "Kiểm tra hợp đồng",
-          "en": "Validate against the contract"
+          "en": "Validate against the contract",
+          "fr": "Valider selon le contrat"
         }
       },
       {
         "id": "retry",
         "label": {
           "vi": "Gọi lại có nêu tên lỗi",
-          "en": "Asked again, naming the fault"
+          "en": "Asked again, naming the fault",
+          "fr": "Redemandé, en nommant le défaut"
         }
       },
       {
         "id": "three",
         "label": {
           "vi": "Ba biểu diễn",
-          "en": "The three representations"
+          "en": "The three representations",
+          "fr": "Les trois représentations"
         }
       }
     ],
@@ -149,7 +163,8 @@
         "to": "three",
         "label": {
           "vi": "hợp lệ",
-          "en": "valid"
+          "en": "valid",
+          "fr": "valide"
         }
       },
       {
@@ -157,7 +172,8 @@
         "to": "retry",
         "label": {
           "vi": "sai hợp đồng",
-          "en": "breaks the contract"
+          "en": "breaks the contract",
+          "fr": "rompt le contrat"
         }
       },
       {
@@ -165,7 +181,8 @@
         "to": "vlm",
         "label": {
           "vi": "gọi lại có nêu tên lỗi",
-          "en": "asked again, naming the fault"
+          "en": "asked again, naming the fault",
+          "fr": "redemandé, en nommant le défaut"
         }
       },
       {
@@ -178,7 +195,8 @@
         "id": "g-ok",
         "label": {
           "vi": "Kết quả có đúng hợp đồng không?",
-          "en": "Does the result satisfy the contract?"
+          "en": "Does the result satisfy the contract?",
+          "fr": "Le résultat satisfait-il le contrat ?"
         }
       }
     ],
@@ -187,7 +205,8 @@
         "id": "x-out",
         "label": {
           "vi": "html + records + summary",
-          "en": "html + records + summary"
+          "en": "html + records + summary",
+          "fr": "html + enregistrements + résumé"
         }
       }
     ]
@@ -196,7 +215,8 @@
     {
       "caption": {
         "vi": "Dạng text của một bản ghi — đây là chuỗi thật sự đi vào chỉ mục.",
-        "en": "A record's text form - this is the string that actually enters the index."
+        "en": "A record's text form - this is the string that actually enters the index.",
+        "fr": "La forme textuelle d'un enregistrement - voici la chaîne qui entre réellement dans l'index."
       },
       "cite": {
         "kind": "excerpt",
@@ -211,7 +231,8 @@
     {
       "text": {
         "vi": "Ba biểu diễn tồn tại song song: hiển thị, tra số chính xác, và định tuyến ngữ nghĩa. Bỏ cái nào cũng mất một khả năng.",
-        "en": "The three representations exist side by side: display, exact lookup, and semantic routing. Drop any one and a capability goes with it."
+        "en": "The three representations exist side by side: display, exact lookup, and semantic routing. Drop any one and a capability goes with it.",
+        "fr": "Les trois représentations coexistent : affichage, recherche exacte et routage sémantique. En supprimer une, c'est perdre une capacité."
       },
       "cite": {
         "kind": "anchor",
@@ -224,7 +245,8 @@
     {
       "text": {
         "vi": "Hàm này nằm ở core chứ không ở ingestion, vì query cũng cần nó mà hai pipeline không được import nhau.",
-        "en": "These live in core rather than in ingestion, because query needs them too and the two pipelines may never import each other."
+        "en": "These live in core rather than in ingestion, because query needs them too and the two pipelines may never import each other.",
+        "fr": "Elles vivent dans core plutôt que dans ingestion, parce que query en a besoin aussi et que les deux chaînes ne doivent jamais s'importer."
       },
       "cite": {
         "kind": "anchor",
@@ -237,7 +259,8 @@
     {
       "text": {
         "vi": "Điền xuôi làm bản ghi đầy đủ; gộp lại chỉ để hiển thị. Dữ liệu và cách vẽ được tách hẳn.",
-        "en": "Forward-filling makes the records complete; collapsing is only for display. The data and the drawing are kept apart."
+        "en": "Forward-filling makes the records complete; collapsing is only for display. The data and the drawing are kept apart.",
+        "fr": "La propagation rend les enregistrements complets ; la refusion ne sert qu'à l'affichage. Les données et le dessin restent séparés."
       },
       "cite": {
         "kind": "anchor",

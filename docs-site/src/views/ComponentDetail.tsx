@@ -22,7 +22,7 @@ export function ComponentDetail(
       const all = [...detail.flow!.nodes, ...detail.flow!.gates,
                    ...detail.flow!.exits];
       const hit = all.find((n) => n.id === key);
-      return hit ? hit.label : { vi: key, en: key };
+      return hit ? hit.label : { vi: key, en: key, fr: key };
     };
     return [
       { heading: content.ui.headings.steps,
@@ -34,6 +34,7 @@ export function ComponentDetail(
           label: {
             vi: `${pick(label(e.from), "vi")} → ${pick(label(e.to), "vi")}`,
             en: `${pick(label(e.from), "en")} -> ${pick(label(e.to), "en")}`,
+            fr: `${pick(label(e.from), "fr")} -> ${pick(label(e.to), "fr")}`,
           },
           detail: e.label,
         })) },

@@ -1,221 +1,446 @@
 {
   "rows": [
     {
-      "store": "postgres", "name": "knowledge_base",
+      "store": "postgres",
+      "name": "knowledge_base",
       "owner": "storage-layer",
-      "writers": ["http-contracts", "ingest-intake"],
-      "readers": ["http-contracts", "query-route-retrieve"],
+      "writers": [
+        "http-contracts",
+        "ingest-intake"
+      ],
+      "readers": [
+        "http-contracts",
+        "query-route-retrieve"
+      ],
       "note": {
         "vi": "Một KB là một không gian tìm kiếm. Mô tả của nó không phải trang trí: đó là thứ duy nhất router đọc để chọn KB, nên mô tả rỗng làm router mù.",
-        "en": "A knowledge base is one search space. Its description is not decoration: it is the only thing the router reads when picking one, so an empty description blinds the router."
+        "en": "A knowledge base is one search space. Its description is not decoration: it is the only thing the router reads when picking one, so an empty description blinds the router.",
+        "fr": "Une base de connaissances est un espace de recherche. Sa description n'est pas un ornement : c'est la seule chose que lit le routeur pour en choisir une, donc une description vide l'aveugle."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 66, "to": 66,
-                "anchor": "__tablename__ = \"knowledge_base\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 66,
+        "to": 66,
+        "anchor": "__tablename__ = \"knowledge_base\""
+      }
     },
     {
-      "store": "postgres", "name": "document",
+      "store": "postgres",
+      "name": "document",
       "owner": "storage-layer",
-      "writers": ["http-contracts", "ingest-intake"],
-      "readers": ["http-contracts", "query-answer"],
+      "writers": [
+        "http-contracts",
+        "ingest-intake"
+      ],
+      "readers": [
+        "http-contracts",
+        "query-answer"
+      ],
       "note": {
         "vi": "Tài liệu mang trạng thái ingestion mà giao diện theo dõi; consumer thư mục và endpoint tải lên cùng ghi vào đây.",
-        "en": "A document carries the ingestion status the interface tracks; both the directory consumer and the upload endpoint write here."
+        "en": "A document carries the ingestion status the interface tracks; both the directory consumer and the upload endpoint write here.",
+        "fr": "Un document porte le statut d'ingestion que suit l'interface ; le consommateur de dossier comme le point de téléversement écrivent ici."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 79, "to": 79,
-                "anchor": "__tablename__ = \"document\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 79,
+        "to": 79,
+        "anchor": "__tablename__ = \"document\""
+      }
     },
     {
-      "store": "postgres", "name": "element",
+      "store": "postgres",
+      "name": "element",
       "owner": "storage-layer",
-      "writers": ["ingest-page-analysis", "index-write", "http-contracts"],
-      "readers": ["http-contracts", "query-answer"],
+      "writers": [
+        "ingest-page-analysis",
+        "index-write",
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts",
+        "query-answer"
+      ],
       "note": {
         "vi": "Đơn vị nhỏ nhất còn truy nguyên được: doc_id, trang, bbox, đường dẫn ảnh crop, cờ tin cậy — đúng nguyên tắc số 3.",
-        "en": "The smallest unit that still traces to its origin: doc_id, page, bbox, crop image path, confidence flag - principle 3 made concrete."
+        "en": "The smallest unit that still traces to its origin: doc_id, page, bbox, crop image path, confidence flag - principle 3 made concrete.",
+        "fr": "La plus petite unité qui remonte encore à son origine : doc_id, page, bbox, chemin de l'image découpée, drapeau de confiance - le principe 3 rendu concret."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 102, "to": 102,
-                "anchor": "__tablename__ = \"element\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 102,
+        "to": 102,
+        "anchor": "__tablename__ = \"element\""
+      }
     },
     {
-      "store": "postgres", "name": "table_element",
+      "store": "postgres",
+      "name": "table_element",
       "owner": "storage-layer",
-      "writers": ["ingest-tables", "index-write", "http-contracts"],
-      "readers": ["http-contracts", "query-answer"],
+      "writers": [
+        "ingest-tables",
+        "index-write",
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts",
+        "query-answer"
+      ],
       "note": {
         "vi": "Biểu diễn thứ nhất và thứ ba của một bảng: lưới HTML dựng lại, và đường dẫn tới ảnh crop gốc luôn được giữ.",
-        "en": "The first and third representations of a table: the reconstructed HTML grid, and the path to the original crop that is always kept."
+        "en": "The first and third representations of a table: the reconstructed HTML grid, and the path to the original crop that is always kept.",
+        "fr": "Les première et troisième représentations d'un tableau : la grille HTML reconstruite, et le chemin vers la découpe d'origine toujours conservée."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 128, "to": 128,
-                "anchor": "__tablename__ = \"table_element\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 128,
+        "to": 128,
+        "anchor": "__tablename__ = \"table_element\""
+      }
     },
     {
-      "store": "postgres", "name": "record",
+      "store": "postgres",
+      "name": "record",
       "owner": "storage-layer",
-      "writers": ["ingest-tables", "index-write"],
-      "readers": ["query-route-retrieve", "http-contracts"],
+      "writers": [
+        "ingest-tables",
+        "index-write"
+      ],
+      "readers": [
+        "query-route-retrieve",
+        "http-contracts"
+      ],
       "note": {
         "vi": "Biểu diễn thứ hai: tách dimensions/metrics để tra số chính xác, và raw_values luôn được giữ nguyên.",
-        "en": "The second representation: dimensions split from metrics for exact numeric lookup, with raw_values always preserved."
+        "en": "The second representation: dimensions split from metrics for exact numeric lookup, with raw_values always preserved.",
+        "fr": "La deuxième représentation : dimensions séparées des métriques pour une recherche numérique exacte, avec raw_values toujours préservé."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 146, "to": 146,
-                "anchor": "__tablename__ = \"record\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 146,
+        "to": 146,
+        "anchor": "__tablename__ = \"record\""
+      }
     },
     {
-      "store": "postgres", "name": "chunk",
+      "store": "postgres",
+      "name": "chunk",
       "owner": "storage-layer",
-      "writers": ["ingest-intake", "index-write"],
-      "readers": ["query-route-retrieve", "query-answer"],
+      "writers": [
+        "ingest-intake",
+        "index-write"
+      ],
+      "readers": [
+        "query-route-retrieve",
+        "query-answer"
+      ],
       "note": {
         "vi": "Chính các chunk này là thứ câu hỏi được đối chiếu, nên chúng là bằng chứng thật của một bản parse — không phải bản tóm tắt.",
-        "en": "These chunks are what a question is matched against, which makes them the real evidence of a parse - not a summary of it."
+        "en": "These chunks are what a question is matched against, which makes them the real evidence of a parse - not a summary of it.",
+        "fr": "C'est à ces fragments qu'une question est confrontée, ce qui en fait la vraie preuve d'une analyse - non un résumé de celle-ci."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 160, "to": 160,
-                "anchor": "__tablename__ = \"chunk\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 160,
+        "to": 160,
+        "anchor": "__tablename__ = \"chunk\""
+      }
     },
     {
-      "store": "postgres", "name": "app_setting",
+      "store": "postgres",
+      "name": "app_setting",
       "owner": "storage-layer",
-      "writers": ["http-contracts", "models-providers"],
-      "readers": ["models-providers", "http-contracts"],
+      "writers": [
+        "http-contracts",
+        "models-providers"
+      ],
+      "readers": [
+        "models-providers",
+        "http-contracts"
+      ],
       "note": {
         "vi": "Ghi đè cấu hình lúc chạy: đổi endpoint của một vai trò model ở đây thì cả API lẫn worker nhận ngay, không khởi động lại — đó là ràng buộc C3.",
-        "en": "Runtime configuration overrides: change a model role's endpoint here and both the API and the worker pick it up without a restart - that is constraint C3."
+        "en": "Runtime configuration overrides: change a model role's endpoint here and both the API and the worker pick it up without a restart - that is constraint C3.",
+        "fr": "Surcharges de configuration à chaud : changez ici le point de terminaison d'un rôle et l'API comme le worker le prennent en compte sans redémarrage - c'est la contrainte C3."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 175, "to": 175,
-                "anchor": "__tablename__ = \"app_setting\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 175,
+        "to": 175,
+        "anchor": "__tablename__ = \"app_setting\""
+      }
     },
     {
-      "store": "postgres", "name": "chat_session",
+      "store": "postgres",
+      "name": "chat_session",
       "owner": "storage-layer",
-      "writers": ["http-contracts"],
-      "readers": ["http-contracts", "query-answer"],
+      "writers": [
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts",
+        "query-answer"
+      ],
       "note": {
         "vi": "Một luồng hội thoại, để câu hỏi tiếp theo hiểu được ngữ cảnh trước đó.",
-        "en": "One conversation thread, so a follow-up question can be understood in context."
+        "en": "One conversation thread, so a follow-up question can be understood in context.",
+        "fr": "Un fil de conversation, pour qu'une question de relance se comprenne dans son contexte."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 184, "to": 184,
-                "anchor": "__tablename__ = \"chat_session\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 184,
+        "to": 184,
+        "anchor": "__tablename__ = \"chat_session\""
+      }
     },
     {
-      "store": "postgres", "name": "chat_message",
+      "store": "postgres",
+      "name": "chat_message",
       "owner": "storage-layer",
-      "writers": ["http-contracts"],
-      "readers": ["http-contracts", "query-answer"],
+      "writers": [
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts",
+        "query-answer"
+      ],
       "note": {
         "vi": "Từng lượt hỏi đáp kèm nguồn, đủ để phát lại một luồng đúng như lúc nó xảy ra.",
-        "en": "Each turn with its sources, enough to replay a thread exactly as it happened."
+        "en": "Each turn with its sources, enough to replay a thread exactly as it happened.",
+        "fr": "Chaque échange avec ses sources, de quoi rejouer un fil exactement tel qu'il s'est déroulé."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 193, "to": 193,
-                "anchor": "__tablename__ = \"chat_message\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 193,
+        "to": 193,
+        "anchor": "__tablename__ = \"chat_message\""
+      }
     },
     {
-      "store": "postgres", "name": "element_revision",
+      "store": "postgres",
+      "name": "element_revision",
       "owner": "storage-layer",
-      "writers": ["index-write", "http-contracts"],
-      "readers": ["http-contracts"],
+      "writers": [
+        "index-write",
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts"
+      ],
       "note": {
         "vi": "Element trước lần sửa cuối. Đây là thứ cho phép lấy lại MỘT chỉnh sửa mà không phải chạy lại cả tài liệu và mất mọi chỉnh sửa khác.",
-        "en": "What an element held before the last edit. This is what makes it possible to take back ONE correction without reprocessing the whole document and losing every other one."
+        "en": "What an element held before the last edit. This is what makes it possible to take back ONE correction without reprocessing the whole document and losing every other one.",
+        "fr": "Ce que contenait un élément avant la dernière correction. C'est ce qui permet d'annuler UNE correction sans retraiter tout le document et perdre toutes les autres."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 223, "to": 223,
-                "anchor": "__tablename__ = \"element_revision\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 223,
+        "to": 223,
+        "anchor": "__tablename__ = \"element_revision\""
+      }
     },
     {
-      "store": "postgres", "name": "audit_event",
+      "store": "postgres",
+      "name": "audit_event",
       "owner": "storage-layer",
-      "writers": ["http-contracts", "ingest-intake"],
-      "readers": ["http-contracts"],
+      "writers": [
+        "http-contracts",
+        "ingest-intake"
+      ],
+      "readers": [
+        "http-contracts"
+      ],
       "note": {
         "vi": "Vết trách nhiệm GDPR: ai tải lên, ai hỏi, ai đổi cấu hình model. Bảng riêng để nó không bị xoá theo cascade của thứ nó ghi lại.",
-        "en": "The GDPR accountability trail: who uploaded, who queried, who changed the model configuration. Its own table so it does not vanish in the cascade of the thing it recorded."
+        "en": "The GDPR accountability trail: who uploaded, who queried, who changed the model configuration. Its own table so it does not vanish in the cascade of the thing it recorded.",
+        "fr": "La piste de responsabilité RGPD : qui a téléversé, qui a interrogé, qui a changé la configuration des modèles. Sa propre table, pour ne pas disparaître dans la cascade de ce qu'elle a enregistré."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 250, "to": 250,
-                "anchor": "__tablename__ = \"audit_event\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 250,
+        "to": 250,
+        "anchor": "__tablename__ = \"audit_event\""
+      }
     },
     {
-      "store": "postgres", "name": "message_feedback",
+      "store": "postgres",
+      "name": "message_feedback",
       "owner": "storage-layer",
-      "writers": ["http-contracts"],
-      "readers": ["http-contracts"],
+      "writers": [
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts"
+      ],
       "note": {
         "vi": "Ngón cái lên xuống. Bảng riêng chứ không phải một cột của chat_message, và những câu bị chê chính là câu đáng đưa vào bộ eval.",
-        "en": "Thumbs up and down. Its own table rather than a column on chat_message, and the thumbs-down answers are exactly the ones worth adding to the eval set."
+        "en": "Thumbs up and down. Its own table rather than a column on chat_message, and the thumbs-down answers are exactly the ones worth adding to the eval set.",
+        "fr": "Pouces levés et baissés. Sa propre table plutôt qu'une colonne de chat_message, et les réponses au pouce baissé sont précisément celles à ajouter au jeu d'évaluation."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 266, "to": 266,
-                "anchor": "__tablename__ = \"message_feedback\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 266,
+        "to": 266,
+        "anchor": "__tablename__ = \"message_feedback\""
+      }
     },
     {
-      "store": "postgres", "name": "assistant",
+      "store": "postgres",
+      "name": "assistant",
       "owner": "storage-layer",
-      "writers": ["http-contracts"],
-      "readers": ["http-contracts"],
+      "writers": [
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts"
+      ],
       "note": {
         "vi": "Một ứng dụng chat: KB riêng làm ngữ cảnh, chỉ dẫn riêng định hình câu trả lời.",
-        "en": "A chat app of its own: its own knowledge bases as context, its own instructions shaping the answer."
+        "en": "A chat app of its own: its own knowledge bases as context, its own instructions shaping the answer.",
+        "fr": "Une application de chat à part entière : ses propres bases comme contexte, ses propres instructions qui façonnent la réponse."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 284, "to": 284,
-                "anchor": "__tablename__ = \"assistant\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 284,
+        "to": 284,
+        "anchor": "__tablename__ = \"assistant\""
+      }
     },
     {
-      "store": "postgres", "name": "assistant_kb",
+      "store": "postgres",
+      "name": "assistant_kb",
       "owner": "storage-layer",
-      "writers": ["http-contracts"],
-      "readers": ["http-contracts", "query-route-retrieve"],
+      "writers": [
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts",
+        "query-route-retrieve"
+      ],
       "note": {
         "vi": "KB nào thuộc phạm vi của trợ lý nào. Khoá chính ghép, nên một KB dùng chung cho nhiều trợ lý được.",
-        "en": "Which knowledge bases an assistant searches. A composite primary key, so one knowledge base can be shared by several assistants."
+        "en": "Which knowledge bases an assistant searches. A composite primary key, so one knowledge base can be shared by several assistants.",
+        "fr": "Quelles bases un assistant interroge. Une clé primaire composite, pour qu'une base puisse être partagée par plusieurs assistants."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 302, "to": 302,
-                "anchor": "__tablename__ = \"assistant_kb\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 302,
+        "to": 302,
+        "anchor": "__tablename__ = \"assistant_kb\""
+      }
     },
     {
-      "store": "postgres", "name": "assistant_conversation",
+      "store": "postgres",
+      "name": "assistant_conversation",
       "owner": "storage-layer",
-      "writers": ["http-contracts"],
-      "readers": ["http-contracts"],
+      "writers": [
+        "http-contracts"
+      ],
+      "readers": [
+        "http-contracts"
+      ],
       "note": {
         "vi": "Một luồng hội thoại đã lưu, gắn với trợ lý đã tạo ra nó.",
-        "en": "One saved thread, tied to the assistant it belongs to."
+        "en": "One saved thread, tied to the assistant it belongs to.",
+        "fr": "Un fil enregistré, rattaché à l'assistant auquel il appartient."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/orm.py", "from": 318, "to": 318,
-                "anchor": "__tablename__ = \"assistant_conversation\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/orm.py",
+        "from": 318,
+        "to": 318,
+        "anchor": "__tablename__ = \"assistant_conversation\""
+      }
     },
-
     {
-      "store": "qdrant", "name": "chunks",
+      "store": "qdrant",
+      "name": "chunks",
       "owner": "storage-layer",
-      "writers": ["index-write", "ingest-intake", "http-contracts"],
-      "readers": ["query-route-retrieve"],
+      "writers": [
+        "index-write",
+        "ingest-intake",
+        "http-contracts"
+      ],
+      "readers": [
+        "query-route-retrieve"
+      ],
       "note": {
         "vi": "Vector của chunk văn bản. Khi xoá tài liệu, kho ngoài bị dọn TRƯỚC cascade Postgres, để một lỗi muộn không bỏ lại vector mồ côi vẫn trả lời.",
-        "en": "The text chunk vectors. On delete the external stores are purged BEFORE the Postgres cascade, so a late failure cannot leave orphaned vectors still answering."
+        "en": "The text chunk vectors. On delete the external stores are purged BEFORE the Postgres cascade, so a late failure cannot leave orphaned vectors still answering.",
+        "fr": "Les vecteurs des fragments de texte. À la suppression, les entrepôts externes sont purgés AVANT la cascade Postgres, pour qu'un échec tardif ne laisse pas de vecteurs orphelins continuer à répondre."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/qdrant.py", "from": 57, "to": 57,
-                "anchor": "COLLECTION_CHUNKS = \"chunks\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 57,
+        "to": 57,
+        "anchor": "COLLECTION_CHUNKS = \"chunks\""
+      }
     },
     {
-      "store": "qdrant", "name": "records",
+      "store": "qdrant",
+      "name": "records",
       "owner": "storage-layer",
-      "writers": ["index-write", "ingest-intake", "http-contracts"],
-      "readers": ["query-route-retrieve"],
+      "writers": [
+        "index-write",
+        "ingest-intake",
+        "http-contracts"
+      ],
+      "readers": [
+        "query-route-retrieve"
+      ],
       "note": {
         "vi": "Vector của từng bản ghi dimensions/metrics — đường để một câu hỏi về một con số cụ thể tìm đúng dòng.",
-        "en": "One vector per dimensions/metrics record - the path by which a question about a specific number finds the right row."
+        "en": "One vector per dimensions/metrics record - the path by which a question about a specific number finds the right row.",
+        "fr": "Un vecteur par enregistrement dimensions/métriques - le chemin par lequel une question sur un chiffre précis trouve la bonne ligne."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/qdrant.py", "from": 58, "to": 58,
-                "anchor": "COLLECTION_RECORDS = \"records\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 58,
+        "to": 58,
+        "anchor": "COLLECTION_RECORDS = \"records\""
+      }
     },
     {
-      "store": "qdrant", "name": "table_summaries",
+      "store": "qdrant",
+      "name": "table_summaries",
       "owner": "storage-layer",
-      "writers": ["index-write", "ingest-intake", "http-contracts"],
-      "readers": ["query-route-retrieve", "query-answer"],
+      "writers": [
+        "index-write",
+        "ingest-intake",
+        "http-contracts"
+      ],
+      "readers": [
+        "query-route-retrieve",
+        "query-answer"
+      ],
       "note": {
         "vi": "Tóm tắt mỗi bảng để tìm được bảng trước khi tìm dòng. Tóm tắt mơ hồ chính là nguyên nhân của lần trượt a1 được ghi trong Phase 4.",
-        "en": "A summary per table, so the table is found before the row. A vague summary is the cause of the one documented Phase 4 miss, a1."
+        "en": "A summary per table, so the table is found before the row. A vague summary is the cause of the one documented Phase 4 miss, a1.",
+        "fr": "Un résumé par tableau, pour que le tableau soit trouvé avant la ligne. Un résumé vague est la cause de l'unique échec documenté de la Phase 4, a1."
       },
-      "cite": { "kind": "anchor", "file": "tablerag/storage/qdrant.py", "from": 59, "to": 59,
-                "anchor": "COLLECTION_TABLE_SUMMARIES = \"table_summaries\"" }
+      "cite": {
+        "kind": "anchor",
+        "file": "tablerag/storage/qdrant.py",
+        "from": 59,
+        "to": 59,
+        "anchor": "COLLECTION_TABLE_SUMMARIES = \"table_summaries\""
+      }
     }
   ]
 }

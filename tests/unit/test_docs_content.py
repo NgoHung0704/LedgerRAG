@@ -32,6 +32,11 @@ VN_LETTERS = re.compile(
 
 VERBATIM_FIELDS = {"anchor", "code", "decl", "file"}
 
+# The languages the page is written in. Adding one here is what forces every
+# content file to carry it — a language half-added is worse than none, because
+# the reader who picked it gets a page that silently falls back.
+LANGS = ("vi", "en", "fr")
+
 MIN_ANCHOR = 12
 
 
@@ -40,13 +45,13 @@ def test_every_content_file_parses():
     assert files, f"no content found under {CONTENT}"
 
 
-def test_localized_strings_have_both_languages():
+def test_localized_strings_have_every_language():
     for path, node in walk(load_all()):
         if not isinstance(node, dict):
             continue
-        if "vi" not in node and "en" not in node:
+        if not any(lang in node for lang in LANGS):
             continue
-        for lang in ("vi", "en"):
+        for lang in LANGS:
             value = node.get(lang)
             assert isinstance(value, str) and value.strip(), (
                 f"{path}: localized string is missing a non-empty '{lang}' — "
@@ -329,3 +334,41 @@ def test_no_reader_visible_string_lives_in_the_site_code():
         "these strings must come from docs-site/content/:\n  "
         + "\n  ".join(problems))
 
+
+# A number written into prose is a claim like any other, but it carries no
+# citation, so nothing above catches it when it goes stale. This one did: the
+# page said 63 endpoints while the code had 66, through several commits that
+# the other guards passed cleanly.
+ENDPOINT_COUNT = re.compile(
+    r"\b(\d+)\s+(?:endpoints?|points de terminaison)\b")
+
+
+def test_prose_endpoint_counts_match_the_code():
+    real = len(source_endpoints())
+    wrong = []
+    for path, node in walk(load_all()):
+        if not isinstance(node, dict):
+            continue
+        for lang in LANGS:
+            text = node.get(lang)
+            if not isinstance(text, str):
+                continue
+            for hit in ENDPOINT_COUNT.finditer(text):
+                if int(hit.group(1)) != real:
+                    wrong.append(f"{path}.{lang} says {hit.group(0)!r}")
+    assert not wrong, (
+        f"the code declares {real} endpoints, but the page says otherwise:\n  "
+        + "\n  ".join(wrong)
+        + "\n(a count written in prose carries no citation, so only this "
+          "guard can keep it honest)")
+
+
+def test_every_operation_carries_a_citation():
+    """A documented endpoint with no pointer into the code is the drift this
+    page exists to prevent. Four of them reached the site before this guard
+    existed, and the contract panel crashed on the first one it tried to link."""
+    naked = [f"{op['method']} {op['path']} (on {edge['id']})"
+             for edge in load("edges.json")["edges"]
+             for op in edge.get("operations", [])
+             if not isinstance(op.get("cite"), dict)]
+    assert not naked, "these operations cite nothing:\n  " + "\n  ".join(naked)

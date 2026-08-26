@@ -8,7 +8,8 @@
       "line": 16,
       "note": {
         "vi": "Ô cắm có từ Phase 1 dưới dạng no-op; Phase 4 điền vào. Tắt thì không có tác dụng phụ nào.",
-        "en": "The slot has existed since Phase 1 as a no-op; Phase 4 fills it. Disabled, it has zero side effects."
+        "en": "The slot has existed since Phase 1 as a no-op; Phase 4 fills it. Disabled, it has zero side effects.",
+        "fr": "L'emplacement existe depuis la Phase 1 sous forme inerte ; la Phase 4 le remplit. Désactivé, il n'a aucun effet de bord."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 99,
       "note": {
         "vi": "Mọi con số trong câu trả lời phải tìm lại được trong ngữ cảnh đã truy hồi.",
-        "en": "Every number in the answer must be found again in the retrieved context."
+        "en": "Every number in the answer must be found again in the retrieved context.",
+        "fr": "Chaque chiffre de la réponse doit se retrouver dans le contexte récupéré."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 64,
       "note": {
         "vi": "Rút số ra khỏi câu trả lời, có nhận diện định dạng theo locale.",
-        "en": "Pulls the numbers out of the answer, locale-aware."
+        "en": "Pulls the numbers out of the answer, locale-aware.",
+        "fr": "Extrait les chiffres de la réponse, en tenant compte de la locale."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 78,
       "note": {
         "vi": "Danh sách trắng phép tính: một con số suy ra được từ nguồn thì không bị coi là bịa.",
-        "en": "The arithmetic whitelist: a number derivable from the sources is not an invention."
+        "en": "The arithmetic whitelist: a number derivable from the sources is not an invention.",
+        "fr": "La liste blanche arithmétique : un chiffre déductible des sources n'est pas une invention."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 137,
       "note": {
         "vi": "Locale khai báo luôn thắng; chỉ khi không khai báo mới suy đoán, và suy đoán rất dè dặt.",
-        "en": "The declared locale always wins; inference only happens when none is given, and it is deliberately conservative."
+        "en": "The declared locale always wins; inference only happens when none is given, and it is deliberately conservative.",
+        "fr": "La locale déclarée l'emporte toujours ; l'inférence n'intervient qu'à défaut, et elle est délibérément prudente."
       }
     }
   ],
@@ -58,28 +63,32 @@
         "id": "ans",
         "label": {
           "vi": "Câu trả lời đã sinh",
-          "en": "The generated answer"
+          "en": "The generated answer",
+          "fr": "La réponse générée"
         }
       },
       {
         "id": "nums",
         "label": {
           "vi": "Rút số trong câu trả lời",
-          "en": "Extract the answer's numbers"
+          "en": "Extract the answer's numbers",
+          "fr": "Extraire les chiffres de la réponse"
         }
       },
       {
         "id": "ctx",
         "label": {
           "vi": "Rút số trong ngữ cảnh",
-          "en": "Extract the context's numbers"
+          "en": "Extract the context's numbers",
+          "fr": "Extraire les chiffres du contexte"
         }
       },
       {
         "id": "match",
         "label": {
           "vi": "Đối chiếu",
-          "en": "Match them"
+          "en": "Match them",
+          "fr": "Les apparier"
         }
       }
     ],
@@ -109,7 +118,8 @@
         "to": "x-ok",
         "label": {
           "vi": "tìm thấy, hoặc suy ra được",
-          "en": "found, or derivable"
+          "en": "found, or derivable",
+          "fr": "trouvé, ou déductible"
         }
       },
       {
@@ -117,7 +127,8 @@
         "to": "x-flag",
         "label": {
           "vi": "không tìm thấy",
-          "en": "not found"
+          "en": "not found",
+          "fr": "introuvable"
         }
       }
     ],
@@ -126,7 +137,8 @@
         "id": "g",
         "label": {
           "vi": "Con số này có trong nguồn không?",
-          "en": "Is this number in the sources?"
+          "en": "Is this number in the sources?",
+          "fr": "Ce chiffre figure-t-il dans les sources ?"
         }
       }
     ],
@@ -135,14 +147,16 @@
         "id": "x-ok",
         "label": {
           "vi": "Trả lời như bình thường",
-          "en": "Answered normally"
+          "en": "Answered normally",
+          "fr": "Répondu normalement"
         }
       },
       {
         "id": "x-flag",
         "label": {
           "vi": "Gắn cờ chưa kiểm chứng được, hiển thị badge",
-          "en": "Flagged as unverified, shown with a badge"
+          "en": "Flagged as unverified, shown with a badge",
+          "fr": "Signalé comme non vérifié, affiché avec un badge"
         }
       }
     ]
@@ -151,7 +165,8 @@
     {
       "caption": {
         "vi": "Chuỗi gốc không bao giờ bị sửa — cái gốc luôn còn để đối chiếu.",
-        "en": "The raw string is never modified - the original always remains to check against."
+        "en": "The raw string is never modified - the original always remains to check against.",
+        "fr": "La chaîne brute n'est jamais modifiée - l'original reste toujours disponible pour vérification."
       },
       "cite": {
         "kind": "excerpt",
@@ -166,7 +181,8 @@
     {
       "text": {
         "vi": "Đây là mắt xích cuối của lời hứa \"không bao giờ có một con số không nguồn\".",
-        "en": "This is the last link of the promise that there is never a number without a source."
+        "en": "This is the last link of the promise that there is never a number without a source.",
+        "fr": "C'est le dernier maillon de la promesse qu'il n'y a jamais de chiffre sans source."
       },
       "cite": {
         "kind": "anchor",
@@ -179,7 +195,8 @@
     {
       "text": {
         "vi": "\"1,234\" một mình có thể là 1234 hoặc 1.234; khi thật sự không quyết được thì đánh dấu mơ hồ chứ không đoán bừa.",
-        "en": "\"1,234\" alone could be 1234 or 1.234; when it genuinely cannot be decided the result is marked ambiguous rather than guessed."
+        "en": "\"1,234\" alone could be 1234 or 1.234; when it genuinely cannot be decided the result is marked ambiguous rather than guessed.",
+        "fr": "« 1,234 » seul peut valoir 1234 ou 1,234 ; quand c'est réellement indécidable, le résultat est marqué ambigu plutôt que deviné."
       },
       "cite": {
         "kind": "anchor",

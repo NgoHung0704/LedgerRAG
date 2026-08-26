@@ -69,6 +69,8 @@ export function ComponentGrid(
     <div className="layer layer-grid">
       <PhaseFilter lang={lang} route={route} go={go} />
 
+      <p className="hint">{pick(content.ui.hints.selectComponent, lang)}</p>
+
       {anyLit ? null : (
         <p className="empty">{pick(content.ui.empty.noPhaseMatch, lang)}</p>
       )}

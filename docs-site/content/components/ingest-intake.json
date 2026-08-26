@@ -8,7 +8,8 @@
       "line": 383,
       "note": {
         "vi": "Điểm vào của ingestion. Idempotent theo doc_id: chạy lại xoá kết quả cũ trước.",
-        "en": "The ingestion entry point. Idempotent by doc_id: a rerun deletes the previous output first."
+        "en": "The ingestion entry point. Idempotent by doc_id: a rerun deletes the previous output first.",
+        "fr": "Le point d'entrée de l'ingestion. Idempotent par doc_id : une réexécution supprime d'abord le résultat précédent."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 187,
       "note": {
         "vi": "Một trang: bố cục, vùng, bảng, hình, confidence, chunk.",
-        "en": "One page: layout, regions, tables, figures, confidence, chunks."
+        "en": "One page: layout, regions, tables, figures, confidence, chunks.",
+        "fr": "Une page : mise en page, régions, tableaux, figures, confiance, fragments."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 88,
       "note": {
         "vi": "Quyết định có tin lưới từ text-layer hay phải nhờ VLM đọc lại.",
-        "en": "Decides whether the text-layer grid can be trusted or the VLM has to read it."
+        "en": "Decides whether the text-layer grid can be trusted or the VLM has to read it.",
+        "fr": "Décide si la grille de la couche de texte est fiable ou si le VLM doit la lire."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 82,
       "note": {
         "vi": "Office sang PDF bằng LibreOffice trước khi ingest, để mọi thứ sau đó không đổi.",
-        "en": "Office to PDF through LibreOffice before ingestion, so nothing downstream changes."
+        "en": "Office to PDF through LibreOffice before ingestion, so nothing downstream changes.",
+        "fr": "Office vers PDF via LibreOffice avant l'ingestion, pour que rien ne change en aval."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 135,
       "note": {
         "vi": "Một vòng quét thư mục nạp: tìm PDF ổn định, tạo KB nếu thiếu, xếp hàng, lưu trữ.",
-        "en": "One sweep of the consume directory: find stable PDFs, create the KB if missing, queue, archive."
+        "en": "One sweep of the consume directory: find stable PDFs, create the KB if missing, queue, archive.",
+        "fr": "Un passage sur le dossier de dépôt : repérer les PDF stables, créer la base si besoin, mettre en file, archiver."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 68,
       "note": {
         "vi": "Chờ tệp ngừng lớn lên rồi mới nạp — nếu không sẽ nạp một PDF đang copy dở.",
-        "en": "Waits for the file to stop growing before ingesting - otherwise it ingests a half-copied PDF."
+        "en": "Waits for the file to stop growing before ingesting - otherwise it ingests a half-copied PDF.",
+        "fr": "Attend que le fichier cesse de grossir avant d'ingérer - sinon il ingère un PDF copié à moitié."
       }
     }
   ],
@@ -68,28 +74,32 @@
         "id": "in",
         "label": {
           "vi": "PDF hoặc file Office",
-          "en": "A PDF or an Office file"
+          "en": "A PDF or an Office file",
+          "fr": "Un PDF ou un fichier Office"
         }
       },
       {
         "id": "convert",
         "label": {
           "vi": "Chuyển sang PDF nếu cần",
-          "en": "Convert to PDF if needed"
+          "en": "Convert to PDF if needed",
+          "fr": "Convertir en PDF si nécessaire"
         }
       },
       {
         "id": "purge",
         "label": {
           "vi": "Xoá kết quả lần trước",
-          "en": "Delete the previous output"
+          "en": "Delete the previous output",
+          "fr": "Supprimer le résultat précédent"
         }
       },
       {
         "id": "pages",
         "label": {
           "vi": "Chạy từng trang",
-          "en": "Run page by page"
+          "en": "Run page by page",
+          "fr": "Traiter page par page"
         }
       }
     ],
@@ -115,7 +125,8 @@
         "to": "x-done",
         "label": {
           "vi": "mọi trang xong",
-          "en": "every page finished"
+          "en": "every page finished",
+          "fr": "toutes les pages terminées"
         }
       },
       {
@@ -123,7 +134,8 @@
         "to": "x-retry",
         "label": {
           "vi": "lỗi tạm thời",
-          "en": "a transient error"
+          "en": "a transient error",
+          "fr": "une erreur passagère"
         }
       },
       {
@@ -131,7 +143,8 @@
         "to": "x-failed",
         "label": {
           "vi": "lỗi vĩnh viễn",
-          "en": "a permanent error"
+          "en": "a permanent error",
+          "fr": "une erreur définitive"
         }
       }
     ],
@@ -140,7 +153,8 @@
         "id": "g-fail",
         "label": {
           "vi": "Lỗi này thử lại được không?",
-          "en": "Is this error worth retrying?"
+          "en": "Is this error worth retrying?",
+          "fr": "Cette erreur mérite-t-elle une nouvelle tentative ?"
         }
       }
     ],
@@ -149,21 +163,24 @@
         "id": "x-done",
         "label": {
           "vi": "done",
-          "en": "done"
+          "en": "done",
+          "fr": "done"
         }
       },
       {
         "id": "x-retry",
         "label": {
           "vi": "Xếp lại hàng đợi",
-          "en": "Back on the queue"
+          "en": "Back on the queue",
+          "fr": "De retour dans la file"
         }
       },
       {
         "id": "x-failed",
         "label": {
           "vi": "failed",
-          "en": "failed"
+          "en": "failed",
+          "fr": "failed"
         }
       }
     ]
@@ -172,7 +189,8 @@
     {
       "caption": {
         "vi": "Một tệp đang được copy vào thì chưa phải là tệp.",
-        "en": "A file still being copied in is not yet a file."
+        "en": "A file still being copied in is not yet a file.",
+        "fr": "Un fichier encore en cours de copie n'est pas encore un fichier."
       },
       "cite": {
         "kind": "excerpt",
@@ -187,7 +205,8 @@
     {
       "text": {
         "vi": "Worker bị giết giữa chừng rồi việc được giao lại sẽ không sinh bản trùng, vì chạy lại luôn dọn trước.",
-        "en": "A worker killed mid-job and redelivered never produces duplicates, because a rerun always purges first."
+        "en": "A worker killed mid-job and redelivered never produces duplicates, because a rerun always purges first.",
+        "fr": "Un worker tué en cours de tâche puis relivré ne produit jamais de doublons, parce qu'une réexécution purge toujours d'abord."
       },
       "cite": {
         "kind": "anchor",
@@ -200,7 +219,8 @@
     {
       "text": {
         "vi": "Đi vòng qua PDF chứ không đọc XML gốc, vì nguyên tắc số 3 đòi mọi element phải có ảnh của nơi nó sinh ra.",
-        "en": "It goes through PDF rather than reading the native XML, because principle 3 demands every element have an image of where it came from."
+        "en": "It goes through PDF rather than reading the native XML, because principle 3 demands every element have an image of where it came from.",
+        "fr": "Il passe par le PDF au lieu de lire le XML natif, parce que le principe 3 exige que chaque élément ait une image de sa provenance."
       },
       "cite": {
         "kind": "anchor",
@@ -213,7 +233,8 @@
     {
       "text": {
         "vi": "Vòng lặp polling đơn giản, cố tình không thêm phụ thuộc theo dõi filesystem.",
-        "en": "A plain polling loop, deliberately taking on no filesystem-watch dependency."
+        "en": "A plain polling loop, deliberately taking on no filesystem-watch dependency.",
+        "fr": "Une simple boucle d'interrogation, qui refuse délibérément toute dépendance de surveillance du système de fichiers."
       },
       "cite": {
         "kind": "anchor",

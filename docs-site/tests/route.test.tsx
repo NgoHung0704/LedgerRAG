@@ -26,6 +26,25 @@ describe("route", () => {
     expect(r.lang).toBe("en");
   });
 
+  it("round-trips a sub-route on a view that has no id", () => {
+    // The map has no id of its own, so selecting a wire produced
+    // #/vi/map/edge/frontend~api, which parsed back as id "edge" and NO
+    // selection — the panel never opened.
+    const r = parseRoute("#/vi/map/-/edge/frontend~api");
+    expect(r.id).toBeNull();
+    expect(r.sub).toEqual({ kind: "edge", id: "frontend~api" });
+    expect(formatRoute(r)).toBe("#/vi/map/-/edge/frontend~api");
+    expect(formatRoute({ lang: "vi", view: "map", id: null, phase: null,
+                         sub: { kind: "edge", id: "frontend~api" } }))
+      .toBe("#/vi/map/-/edge/frontend~api");
+  });
+
+  it("peels a sub-route off a view that has no id", () => {
+    const r = popOne(parseRoute("#/vi/map/-/edge/frontend~api"));
+    expect(r.sub).toBeNull();
+    expect(formatRoute(r)).toBe("#/vi/map");
+  });
+
   it("keeps the phase filter across a peel", () => {
     const r = popOne(parseRoute("#/vi/c/ingest-tables?phase=p2"));
     expect(r.phase).toBe("p2");

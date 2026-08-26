@@ -8,7 +8,8 @@
       "line": 145,
       "note": {
         "vi": "Đo hình học các thanh của biểu đồ vector — toạ độ là sự thật đo được.",
-        "en": "Measures the geometry of a vector chart's bars - the coordinates are measurable truth."
+        "en": "Measures the geometry of a vector chart's bars - the coordinates are measurable truth.",
+        "fr": "Mesure la géométrie des barres d'un graphique vectoriel - les coordonnées sont une vérité mesurable."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 200,
       "note": {
         "vi": "So số model đọc được với tỉ lệ các thanh mang chúng.",
-        "en": "Compares the numbers the model read against the proportions of the bars carrying them."
+        "en": "Compares the numbers the model read against the proportions of the bars carrying them.",
+        "fr": "Compare les chiffres lus par le modèle aux proportions des barres qui les portent."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 87,
       "note": {
         "vi": "Kết luận có nên đưa phần đọc được vào chỉ mục hay không.",
-        "en": "Decides whether what was read is fit to enter the index."
+        "en": "Decides whether what was read is fit to enter the index.",
+        "fr": "Décide si ce qui a été lu mérite d'entrer dans l'index."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 123,
       "note": {
         "vi": "Bảng màu thật sự của một hình vector.",
-        "en": "The actual palette a vector figure uses."
+        "en": "The actual palette a vector figure uses.",
+        "fr": "La palette réellement utilisée par une figure vectorielle."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 78,
       "note": {
         "vi": "Đặt tên cho màu, vì người ta hỏi \"vùng màu đỏ\" chứ không hỏi mã hex.",
-        "en": "Names a colour, because people ask for \"the red zone\", not for a hex code."
+        "en": "Names a colour, because people ask for \"the red zone\", not for a hex code.",
+        "fr": "Nomme une couleur, parce qu'on demande « la zone rouge », pas un code hexadécimal."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 185,
       "note": {
         "vi": "Nhận ra khi màu chính là thông tin, không phải trang trí.",
-        "en": "Recognises when the colour is the information rather than decoration."
+        "en": "Recognises when the colour is the information rather than decoration.",
+        "fr": "Reconnaît quand la couleur est l'information plutôt qu'une décoration."
       }
     }
   ],
@@ -68,28 +74,32 @@
         "id": "fig",
         "label": {
           "vi": "Một hình",
-          "en": "A figure"
+          "en": "A figure",
+          "fr": "Une figure"
         }
       },
       {
         "id": "read",
         "label": {
           "vi": "VLM đọc số trên hình",
-          "en": "The VLM reads the numbers off it"
+          "en": "The VLM reads the numbers off it",
+          "fr": "Le VLM y lit les chiffres"
         }
       },
       {
         "id": "measure",
         "label": {
           "vi": "Đo hình học các thanh",
-          "en": "Measure the bar geometry"
+          "en": "Measure the bar geometry",
+          "fr": "Mesurer la géométrie des barres"
         }
       },
       {
         "id": "palette",
         "label": {
           "vi": "Đo bảng màu",
-          "en": "Measure the palette"
+          "en": "Measure the palette",
+          "fr": "Mesurer la palette"
         }
       }
     ],
@@ -115,7 +125,8 @@
         "to": "palette",
         "label": {
           "vi": "số khớp tỉ lệ thanh",
-          "en": "the numbers match the bars"
+          "en": "the numbers match the bars",
+          "fr": "les chiffres correspondent aux barres"
         }
       },
       {
@@ -123,7 +134,8 @@
         "to": "x-drop",
         "label": {
           "vi": "không khớp",
-          "en": "they do not match"
+          "en": "they do not match",
+          "fr": "ils ne correspondent pas"
         }
       },
       {
@@ -136,7 +148,8 @@
         "id": "g-agree",
         "label": {
           "vi": "Số đọc được có tỉ lệ với thanh không?",
-          "en": "Are the numbers proportional to the bars?"
+          "en": "Are the numbers proportional to the bars?",
+          "fr": "Les chiffres sont-ils proportionnels aux barres ?"
         }
       }
     ],
@@ -145,14 +158,16 @@
         "id": "x-index",
         "label": {
           "vi": "Đưa vào chỉ mục kèm mô tả màu",
-          "en": "Indexed, with the colour description"
+          "en": "Indexed, with the colour description",
+          "fr": "Indexé, avec la description des couleurs"
         }
       },
       {
         "id": "x-drop",
         "label": {
           "vi": "Không index phần số đó",
-          "en": "Those numbers are not indexed"
+          "en": "Those numbers are not indexed",
+          "fr": "Ces chiffres ne sont pas indexés"
         }
       }
     ]
@@ -161,7 +176,8 @@
     {
       "caption": {
         "vi": "Màu là nghĩa không tồn tại ở bất kỳ text layer nào.",
-        "en": "Colour is meaning that exists in no text layer at all."
+        "en": "Colour is meaning that exists in no text layer at all.",
+        "fr": "La couleur porte un sens qui n'existe dans aucune couche de texte."
       },
       "cite": {
         "kind": "excerpt",
@@ -176,7 +192,8 @@
     {
       "text": {
         "vi": "Chữ trên thanh thường là text viền nên chỉ VLM đọc được, nhưng chính các thanh thì đo được — đó là cách kiểm chéo.",
-        "en": "The values printed on the bars are usually outlined text so only a VLM can read them, but the bars themselves are measurable - that is the cross-check."
+        "en": "The values printed on the bars are usually outlined text so only a VLM can read them, but the bars themselves are measurable - that is the cross-check.",
+        "fr": "Les valeurs imprimées sur les barres sont le plus souvent du texte vectorisé que seul un VLM sait lire, mais les barres, elles, se mesurent - c'est le recoupement."
       },
       "cite": {
         "kind": "anchor",
@@ -189,7 +206,8 @@
     {
       "text": {
         "vi": "Một cột trạng thái nói \"đạt\" bằng cách có màu xanh; không mô tả màu thì thông tin đó biến mất khỏi chỉ mục.",
-        "en": "A status column says \"compliant\" by being green; without describing the colour that information never reaches the index."
+        "en": "A status column says \"compliant\" by being green; without describing the colour that information never reaches the index.",
+        "fr": "Une colonne d'état dit « conforme » en étant verte ; sans description de la couleur, cette information n'atteint jamais l'index."
       },
       "cite": {
         "kind": "anchor",

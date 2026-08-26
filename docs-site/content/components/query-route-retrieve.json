@@ -8,7 +8,8 @@
       "line": 32,
       "note": {
         "vi": "Router của Phase 1: đúng một KB, không gọi model.",
-        "en": "The Phase 1 router: exactly one knowledge base, no model call."
+        "en": "The Phase 1 router: exactly one knowledge base, no model call.",
+        "fr": "Le routeur de la Phase 1 : exactement une base de connaissances, aucun appel de modèle."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 89,
       "note": {
         "vi": "Router Phase 5: đọc mô tả từng KB, chọn được nhiều, hỏng thì suy biến về tất cả.",
-        "en": "The Phase 5 router: reads each KB description, may select several, and on failure degrades to all."
+        "en": "The Phase 5 router: reads each KB description, may select several, and on failure degrades to all.",
+        "fr": "Le routeur de la Phase 5 : lit la description de chaque base, peut en choisir plusieurs, et en cas d'échec se rabat sur toutes."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 63,
       "note": {
         "vi": "Đọc lựa chọn của model một cách chịu lỗi — model trả rác cũng không được làm chết truy vấn.",
-        "en": "Reads the model's choice forgivingly - a garbled reply may not kill the query."
+        "en": "Reads the model's choice forgivingly - a garbled reply may not kill the query.",
+        "fr": "Lit le choix du modèle avec indulgence - une réponse abîmée ne doit pas tuer la requête."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 17,
       "note": {
         "vi": "Dense cộng sparse, hợp nhất RRF trên cả ba collection.",
-        "en": "Dense plus sparse, fused with RRF across all three collections."
+        "en": "Dense plus sparse, fused with RRF across all three collections.",
+        "fr": "Dense plus creux, fusionnés par RRF sur les trois collections."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 131,
       "note": {
         "vi": "Xếp lại bằng cross-encoder khi vai trò reranker bật được.",
-        "en": "Reorders with the cross-encoder when the reranker role is available."
+        "en": "Reorders with the cross-encoder when the reranker role is available.",
+        "fr": "Réordonne avec le cross-encodeur quand le rôle reranker est disponible."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 31,
       "note": {
         "vi": "Cho mỗi tài liệu khối tốt nhất của nó trước, để một tài liệu dài không chiếm hết đầu ngữ cảnh.",
-        "en": "Gives each document its best block first, so one long document cannot own the head of the context."
+        "en": "Gives each document its best block first, so one long document cannot own the head of the context.",
+        "fr": "Donne d'abord à chaque document son meilleur bloc, pour qu'un long document ne s'approprie pas la tête du contexte."
       }
     },
     {
@@ -68,7 +74,8 @@
       "line": 48,
       "note": {
         "vi": "Vector sparse tính tại chỗ bằng Python thuần — không dựng thêm máy chủ suy luận nào.",
-        "en": "The sparse vector computed here in pure Python - no extra inference server is stood up."
+        "en": "The sparse vector computed here in pure Python - no extra inference server is stood up.",
+        "fr": "Le vecteur creux calculé ici en Python pur - aucun serveur d'inférence supplémentaire n'est monté."
       }
     }
   ],
@@ -78,42 +85,48 @@
         "id": "q",
         "label": {
           "vi": "Câu hỏi",
-          "en": "The question"
+          "en": "The question",
+          "fr": "La question"
         }
       },
       {
         "id": "route",
         "label": {
           "vi": "Chọn KB",
-          "en": "Choose the knowledge bases"
+          "en": "Choose the knowledge bases",
+          "fr": "Choisir les bases de connaissances"
         }
       },
       {
         "id": "dense",
         "label": {
           "vi": "Tìm dense",
-          "en": "Dense search"
+          "en": "Dense search",
+          "fr": "Recherche dense"
         }
       },
       {
         "id": "sparse",
         "label": {
           "vi": "Tìm sparse",
-          "en": "Sparse search"
+          "en": "Sparse search",
+          "fr": "Recherche creuse"
         }
       },
       {
         "id": "rrf",
         "label": {
           "vi": "Hợp nhất RRF",
-          "en": "RRF fusion"
+          "en": "RRF fusion",
+          "fr": "Fusion RRF"
         }
       },
       {
         "id": "rank",
         "label": {
           "vi": "Xếp lại",
-          "en": "Reorder"
+          "en": "Reorder",
+          "fr": "Réordonner"
         }
       }
     ],
@@ -131,7 +144,8 @@
         "to": "dense",
         "label": {
           "vi": "chọn được KB",
-          "en": "knowledge bases chosen"
+          "en": "knowledge bases chosen",
+          "fr": "bases de connaissances choisies"
         }
       },
       {
@@ -139,7 +153,8 @@
         "to": "all",
         "label": {
           "vi": "router hỏng",
-          "en": "the router failed"
+          "en": "the router failed",
+          "fr": "le routeur a échoué"
         }
       },
       {
@@ -147,7 +162,8 @@
         "to": "dense",
         "label": {
           "vi": "tìm TẤT CẢ KB",
-          "en": "search ALL knowledge bases"
+          "en": "search ALL knowledge bases",
+          "fr": "chercher dans TOUTES les bases"
         }
       },
       {
@@ -171,7 +187,8 @@
         "to": "rank",
         "label": {
           "vi": "reranker gọi được",
-          "en": "the reranker answers"
+          "en": "the reranker answers",
+          "fr": "le reranker répond"
         }
       },
       {
@@ -179,7 +196,8 @@
         "to": "x-fallback",
         "label": {
           "vi": "tắt hoặc không với tới được",
-          "en": "off, or unreachable"
+          "en": "off, or unreachable",
+          "fr": "désactivé, ou injoignable"
         }
       },
       {
@@ -192,14 +210,16 @@
         "id": "g-route",
         "label": {
           "vi": "Router có chọn được KB nào không?",
-          "en": "Did the router pick any knowledge base?"
+          "en": "Did the router pick any knowledge base?",
+          "fr": "Le routeur a-t-il choisi une base ?"
         }
       },
       {
         "id": "g-rerank",
         "label": {
           "vi": "Vai trò reranker có dùng được không?",
-          "en": "Is the reranker role usable?"
+          "en": "Is the reranker role usable?",
+          "fr": "Le rôle reranker est-il utilisable ?"
         }
       }
     ],
@@ -208,21 +228,24 @@
         "id": "x-ranked",
         "label": {
           "vi": "Ứng viên đã xếp hạng",
-          "en": "The ranked candidates"
+          "en": "The ranked candidates",
+          "fr": "Les candidats classés"
         }
       },
       {
         "id": "x-fallback",
         "label": {
           "vi": "Thứ tự dự phòng đa dạng theo tài liệu",
-          "en": "The document-diversified fallback ordering"
+          "en": "The document-diversified fallback ordering",
+          "fr": "L'ordre de repli diversifié par document"
         }
       },
       {
         "id": "all",
         "label": {
           "vi": "Suy biến về tìm tất cả",
-          "en": "Degrade to searching all"
+          "en": "Degrade to searching all",
+          "fr": "Se rabattre sur une recherche dans toutes"
         }
       }
     ]
@@ -231,7 +254,8 @@
     {
       "caption": {
         "vi": "Router Phase 1 nằm sẵn ở đúng vị trí cuối cùng của nó.",
-        "en": "The Phase 1 router, already sitting in its final slot."
+        "en": "The Phase 1 router, already sitting in its final slot.",
+        "fr": "Le routeur de la Phase 1, déjà à son emplacement définitif."
       },
       "cite": {
         "kind": "excerpt",
@@ -246,7 +270,8 @@
     {
       "text": {
         "vi": "Cô lập KB và định tuyến là ý tưởng nền của sản phẩm, không phải một tính năng thêm vào.",
-        "en": "KB isolation plus routing is the product's founding idea, not a feature added on top."
+        "en": "KB isolation plus routing is the product's founding idea, not a feature added on top.",
+        "fr": "L'isolement des bases et le routage sont l'idée fondatrice du produit, pas une fonctionnalité ajoutée après coup."
       },
       "cite": {
         "kind": "anchor",
@@ -259,7 +284,8 @@
     {
       "text": {
         "vi": "Thay router được dễ vì mọi thứ phía sau vốn đã lọc theo routed_kb_ids.",
-        "en": "Swapping the router was plug-in only because everything downstream already filters on routed_kb_ids."
+        "en": "Swapping the router was plug-in only because everything downstream already filters on routed_kb_ids.",
+        "fr": "Remplacer le routeur n'a été qu'un branchement parce que tout l'aval filtre déjà sur routed_kb_ids."
       },
       "cite": {
         "kind": "anchor",
@@ -272,7 +298,8 @@
     {
       "text": {
         "vi": "Không dựng thêm máy chủ suy luận chỉ để khớp từ khoá: vector sparse tính bằng Python thuần trên CPU.",
-        "en": "No extra inference server just for lexical matching: the sparse vectors are computed in pure Python on the CPU."
+        "en": "No extra inference server just for lexical matching: the sparse vectors are computed in pure Python on the CPU.",
+        "fr": "Aucun serveur d'inférence en plus juste pour l'appariement lexical : les vecteurs creux sont calculés en Python pur sur le processeur."
       },
       "cite": {
         "kind": "anchor",
@@ -287,7 +314,8 @@
     {
       "text": {
         "vi": "Hai thang lương cùng hình dạng trong một tài liệu: tóm tắt tự động mơ hồ không phân biệt nổi. Đây là ca khó của truy hồi.",
-        "en": "Two same-shaped pay scales in one document: vague auto-summaries cannot tell them apart. A retrieval hard case."
+        "en": "Two same-shaped pay scales in one document: vague auto-summaries cannot tell them apart. A retrieval hard case.",
+        "fr": "Deux grilles salariales de même forme dans un même document : des résumés automatiques vagues ne les distinguent pas. Un cas difficile de recherche."
       },
       "cite": {
         "kind": "anchor",

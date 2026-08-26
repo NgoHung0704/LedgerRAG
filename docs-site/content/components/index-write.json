@@ -8,7 +8,8 @@
       "line": 49,
       "note": {
         "vi": "Cắt theo đoạn văn, chồng lấn khoảng 10%, tất định và không phụ thuộc gì.",
-        "en": "Cuts by paragraph with about 10% overlap, deterministic and dependency-free."
+        "en": "Cuts by paragraph with about 10% overlap, deterministic and dependency-free.",
+        "fr": "Découpe par paragraphe avec environ 10 % de recouvrement, de façon déterministe et sans dépendance."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 101,
       "note": {
         "vi": "Áp chỉnh sửa tay vào Postgres rồi dựng lại vector của riêng element đó.",
-        "en": "Applies a hand edit in Postgres and rebuilds that element's vectors alone."
+        "en": "Applies a hand edit in Postgres and rebuilds that element's vectors alone.",
+        "fr": "Applique une correction manuelle dans Postgres et reconstruit les vecteurs de ce seul élément."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 895,
       "note": {
         "vi": "Dựng lại chunk, bản ghi và vector cho một element.",
-        "en": "Rebuilds the chunks, records and vectors for one element."
+        "en": "Rebuilds the chunks, records and vectors for one element.",
+        "fr": "Reconstruit les fragments, les enregistrements et les vecteurs d'un élément."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 292,
       "note": {
         "vi": "Lấy lại lần sửa cuối của một element mà không đụng tới các chỉnh sửa khác.",
-        "en": "Takes back one element's last save without touching any other correction."
+        "en": "Takes back one element's last save without touching any other correction.",
+        "fr": "Annule le dernier enregistrement d'un élément sans toucher aux autres corrections."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 668,
       "note": {
         "vi": "\"Đây là hai bảng\": mỗi phần được render lại từ PDF và có bbox, crop riêng.",
-        "en": "\"These are two tables\": each part is re-rendered from the PDF with its own bbox and crop."
+        "en": "\"These are two tables\": each part is re-rendered from the PDF with its own bbox and crop.",
+        "fr": "« Ce sont deux tableaux » : chaque partie est re-rendue depuis le PDF avec sa propre boîte englobante et sa propre découpe."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 113,
       "note": {
         "vi": "Migration Phase 4: dựng lại collection theo schema hybrid và embed lại tất cả từ Postgres.",
-        "en": "The Phase 4 migration: recreate the collections with the hybrid schema and re-embed everything from Postgres."
+        "en": "The Phase 4 migration: recreate the collections with the hybrid schema and re-embed everything from Postgres.",
+        "fr": "La migration de la Phase 4 : recréer les collections avec le schéma hybride et réencoder tout depuis Postgres."
       }
     }
   ],
@@ -68,35 +74,40 @@
         "id": "edit",
         "label": {
           "vi": "Một chỉnh sửa đã lưu",
-          "en": "A saved correction"
+          "en": "A saved correction",
+          "fr": "Une correction enregistrée"
         }
       },
       {
         "id": "pg",
         "label": {
           "vi": "Ghi Postgres",
-          "en": "Write Postgres"
+          "en": "Write Postgres",
+          "fr": "Écrire dans Postgres"
         }
       },
       {
         "id": "chunk",
         "label": {
           "vi": "Cắt lại chunk",
-          "en": "Re-chunk"
+          "en": "Re-chunk",
+          "fr": "Refragmenter"
         }
       },
       {
         "id": "embed",
         "label": {
           "vi": "Sinh vector",
-          "en": "Embed"
+          "en": "Embed",
+          "fr": "Encoder"
         }
       },
       {
         "id": "qdrant",
         "label": {
           "vi": "Ghi Qdrant",
-          "en": "Write Qdrant"
+          "en": "Write Qdrant",
+          "fr": "Écrire dans Qdrant"
         }
       }
     ],
@@ -128,7 +139,8 @@
         "id": "x-live",
         "label": {
           "vi": "Câu trả lời tiếp theo dùng bản đã sửa",
-          "en": "The next answer uses the corrected parse"
+          "en": "The next answer uses the corrected parse",
+          "fr": "La réponse suivante utilise l'analyse corrigée"
         }
       }
     ]
@@ -137,7 +149,8 @@
     {
       "caption": {
         "vi": "Migration chỉ dựng lại vector, không parse lại — sự thật đã parse nằm ở Postgres.",
-        "en": "The migration rebuilds only the vectors and never re-parses - the parsed truth lives in Postgres."
+        "en": "The migration rebuilds only the vectors and never re-parses - the parsed truth lives in Postgres.",
+        "fr": "La migration ne reconstruit que les vecteurs et ne réanalyse jamais - la vérité analysée vit dans Postgres."
       },
       "cite": {
         "kind": "excerpt",
@@ -152,7 +165,8 @@
     {
       "text": {
         "vi": "Module này nằm ở top level chứ không trong ingestion/ hay query/, để API dùng được mà không phá vỡ sự cô lập giữa hai pipeline.",
-        "en": "This module sits at top level rather than inside ingestion/ or query/, so the API can use it without breaking the isolation between the two pipelines."
+        "en": "This module sits at top level rather than inside ingestion/ or query/, so the API can use it without breaking the isolation between the two pipelines.",
+        "fr": "Ce module est à la racine plutôt que dans ingestion/ ou query/, pour que l'API puisse s'en servir sans briser l'isolement entre les deux chaînes."
       },
       "cite": {
         "kind": "anchor",
@@ -165,7 +179,8 @@
     {
       "text": {
         "vi": "Không parse lại: sự thật đã parse nằm ở Postgres, chỉ vector cần dựng lại.",
-        "en": "No re-parsing: the parsed truth lives in Postgres and only the vectors need rebuilding."
+        "en": "No re-parsing: the parsed truth lives in Postgres and only the vectors need rebuilding.",
+        "fr": "Aucune réanalyse : la vérité analysée vit dans Postgres, seuls les vecteurs sont à reconstruire."
       },
       "cite": {
         "kind": "anchor",
@@ -180,7 +195,8 @@
     {
       "text": {
         "vi": "Muốn bật truy hồi lai ở một nơi triển khai đã có dữ liệu thì phải chạy migration này.",
-        "en": "Turning on hybrid retrieval on a deployment that already holds data requires running this migration."
+        "en": "Turning on hybrid retrieval on a deployment that already holds data requires running this migration.",
+        "fr": "Activer la recherche hybride sur un déploiement qui contient déjà des données exige de lancer cette migration."
       },
       "cite": {
         "kind": "anchor",

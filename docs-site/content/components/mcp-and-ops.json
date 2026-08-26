@@ -8,7 +8,8 @@
       "line": 41,
       "note": {
         "vi": "Công cụ MCP thứ nhất: các KB và số tài liệu của chúng.",
-        "en": "The first MCP tool: the knowledge bases and their document counts."
+        "en": "The first MCP tool: the knowledge bases and their document counts.",
+        "fr": "Le premier outil MCP : les bases de connaissances et leur nombre de documents."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 64,
       "note": {
         "vi": "Công cụ MCP thứ hai: một câu trả lời có nguồn, giữ nguyên các tín hiệu cảnh báo.",
-        "en": "The second MCP tool: a grounded answer, with the warning signals kept."
+        "en": "The second MCP tool: a grounded answer, with the warning signals kept.",
+        "fr": "Le second outil MCP : une réponse sourcée, avec ses signaux d'alerte conservés."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 81,
       "note": {
         "vi": "Bóc một khung SSE — tách khỏi runtime MCP nên kiểm thử được riêng.",
-        "en": "Parses one SSE frame - kept apart from the MCP runtime so it can be tested alone."
+        "en": "Parses one SSE frame - kept apart from the MCP runtime so it can be tested alone.",
+        "fr": "Analyse une trame SSE - tenue à l'écart du runtime MCP pour être testable seule."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 138,
       "note": {
         "vi": "Định dạng câu trả lời sao cho agent gọi tới vẫn thấy cờ cần duyệt và số chưa kiểm chứng.",
-        "en": "Formats the answer so the calling agent still sees the needs-review and unverified-number flags."
+        "en": "Formats the answer so the calling agent still sees the needs-review and unverified-number flags.",
+        "fr": "Met en forme la réponse pour que l'agent appelant voie encore les drapeaux « à relire » et « chiffre non vérifié »."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 72,
       "note": {
         "vi": "In ra đúng ngữ cảnh mà model nhận được cho một câu hỏi.",
-        "en": "Prints exactly the context the model received for one question."
+        "en": "Prints exactly the context the model received for one question.",
+        "fr": "Affiche exactement le contexte que le modèle a reçu pour une question."
       }
     }
   ],
@@ -58,28 +63,32 @@
         "id": "client",
         "label": {
           "vi": "MCP client",
-          "en": "MCP client"
+          "en": "MCP client",
+          "fr": "Client MCP"
         }
       },
       {
         "id": "server",
         "label": {
           "vi": "MCP server",
-          "en": "MCP server"
+          "en": "MCP server",
+          "fr": "Serveur MCP"
         }
       },
       {
         "id": "api",
         "label": {
           "vi": "HTTP API",
-          "en": "The HTTP API"
+          "en": "The HTTP API",
+          "fr": "L'API HTTP"
         }
       },
       {
         "id": "sse",
         "label": {
           "vi": "Bóc luồng SSE",
-          "en": "Parse the SSE stream"
+          "en": "Parse the SSE stream",
+          "fr": "Analyser le flux SSE"
         }
       }
     ],
@@ -89,7 +98,8 @@
         "to": "server",
         "label": {
           "vi": "stdio",
-          "en": "stdio"
+          "en": "stdio",
+          "fr": "stdio"
         }
       },
       {
@@ -111,7 +121,8 @@
         "id": "x-answer",
         "label": {
           "vi": "Câu trả lời còn nguyên cờ trung thực",
-          "en": "The answer with its honesty flags intact"
+          "en": "The answer with its honesty flags intact",
+          "fr": "La réponse avec ses drapeaux d'honnêteté intacts"
         }
       }
     ]
@@ -120,7 +131,8 @@
     {
       "caption": {
         "vi": "Cờ cần duyệt và số chưa kiểm chứng đi kèm câu trả lời, không bị giặt sạch.",
-        "en": "The needs-review and unverified-number flags travel with the answer rather than being laundered out."
+        "en": "The needs-review and unverified-number flags travel with the answer rather than being laundered out.",
+        "fr": "Les drapeaux « à relire » et « chiffre non vérifié » voyagent avec la réponse au lieu d'être blanchis."
       },
       "cite": {
         "kind": "excerpt",
@@ -135,7 +147,8 @@
     {
       "text": {
         "vi": "MCP không bao giờ chạm thẳng vào Postgres hay Qdrant: mọi thứ vẫn ở sau API.",
-        "en": "MCP never touches Postgres or Qdrant directly: everything stays behind the API."
+        "en": "MCP never touches Postgres or Qdrant directly: everything stays behind the API.",
+        "fr": "MCP ne touche jamais Postgres ni Qdrant directement : tout reste derrière l'API."
       },
       "cite": {
         "kind": "anchor",
@@ -148,7 +161,8 @@
     {
       "text": {
         "vi": "Agent gọi tới phải thấy các tín hiệu thất bại trung thực, chứ không nhận một câu trả lời đã được làm sạch.",
-        "en": "The calling agent must see the honest-failure signals rather than receive a laundered answer."
+        "en": "The calling agent must see the honest-failure signals rather than receive a laundered answer.",
+        "fr": "L'agent appelant doit voir les signaux d'échec honnête plutôt que recevoir une réponse blanchie."
       },
       "cite": {
         "kind": "anchor",

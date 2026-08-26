@@ -8,7 +8,8 @@
       "line": 195,
       "note": {
         "vi": "Lắp sáu bước theo đúng thứ tự; đổi triển khai từng bước là đổi ở đây.",
-        "en": "Assembles the six steps in order; swapping an implementation happens here."
+        "en": "Assembles the six steps in order; swapping an implementation happens here.",
+        "fr": "Assemble les six étapes dans l'ordre ; c'est ici qu'on remplace une implémentation."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 52,
       "note": {
         "vi": "Chiếc hộp đi qua cả sáu bước — mỗi bước đọc nó, thêm vào, trả lại.",
-        "en": "The box that travels through all six steps - each one reads it, adds to it, hands it on."
+        "en": "The box that travels through all six steps - each one reads it, adds to it, hands it on.",
+        "fr": "La boîte qui traverse les six étapes - chacune la lit, y ajoute, la transmet."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 98,
       "note": {
         "vi": "Hợp đồng của một bước: async run(ctx) trả về ctx. Chỉ có thế.",
-        "en": "A step's whole contract: async run(ctx) returning ctx. Nothing else."
+        "en": "A step's whole contract: async run(ctx) returning ctx. Nothing else.",
+        "fr": "Tout le contrat d'une étape : async run(ctx) qui renvoie ctx. Rien d'autre."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 24,
       "note": {
         "vi": "Một khối nguồn kèm xuất xứ — thứ mà trích dẫn bấm ngược về.",
-        "en": "One source block with its provenance - what a citation clicks back to."
+        "en": "One source block with its provenance - what a citation clicks back to.",
+        "fr": "Un bloc source avec sa provenance - ce vers quoi ramène une citation."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 102,
       "note": {
         "vi": "Chạy chuỗi bước, và là chỗ duy nhất biết thứ tự.",
-        "en": "Runs the chain, and is the only place that knows the order."
+        "en": "Runs the chain, and is the only place that knows the order.",
+        "fr": "Exécute la chaîne, et reste le seul endroit qui connaisse l'ordre."
       }
     }
   ],
@@ -58,49 +63,56 @@
         "id": "q",
         "label": {
           "vi": "Câu hỏi",
-          "en": "The question"
+          "en": "The question",
+          "fr": "La question"
         }
       },
       {
         "id": "router",
         "label": {
           "vi": "Router",
-          "en": "Router"
+          "en": "Router",
+          "fr": "Router"
         }
       },
       {
         "id": "retrieve",
         "label": {
           "vi": "Retrieve",
-          "en": "Retrieve"
+          "en": "Retrieve",
+          "fr": "Retrieve"
         }
       },
       {
         "id": "rerank",
         "label": {
           "vi": "Rerank",
-          "en": "Rerank"
+          "en": "Rerank",
+          "fr": "Rerank"
         }
       },
       {
         "id": "assemble",
         "label": {
           "vi": "AssembleContext",
-          "en": "AssembleContext"
+          "en": "AssembleContext",
+          "fr": "AssembleContext"
         }
       },
       {
         "id": "generate",
         "label": {
           "vi": "Generate",
-          "en": "Generate"
+          "en": "Generate",
+          "fr": "Générer"
         }
       },
       {
         "id": "verify",
         "label": {
           "vi": "Verify",
-          "en": "Verify"
+          "en": "Verify",
+          "fr": "Verify"
         }
       }
     ],
@@ -140,7 +152,8 @@
         "id": "x-answer",
         "label": {
           "vi": "Câu trả lời có trích dẫn",
-          "en": "A cited answer"
+          "en": "A cited answer",
+          "fr": "Une réponse sourcée"
         }
       }
     ]
@@ -149,7 +162,8 @@
     {
       "caption": {
         "vi": "Toàn bộ hợp đồng của một bước, gói gọn trong bốn dòng.",
-        "en": "A step's entire contract, in four lines."
+        "en": "A step's entire contract, in four lines.",
+        "fr": "Tout le contrat d'une étape, en quatre lignes."
       },
       "cite": {
         "kind": "excerpt",
@@ -164,7 +178,8 @@
     {
       "text": {
         "vi": "Phase 1 đã cắm sẵn bản no-op vào đúng vị trí cuối cùng, nên Phase 4 và 5 chỉ việc thay ruột chứ không phải đổi khung.",
-        "en": "Phase 1 plugs no-op implementations into their final slots, so Phases 4 and 5 swap the insides rather than the frame."
+        "en": "Phase 1 plugs no-op implementations into their final slots, so Phases 4 and 5 swap the insides rather than the frame.",
+        "fr": "La Phase 1 branche des implémentations inertes à leur emplacement définitif, si bien que les Phases 4 et 5 remplacent l'intérieur et non le cadre."
       },
       "cite": {
         "kind": "anchor",

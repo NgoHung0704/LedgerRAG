@@ -2,27 +2,40 @@
   "phases": [
     {
       "id": "p0",
-      "label": { "vi": "Phase 0 — spike gỡ rủi ro", "en": "Phase 0 — de-risk spike" },
+      "label": {
+        "vi": "Phase 0 — spike gỡ rủi ro",
+        "en": "Phase 0 — de-risk spike",
+        "fr": "Phase 0 - pointe de dérisquage"
+      },
       "summary": {
         "vi": "Chứng minh VLM đọc bảng chạy được trên đúng phần cứng sẽ triển khai, trước khi viết bất kỳ dòng nào của sub-pipeline bảng.",
-        "en": "Prove the table-parsing VLM works on the hardware that will actually run it, before a single line of the table sub-pipeline is written."
+        "en": "Prove the table-parsing VLM works on the hardware that will actually run it, before a single line of the table sub-pipeline is written.",
+        "fr": "Prouver que le VLM d'analyse de tableaux fonctionne sur le matériel qui l'exécutera vraiment, avant d'écrire une seule ligne de la sous-chaîne des tableaux."
       },
       "status": {
         "vi": "Đã chạy chiến dịch đo: champion là qwen3-vl:8b-instruct, độ chính xác tổng hợp nằm trong dải 84–90%.",
-        "en": "The measurement campaign has run: the champion is qwen3-vl:8b-instruct, with synthetic accuracy in the 84-90% band."
+        "en": "The measurement campaign has run: the champion is qwen3-vl:8b-instruct, with synthetic accuracy in the 84-90% band.",
+        "fr": "La campagne de mesure a eu lieu : le champion est qwen3-vl:8b-instruct, avec une précision synthétique dans la fourchette 84-90 %."
       },
       "cite": {
-        "kind": "anchor", "file": "README.md", "from": 18, "to": 18,
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 18,
+        "to": 18,
         "anchor": "prove the parser VLM on the deployment hardware"
       },
       "debts": [
         {
           "text": {
             "vi": "Quyết định go/no-go cuối cùng vẫn chờ đo trên tài liệu thật, không phải bộ bảng sinh tự động.",
-            "en": "The final go/no-go still waits on a measurement over real documents, not the generated table set."
+            "en": "The final go/no-go still waits on a measurement over real documents, not the generated table set.",
+            "fr": "Le feu vert final attend encore une mesure sur des documents réels, pas sur le jeu de tableaux généré."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 18, "to": 18,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 18,
+            "to": 18,
             "anchor": "final go/no-go on real documents"
           }
         }
@@ -30,27 +43,40 @@
     },
     {
       "id": "p1",
-      "label": { "vi": "Phase 1 — bộ khung hai pipeline", "en": "Phase 1 — two-pipeline skeleton" },
+      "label": {
+        "vi": "Phase 1 — bộ khung hai pipeline",
+        "en": "Phase 1 — two-pipeline skeleton",
+        "fr": "Phase 1 - squelette à deux chaînes"
+      },
       "summary": {
         "vi": "Đường đi end-to-end chỉ với văn bản: ingestion ghi, query đọc, hai bên chỉ gặp nhau ở tầng lưu trữ.",
-        "en": "An end-to-end path with text only: ingestion writes, query reads, and the two meet at the storage layer alone."
+        "en": "An end-to-end path with text only: ingestion writes, query reads, and the two meet at the storage layer alone.",
+        "fr": "Un chemin de bout en bout avec du texte seulement : ingestion écrit, query lit, et les deux ne se rencontrent qu'à la couche de stockage."
       },
       "status": {
         "vi": "Code đã xong; còn thiếu việc chạy các kiểm tra DoD của Phase 1 trên một stack đang sống.",
-        "en": "The code is complete; what is missing is running the Phase 1 DoD checks against a live stack."
+        "en": "The code is complete; what is missing is running the Phase 1 DoD checks against a live stack.",
+        "fr": "Le code est complet ; il manque l'exécution des contrôles de la Phase 1 sur une pile en fonctionnement."
       },
       "cite": {
-        "kind": "anchor", "file": "README.md", "from": 19, "to": 19,
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 19,
+        "to": 19,
         "anchor": "needs the Phase 1 DoD checks run against a live stack"
       },
       "debts": [
         {
           "text": {
             "vi": "Các kiểm tra DoD chưa được chạy vì cần một stack thật đang chạy.",
-            "en": "The DoD checks have not been run, because they need a stack that is actually running."
+            "en": "The DoD checks have not been run, because they need a stack that is actually running.",
+            "fr": "Les contrôles n'ont pas été exécutés, parce qu'ils exigent une pile réellement en marche."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 19, "to": 19,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 19,
+            "to": 19,
             "anchor": "run against a live stack"
           }
         }
@@ -58,37 +84,54 @@
     },
     {
       "id": "p2",
-      "label": { "vi": "Phase 2 — sub-pipeline bảng", "en": "Phase 2 — table sub-pipeline" },
+      "label": {
+        "vi": "Phase 2 — sub-pipeline bảng",
+        "en": "Phase 2 — table sub-pipeline",
+        "fr": "Phase 2 - sous-chaîne des tableaux"
+      },
       "summary": {
         "vi": "Mỗi bảng được giữ ở ba dạng biểu diễn cùng lúc: ảnh crop gốc, lưới đã dựng lại, và các bản ghi dimensions/metrics.",
-        "en": "Every table is kept in three representations at once: the original crop image, the reconstructed grid, and the dimensions/metrics records."
+        "en": "Every table is kept in three representations at once: the original crop image, the reconstructed grid, and the dimensions/metrics records.",
+        "fr": "Chaque tableau est conservé en trois représentations à la fois : l'image découpée d'origine, la grille reconstruite et les enregistrements dimensions/métriques."
       },
       "status": {
         "vi": "Đo trên máy thật ngày 2026-07-20, lần chạy đầu theo đúng đường production: make eval-tables đạt 88,4%.",
-        "en": "Measured on the box on 2026-07-20, the first run down the real production path: make eval-tables reaches 88.4%."
+        "en": "Measured on the box on 2026-07-20, the first run down the real production path: make eval-tables reaches 88.4%.",
+        "fr": "Mesuré sur la machine le 2026-07-20, première exécution sur le vrai chemin de production : make eval-tables atteint 88,4 %."
       },
       "cite": {
-        "kind": "anchor", "file": "README.md", "from": 20, "to": 20,
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 20,
+        "to": 20,
         "anchor": "`make eval-tables` = 88.4%"
       },
       "debts": [
         {
           "text": {
             "vi": "Cổng ≥95% không đạt với qwen3-vl:8b-instruct; nâng model parser mới là đòn bẩy, không phải sửa prompt.",
-            "en": "The 95% gate is not met with qwen3-vl:8b-instruct; upgrading the parser model is the lever, not editing the prompt."
+            "en": "The 95% gate is not met with qwen3-vl:8b-instruct; upgrading the parser model is the lever, not editing the prompt.",
+            "fr": "La porte des 95 % n'est pas franchie avec qwen3-vl:8b-instruct ; le levier est de changer de modèle d'analyse, pas de modifier l'invite."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 20, "to": 20,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 20,
+            "to": 20,
             "anchor": "≥95% gate is not met with"
           }
         },
         {
           "text": {
             "vi": "Không được sửa prompt của parser nếu chưa chạy A/B eval-tables riêng: đổi câu chữ làm các bảng không liên quan nhảy giữa 0% và 100%.",
-            "en": "The parser prompt may not be edited without an isolated eval-tables A/B: wording changes flip unrelated tables between 0% and 100%."
+            "en": "The parser prompt may not be edited without an isolated eval-tables A/B: wording changes flip unrelated tables between 0% and 100%.",
+            "fr": "L'invite de l'analyseur ne peut être modifiée sans un A/B eval-tables isolé : un changement de formulation fait basculer des tableaux sans rapport entre 0 % et 100 %."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 20, "to": 20,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 20,
+            "to": 20,
             "anchor": "Never edit the parser prompt without an isolated eval-tables A/B"
           }
         }
@@ -96,27 +139,40 @@
     },
     {
       "id": "p3",
-      "label": { "vi": "Phase 3 — độ tin cậy và thất bại trung thực", "en": "Phase 3 — confidence and honest failure" },
+      "label": {
+        "vi": "Phase 3 — độ tin cậy và thất bại trung thực",
+        "en": "Phase 3 — confidence and honest failure",
+        "fr": "Phase 3 - confiance et échec honnête"
+      },
       "summary": {
         "vi": "Ba tín hiệu tin cậy — cấu trúc, đọc hai lần, số học — cộng với luồng người duyệt, để hệ thống nói \"tôi không chắc\" thay vì bịa số.",
-        "en": "Three confidence signals - structural, double-read, arithmetic - plus a human review flow, so the system can say it is unsure instead of inventing a number."
+        "en": "Three confidence signals - structural, double-read, arithmetic - plus a human review flow, so the system can say it is unsure instead of inventing a number.",
+        "fr": "Trois signaux de confiance - structurel, double lecture, arithmétique - plus un circuit de relecture humaine, pour que le système puisse dire qu'il n'est pas sûr au lieu d'inventer un chiffre."
       },
       "status": {
         "vi": "Xong, kèm một giới hạn được ghi rõ: tỷ lệ báo động giả đo được là 0%.",
-        "en": "Done, with a documented limit: the measured false-positive rate is 0%."
+        "en": "Done, with a documented limit: the measured false-positive rate is 0%.",
+        "fr": "Terminé, avec une limite documentée : le taux de faux positifs mesuré est de 0 %."
       },
       "cite": {
-        "kind": "anchor", "file": "README.md", "from": 21, "to": 21,
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 21,
+        "to": 21,
         "anchor": "false-positive rate **0%**"
       },
       "debts": [
         {
           "text": {
             "vi": "DoD recall ≥90% không đạt được trên phần cứng này; lưới an toàn thật nằm ở kiến trúc — luôn giữ ảnh gốc và không bao giờ khẳng định số từ một parse bị gắn cờ.",
-            "en": "The 90% recall DoD is not achievable on this hardware; the real safety net is architectural - the source image is always kept and no number is ever asserted from a flagged parse."
+            "en": "The 90% recall DoD is not achievable on this hardware; the real safety net is architectural - the source image is always kept and no number is ever asserted from a flagged parse.",
+            "fr": "Le critère de rappel à 90 % n'est pas atteignable sur ce matériel ; le vrai filet de sécurité est architectural - l'image source est toujours conservée et aucun chiffre n'est jamais affirmé depuis une analyse signalée."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 21, "to": 21,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 21,
+            "to": 21,
             "anchor": "≥90% recall DoD is not achievable on this hardware"
           }
         }
@@ -124,37 +180,54 @@
     },
     {
       "id": "p4",
-      "label": { "vi": "Phase 4 — truy hồi lai và kiểm chứng câu trả lời", "en": "Phase 4 — hybrid retrieval and answer verification" },
+      "label": {
+        "vi": "Phase 4 — truy hồi lai và kiểm chứng câu trả lời",
+        "en": "Phase 4 — hybrid retrieval and answer verification",
+        "fr": "Phase 4 - recherche hybride et vérification des réponses"
+      },
       "summary": {
         "vi": "Truy hồi dense + sparse hợp nhất bằng RRF, thêm bước rerank, và kiểm chứng từng con số trong câu trả lời trước khi hiển thị.",
-        "en": "Dense plus sparse retrieval fused with RRF, a rerank step on top, and every number in the answer verified before it is shown."
+        "en": "Dense plus sparse retrieval fused with RRF, a rerank step on top, and every number in the answer verified before it is shown.",
+        "fr": "Recherche dense plus creuse fusionnée par RRF, une étape de réordonnancement par-dessus, et chaque chiffre de la réponse vérifié avant affichage."
       },
       "status": {
         "vi": "Cổng đã qua trên máy thật ngày 2026-07-21: bảng 19/20, văn bản 12/12, câu bẫy 7/7.",
-        "en": "The gate passed on the box on 2026-07-21: tables 19/20, text 12/12, traps 7/7."
+        "en": "The gate passed on the box on 2026-07-21: tables 19/20, text 12/12, traps 7/7.",
+        "fr": "La porte est passée sur la machine le 2026-07-21 : tableaux 19/20, texte 12/12, pièges 7/7."
       },
       "cite": {
-        "kind": "anchor", "file": "README.md", "from": 22, "to": 22,
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 22,
+        "to": 22,
         "anchor": "= table 19/20 (95%), text 12/12 (100%), traps 7/7 (100%)"
       },
       "debts": [
         {
           "text": {
             "vi": "Một lần trượt được ghi rõ (a1): hai thang lương cùng hình dạng trong một tài liệu mà tóm tắt tự động mơ hồ không phân biệt nổi — đây là ca khó của truy hồi, không phải lỗi parse.",
-            "en": "One documented miss (a1): two same-shaped pay scales in one document that vague auto-summaries cannot tell apart - a retrieval hard case, not a parse failure."
+            "en": "One documented miss (a1): two same-shaped pay scales in one document that vague auto-summaries cannot tell apart - a retrieval hard case, not a parse failure.",
+            "fr": "Un échec documenté (a1) : deux grilles salariales de même forme dans un même document que des résumés automatiques vagues ne distinguent pas - un cas difficile de recherche, pas un défaut d'analyse."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 22, "to": 22,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 22,
+            "to": 22,
             "anchor": "One documented miss (a1)"
           }
         },
         {
           "text": {
             "vi": "Muốn bật ở nơi triển khai thì phải chạy migration reindex_all và trỏ vai trò reranker vào một endpoint /rerank.",
-            "en": "Activating this on a deployment needs the reindex_all migration and the reranker role pointed at a /rerank endpoint."
+            "en": "Activating this on a deployment needs the reindex_all migration and the reranker role pointed at a /rerank endpoint.",
+            "fr": "L'activer sur un déploiement exige la migration reindex_all et le rôle reranker pointé vers un point de terminaison /rerank."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 22, "to": 22,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 22,
+            "to": 22,
             "anchor": "`reindex_all` migration, point the reranker role at a `/rerank` endpoint"
           }
         }
@@ -162,27 +235,40 @@
     },
     {
       "id": "p5",
-      "label": { "vi": "Phase 5 — router nhiều KB và UX người dùng cuối", "en": "Phase 5 — multi-KB router and end-user UX" },
+      "label": {
+        "vi": "Phase 5 — router nhiều KB và UX người dùng cuối",
+        "en": "Phase 5 — multi-KB router and end-user UX",
+        "fr": "Phase 5 - routeur multi-bases et expérience utilisateur"
+      },
       "summary": {
         "vi": "Router bằng LLM chọn KB theo mô tả, chọn được nhiều, ghim tay đè lên được, và khi hỏng thì suy biến về tìm tất cả chứ không tìm rỗng.",
-        "en": "An LLM router picks knowledge bases from their descriptions, may pick several, can be overridden by a manual pin, and on failure degrades to searching all rather than none."
+        "en": "An LLM router picks knowledge bases from their descriptions, may pick several, can be overridden by a manual pin, and on failure degrades to searching all rather than none.",
+        "fr": "Un routeur LLM choisit les bases d'après leurs descriptions, peut en retenir plusieurs, peut être outrepassé par un épinglage manuel, et en cas d'échec se rabat sur toutes plutôt que sur aucune."
       },
       "status": {
         "vi": "Code đã xong: LLMRouter đọc mô tả KB, chọn nhiều, cho phép ghim tay đè lên.",
-        "en": "The code is complete: LLMRouter reads the KB descriptions, selects several, and lets a manual pin override it."
+        "en": "The code is complete: LLMRouter reads the KB descriptions, selects several, and lets a manual pin override it.",
+        "fr": "Le code est complet : LLMRouter lit les descriptions des bases, en sélectionne plusieurs, et se laisse outrepasser par un épinglage manuel."
       },
       "cite": {
-        "kind": "anchor", "file": "README.md", "from": 23, "to": 23,
+        "kind": "anchor",
+        "file": "README.md",
+        "from": 23,
+        "to": 23,
         "anchor": "`LLMRouter` over KB descriptions (multi-select, manual-pin override"
       },
       "debts": [
         {
           "text": {
             "vi": "Phần còn lại là kiểm chứng ở phía triển khai: 3 KB thật × 10 câu định tuyến đạt ≥90%, một lượt chạy không trợ giúp bởi đồng nghiệp HR, và docker compose up trên một máy GPU sạch.",
-            "en": "What remains is deployment-side validation: 3 real knowledge bases times 10 routing questions at 90% or better, an unassisted run by an HR colleague, and docker compose up on a clean GPU box."
+            "en": "What remains is deployment-side validation: 3 real knowledge bases times 10 routing questions at 90% or better, an unassisted run by an HR colleague, and docker compose up on a clean GPU box.",
+            "fr": "Il reste la validation côté déploiement : 3 bases réelles fois 10 questions de routage à 90 % ou mieux, un essai sans assistance par un collègue RH, et docker compose up sur une machine GPU vierge."
           },
           "cite": {
-            "kind": "anchor", "file": "README.md", "from": 23, "to": 23,
+            "kind": "anchor",
+            "file": "README.md",
+            "from": 23,
+            "to": 23,
             "anchor": "Remaining is deployment-side validation (DoD)"
           }
         }

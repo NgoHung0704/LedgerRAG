@@ -8,7 +8,8 @@
       "line": 92,
       "note": {
         "vi": "Toàn bộ cấu hình nền tảng, đọc từ biến môi trường tiền tố LEDGERRAG_.",
-        "en": "The whole platform configuration, read from LEDGERRAG_-prefixed environment variables."
+        "en": "The whole platform configuration, read from LEDGERRAG_-prefixed environment variables.",
+        "fr": "Toute la configuration de la plateforme, lue depuis les variables d'environnement préfixées LEDGERRAG_."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 51,
       "note": {
         "vi": "Bốn vai trò trừu tượng; không có tên model nào được hardcode ở đây.",
-        "en": "The four abstract roles; no model name is hardcoded here."
+        "en": "The four abstract roles; no model name is hardcoded here.",
+        "fr": "Les quatre rôles abstraits ; aucun nom de modèle n'est codé en dur ici."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 222,
       "note": {
         "vi": "Cấu hình được cache, và mọi thứ khác đọc qua đây.",
-        "en": "The configuration, cached, and everything else reads it through here."
+        "en": "The configuration, cached, and everything else reads it through here.",
+        "fr": "La configuration, mise en cache, et tout le reste la lit en passant par ici."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 52,
       "note": {
         "vi": "Hình dạng KB mà API trả về — hợp đồng với frontend.",
-        "en": "The knowledge-base shape the API returns - the contract with the frontend."
+        "en": "The knowledge-base shape the API returns - the contract with the frontend.",
+        "fr": "La forme de base de connaissances que renvoie l'API - le contrat avec le frontend."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 52,
       "note": {
         "vi": "Bản parse dạng text để đưa cho người có thể hành động dựa trên nó.",
-        "en": "The parse as text, for showing to someone who can act on it."
+        "en": "The parse as text, for showing to someone who can act on it.",
+        "fr": "L'analyse en texte brut, à montrer à quelqu'un qui peut en faire quelque chose."
       }
     }
   ],
@@ -58,28 +63,32 @@
         "id": "env",
         "label": {
           "vi": "Biến môi trường và .env",
-          "en": "Environment variables and .env"
+          "en": "Environment variables and .env",
+          "fr": "Variables d'environnement et .env"
         }
       },
       {
         "id": "settings",
         "label": {
           "vi": "Settings",
-          "en": "Settings"
+          "en": "Settings",
+          "fr": "Settings"
         }
       },
       {
         "id": "db",
         "label": {
           "vi": "Ghi đè trong app_setting",
-          "en": "The app_setting override"
+          "en": "The app_setting override",
+          "fr": "La surcharge dans app_setting"
         }
       },
       {
         "id": "eff",
         "label": {
           "vi": "Cấu hình có hiệu lực",
-          "en": "The effective configuration"
+          "en": "The effective configuration",
+          "fr": "La configuration effective"
         }
       }
     ],
@@ -97,7 +106,8 @@
         "to": "eff",
         "label": {
           "vi": "phủ lên phần nền",
-          "en": "overlaid on the base"
+          "en": "overlaid on the base",
+          "fr": "superposée à la base"
         }
       }
     ],
@@ -108,7 +118,8 @@
     {
       "caption": {
         "vi": "Bốn vai trò, và không một tên model nào nằm trong code.",
-        "en": "Four roles, and not one model name living in the code."
+        "en": "Four roles, and not one model name living in the code.",
+        "fr": "Quatre rôles, et pas un seul nom de modèle qui vive dans le code."
       },
       "cite": {
         "kind": "excerpt",
@@ -123,7 +134,8 @@
     {
       "text": {
         "vi": "Ràng buộc C3: nền tảng độc lập với model và phần cứng; người triển khai ánh xạ từng vai trò tới một endpoint cụ thể.",
-        "en": "Constraint C3: the platform is model- and hardware-agnostic; the deploying engineer maps each role to a concrete endpoint."
+        "en": "Constraint C3: the platform is model- and hardware-agnostic; the deploying engineer maps each role to a concrete endpoint.",
+        "fr": "Contrainte C3 : la plateforme est agnostique au modèle et au matériel ; l'ingénieur qui déploie associe chaque rôle à un point de terminaison concret."
       },
       "cite": {
         "kind": "anchor",
@@ -138,7 +150,8 @@
     {
       "text": {
         "vi": "Với qwen3-vl phải dùng tag -instruct: tag mặc định là model thinking và trả về rỗng. Đây là phát hiện của chiến dịch Phase 0.",
-        "en": "For qwen3-vl the -instruct tag is required: the default tag is a thinking model that returns empty output. This is a Phase 0 campaign finding."
+        "en": "For qwen3-vl the -instruct tag is required: the default tag is a thinking model that returns empty output. This is a Phase 0 campaign finding.",
+        "fr": "Pour qwen3-vl, le tag -instruct est obligatoire : le tag par défaut est un modèle de raisonnement qui ne renvoie rien. C'est un constat de la campagne de la Phase 0."
       },
       "cite": {
         "kind": "anchor",

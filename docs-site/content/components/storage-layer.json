@@ -8,7 +8,8 @@
       "line": 37,
       "note": {
         "vi": "Một session, một giao dịch, đóng đúng chỗ.",
-        "en": "One session, one transaction, closed in the right place."
+        "en": "One session, one transaction, closed in the right place.",
+        "fr": "Une session, une transaction, fermée au bon endroit."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 228,
       "note": {
         "vi": "Đường duy nhất để ingestion ghi một element.",
-        "en": "The only way ingestion writes an element."
+        "en": "The only way ingestion writes an element.",
+        "fr": "La seule façon dont l'ingestion écrit un élément."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 292,
       "note": {
         "vi": "Đường duy nhất để query hydrate một hit thành nguồn có xuất xứ.",
-        "en": "The only way query hydrates a hit into a source with provenance."
+        "en": "The only way query hydrates a hit into a source with provenance.",
+        "fr": "La seule façon dont query transforme un résultat en source avec provenance."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 546,
       "note": {
         "vi": "Chụp lại element trước khi sửa, để lấy lại được đúng một lần sửa.",
-        "en": "Snapshots an element before an edit, so exactly one edit can be taken back."
+        "en": "Snapshots an element before an edit, so exactly one edit can be taken back.",
+        "fr": "Photographie un élément avant une correction, pour qu'une seule correction puisse être annulée."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 73,
       "note": {
         "vi": "Bọc Qdrant: ba collection, mỗi điểm mang kb_id, doc_id, element_id.",
-        "en": "The Qdrant wrapper: three collections, every point carrying kb_id, doc_id and element_id."
+        "en": "The Qdrant wrapper: three collections, every point carrying kb_id, doc_id and element_id.",
+        "fr": "L'enveloppe Qdrant : trois collections, chaque point portant kb_id, doc_id et element_id."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 120,
       "note": {
         "vi": "Hai backend sau một interface: MinIO cho compose, filesystem cho máy lẻ.",
-        "en": "Two backends behind one interface: MinIO for compose, the filesystem for a single box."
+        "en": "Two backends behind one interface: MinIO for compose, the filesystem for a single box.",
+        "fr": "Deux implémentations derrière une interface : MinIO pour compose, le système de fichiers pour une machine unique."
       }
     }
   ],
@@ -68,42 +74,48 @@
         "id": "ing",
         "label": {
           "vi": "ingestion/ ghi",
-          "en": "ingestion/ writes"
+          "en": "ingestion/ writes",
+          "fr": "ingestion/ écrit"
         }
       },
       {
         "id": "repo",
         "label": {
           "vi": "Hàm repository",
-          "en": "A repository function"
+          "en": "A repository function",
+          "fr": "Une fonction de dépôt"
         }
       },
       {
         "id": "pg",
         "label": {
           "vi": "Postgres",
-          "en": "Postgres"
+          "en": "Postgres",
+          "fr": "Postgres"
         }
       },
       {
         "id": "qd",
         "label": {
           "vi": "Qdrant",
-          "en": "Qdrant"
+          "en": "Qdrant",
+          "fr": "Qdrant"
         }
       },
       {
         "id": "obj",
         "label": {
           "vi": "Object store",
-          "en": "Object store"
+          "en": "Object store",
+          "fr": "Entrepôt d'objets"
         }
       },
       {
         "id": "qry",
         "label": {
           "vi": "query/ đọc",
-          "en": "query/ reads"
+          "en": "query/ reads",
+          "fr": "query/ lit"
         }
       }
     ],
@@ -144,7 +156,8 @@
     {
       "caption": {
         "vi": "Mọi lời gọi Postgres đều đi qua đúng khối này.",
-        "en": "Every Postgres call goes through exactly this block."
+        "en": "Every Postgres call goes through exactly this block.",
+        "fr": "Chaque appel à Postgres passe exactement par ce bloc."
       },
       "cite": {
         "kind": "excerpt",
@@ -159,7 +172,8 @@
     {
       "text": {
         "vi": "Nguyên tắc số 1: hai pipeline không bao giờ import nhau, và có một test kiến trúc canh chuyện đó.",
-        "en": "Principle 1: the two pipelines never import each other, and an architecture test stands watch over it."
+        "en": "Principle 1: the two pipelines never import each other, and an architecture test stands watch over it.",
+        "fr": "Principe 1 : les deux chaînes ne s'importent jamais, et un test d'architecture monte la garde."
       },
       "cite": {
         "kind": "anchor",
@@ -172,7 +186,8 @@
     {
       "text": {
         "vi": "Mỗi điểm mang kb_id, doc_id, element_id để lọc payload và để truy nguyên — vector không nguồn thì vô nghĩa.",
-        "en": "Every point carries kb_id, doc_id and element_id for payload filtering and for provenance - a vector with no source means nothing."
+        "en": "Every point carries kb_id, doc_id and element_id for payload filtering and for provenance - a vector with no source means nothing.",
+        "fr": "Chaque point porte kb_id, doc_id et element_id pour le filtrage et la provenance - un vecteur sans source ne veut rien dire."
       },
       "cite": {
         "kind": "anchor",
@@ -185,7 +200,8 @@
     {
       "text": {
         "vi": "JSONB trên Postgres, JSON thường khi chạy SQLite, để test đơn vị không cần dựng dịch vụ.",
-        "en": "JSONB on Postgres, plain JSON on SQLite, so the unit tests need no services."
+        "en": "JSONB on Postgres, plain JSON on SQLite, so the unit tests need no services.",
+        "fr": "JSONB sur Postgres, JSON simple sur SQLite, pour que les tests unitaires n'aient besoin d'aucun service."
       },
       "cite": {
         "kind": "anchor",

@@ -6,11 +6,13 @@
       "to": "api",
       "label": {
         "vi": "KB",
-        "en": "Knowledge bases"
+        "en": "Knowledge bases",
+        "fr": "Bases de connaissances"
       },
       "summary": {
         "vi": "Vòng đời một KB, cộng bản nháp mô tả và hàng đợi duyệt ở mức KB.",
-        "en": "The life of a knowledge base, plus the description draft and the KB-level review queue."
+        "en": "The life of a knowledge base, plus the description draft and the KB-level review queue.",
+        "fr": "La vie d'une base de connaissances, plus le brouillon de description et la file de relecture au niveau de la base."
       },
       "operations": [
         {
@@ -18,22 +20,26 @@
           "path": "/api/kbs",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Tên, locale và các thiết lập ban đầu của KB.",
-            "en": "The knowledge base's name, locale and initial settings."
+            "en": "The knowledge base's name, locale and initial settings.",
+            "fr": "Le nom, la locale et les réglages initiaux de la base."
           },
           "response": {
             "vi": "KB vừa tạo, kèm id dùng cho mọi lời gọi sau.",
-            "en": "The knowledge base as created, with the id every later call uses."
+            "en": "The knowledge base as created, with the id every later call uses.",
+            "fr": "La base telle que créée, avec l'identifiant qu'utiliseront tous les appels suivants."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -50,22 +56,26 @@
           "path": "/api/kbs",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Không có tham số.",
-            "en": "No parameters."
+            "en": "No parameters.",
+            "fr": "Aucun paramètre."
           },
           "response": {
             "vi": "Toàn bộ KB kèm số tài liệu, dùng cho bộ chọn phạm vi khi chat.",
-            "en": "Every knowledge base with its document count, feeding the chat scope picker."
+            "en": "Every knowledge base with its document count, feeding the chat scope picker.",
+            "fr": "Toutes les bases avec leur nombre de documents, qui alimentent le sélecteur de portée du chat."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -82,29 +92,34 @@
           "path": "/api/kbs/{kb_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id của KB trên đường dẫn.",
-            "en": "The knowledge base id on the path."
+            "en": "The knowledge base id on the path.",
+            "fr": "L'identifiant de la base dans le chemin."
           },
           "response": {
             "vi": "Một KB, gồm mô tả mà router đọc để định tuyến.",
-            "en": "One knowledge base, including the description the router reads."
+            "en": "One knowledge base, including the description the router reads.",
+            "fr": "Une base, avec la description que lit le routeur."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -121,29 +136,34 @@
           "path": "/api/kbs/{kb_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Các trường cần đổi: locale, mức kiểm chứng, tên, mô tả.",
-            "en": "The fields to change: locale, verification level, name, description."
+            "en": "The fields to change: locale, verification level, name, description.",
+            "fr": "Les champs à modifier : locale, niveau de vérification, nom, description."
           },
           "response": {
             "vi": "KB sau khi sửa.",
-            "en": "The knowledge base after the change."
+            "en": "The knowledge base after the change.",
+            "fr": "La base après modification."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -160,29 +180,34 @@
           "path": "/api/kbs/{kb_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id của KB cần xoá.",
-            "en": "The id of the knowledge base to delete."
+            "en": "The id of the knowledge base to delete.",
+            "fr": "L'identifiant de la base à supprimer."
           },
           "response": {
             "vi": "204 không nội dung. Vector và file bị xoá TRƯỚC cascade Postgres, để một lỗi muộn không bỏ lại vector mồ côi vẫn trả lời được.",
-            "en": "204 with no body. Vectors and files are purged BEFORE the Postgres cascade, so a late failure cannot leave orphaned vectors still answering."
+            "en": "204 with no body. Vectors and files are purged BEFORE the Postgres cascade, so a late failure cannot leave orphaned vectors still answering.",
+            "fr": "204 sans corps. Vecteurs et fichiers sont purgés AVANT la cascade Postgres, pour qu'un échec tardif ne laisse pas de vecteurs orphelins continuer à répondre."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -199,36 +224,42 @@
           "path": "/api/kbs/{kb_id}/suggest-description",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id của KB; nội dung lấy từ vài tài liệu đầu tiên.",
-            "en": "The knowledge base id; the content comes from its first documents."
+            "en": "The knowledge base id; the content comes from its first documents.",
+            "fr": "L'identifiant de la base ; le contenu vient de ses premiers documents."
           },
           "response": {
             "vi": "Bản nháp mô tả để người dùng duyệt rồi tự lưu bằng PATCH — mô tả yếu làm router mù.",
-            "en": "A draft description for the user to review and save with PATCH - a weak description blinds the router."
+            "en": "A draft description for the user to review and save with PATCH - a weak description blinds the router.",
+            "fr": "Un brouillon de description que l'utilisateur relit puis enregistre par PATCH - une description faible aveugle le routeur."
           },
           "errors": [
             {
               "code": "400",
               "meaning": {
                 "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
-                "en": "The request is malformed, or a precondition is unmet."
+                "en": "The request is malformed, or a precondition is unmet.",
+                "fr": "La requête est mal formée, ou une condition préalable n'est pas remplie."
               }
             },
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -245,29 +276,34 @@
           "path": "/api/kbs/{kb_id}/needs-review",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id của KB.",
-            "en": "The knowledge base id."
+            "en": "The knowledge base id.",
+            "fr": "L'identifiant de la base."
           },
           "response": {
             "vi": "Hàng đợi duyệt ở mức KB: những element parser tự nhận là không chắc.",
-            "en": "The KB-level review queue: the elements the parser flagged as unsure."
+            "en": "The KB-level review queue: the elements the parser flagged as unsure.",
+            "fr": "La file de relecture de la base : les éléments que l'analyseur a signalés comme incertains."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -284,32 +320,44 @@
           "path": "/api/kbs/{kb_id}/retrieval-key",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Không có thân yêu cầu. Bật (hoặc thay) khoá truy xuất bên ngoài cho KB này — mặc định tắt.",
-            "en": "No body. Enables (or replaces) this KB's external-retrieval key — off by default."
+            "en": "No body. Enables (or replaces) this KB's external-retrieval key — off by default.",
+            "fr": "Aucun corps. Active (ou remplace) la clé de recherche externe de cette base - désactivée par défaut."
           },
           "response": {
             "vi": "KB kèm khoá mới. Khoá cũ chết ngay lúc lệnh này trả về.",
-            "en": "The knowledge base with its new key. The previous one stops working the moment this returns."
+            "en": "The knowledge base with its new key. The previous one stops working the moment this returns.",
+            "fr": "La base avec sa nouvelle clé. L'ancienne cesse de fonctionner dès que cet appel répond."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
-          ]
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/kb.py",
+            "from": 109,
+            "to": 109,
+            "anchor": "def create_retrieval_key(kb_id: uuid.UUID,"
+          }
         }
       ]
     },
@@ -319,11 +367,13 @@
       "to": "api",
       "label": {
         "vi": "Tài liệu",
-        "en": "Documents"
+        "en": "Documents",
+        "fr": "Documents"
       },
       "summary": {
         "vi": "Tải lên, chạy lại, xoá, và mọi đường dẫn tới bằng chứng gốc: ảnh trang, PDF gốc, bản xuất parse.",
-        "en": "Upload, reprocess, delete, and every path back to the original evidence: page images, the source PDF, the parse export."
+        "en": "Upload, reprocess, delete, and every path back to the original evidence: page images, the source PDF, the parse export.",
+        "fr": "Téléverser, retraiter, supprimer, et tous les chemins qui ramènent à la preuve d'origine : images de page, PDF source, export de l'analyse."
       },
       "operations": [
         {
@@ -331,43 +381,50 @@
           "path": "/api/kbs/{kb_id}/documents",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "multipart với một tệp PDF.",
-            "en": "A multipart body carrying one PDF."
+            "en": "A multipart body carrying one PDF.",
+            "fr": "Un corps multipart portant un PDF."
           },
           "response": {
             "vi": "202 kèm bản ghi tài liệu ở trạng thái đang xử lý; việc thật chạy ở worker.",
-            "en": "202 with the document record in a pending state; the real work runs in the worker."
+            "en": "202 with the document record in a pending state; the real work runs in the worker.",
+            "fr": "202 avec l'enregistrement du document en attente ; le vrai travail se fait dans le worker."
           },
           "errors": [
             {
               "code": "400",
               "meaning": {
                 "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
-                "en": "The request is malformed, or a precondition is unmet."
+                "en": "The request is malformed, or a precondition is unmet.",
+                "fr": "La requête est mal formée, ou une condition préalable n'est pas remplie."
               }
             },
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             },
             {
               "code": "413",
               "meaning": {
                 "vi": "Tệp vượt quá giới hạn kích thước cho phép.",
-                "en": "The file exceeds the permitted size limit."
+                "en": "The file exceeds the permitted size limit.",
+                "fr": "Le fichier dépasse la taille autorisée."
               }
             }
           ],
@@ -384,29 +441,34 @@
           "path": "/api/kbs/{kb_id}/documents",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id của KB.",
-            "en": "The knowledge base id."
+            "en": "The knowledge base id.",
+            "fr": "L'identifiant de la base."
           },
           "response": {
             "vi": "Tài liệu của KB kèm trạng thái ingestion để giao diện theo dõi.",
-            "en": "The KB's documents with their ingestion status for the interface to track."
+            "en": "The KB's documents with their ingestion status for the interface to track.",
+            "fr": "Les documents de la base avec leur statut d'ingestion, que l'interface suit."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -423,29 +485,34 @@
           "path": "/api/documents/{doc_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu.",
-            "en": "The document id."
+            "en": "The document id.",
+            "fr": "L'identifiant du document."
           },
           "response": {
             "vi": "Một tài liệu kèm trạng thái và thống kê.",
-            "en": "One document with its status and counts."
+            "en": "One document with its status and counts.",
+            "fr": "Un document avec son statut et ses compteurs."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -462,36 +529,42 @@
           "path": "/api/documents/{doc_id}/reprocess",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu.",
-            "en": "The document id."
+            "en": "The document id.",
+            "fr": "L'identifiant du document."
           },
           "response": {
             "vi": "Tài liệu được đưa lại vào hàng đợi; 409 nếu nó đang chạy dở.",
-            "en": "The document is queued again; 409 when one is already in flight."
+            "en": "The document is queued again; 409 when one is already in flight.",
+            "fr": "Le document est remis en file ; 409 si un traitement est déjà en cours."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             },
             {
               "code": "409",
               "meaning": {
                 "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
-                "en": "Conflicts with the object's current state."
+                "en": "Conflicts with the object's current state.",
+                "fr": "En conflit avec l'état actuel de l'objet."
               }
             }
           ],
@@ -508,29 +581,34 @@
           "path": "/api/documents/{doc_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu.",
-            "en": "The document id."
+            "en": "The document id.",
+            "fr": "L'identifiant du document."
           },
           "response": {
             "vi": "204: gỡ khỏi cả ba kho — vector, file, Postgres.",
-            "en": "204: removed from all three stores - vectors, files, Postgres."
+            "en": "204: removed from all three stores - vectors, files, Postgres.",
+            "fr": "204 : retiré des trois entrepôts - vecteurs, fichiers, Postgres."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -547,29 +625,34 @@
           "path": "/api/kbs/{kb_id}/documents/bulk-delete",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Danh sách id tài liệu; chỉ tài liệu thuộc KB này bị đụng tới.",
-            "en": "A list of document ids; only documents belonging to this KB are touched."
+            "en": "A list of document ids; only documents belonging to this KB are touched.",
+            "fr": "Une liste d'identifiants de documents ; seuls ceux de cette base sont touchés."
           },
           "response": {
             "vi": "Số tài liệu đã xoá. Gộp lô chứ không lặp từng cái: một lần xoá vector theo MatchAny cho mỗi collection, tránh việc trình duyệt huỷ request.",
-            "en": "How many were deleted. Batched, not per-document: one MatchAny vector delete per collection, which is what stops the browser aborting the fetch."
+            "en": "How many were deleted. Batched, not per-document: one MatchAny vector delete per collection, which is what stops the browser aborting the fetch.",
+            "fr": "Combien ont été supprimés. Par lots, non document par document : une suppression vectorielle MatchAny par collection, ce qui empêche le navigateur d'abandonner la requête."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -586,29 +669,34 @@
           "path": "/api/kbs/{kb_id}/documents/bulk-reprocess",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Danh sách id tài liệu cần chạy lại.",
-            "en": "A list of document ids to run again."
+            "en": "A list of document ids to run again.",
+            "fr": "Une liste d'identifiants de documents à retraiter."
           },
           "response": {
             "vi": "Số tài liệu đã xếp hàng; cái nào đang chạy dở thì bỏ qua chứ không xếp hai lần.",
-            "en": "How many were queued; one already in flight is skipped rather than queued twice."
+            "en": "How many were queued; one already in flight is skipped rather than queued twice.",
+            "fr": "Combien ont été mis en file ; un traitement déjà en cours est ignoré plutôt que mis en file deux fois."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -625,29 +713,34 @@
           "path": "/api/documents/{doc_id}/pages/{page}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu và số trang.",
-            "en": "The document id and the page number."
+            "en": "The document id and the page number.",
+            "fr": "L'identifiant du document et le numéro de page."
           },
           "response": {
             "vi": "Element, chunk, record và vector của trang biến mất; FILE GỐC và ảnh render trang thì ở lại, nên chạy lại ingestion là trang quay về nguyên vẹn.",
-            "en": "The page's elements, chunks, records and vectors go; the ORIGINAL file and the page render stay, so reprocessing brings the page back untouched."
+            "en": "The page's elements, chunks, records and vectors go; the ORIGINAL file and the page render stay, so reprocessing brings the page back untouched.",
+            "fr": "Les éléments, fragments, enregistrements et vecteurs de la page partent ; le fichier D'ORIGINE et le rendu de page restent, si bien qu'un retraitement ramène la page intacte."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -664,29 +757,34 @@
           "path": "/api/documents/{doc_id}/elements",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu.",
-            "en": "The document id."
+            "en": "The document id.",
+            "fr": "L'identifiant du document."
           },
           "response": {
             "vi": "Toàn bộ những gì ingestion tạo ra: từng element với ba dạng biểu diễn của bảng và liên kết tới ảnh crop.",
-            "en": "Everything ingestion produced: each element with the three table representations and links to its crop image."
+            "en": "Everything ingestion produced: each element with the three table representations and links to its crop image.",
+            "fr": "Tout ce que l'ingestion a produit : chaque élément avec les trois représentations de tableau et les liens vers son image découpée."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -703,29 +801,34 @@
           "path": "/api/documents/{doc_id}/pages/{page}/image",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu và số trang.",
-            "en": "The document id and the page number."
+            "en": "The document id and the page number.",
+            "fr": "L'identifiant du document et le numéro de page."
           },
           "response": {
             "vi": "Ảnh render của trang — đích bấm ngược của mọi trích dẫn. Cùng URL nhưng nội dung đổi khi chạy lại, nên luôn revalidate kèm ETag.",
-            "en": "The stored page render - the click-through target of every citation. The URL never changes but the content does on reprocessing, so it always revalidates, with an ETag to make that free."
+            "en": "The stored page render - the click-through target of every citation. The URL never changes but the content does on reprocessing, so it always revalidates, with an ETag to make that free.",
+            "fr": "Le rendu de page stocké - la cible de clic de chaque citation. L'URL ne change jamais mais le contenu change au retraitement, donc il revalide toujours, avec un ETag qui rend cela gratuit."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -742,29 +845,34 @@
           "path": "/api/documents/{doc_id}/boilerplate-scan",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu.",
-            "en": "The document id."
+            "en": "The document id.",
+            "fr": "L'identifiant du document."
           },
           "response": {
             "vi": "Chỉ đọc: các ứng viên header/footer/số trang lặp lại. Không đổi gì — người duyệt xác nhận trước.",
-            "en": "Read-only: the running header, footer and page-number candidates. Nothing changes - the reviewer confirms first."
+            "en": "Read-only: the running header, footer and page-number candidates. Nothing changes - the reviewer confirms first.",
+            "fr": "Lecture seule : les en-têtes, pieds de page et numéros de page candidats. Rien ne change - le relecteur confirme d'abord."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -781,29 +889,34 @@
           "path": "/api/documents/{doc_id}/boilerplate-exclude",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Danh sách element đã được xác nhận là boilerplate.",
-            "en": "The elements confirmed as boilerplate."
+            "en": "The elements confirmed as boilerplate.",
+            "fr": "Les éléments confirmés comme répétitifs."
           },
           "response": {
             "vi": "Vector của chúng bị gỡ khỏi truy hồi; element và ảnh vẫn còn.",
-            "en": "Their vectors leave retrieval; the element and its image stay."
+            "en": "Their vectors leave retrieval; the element and its image stay.",
+            "fr": "Leurs vecteurs quittent la recherche ; l'élément et son image restent."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -820,29 +933,34 @@
           "path": "/api/documents/{doc_id}/export",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu.",
-            "en": "The document id."
+            "en": "The document id.",
+            "fr": "L'identifiant du document."
           },
           "response": {
             "vi": "Bản parse dạng văn bản thuần, giữ nguyên dạng thô và nhất là các chunk đúng như đã index — bản tóm tắt gọn gàng của một parse sai không chứng minh gì.",
-            "en": "The parse as plain text, holding the raw forms and above all the chunks exactly as indexed - a tidy summary of a bad parse is evidence of nothing."
+            "en": "The parse as plain text, holding the raw forms and above all the chunks exactly as indexed - a tidy summary of a bad parse is evidence of nothing.",
+            "fr": "L'analyse en texte brut, avec les formes brutes et surtout les fragments exactement tels qu'indexés - un résumé propre d'une mauvaise analyse ne prouve rien."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -859,29 +977,34 @@
           "path": "/api/documents/{doc_id}/original",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id tài liệu.",
-            "en": "The document id."
+            "en": "The document id.",
+            "fr": "L'identifiant du document."
           },
           "response": {
             "vi": "Chính tệp PDF gốc, để đối chiếu bản parse ở độ trung thực đầy đủ.",
-            "en": "The original PDF itself, so the parse can be compared against it at full fidelity."
+            "en": "The original PDF itself, so the parse can be compared against it at full fidelity.",
+            "fr": "Le PDF d'origine lui-même, pour comparer l'analyse à pleine fidélité."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -901,11 +1024,13 @@
       "to": "api",
       "label": {
         "vi": "Element và duyệt lại",
-        "en": "Elements and review"
+        "en": "Elements and review",
+        "fr": "Éléments et relecture"
       },
       "summary": {
         "vi": "Nơi con người sửa được máy: tách, gộp, đọc lại, hạ cấp, duyệt. Phần lớn trả về ĐỀ XUẤT chứ không tự ghi.",
-        "en": "Where a human corrects the machine: split, merge, reread, demote, approve. Most of these return a PROPOSAL rather than writing."
+        "en": "Where a human corrects the machine: split, merge, reread, demote, approve. Most of these return a PROPOSAL rather than writing.",
+        "fr": "Là où un humain corrige la machine : scinder, fusionner, relire, rétrograder, valider. La plupart renvoient une PROPOSITION au lieu d'écrire."
       },
       "operations": [
         {
@@ -913,29 +1038,34 @@
           "path": "/api/elements/{element_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "Một element đã parse, kèm mọi dạng biểu diễn của nó.",
-            "en": "One parsed element with every representation it carries."
+            "en": "One parsed element with every representation it carries.",
+            "fr": "Un élément analysé avec toutes les représentations qu'il porte."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -952,29 +1082,34 @@
           "path": "/api/elements/{element_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Nội dung đã sửa tay.",
-            "en": "The hand-corrected content."
+            "en": "The hand-corrected content.",
+            "fr": "Le contenu corrigé à la main."
           },
           "response": {
             "vi": "Element được lưu rồi index lại, nên câu trả lời dùng đúng dữ liệu đã sửa.",
-            "en": "The element is saved and re-indexed, so answers use the corrected data."
+            "en": "The element is saved and re-indexed, so answers use the corrected data.",
+            "fr": "L'élément est enregistré et réindexé, pour que les réponses utilisent les données corrigées."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -991,29 +1126,34 @@
           "path": "/api/elements/{element_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "204: chunk, record và vector đi theo. Tệp gốc không bị đụng, nên chạy lại ingestion là nó quay về.",
-            "en": "204: its chunks, records and vectors go with it. The original file is untouched, so reprocessing brings it back."
+            "en": "204: its chunks, records and vectors go with it. The original file is untouched, so reprocessing brings it back.",
+            "fr": "204 : ses fragments, enregistrements et vecteurs partent avec lui. Le fichier d'origine est intact, un retraitement le ramène."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1030,29 +1170,34 @@
           "path": "/api/elements/{element_id}/undo",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "Trả element về trạng thái trước lần sửa cuối rồi index lại — lấy lại MỘT element mà không huỷ mọi chỉnh sửa khác trong tài liệu.",
-            "en": "Puts the element back as it was before the last save and re-indexes - it takes back ONE element without discarding every other correction."
+            "en": "Puts the element back as it was before the last save and re-indexes - it takes back ONE element without discarding every other correction.",
+            "fr": "Remet l'élément tel qu'il était avant le dernier enregistrement et réindexe - cela annule UN élément sans jeter toutes les autres corrections."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1069,43 +1214,50 @@
           "path": "/api/elements/{element_id}/reread",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element và mode đọc lại.",
-            "en": "The element id and the reread mode."
+            "en": "The element id and the reread mode.",
+            "fr": "L'identifiant de l'élément et le mode de relecture."
           },
           "response": {
             "vi": "Một ĐỀ XUẤT, không ghi gì: VLM đọc lại cả TRANG, người duyệt so với ảnh gốc rồi mới lưu qua đường sửa element thông thường.",
-            "en": "A PROPOSAL that writes nothing: the VLM re-reads the whole PAGE and the reviewer compares it with the original image before saving it the ordinary way."
+            "en": "A PROPOSAL that writes nothing: the VLM re-reads the whole PAGE and the reviewer compares it with the original image before saving it the ordinary way.",
+            "fr": "Une PROPOSITION qui n'écrit rien : le VLM relit la PAGE entière et le relecteur la compare à l'image d'origine avant de l'enregistrer normalement."
           },
           "errors": [
             {
               "code": "400",
               "meaning": {
                 "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
-                "en": "The request is malformed, or a precondition is unmet."
+                "en": "The request is malformed, or a precondition is unmet.",
+                "fr": "La requête est mal formée, ou une condition préalable n'est pas remplie."
               }
             },
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             },
             {
               "code": "502",
               "meaning": {
                 "vi": "Endpoint model phía sau không trả lời được.",
-                "en": "The upstream model endpoint could not answer."
+                "en": "The upstream model endpoint could not answer.",
+                "fr": "Le point de terminaison du modèle en amont n'a pas pu répondre."
               }
             }
           ],
@@ -1122,36 +1274,42 @@
           "path": "/api/elements/{element_id}/assist",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Nội dung đang mở trong trình soạn, chưa lưu nên đi kèm request.",
-            "en": "The content open in the editor, unsaved, so it travels with the request."
+            "en": "The content open in the editor, unsaved, so it travels with the request.",
+            "fr": "Le contenu ouvert dans l'éditeur, non enregistré, il voyage donc avec la requête."
           },
           "response": {
             "vi": "Trả lời của trợ lý và, khi có thay đổi, toàn bộ nội dung mới dưới dạng đề xuất. Nó được phép sắp xếp lại nhưng không bao giờ thêm dữ kiện.",
-            "en": "The assistant's reply and, when it changed something, the complete new content as a proposal. It may rearrange but never adds facts."
+            "en": "The assistant's reply and, when it changed something, the complete new content as a proposal. It may rearrange but never adds facts.",
+            "fr": "La réponse de l'assistant et, s'il a changé quelque chose, le nouveau contenu complet en proposition. Il peut réorganiser mais n'ajoute jamais de faits."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             },
             {
               "code": "502",
               "meaning": {
                 "vi": "Endpoint model phía sau không trả lời được.",
-                "en": "The upstream model endpoint could not answer."
+                "en": "The upstream model endpoint could not answer.",
+                "fr": "Le point de terminaison du modèle en amont n'a pas pu répondre."
               }
             }
           ],
@@ -1168,29 +1326,34 @@
           "path": "/api/elements/{element_id}/derive",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "HTML đang được sửa trong trình soạn.",
-            "en": "The HTML being edited."
+            "en": "The HTML being edited.",
+            "fr": "Le HTML en cours d'édition."
           },
           "response": {
             "vi": "Record được dựng lại tất định từ HTML và summary sinh lại; nếu không, lưới đúng trên màn hình mà câu trả lời vẫn trích số từ parse cũ.",
-            "en": "Records are re-derived deterministically from the HTML and the summary is regenerated; otherwise the grid is right on screen while answers still quote numbers from the old parse."
+            "en": "Records are re-derived deterministically from the HTML and the summary is regenerated; otherwise the grid is right on screen while answers still quote numbers from the old parse.",
+            "fr": "Les enregistrements sont redérivés de façon déterministe depuis le HTML et le résumé est régénéré ; sinon la grille est juste à l'écran pendant que les réponses citent encore les chiffres de l'ancienne analyse."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1207,29 +1370,34 @@
           "path": "/api/elements/{element_id}/recheck",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "Đề xuất: vùng bảng được render lại ở gấp đôi DPI lúc ingest, lấy lưới text-layer làm gợi ý, đọc hai lần để chấm điểm đồng thuận trước khi lưu.",
-            "en": "A proposal: the region is re-rendered at double the ingest DPI, the text-layer grid is used as a hint, and the table is read twice so the agreement is visible before saving."
+            "en": "A proposal: the region is re-rendered at double the ingest DPI, the text-layer grid is used as a hint, and the table is read twice so the agreement is visible before saving.",
+            "fr": "Une proposition : la région est re-rendue au double de la résolution d'ingestion, la grille de la couche de texte sert d'indice, et le tableau est lu deux fois pour que l'accord soit visible avant l'enregistrement."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1246,29 +1414,34 @@
           "path": "/api/elements/{element_id}/split",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "\"Đây là hai bảng\": model chỉ được hỏi ĐƯỜNG CẮT ở đâu, mỗi phần sau đó render lại từ PDF và parse qua đúng hợp đồng cũ, có bbox và crop riêng.",
-            "en": "\"These are two tables\": the model is asked only WHERE the seam is; each part is re-rendered from the PDF and parsed through the ordinary contract, with its own bbox and crop."
+            "en": "\"These are two tables\": the model is asked only WHERE the seam is; each part is re-rendered from the PDF and parsed through the ordinary contract, with its own bbox and crop.",
+            "fr": "« Ce sont deux tableaux » : on demande au modèle uniquement OÙ se trouve la césure ; chaque partie est re-rendue depuis le PDF et analysée par le contrat ordinaire, avec sa propre boîte englobante et sa propre découpe."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "409",
               "meaning": {
                 "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
-                "en": "Conflicts with the object's current state."
+                "en": "Conflicts with the object's current state.",
+                "fr": "En conflit avec l'état actuel de l'objet."
               }
             }
           ],
@@ -1285,36 +1458,42 @@
           "path": "/api/elements/merge",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Danh sách bảng do người duyệt chọn — không còn đoán \"bảng kế tiếp\".",
-            "en": "The tables the reviewer chose - no more guessing at \"the next one\"."
+            "en": "The tables the reviewer chose - no more guessing at \"the next one\".",
+            "fr": "Les tableaux choisis par le relecteur - fini de deviner « le suivant »."
           },
           "response": {
             "vi": "\"Đây là một bảng\": cái đầu theo thứ tự đọc giữ danh tính, undo khôi phục nội dung cũ của nó, các cái còn lại biến mất tới khi chạy lại tài liệu.",
-            "en": "\"These are one table\": the first in reading order keeps its identity, undo restores its previous content, and the others are gone until the document is reprocessed."
+            "en": "\"These are one table\": the first in reading order keeps its identity, undo restores its previous content, and the others are gone until the document is reprocessed.",
+            "fr": "« C'est un seul tableau » : le premier dans l'ordre de lecture garde son identité, l'annulation restaure son contenu précédent, et les autres disparaissent jusqu'au retraitement du document."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             },
             {
               "code": "409",
               "meaning": {
                 "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
-                "en": "Conflicts with the object's current state."
+                "en": "Conflicts with the object's current state.",
+                "fr": "En conflit avec l'état actuel de l'objet."
               }
             }
           ],
@@ -1331,29 +1510,34 @@
           "path": "/api/elements/{element_id}/to-table",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Markdown hoặc HTML đang mở trong trình soạn.",
-            "en": "The markdown or HTML open in the editor."
+            "en": "The markdown or HTML open in the editor.",
+            "fr": "Le markdown ou le HTML ouvert dans l'éditeur."
           },
           "response": {
             "vi": "\"Đoạn text này là bảng\": nâng lại thành bảng, nếu không thì một bảng vừa cứu được vẫn nằm đó dưới dạng TEXT, không record, không summary định tuyến.",
-            "en": "\"This text is a table\": promotes it back, otherwise a table just recovered stays TEXT - unsearchable as a table, with no records and no routing summary."
+            "en": "\"This text is a table\": promotes it back, otherwise a table just recovered stays TEXT - unsearchable as a table, with no records and no routing summary.",
+            "fr": "« Ce texte est un tableau » : le repromeut, sinon un tableau tout juste récupéré reste du TEXTE - introuvable en tant que tableau, sans enregistrements ni résumé de routage."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "409",
               "meaning": {
                 "vi": "Xung đột với trạng thái hiện tại của đối tượng.",
-                "en": "Conflicts with the object's current state."
+                "en": "Conflicts with the object's current state.",
+                "fr": "En conflit avec l'état actuel de l'objet."
               }
             }
           ],
@@ -1370,29 +1554,34 @@
           "path": "/api/elements/{element_id}/row-merging",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Cờ merged bật hay tắt.",
-            "en": "The merged flag, on or off."
+            "en": "The merged flag, on or off.",
+            "fr": "L'indicateur de fusion, activé ou non."
           },
           "response": {
             "vi": "Chỉ đổi cách hiển thị: record vốn dựng từ lưới đã forward-fill nên không index lại, không câu trả lời nào đổi, và cờ cần duyệt cũng không được xoá.",
-            "en": "Display only: records come from a forward-filled grid, so nothing is re-indexed, no answer changes, and the review flag is not cleared either."
+            "en": "Display only: records come from a forward-filled grid, so nothing is re-indexed, no answer changes, and the review flag is not cleared either.",
+            "fr": "Affichage seulement : les enregistrements viennent d'une grille propagée, donc rien n'est réindexé, aucune réponse ne change, et le drapeau de relecture n'est pas levé non plus."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1409,29 +1598,34 @@
           "path": "/api/elements/{element_id}/convert-to-text",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "\"Đây không phải bảng\": chính chữ trong các ô thành text của element (không bịa gì), record và lưới bỏ đi, ảnh crop ở lại nên vẫn truy nguyên được.",
-            "en": "\"This is not a table\": the cells' own words become the element's text (nothing invented), the records and grid go away, and the crop stays so provenance is intact."
+            "en": "\"This is not a table\": the cells' own words become the element's text (nothing invented), the records and grid go away, and the crop stays so provenance is intact.",
+            "fr": "« Ce n'est pas un tableau » : les mots des cellules deviennent le texte de l'élément (rien n'est inventé), les enregistrements et la grille disparaissent, et la découpe reste pour préserver la provenance."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1448,29 +1642,34 @@
           "path": "/api/elements/{element_id}/approve",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "Người duyệt xác nhận bản parse: xoá cờ needs_review, câu trả lời dùng bảng này trở lại bình thường.",
-            "en": "The reviewer confirmed the parse: the needs_review flag is cleared and answers using this table return to normal."
+            "en": "The reviewer confirmed the parse: the needs_review flag is cleared and answers using this table return to normal.",
+            "fr": "Le relecteur a confirmé l'analyse : le drapeau needs_review est levé et les réponses utilisant ce tableau redeviennent normales."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1487,29 +1686,34 @@
           "path": "/api/elements/{element_id}/unusable",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "Người duyệt bác bản parse: record rời khỏi truy hồi, ảnh gốc ở lại làm đường lui trung thực.",
-            "en": "The reviewer rejected the parse: the records leave retrieval and the original image stays for the honest fallback."
+            "en": "The reviewer rejected the parse: the records leave retrieval and the original image stays for the honest fallback.",
+            "fr": "Le relecteur a rejeté l'analyse : les enregistrements quittent la recherche et l'image d'origine reste pour le repli honnête."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1526,29 +1730,34 @@
           "path": "/api/elements/{element_id}/image",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id element.",
-            "en": "The element id."
+            "en": "The element id.",
+            "fr": "L'identifiant de l'élément."
           },
           "response": {
             "vi": "Ảnh crop — thẩm quyền mà người duyệt đối chiếu. URL không đổi nhưng nội dung thì có, nên no-cache nghĩa là \"luôn hỏi lại\", và ETag làm việc hỏi đó miễn phí.",
-            "en": "The crop - the authority the reviewer reads the parse against. Its URL never changes but its content does, so no-cache means \"always ask\", and the ETag makes asking free."
+            "en": "The crop - the authority the reviewer reads the parse against. Its URL never changes but its content does, so no-cache means \"always ask\", and the ETag makes asking free.",
+            "fr": "La découpe - l'autorité contre laquelle le relecteur lit l'analyse. Son URL ne change jamais mais son contenu si, donc no-cache signifie « toujours demander », et l'ETag rend la question gratuite."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1568,11 +1777,13 @@
       "to": "api",
       "label": {
         "vi": "Chat",
-        "en": "Chat"
+        "en": "Chat",
+        "fr": "Chat"
       },
       "summary": {
         "vi": "Ba đường hỏi, cùng một hợp đồng SSE, cùng một bộ cờ thất bại trung thực.",
-        "en": "Three ways to ask, one SSE contract, one set of honest-failure flags."
+        "en": "Three ways to ask, one SSE contract, one set of honest-failure flags.",
+        "fr": "Trois façons de demander, un seul contrat SSE, un seul jeu de drapeaux d'échec honnête."
       },
       "operations": [
         {
@@ -1580,29 +1791,34 @@
           "path": "/api/kbs/{kb_id}/chat",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Câu hỏi, trong phạm vi đúng một KB.",
-            "en": "The question, scoped to exactly one knowledge base."
+            "en": "The question, scoped to exactly one knowledge base.",
+            "fr": "La question, limitée à exactement une base de connaissances."
           },
           "response": {
             "vi": "Luồng SSE: câu trả lời chảy về kèm trích dẫn mức trang và các cờ thất bại trung thực.",
-            "en": "An SSE stream: the answer arrives with page-level citations and the honest-failure flags."
+            "en": "An SSE stream: the answer arrives with page-level citations and the honest-failure flags.",
+            "fr": "Un flux SSE : la réponse arrive avec des citations au niveau de la page et les drapeaux d'échec honnête."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1619,29 +1835,34 @@
           "path": "/api/chat",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Câu hỏi, kèm kb_ids nếu người dùng muốn ghim tay đè lên router.",
-            "en": "The question, plus kb_ids when the user pins the scope over the router."
+            "en": "The question, plus kb_ids when the user pins the scope over the router.",
+            "fr": "La question, plus kb_ids quand l'utilisateur fige la portée par-dessus le routeur."
           },
           "response": {
             "vi": "Cùng hợp đồng SSE, thêm trường routing trên sự kiện done cho biết router đã chọn KB nào.",
-            "en": "The same SSE contract plus a routing field on the done event naming which knowledge bases the router picked."
+            "en": "The same SSE contract plus a routing field on the done event naming which knowledge bases the router picked.",
+            "fr": "Le même contrat SSE, plus un champ routing sur l'événement done nommant les bases retenues par le routeur."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1658,22 +1879,26 @@
           "path": "/api/messages/{message_id}/feedback",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Ngón cái lên hoặc xuống cho một câu trả lời.",
-            "en": "A thumbs up or down on one answer."
+            "en": "A thumbs up or down on one answer.",
+            "fr": "Un pouce levé ou baissé sur une réponse."
           },
           "response": {
             "vi": "Ghi nhận phản hồi: câu bị chê chính là câu đáng đưa vào bộ eval.",
-            "en": "The feedback is recorded: a thumbs-down answer is exactly the question worth adding to the eval set."
+            "en": "The feedback is recorded: a thumbs-down answer is exactly the question worth adding to the eval set.",
+            "fr": "L'avis est enregistré : une réponse au pouce baissé est exactement la question à ajouter au jeu d'évaluation."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -1693,11 +1918,13 @@
       "to": "api",
       "label": {
         "vi": "Trợ lý và hội thoại",
-        "en": "Assistants and conversations"
+        "en": "Assistants and conversations",
+        "fr": "Assistants et conversations"
       },
       "summary": {
         "vi": "Trợ lý gói sẵn phạm vi KB và chỉ dẫn; hội thoại lưu lại để phát lại được.",
-        "en": "An assistant packages a KB scope and its instructions; conversations are saved so they can be replayed."
+        "en": "An assistant packages a KB scope and its instructions; conversations are saved so they can be replayed.",
+        "fr": "Un assistant regroupe une portée en bases et ses instructions ; les conversations sont enregistrées pour être rejouées."
       },
       "operations": [
         {
@@ -1705,22 +1932,26 @@
           "path": "/api/assistants",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Không có tham số.",
-            "en": "No parameters."
+            "en": "No parameters.",
+            "fr": "Aucun paramètre."
           },
           "response": {
             "vi": "Mọi trợ lý đã cấu hình.",
-            "en": "Every configured assistant."
+            "en": "Every configured assistant.",
+            "fr": "Tous les assistants configurés."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -1737,22 +1968,26 @@
           "path": "/api/assistants",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Tên, các KB thuộc phạm vi, và chỉ dẫn riêng.",
-            "en": "A name, the knowledge bases in its scope, and its own instructions."
+            "en": "A name, the knowledge bases in its scope, and its own instructions.",
+            "fr": "Un nom, les bases dans sa portée, et ses propres instructions."
           },
           "response": {
             "vi": "201 kèm trợ lý vừa tạo.",
-            "en": "201 with the assistant as created."
+            "en": "201 with the assistant as created.",
+            "fr": "201 avec l'assistant tel que créé."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -1769,29 +2004,34 @@
           "path": "/api/assistants/{assistant_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id trợ lý.",
-            "en": "The assistant id."
+            "en": "The assistant id.",
+            "fr": "L'identifiant de l'assistant."
           },
           "response": {
             "vi": "Một trợ lý kèm phạm vi và chỉ dẫn.",
-            "en": "One assistant with its scope and instructions."
+            "en": "One assistant with its scope and instructions.",
+            "fr": "Un assistant avec sa portée et ses instructions."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1808,29 +2048,34 @@
           "path": "/api/assistants/{assistant_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Các trường cần đổi.",
-            "en": "The fields to change."
+            "en": "The fields to change.",
+            "fr": "Les champs à modifier."
           },
           "response": {
             "vi": "Trợ lý sau khi sửa.",
-            "en": "The assistant after the change."
+            "en": "The assistant after the change.",
+            "fr": "L'assistant après modification."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1847,29 +2092,34 @@
           "path": "/api/assistants/{assistant_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id trợ lý.",
-            "en": "The assistant id."
+            "en": "The assistant id.",
+            "fr": "L'identifiant de l'assistant."
           },
           "response": {
             "vi": "204 không nội dung.",
-            "en": "204 with no body."
+            "en": "204 with no body.",
+            "fr": "204 sans corps."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1886,36 +2136,42 @@
           "path": "/api/assistants/{assistant_id}/chat",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Câu hỏi gửi cho một trợ lý.",
-            "en": "A question put to one assistant."
+            "en": "A question put to one assistant.",
+            "fr": "Une question posée à un assistant."
           },
           "response": {
             "vi": "Cùng hợp đồng SSE: các KB của trợ lý là toàn bộ không gian tìm, chỉ dẫn của nó định hình câu trả lời, và luồng hội thoại được lưu dưới nó.",
-            "en": "The same SSE contract: the assistant's knowledge bases are the whole search space, its instructions shape the answer, and the thread is saved under it."
+            "en": "The same SSE contract: the assistant's knowledge bases are the whole search space, its instructions shape the answer, and the thread is saved under it.",
+            "fr": "Le même contrat SSE : les bases de l'assistant forment tout l'espace de recherche, ses instructions façonnent la réponse, et le fil est enregistré sous lui."
           },
           "errors": [
             {
               "code": "400",
               "meaning": {
                 "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
-                "en": "The request is malformed, or a precondition is unmet."
+                "en": "The request is malformed, or a precondition is unmet.",
+                "fr": "La requête est mal formée, ou une condition préalable n'est pas remplie."
               }
             },
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1932,29 +2188,34 @@
           "path": "/api/assistants/{assistant_id}/conversations",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id trợ lý.",
-            "en": "The assistant id."
+            "en": "The assistant id.",
+            "fr": "L'identifiant de l'assistant."
           },
           "response": {
             "vi": "Các luồng hội thoại đã lưu của trợ lý đó.",
-            "en": "That assistant's saved threads."
+            "en": "That assistant's saved threads.",
+            "fr": "Les fils enregistrés de cet assistant."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -1971,29 +2232,34 @@
           "path": "/api/conversations/{session_id}/messages",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id phiên.",
-            "en": "The session id."
+            "en": "The session id.",
+            "fr": "L'identifiant de session."
           },
           "response": {
             "vi": "Phát lại một luồng đã lưu với đủ mọi thứ để vẽ lại y như cũ.",
-            "en": "Replays a saved thread with everything needed to re-render it."
+            "en": "Replays a saved thread with everything needed to re-render it.",
+            "fr": "Rejoue un fil enregistré avec tout ce qu'il faut pour le réafficher."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -2010,29 +2276,34 @@
           "path": "/api/conversations/{session_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Tên mới cho luồng.",
-            "en": "The thread's new name."
+            "en": "The thread's new name.",
+            "fr": "Le nouveau nom du fil."
           },
           "response": {
             "vi": "Luồng sau khi đổi tên.",
-            "en": "The thread after the rename."
+            "en": "The thread after the rename.",
+            "fr": "Le fil après renommage."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -2049,29 +2320,34 @@
           "path": "/api/conversations/{session_id}",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Id phiên.",
-            "en": "The session id."
+            "en": "The session id.",
+            "fr": "L'identifiant de session."
           },
           "response": {
             "vi": "204 không nội dung.",
-            "en": "204 with no body."
+            "en": "204 with no body.",
+            "fr": "204 sans corps."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "404",
               "meaning": {
                 "vi": "Đối tượng được tham chiếu không tồn tại.",
-                "en": "The referenced object does not exist."
+                "en": "The referenced object does not exist.",
+                "fr": "L'objet référencé n'existe pas."
               }
             }
           ],
@@ -2088,25 +2364,36 @@
           "path": "/api/assistants/{assistant_id}/embed-token",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Không có thân yêu cầu. Token do máy chủ sinh, không phải trình duyệt: crypto.randomUUID() chỉ tồn tại trong secure context, còn hệ thống này phục vụ qua http trên tên nội bộ.",
-            "en": "No body. The token is minted by the server, not the browser: crypto.randomUUID() exists only in a secure context and this is served over plain http on an intranet name."
+            "en": "No body. The token is minted by the server, not the browser: crypto.randomUUID() exists only in a secure context and this is served over plain http on an intranet name.",
+            "fr": "Aucun corps. Le jeton est frappé par le serveur, pas par le navigateur : crypto.randomUUID() n'existe qu'en contexte sécurisé et ceci est servi en http simple sur un nom d'intranet."
           },
           "response": {
             "vi": "Trợ lý kèm token mới. Token cũ chết ngay lúc lệnh này trả về.",
-            "en": "The assistant with its new token. The previous one stops working the moment this returns."
+            "en": "The assistant with its new token. The previous one stops working the moment this returns.",
+            "fr": "L'assistant avec son nouveau jeton. L'ancien cesse de fonctionner dès que cet appel répond."
           },
           "errors": [
             {
               "code": "404",
               "meaning": {
                 "vi": "Không có trợ lý này.",
-                "en": "No such assistant."
+                "en": "No such assistant.",
+                "fr": "Cet assistant n'existe pas."
               }
             }
-          ]
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/assistants.py",
+            "from": 156,
+            "to": 156,
+            "anchor": "def create_embed_token(assistant_id: uuid.UUID,"
+          }
         }
       ]
     },
@@ -2116,11 +2403,13 @@
       "to": "api",
       "label": {
         "vi": "Cấu hình model",
-        "en": "Model configuration"
+        "en": "Model configuration",
+        "fr": "Configuration des modèles"
       },
       "summary": {
         "vi": "Ràng buộc C3 thành giao diện: đổi endpoint và model lúc chạy, không hardcode, không khởi động lại.",
-        "en": "Constraint C3 turned into a screen: endpoints and models change at runtime, nothing hardcoded, no restart."
+        "en": "Constraint C3 turned into a screen: endpoints and models change at runtime, nothing hardcoded, no restart.",
+        "fr": "La contrainte C3 devenue un écran : points de terminaison et modèles changent à chaud, rien n'est codé en dur, aucun redémarrage."
       },
       "operations": [
         {
@@ -2128,22 +2417,26 @@
           "path": "/api/models",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Không có tham số.",
-            "en": "No parameters."
+            "en": "No parameters.",
+            "fr": "Aucun paramètre."
           },
           "response": {
             "vi": "Bốn vai trò trừu tượng — parser, embedder, chat, reranker — với endpoint và model đang gắn vào từng vai.",
-            "en": "The four abstract roles - parser, embedder, chat, reranker - with the endpoint and model currently bound to each."
+            "en": "The four abstract roles - parser, embedder, chat, reranker - with the endpoint and model currently bound to each.",
+            "fr": "Les quatre rôles abstraits - parser, embedder, chat, reranker - avec le point de terminaison et le modèle actuellement associés à chacun."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -2160,36 +2453,42 @@
           "path": "/api/models/{role}",
           "auth": {
             "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
-            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403.",
+            "fr": "Administrateurs seulement : en plus de l'identité du proxy, le nom ou l'e-mail doit figurer dans la liste des administrateurs, sinon 403."
           },
           "request": {
             "vi": "Provider, base_url, model_name cho một vai trò.",
-            "en": "The provider, base_url and model_name for one role."
+            "en": "The provider, base_url and model_name for one role.",
+            "fr": "Le provider, la base_url et le model_name d'un rôle."
           },
           "response": {
             "vi": "Ghi đè được lưu trong Postgres và cả API lẫn worker nhận ngay, không cần khởi động lại — đó là điều làm ràng buộc C3 thành sự thật.",
-            "en": "The override is stored in Postgres and picked up by both the API and the worker without a restart - which is what makes constraint C3 true."
+            "en": "The override is stored in Postgres and picked up by both the API and the worker without a restart - which is what makes constraint C3 true.",
+            "fr": "La surcharge est stockée dans Postgres et prise en compte par l'API comme par le worker sans redémarrage - c'est ce qui rend la contrainte C3 vraie."
           },
           "errors": [
             {
               "code": "400",
               "meaning": {
                 "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
-                "en": "The request is malformed, or a precondition is unmet."
+                "en": "The request is malformed, or a precondition is unmet.",
+                "fr": "La requête est mal formée, ou une condition préalable n'est pas remplie."
               }
             },
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "403",
               "meaning": {
                 "vi": "Có danh tính, nhưng không phải admin.",
-                "en": "Identity present, but not an admin."
+                "en": "Identity present, but not an admin.",
+                "fr": "Identité présente, mais pas administrateur."
               }
             }
           ],
@@ -2206,29 +2505,34 @@
           "path": "/api/models/{role}/available",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Tên vai trò.",
-            "en": "The role name."
+            "en": "The role name.",
+            "fr": "Le nom du rôle."
           },
           "response": {
             "vi": "Model đã cài trên máy chủ Ollama của vai đó; rỗng với provider khác.",
-            "en": "The models installed on that role's Ollama server; empty for other providers."
+            "en": "The models installed on that role's Ollama server; empty for other providers.",
+            "fr": "Les modèles installés sur le serveur Ollama de ce rôle ; vide pour les autres fournisseurs."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "502",
               "meaning": {
                 "vi": "Endpoint model phía sau không trả lời được.",
-                "en": "The upstream model endpoint could not answer."
+                "en": "The upstream model endpoint could not answer.",
+                "fr": "Le point de terminaison du modèle en amont n'a pas pu répondre."
               }
             }
           ],
@@ -2245,36 +2549,42 @@
           "path": "/api/models/{role}/pull",
           "auth": {
             "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
-            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403.",
+            "fr": "Administrateurs seulement : en plus de l'identité du proxy, le nom ou l'e-mail doit figurer dans la liste des administrateurs, sinon 403."
           },
           "request": {
             "vi": "Tên model cần kéo về.",
-            "en": "The model to pull."
+            "en": "The model to pull.",
+            "fr": "Le modèle à télécharger."
           },
           "response": {
             "vi": "Luồng SSE tiến độ tải về máy chủ Ollama của vai trò đó.",
-            "en": "An SSE stream of pull progress onto that role's Ollama server."
+            "en": "An SSE stream of pull progress onto that role's Ollama server.",
+            "fr": "Un flux SSE de l'avancement du téléchargement sur le serveur Ollama de ce rôle."
           },
           "errors": [
             {
               "code": "400",
               "meaning": {
                 "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
-                "en": "The request is malformed, or a precondition is unmet."
+                "en": "The request is malformed, or a precondition is unmet.",
+                "fr": "La requête est mal formée, ou une condition préalable n'est pas remplie."
               }
             },
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "403",
               "meaning": {
                 "vi": "Có danh tính, nhưng không phải admin.",
-                "en": "Identity present, but not an admin."
+                "en": "Identity present, but not an admin.",
+                "fr": "Identité présente, mais pas administrateur."
               }
             }
           ],
@@ -2294,11 +2604,13 @@
       "to": "api",
       "label": {
         "vi": "Danh tính, thiết lập, kiểm toán",
-        "en": "Identity, settings, audit"
+        "en": "Identity, settings, audit",
+        "fr": "Identité, réglages, audit"
       },
       "summary": {
         "vi": "Ai đang đăng nhập, persona chat toàn cục, và vết kiểm toán GDPR.",
-        "en": "Who is signed in, the global chat persona, and the GDPR audit trail."
+        "en": "Who is signed in, the global chat persona, and the GDPR audit trail.",
+        "fr": "Qui est connecté, la personnalité globale du chat, et la piste d'audit RGPD."
       },
       "operations": [
         {
@@ -2306,22 +2618,26 @@
           "path": "/api/me",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Không có tham số; danh tính lấy từ header proxy.",
-            "en": "No parameters; the identity comes from the proxy header."
+            "en": "No parameters; the identity comes from the proxy header.",
+            "fr": "Aucun paramètre ; l'identité vient de l'en-tête du proxy."
           },
           "response": {
             "vi": "Người dùng hiện tại và cờ admin — giao diện dựa vào đây để ẩn/hiện các hành động chỉ dành cho admin.",
-            "en": "The current user and the admin flag - the interface uses it to show or hide the admin-only actions."
+            "en": "The current user and the admin flag - the interface uses it to show or hide the admin-only actions.",
+            "fr": "L'utilisateur courant et l'indicateur d'administration - l'interface s'en sert pour montrer ou masquer les actions réservées."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -2338,22 +2654,26 @@
           "path": "/api/settings/chat-instructions",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Không có tham số.",
-            "en": "No parameters."
+            "en": "No parameters.",
+            "fr": "Aucun paramètre."
           },
           "response": {
             "vi": "Persona chat toàn cục: trợ lý là ai, cộng phần hướng dẫn nối vào mọi system prompt. Ai đọc cũng được; chỉ admin sửa được.",
-            "en": "The global chat persona: who the assistant is, plus the guidance appended to every system prompt. Any user may read it; only admins may change it."
+            "en": "The global chat persona: who the assistant is, plus the guidance appended to every system prompt. Any user may read it; only admins may change it.",
+            "fr": "La personnalité globale du chat : qui est l'assistant, plus les consignes ajoutées à chaque invite système. Tout utilisateur peut la lire ; seuls les administrateurs la modifient."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             }
           ],
@@ -2370,29 +2690,34 @@
           "path": "/api/settings/chat-instructions",
           "auth": {
             "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
-            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403.",
+            "fr": "Administrateurs seulement : en plus de l'identité du proxy, le nom ou l'e-mail doit figurer dans la liste des administrateurs, sinon 403."
           },
           "request": {
             "vi": "Persona và hướng dẫn mới.",
-            "en": "The new persona and guidance."
+            "en": "The new persona and guidance.",
+            "fr": "La nouvelle personnalité et les nouvelles consignes."
           },
           "response": {
             "vi": "Persona sau khi lưu; để trống phần danh tính là quay về mô tả mặc định.",
-            "en": "The persona as saved; an empty identity falls back to the built-in description."
+            "en": "The persona as saved; an empty identity falls back to the built-in description.",
+            "fr": "La personnalité telle qu'enregistrée ; une identité vide retombe sur la description intégrée."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "403",
               "meaning": {
                 "vi": "Có danh tính, nhưng không phải admin.",
-                "en": "Identity present, but not an admin."
+                "en": "Identity present, but not an admin.",
+                "fr": "Identité présente, mais pas administrateur."
               }
             }
           ],
@@ -2409,29 +2734,34 @@
           "path": "/api/audit",
           "auth": {
             "vi": "Chỉ admin: ngoài danh tính proxy, tên hoặc email phải nằm trong danh sách admin, nếu không là 403.",
-            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403."
+            "en": "Admin only: on top of the proxy identity, the name or email must be in the admin list, otherwise 403.",
+            "fr": "Administrateurs seulement : en plus de l'identité du proxy, le nom ou l'e-mail doit figurer dans la liste des administrateurs, sinon 403."
           },
           "request": {
             "vi": "Giới hạn số dòng, mặc định 200.",
-            "en": "A row limit, 200 by default."
+            "en": "A row limit, 200 by default.",
+            "fr": "Une limite de lignes, 200 par défaut."
           },
           "response": {
             "vi": "Vết kiểm toán GDPR, mới nhất trước: ai đã tải lên, đã hỏi, đã đổi cấu hình model.",
-            "en": "The GDPR accountability trail, most recent first: who uploaded, who queried, who changed the model configuration."
+            "en": "The GDPR accountability trail, most recent first: who uploaded, who queried, who changed the model configuration.",
+            "fr": "La piste de responsabilité RGPD, du plus récent au plus ancien : qui a téléversé, qui a interrogé, qui a changé la configuration des modèles."
           },
           "errors": [
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "403",
               "meaning": {
                 "vi": "Có danh tính, nhưng không phải admin.",
-                "en": "Identity present, but not an admin."
+                "en": "Identity present, but not an admin.",
+                "fr": "Identité présente, mais pas administrateur."
               }
             }
           ],
@@ -2451,11 +2781,13 @@
       "to": "api",
       "label": {
         "vi": "Sức khoẻ",
-        "en": "Health"
+        "en": "Health",
+        "fr": "Santé"
       },
       "summary": {
         "vi": "Hai đường mở duy nhất, vì health check phải gọi được trước khi có ai đăng nhập.",
-        "en": "The only two open paths, because a health check must work before anyone has signed in."
+        "en": "The only two open paths, because a health check must work before anyone has signed in.",
+        "fr": "Les deux seuls chemins ouverts, parce qu'une sonde de santé doit fonctionner avant que quiconque se soit connecté."
       },
       "operations": [
         {
@@ -2463,15 +2795,18 @@
           "path": "/api/health",
           "auth": {
             "vi": "Mở, không cần xác thực — health là đường mà load balancer và preflight phải gọi được.",
-            "en": "Open, unauthenticated - health is the path a load balancer and the preflight script must be able to call."
+            "en": "Open, unauthenticated - health is the path a load balancer and the preflight script must be able to call.",
+            "fr": "Ouvert, sans authentification - health est le chemin qu'un répartiteur de charge et le script de contrôle avant vol doivent pouvoir appeler."
           },
           "request": {
             "vi": "Không có tham số.",
-            "en": "No parameters."
+            "en": "No parameters.",
+            "fr": "Aucun paramètre."
           },
           "response": {
             "vi": "Nhịp sống của tiến trình. Đây là một trong những đường mở — chặn nó là health check của proxy chết.",
-            "en": "The process's liveness. This is one of the open paths - gate it and the proxy's health check dies."
+            "en": "The process's liveness. This is one of the open paths - gate it and the proxy's health check dies.",
+            "fr": "La vitalité du processus. C'est l'un des chemins ouverts - le filtrer tuerait la sonde du proxy."
           },
           "errors": [],
           "cite": {
@@ -2487,15 +2822,18 @@
           "path": "/api/health/models",
           "auth": {
             "vi": "Mở, không cần xác thực — health là đường mà load balancer và preflight phải gọi được.",
-            "en": "Open, unauthenticated - health is the path a load balancer and the preflight script must be able to call."
+            "en": "Open, unauthenticated - health is the path a load balancer and the preflight script must be able to call.",
+            "fr": "Ouvert, sans authentification - health est le chemin qu'un répartiteur de charge et le script de contrôle avant vol doivent pouvoir appeler."
           },
           "request": {
             "vi": "Không có tham số.",
-            "en": "No parameters."
+            "en": "No parameters.",
+            "fr": "Aucun paramètre."
           },
           "response": {
             "vi": "Sức khoẻ endpoint theo từng vai trò model — góc nhìn preflight của người triển khai.",
-            "en": "Endpoint health per model role - the deployer's preflight view."
+            "en": "Endpoint health per model role - the deployer's preflight view.",
+            "fr": "Santé du point de terminaison par rôle de modèle - la vue de contrôle avant vol de celui qui déploie."
           },
           "errors": [],
           "cite": {
@@ -2514,11 +2852,13 @@
       "to": "api",
       "label": {
         "vi": "Chẩn đoán",
-        "en": "Diagnostics"
+        "en": "Diagnostics",
+        "fr": "Diagnostic"
       },
       "summary": {
         "vi": "Một đường duy nhất để soi vì sao nhận diện bảng ra kết quả như vậy.",
-        "en": "A single path for inspecting why table detection produced what it did."
+        "en": "A single path for inspecting why table detection produced what it did.",
+        "fr": "Un seul chemin pour inspecter pourquoi la détection de tableaux a produit ce qu'elle a produit."
       },
       "operations": [
         {
@@ -2526,43 +2866,50 @@
           "path": "/api/diagnostics/table-detection",
           "auth": {
             "vi": "Cần danh tính do proxy chuyển xuống; thiếu header là 401.",
-            "en": "Needs the identity the proxy forwards; a missing header is a 401."
+            "en": "Needs the identity the proxy forwards; a missing header is a 401.",
+            "fr": "Exige l'identité transmise par le proxy ; un en-tête manquant vaut 401."
           },
           "request": {
             "vi": "Một tệp PDF, kèm số trang tuỳ chọn để chạy nhận diện vùng bằng VLM.",
-            "en": "A PDF file, plus an optional page number for VLM region detection."
+            "en": "A PDF file, plus an optional page number for VLM region detection.",
+            "fr": "Un fichier PDF, plus un numéro de page facultatif pour la détection de régions par le VLM."
           },
           "response": {
             "vi": "Bảng phân tích find_tables theo từng trang và từng chiến lược — công cụ để hiểu vì sao một bảng bị bỏ sót.",
-            "en": "The per-page, per-strategy find_tables breakdown - the tool for understanding why a table was missed."
+            "en": "The per-page, per-strategy find_tables breakdown - the tool for understanding why a table was missed.",
+            "fr": "Le détail de find_tables page par page et stratégie par stratégie - l'outil pour comprendre pourquoi un tableau a été manqué."
           },
           "errors": [
             {
               "code": "400",
               "meaning": {
                 "vi": "Yêu cầu sai định dạng, hoặc điều kiện tiên quyết chưa thoả.",
-                "en": "The request is malformed, or a precondition is unmet."
+                "en": "The request is malformed, or a precondition is unmet.",
+                "fr": "La requête est mal formée, ou une condition préalable n'est pas remplie."
               }
             },
             {
               "code": "401",
               "meaning": {
                 "vi": "Không có danh tính nào từ proxy.",
-                "en": "No proxy identity was presented."
+                "en": "No proxy identity was presented.",
+                "fr": "Aucune identité de proxy n'a été présentée."
               }
             },
             {
               "code": "413",
               "meaning": {
                 "vi": "Tệp vượt quá giới hạn kích thước cho phép.",
-                "en": "The file exceeds the permitted size limit."
+                "en": "The file exceeds the permitted size limit.",
+                "fr": "Le fichier dépasse la taille autorisée."
               }
             },
             {
               "code": "502",
               "meaning": {
                 "vi": "Endpoint model phía sau không trả lời được.",
-                "en": "The upstream model endpoint could not answer."
+                "en": "The upstream model endpoint could not answer.",
+                "fr": "Le point de terminaison du modèle en amont n'a pas pu répondre."
               }
             }
           ],
@@ -2582,11 +2929,13 @@
       "to": "frontend",
       "label": {
         "vi": "Tải giao diện",
-        "en": "Loads the interface"
+        "en": "Loads the interface",
+        "fr": "Charge l'interface"
       },
       "summary": {
         "vi": "Trình duyệt mở ứng dụng Next.js ở cổng 3000.",
-        "en": "The browser opens the Next.js app on port 3000."
+        "en": "The browser opens the Next.js app on port 3000.",
+        "fr": "Le navigateur ouvre l'application Next.js sur le port 3000."
       },
       "operations": [],
       "cite": {
@@ -2603,11 +2952,13 @@
       "to": "proxy",
       "label": {
         "vi": "Đăng nhập SSO",
-        "en": "SSO sign-in"
+        "en": "SSO sign-in",
+        "fr": "Connexion SSO"
       },
       "summary": {
         "vi": "Trình duyệt xác thực với proxy; ứng dụng không bao giờ thấy mật khẩu.",
-        "en": "The browser authenticates against the proxy; the app never sees a password."
+        "en": "The browser authenticates against the proxy; the app never sees a password.",
+        "fr": "Le navigateur s'authentifie auprès du proxy ; l'application ne voit jamais de mot de passe."
       },
       "operations": [],
       "cite": {
@@ -2624,11 +2975,13 @@
       "to": "api",
       "label": {
         "vi": "Header danh tính",
-        "en": "Identity header"
+        "en": "Identity header",
+        "fr": "En-tête d'identité"
       },
       "summary": {
         "vi": "Proxy chuyển tên người dùng xuống bằng header. Tin header chỉ an toàn khi API chỉ nghe được qua proxy — hở cổng 8000 ra ngoài là ai cũng tự xưng admin được.",
-        "en": "The proxy forwards the username in a header. Trusting a header is safe ONLY while the API is reachable through the proxy alone - publish port 8000 and anyone can call themselves admin."
+        "en": "The proxy forwards the username in a header. Trusting a header is safe ONLY while the API is reachable through the proxy alone - publish port 8000 and anyone can call themselves admin.",
+        "fr": "Le proxy transmet le nom d'utilisateur dans un en-tête. Faire confiance à un en-tête n'est sûr QUE tant que l'API n'est joignable que par le proxy - exposez le port 8000 et n'importe qui peut se déclarer administrateur."
       },
       "operations": [],
       "cite": {
@@ -2645,11 +2998,13 @@
       "to": "consumer",
       "label": {
         "vi": "Nạp theo thư mục",
-        "en": "Directory feed"
+        "en": "Directory feed",
+        "fr": "Alimentation par dossier"
       },
       "summary": {
         "vi": "PDF nằm trong thư mục con mang tên KB thì được nạp vào đúng KB đó; PDF ở thư mục gốc bị bỏ qua.",
-        "en": "A PDF inside a subfolder named after a knowledge base is ingested into it; a PDF in the root is ignored."
+        "en": "A PDF inside a subfolder named after a knowledge base is ingested into it; a PDF in the root is ignored.",
+        "fr": "Un PDF placé dans un sous-dossier portant le nom d'une base y est ingéré ; un PDF à la racine est ignoré."
       },
       "operations": [],
       "cite": {
@@ -2666,11 +3021,13 @@
       "to": "redis",
       "label": {
         "vi": "Xếp hàng ingestion",
-        "en": "Queues ingestion"
+        "en": "Queues ingestion",
+        "fr": "Met l'ingestion en file"
       },
       "summary": {
         "vi": "Consumer tạo bản ghi tài liệu rồi đẩy việc vào cùng hàng đợi mà API dùng.",
-        "en": "The consumer creates the document record and pushes the work onto the same queue the API uses."
+        "en": "The consumer creates the document record and pushes the work onto the same queue the API uses.",
+        "fr": "Le consommateur crée l'enregistrement du document et pousse le travail dans la même file que l'API."
       },
       "operations": [],
       "cite": {
@@ -2687,11 +3044,13 @@
       "to": "mcp-server",
       "label": {
         "vi": "Giao thức MCP qua stdio",
-        "en": "MCP over stdio"
+        "en": "MCP over stdio",
+        "fr": "MCP par stdio"
       },
       "summary": {
         "vi": "Client MCP chạy server ngay trên máy mình và gọi hai công cụ: liệt kê KB, và hỏi một câu có trích dẫn.",
-        "en": "The MCP client runs the server locally and calls two tools: list the knowledge bases, and ask a cited question."
+        "en": "The MCP client runs the server locally and calls two tools: list the knowledge bases, and ask a cited question.",
+        "fr": "Le client MCP exécute le serveur en local et appelle deux outils : lister les bases de connaissances, et poser une question sourcée."
       },
       "operations": [],
       "cite": {
@@ -2708,11 +3067,13 @@
       "to": "api",
       "label": {
         "vi": "Chỉ đi qua HTTP API",
-        "en": "Through the HTTP API only"
+        "en": "Through the HTTP API only",
+        "fr": "Uniquement par l'API HTTP"
       },
       "summary": {
         "vi": "MCP server không bao giờ chạm thẳng vào Postgres hay Qdrant: ingestion, query và serving đều ở sau API — đúng nguyên tắc số 1.",
-        "en": "The MCP server never touches Postgres or Qdrant directly: ingestion, query and serving all stay behind the API - principle 1."
+        "en": "The MCP server never touches Postgres or Qdrant directly: ingestion, query and serving all stay behind the API - principle 1.",
+        "fr": "Le serveur MCP ne touche jamais Postgres ni Qdrant directement : ingestion, requête et service restent derrière l'API - principe 1."
       },
       "operations": [],
       "cite": {
@@ -2729,11 +3090,13 @@
       "to": "redis",
       "label": {
         "vi": "Bỏ việc vào hàng đợi",
-        "en": "Enqueues the work"
+        "en": "Enqueues the work",
+        "fr": "Met le travail en file"
       },
       "summary": {
         "vi": "Tải lên trả về 202 ngay: việc thật nằm trong hàng đợi, worker lấy từng cái.",
-        "en": "Upload answers 202 straight away: the real work sits on the queue and the worker takes it one at a time."
+        "en": "Upload answers 202 straight away: the real work sits on the queue and the worker takes it one at a time.",
+        "fr": "Le téléversement répond 202 immédiatement : le vrai travail attend dans la file et le worker le prend un par un."
       },
       "operations": [],
       "cite": {
@@ -2750,11 +3113,13 @@
       "to": "redis",
       "label": {
         "vi": "Lấy việc ra",
-        "en": "Takes the work"
+        "en": "Takes the work",
+        "fr": "Prend le travail"
       },
       "summary": {
         "vi": "Worker chạy một tài liệu tại một thời điểm — đó là thứ giữ cho một lô lớn không đè chết máy.",
-        "en": "The worker runs one document at a time - which is what keeps a large batch from overwhelming the box."
+        "en": "The worker runs one document at a time - which is what keeps a large batch from overwhelming the box.",
+        "fr": "Le worker traite un document à la fois - c'est ce qui empêche un gros lot de submerger la machine."
       },
       "operations": [],
       "cite": {
@@ -2771,11 +3136,13 @@
       "to": "postgres",
       "label": {
         "vi": "Đọc ghi cấu trúc",
-        "en": "Reads and writes the structure"
+        "en": "Reads and writes the structure",
+        "fr": "Lit et écrit la structure"
       },
       "summary": {
         "vi": "API đọc KB, tài liệu, element và hội thoại qua đúng một tầng repository — không câu SQL nào nằm trong route.",
-        "en": "The API reads knowledge bases, documents, elements and conversations through one repository layer - no SQL lives in a route."
+        "en": "The API reads knowledge bases, documents, elements and conversations through one repository layer - no SQL lives in a route.",
+        "fr": "L'API lit bases, documents, éléments et conversations à travers une seule couche de dépôt - aucun SQL ne vit dans une route."
       },
       "operations": [],
       "cite": {
@@ -2792,11 +3159,13 @@
       "to": "postgres",
       "label": {
         "vi": "Ghi kết quả parse",
-        "en": "Writes the parse"
+        "en": "Writes the parse",
+        "fr": "Écrit l'analyse"
       },
       "summary": {
         "vi": "Worker ghi element, bản ghi bảng và chunk. Nó không bao giờ import query/ — hai pipeline chỉ gặp nhau ở đây.",
-        "en": "The worker writes elements, table records and chunks. It never imports query/ - the two pipelines meet only here."
+        "en": "The worker writes elements, table records and chunks. It never imports query/ - the two pipelines meet only here.",
+        "fr": "Le worker écrit éléments, enregistrements de tableau et fragments. Il n'importe jamais query/ - les deux chaînes ne se rencontrent qu'ici."
       },
       "operations": [],
       "cite": {
@@ -2813,11 +3182,13 @@
       "to": "qdrant",
       "label": {
         "vi": "Tìm vector, và dọn khi xoá",
-        "en": "Searches, and purges on delete"
+        "en": "Searches, and purges on delete",
+        "fr": "Cherche, et purge à la suppression"
       },
       "summary": {
         "vi": "Truy hồi đọc cả ba collection. Khi xoá tài liệu hay KB, vector bị dọn TRƯỚC cascade Postgres.",
-        "en": "Retrieval reads all three collections. On deleting a document or a knowledge base the vectors are purged BEFORE the Postgres cascade."
+        "en": "Retrieval reads all three collections. On deleting a document or a knowledge base the vectors are purged BEFORE the Postgres cascade.",
+        "fr": "La recherche lit les trois collections. À la suppression d'un document ou d'une base, les vecteurs sont purgés AVANT la cascade Postgres."
       },
       "operations": [],
       "cite": {
@@ -2834,11 +3205,13 @@
       "to": "qdrant",
       "label": {
         "vi": "Ghi vector",
-        "en": "Writes the vectors"
+        "en": "Writes the vectors",
+        "fr": "Écrit les vecteurs"
       },
       "summary": {
         "vi": "Mỗi điểm mang kèm kb_id, doc_id, element_id để lọc payload và để truy nguyên — vector không có nguồn thì vô dụng.",
-        "en": "Every point carries kb_id, doc_id and element_id for payload filtering and for provenance - a vector with no source is useless."
+        "en": "Every point carries kb_id, doc_id and element_id for payload filtering and for provenance - a vector with no source is useless.",
+        "fr": "Chaque point porte kb_id, doc_id et element_id pour le filtrage et la provenance - un vecteur sans source est inutile."
       },
       "operations": [],
       "cite": {
@@ -2855,11 +3228,13 @@
       "to": "minio",
       "label": {
         "vi": "Phục vụ ảnh gốc",
-        "en": "Serves the original images"
+        "en": "Serves the original images",
+        "fr": "Sert les images d'origine"
       },
       "summary": {
         "vi": "Ảnh crop, ảnh render trang và PDF gốc — đường bấm ngược từ câu trả lời về tận trang giấy.",
-        "en": "Crops, page renders and the original PDF - the path from an answer back to the page itself."
+        "en": "Crops, page renders and the original PDF - the path from an answer back to the page itself.",
+        "fr": "Découpes, rendus de page et PDF d'origine - le chemin qui ramène d'une réponse à la page elle-même."
       },
       "operations": [],
       "cite": {
@@ -2876,11 +3251,13 @@
       "to": "minio",
       "label": {
         "vi": "Lưu ảnh lúc ingest",
-        "en": "Stores the images at ingest"
+        "en": "Stores the images at ingest",
+        "fr": "Stocke les images à l'ingestion"
       },
       "summary": {
         "vi": "Ảnh gốc được lưu ngay lúc tải lên, trước khi parse — nếu parse sai thì vẫn còn nguyên bản để đối chiếu.",
-        "en": "The original is stored at upload time, before any parsing - so when a parse is wrong the original is still there to read it against."
+        "en": "The original is stored at upload time, before any parsing - so when a parse is wrong the original is still there to read it against.",
+        "fr": "L'original est stocké au téléversement, avant toute analyse - ainsi, quand une analyse est fausse, l'original est encore là pour la confronter."
       },
       "operations": [],
       "cite": {
@@ -2897,11 +3274,13 @@
       "to": "parser",
       "label": {
         "vi": "Đọc bảng và trang scan",
-        "en": "Reads tables and scanned pages"
+        "en": "Reads tables and scanned pages",
+        "fr": "Lit les tableaux et les pages scannées"
       },
       "summary": {
         "vi": "Trang scan không phải ca đặc biệt: cũng là ảnh chất lượng thấp hơn đưa vào đúng VLM đó.",
-        "en": "A scanned page is not a special case: it is lower-quality image input to the same VLM."
+        "en": "A scanned page is not a special case: it is lower-quality image input to the same VLM.",
+        "fr": "Une page scannée n'est pas un cas particulier : c'est une image de moindre qualité donnée au même VLM."
       },
       "operations": [],
       "cite": {
@@ -2918,11 +3297,13 @@
       "to": "embedder",
       "label": {
         "vi": "Sinh vector lúc index",
-        "en": "Embeds at index time"
+        "en": "Embeds at index time",
+        "fr": "Encode au moment de l'indexation"
       },
       "summary": {
         "vi": "Sửa tay một element thì vector của riêng nó được dựng lại — nếu không, câu trả lời vẫn trích bản parse cũ.",
-        "en": "Correcting one element by hand rebuilds that element's vectors - otherwise answers keep quoting the stale parse."
+        "en": "Correcting one element by hand rebuilds that element's vectors - otherwise answers keep quoting the stale parse.",
+        "fr": "Corriger un élément à la main reconstruit les vecteurs de cet élément - sinon les réponses continuent de citer l'analyse périmée."
       },
       "operations": [],
       "cite": {
@@ -2939,11 +3320,13 @@
       "to": "embedder",
       "label": {
         "vi": "Sinh vector cho câu hỏi",
-        "en": "Embeds the question"
+        "en": "Embeds the question",
+        "fr": "Encode la question"
       },
       "summary": {
         "vi": "Truy hồi lai: dense bắt ý, sparse bắt token hiếm mà dense làm mờ — mã sản phẩm, tên riêng, \"T1 2013\".",
-        "en": "Hybrid retrieval: dense catches the meaning, sparse catches the rare tokens dense blurs - product codes, proper names, \"T1 2013\"."
+        "en": "Hybrid retrieval: dense catches the meaning, sparse catches the rare tokens dense blurs - product codes, proper names, \"T1 2013\".",
+        "fr": "Recherche hybride : le dense saisit le sens, le creux saisit les jetons rares que le dense brouille - codes produits, noms propres, « T1 2013 »."
       },
       "operations": [],
       "cite": {
@@ -2960,11 +3343,13 @@
       "to": "chat",
       "label": {
         "vi": "Sinh câu trả lời",
-        "en": "Generates the answer"
+        "en": "Generates the answer",
+        "fr": "Génère la réponse"
       },
       "summary": {
         "vi": "System prompt mã hoá triết lý sản phẩm: chỉ trả lời từ nguồn, trích dẫn mọi thứ, chép số y nguyên, và không bao giờ khẳng định số từ nguồn bị gắn cờ.",
-        "en": "The system prompt encodes the product philosophy: answer only from sources, cite everything, copy numbers exactly, and never assert a figure from a flagged source."
+        "en": "The system prompt encodes the product philosophy: answer only from sources, cite everything, copy numbers exactly, and never assert a figure from a flagged source.",
+        "fr": "L'invite système encode la philosophie du produit : ne répondre qu'à partir des sources, tout citer, recopier les chiffres à l'identique, et ne jamais affirmer un chiffre venu d'une source signalée."
       },
       "operations": [],
       "cite": {
@@ -2981,11 +3366,13 @@
       "to": "reranker",
       "label": {
         "vi": "Xếp lại thứ tự ứng viên",
-        "en": "Reorders the candidates"
+        "en": "Reorders the candidates",
+        "fr": "Réordonne les candidats"
       },
       "summary": {
         "vi": "Vai trò này mặc định tắt, và khi bật mà không gọi được thì suy biến y hệt lúc tắt thay vì làm hỏng cả truy vấn.",
-        "en": "The role is disabled by default, and when enabled but unreachable it degrades exactly as if it were off rather than failing the query."
+        "en": "The role is disabled by default, and when enabled but unreachable it degrades exactly as if it were off rather than failing the query.",
+        "fr": "Le rôle est désactivé par défaut, et lorsqu'il est activé mais injoignable il se dégrade exactement comme s'il était éteint plutôt que de faire échouer la requête."
       },
       "operations": [],
       "cite": {
@@ -3002,11 +3389,13 @@
       "to": "api",
       "label": {
         "vi": "Trợ lý nhúng",
-        "en": "Embedded assistant"
+        "en": "Embedded assistant",
+        "fr": "Assistant embarqué"
       },
       "summary": {
         "vi": "Một trợ lý được phục vụ cho ứng dụng khác bằng token. Đây là tiền tố duy nhất đi qua middleware mà không cần danh tính, nên mỗi route tự đổi token lấy trợ lý và trả 404 khi không khớp — 404 chứ không phải 403, vì 403 xác nhận có trợ lý ở đó.",
-        "en": "One assistant served to another application by token. This is the only prefix the middleware lets through without an identity, so each route exchanges the token itself and answers 404 when it does not match — 404 rather than 403, because a 403 confirms an assistant is there."
+        "en": "One assistant served to another application by token. This is the only prefix the middleware lets through without an identity, so each route exchanges the token itself and answers 404 when it does not match — 404 rather than 403, because a 403 confirms an assistant is there.",
+        "fr": "Un assistant servi à une autre application par jeton. C'est le seul préfixe que le middleware laisse passer sans identité, donc chaque route échange le jeton elle-même et répond 404 s'il ne correspond pas - 404 plutôt que 403, parce qu'un 403 confirmerait qu'un assistant est là."
       },
       "operations": [
         {
@@ -3014,50 +3403,72 @@
           "path": "/api/embed/{token}",
           "auth": {
             "vi": "Token chính là chứng chỉ. Không cần header danh tính.",
-            "en": "The token is the whole credential. No identity header."
+            "en": "The token is the whole credential. No identity header.",
+            "fr": "Le jeton constitue l'intégralité de l'authentification. Aucun en-tête d'identité."
           },
           "request": {
             "vi": "Token trong đường dẫn.",
-            "en": "The token, in the path."
+            "en": "The token, in the path.",
+            "fr": "Le jeton, dans le chemin."
           },
           "response": {
             "vi": "Mặt tiền của trợ lý: tên, mô tả, lời mở đầu. Không có id kho tri thức, không có chỉ dẫn vận hành, không có chính token.",
-            "en": "The assistant's public face: name, description, opening message. No knowledge base ids, no operator instructions, and not the token itself."
+            "en": "The assistant's public face: name, description, opening message. No knowledge base ids, no operator instructions, and not the token itself.",
+            "fr": "La face publique de l'assistant : nom, description, message d'accueil. Aucun identifiant de base, aucune consigne d'exploitation, et pas le jeton lui-même."
           },
           "errors": [
             {
               "code": "404",
               "meaning": {
                 "vi": "Token lạ, đã thu hồi, hoặc là khoảng trắng.",
-                "en": "Unknown, revoked or blank token."
+                "en": "Unknown, revoked or blank token.",
+                "fr": "Jeton inconnu, révoqué ou vide."
               }
             }
-          ]
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/embed.py",
+            "from": 38,
+            "to": 38,
+            "anchor": "def embed_face(token: str) -> EmbedFace:"
+          }
         },
         {
           "method": "POST",
           "path": "/api/embed/{token}/chat",
           "auth": {
             "vi": "Token chính là chứng chỉ, và cũng là danh tính — đường này không nhận id trợ lý, nên một token hợp lệ không chĩa sang trợ lý khác được.",
-            "en": "The token is the credential and the identity — this route takes no assistant id, so a valid token cannot be aimed at another assistant."
+            "en": "The token is the credential and the identity — this route takes no assistant id, so a valid token cannot be aimed at another assistant.",
+            "fr": "Le jeton est à la fois l'authentification et l'identité - cette route ne prend aucun identifiant d'assistant, donc un jeton valide ne peut pas être pointé vers un autre assistant."
           },
           "request": {
             "vi": "Câu hỏi và session_id tuỳ chọn, giống hợp đồng chat khác.",
-            "en": "A question and an optional session_id, the same contract as the other chat routes."
+            "en": "A question and an optional session_id, the same contract as the other chat routes.",
+            "fr": "Une question et un session_id facultatif, le même contrat que les autres routes de chat."
           },
           "response": {
             "vi": "Cùng luồng SSE của chat trợ lý: citations, token, caution, done. Ghi nhật ký với actor embed:<tên trợ lý>.",
-            "en": "The same SSE stream as the assistant chat: citations, token, caution, done. Audited with actor embed:<assistant name>."
+            "en": "The same SSE stream as the assistant chat: citations, token, caution, done. Audited with actor embed:<assistant name>.",
+            "fr": "Le même flux SSE que le chat d'assistant : citations, token, caution, done. Audité avec l'acteur embed:<nom de l'assistant>."
           },
           "errors": [
             {
               "code": "404",
               "meaning": {
                 "vi": "Token lạ, đã thu hồi, hoặc là khoảng trắng.",
-                "en": "Unknown, revoked or blank token."
+                "en": "Unknown, revoked or blank token.",
+                "fr": "Jeton inconnu, révoqué ou vide."
               }
             }
-          ]
+          ],
+          "cite": {
+            "kind": "anchor",
+            "file": "tablerag/api/routes/embed.py",
+            "from": 50,
+            "to": 50,
+            "anchor": "async def embed_chat(token: str,"
+          }
         }
       ]
     },
@@ -3067,11 +3478,13 @@
       "to": "api",
       "label": {
         "vi": "Truy xuất bên ngoài",
-        "en": "External retrieval"
+        "en": "External retrieval",
+        "fr": "Recherche externe"
       },
       "summary": {
         "vi": "Kết quả truy xuất thô của một KB, phục vụ nền tảng RAG khác (Dify, RAGFlow…) bằng khoá API — hợp đồng External Knowledge API của Dify. Tiền tố mở thứ hai đi qua middleware mà không cần danh tính, cùng cách phòng thủ với embed: 404 chứ không phải 401/403, để không xác nhận KB đó tồn tại. Tắt theo mặc định cho tới khi có người mint khoá cho KB (xem POST /api/kbs/{kb_id}/retrieval-key).",
-        "en": "One KB's raw retrieval results, served to another RAG platform (Dify, RAGFlow…) by API key — Dify's External Knowledge API contract. The second open prefix the middleware lets through without an identity, same defensive stance as embed: 404 rather than 401/403, so it never confirms the KB exists. Off by default until someone mints a key for the KB (see POST /api/kbs/{kb_id}/retrieval-key)."
+        "en": "One KB's raw retrieval results, served to another RAG platform (Dify, RAGFlow…) by API key — Dify's External Knowledge API contract. The second open prefix the middleware lets through without an identity, same defensive stance as embed: 404 rather than 401/403, so it never confirms the KB exists. Off by default until someone mints a key for the KB (see POST /api/kbs/{kb_id}/retrieval-key).",
+        "fr": "Les résultats bruts de recherche d'une base, servis à une autre plateforme RAG (Dify, RAGFlow…) par clé d'API - le contrat External Knowledge API de Dify. C'est le second préfixe ouvert que le middleware laisse passer sans identité, avec la même posture défensive qu'embed : 404 plutôt que 401/403, pour ne jamais confirmer que la base existe. Désactivé par défaut tant que personne n'a frappé de clé pour la base (voir POST /api/kbs/{kb_id}/retrieval-key)."
       },
       "operations": [
         {
@@ -3079,29 +3492,34 @@
           "path": "/api/retrieval/{kb_id}/retrieval",
           "auth": {
             "vi": "Khoá Bearer đứng thay danh tính; sai hoặc thiếu khoá trả 404, không phải 401.",
-            "en": "A Bearer key stands in for identity; a wrong or missing key answers 404, not 401."
+            "en": "A Bearer key stands in for identity; a wrong or missing key answers 404, not 401.",
+            "fr": "Une clé Bearer tient lieu d'identité ; une clé fausse ou absente répond 404, pas 401."
           },
           "request": {
             "vi": "query, và retrieval_setting {top_k, score_threshold} — đúng hợp đồng External Knowledge API của Dify.",
-            "en": "query, and retrieval_setting {top_k, score_threshold} — Dify's External Knowledge API request shape."
+            "en": "query, and retrieval_setting {top_k, score_threshold} — Dify's External Knowledge API request shape.",
+            "fr": "query, et retrieval_setting {top_k, score_threshold} - la forme de requête de l'External Knowledge API de Dify."
           },
           "response": {
             "vi": "records[]: content, score, title, metadata — chạy Router → Retrieve → Rerank → AssembleContext, bỏ qua ExpandNeighbours và Generate/Verify vì đây là truy xuất thô, không sinh câu trả lời.",
-            "en": "records[]: content, score, title, metadata — runs Router → Retrieve → Rerank → AssembleContext, skipping ExpandNeighbours and Generate/Verify since this returns raw matches, not a generated answer."
+            "en": "records[]: content, score, title, metadata — runs Router → Retrieve → Rerank → AssembleContext, skipping ExpandNeighbours and Generate/Verify since this returns raw matches, not a generated answer.",
+            "fr": "records[] : content, score, title, metadata - exécute Router → Retrieve → Rerank → AssembleContext, en sautant ExpandNeighbours et Generate/Verify puisque cela renvoie des correspondances brutes, pas une réponse générée."
           },
           "errors": [
             {
               "code": "404",
               "meaning": {
                 "vi": "Khoá lạ, KB chưa bật truy xuất bên ngoài, hoặc khoá không khớp kb_id trên đường dẫn.",
-                "en": "Unknown key, external retrieval not enabled for this KB, or the key does not match the kb_id in the path."
+                "en": "Unknown key, external retrieval not enabled for this KB, or the key does not match the kb_id in the path.",
+                "fr": "Clé inconnue, recherche externe non activée pour cette base, ou clé ne correspondant pas au kb_id du chemin."
               }
             },
             {
               "code": "500",
               "meaning": {
                 "vi": "Lỗi nội bộ trong khi truy xuất; không lộ chi tiết ra ngoài.",
-                "en": "An internal error during retrieval; details are not leaked to the caller."
+                "en": "An internal error during retrieval; details are not leaked to the caller.",
+                "fr": "Une erreur interne pendant la recherche ; les détails ne fuitent pas vers l'appelant."
               }
             }
           ],

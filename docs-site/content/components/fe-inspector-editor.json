@@ -8,7 +8,8 @@
       "line": 46,
       "note": {
         "vi": "Sửa một element với ảnh crop luôn nằm cạnh — ảnh mới là thẩm quyền.",
-        "en": "Edits one element with its crop beside it - the image is the authority."
+        "en": "Edits one element with its crop beside it - the image is the authority.",
+        "fr": "Corrige un élément avec son image découpée à côté - c'est l'image qui fait autorité."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 13,
       "note": {
         "vi": "Xem chính các bản ghi dimensions/metrics mà câu trả lời sẽ trích số từ đó.",
-        "en": "Shows the very dimensions/metrics records an answer will quote numbers from."
+        "en": "Shows the very dimensions/metrics records an answer will quote numbers from.",
+        "fr": "Montre les enregistrements dimensions/métriques dont une réponse tirera ses chiffres."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 26,
       "note": {
         "vi": "Mở ảnh trang gốc từ một trích dẫn.",
-        "en": "Opens the original page image from a citation."
+        "en": "Opens the original page image from a citation.",
+        "fr": "Ouvre l'image d'origine de la page depuis une citation."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 16,
       "note": {
         "vi": "Duyệt các ứng viên header/footer trước khi loại chúng khỏi truy hồi.",
-        "en": "Reviews the header and footer candidates before excluding them from retrieval."
+        "en": "Reviews the header and footer candidates before excluding them from retrieval.",
+        "fr": "Passe en revue les en-têtes et pieds de page candidats avant de les exclure de la recherche."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 15,
       "note": {
         "vi": "Trợ lý sửa nội dung; kết quả là đề xuất, người duyệt tự áp dụng.",
-        "en": "The editing assistant; its output is a proposal the reviewer applies."
+        "en": "The editing assistant; its output is a proposal the reviewer applies.",
+        "fr": "L'assistant de correction ; ce qu'il produit est une proposition que le relecteur applique."
       }
     }
   ],
@@ -58,28 +63,32 @@
         "id": "open",
         "label": {
           "vi": "Mở một element",
-          "en": "Open an element"
+          "en": "Open an element",
+          "fr": "Ouvrir un élément"
         }
       },
       {
         "id": "compare",
         "label": {
           "vi": "So bản parse với ảnh crop",
-          "en": "Compare the parse with the crop"
+          "en": "Compare the parse with the crop",
+          "fr": "Comparer l'analyse à l'image découpée"
         }
       },
       {
         "id": "act",
         "label": {
           "vi": "Sửa, tách, gộp, hạ cấp",
-          "en": "Edit, split, merge, demote"
+          "en": "Edit, split, merge, demote",
+          "fr": "Corriger, scinder, fusionner, rétrograder"
         }
       },
       {
         "id": "save",
         "label": {
           "vi": "Lưu và index lại",
-          "en": "Save and re-index"
+          "en": "Save and re-index",
+          "fr": "Enregistrer et réindexer"
         }
       }
     ],
@@ -97,7 +106,8 @@
         "to": "act",
         "label": {
           "vi": "bản parse sai",
-          "en": "the parse is wrong"
+          "en": "the parse is wrong",
+          "fr": "l'analyse est fausse"
         }
       },
       {
@@ -105,7 +115,8 @@
         "to": "x-approve",
         "label": {
           "vi": "bản parse đúng",
-          "en": "the parse is right"
+          "en": "the parse is right",
+          "fr": "l'analyse est juste"
         }
       },
       {
@@ -122,7 +133,8 @@
         "id": "g",
         "label": {
           "vi": "Bản parse có khớp ảnh không?",
-          "en": "Does the parse match the image?"
+          "en": "Does the parse match the image?",
+          "fr": "L'analyse correspond-elle à l'image ?"
         }
       }
     ],
@@ -131,14 +143,16 @@
         "id": "x-approve",
         "label": {
           "vi": "Duyệt, xoá cờ cần xem lại",
-          "en": "Approved, the review flag is cleared"
+          "en": "Approved, the review flag is cleared",
+          "fr": "Validé, le drapeau de relecture est levé"
         }
       },
       {
         "id": "x-live",
         "label": {
           "vi": "Câu trả lời tiếp theo dùng bản đã sửa",
-          "en": "The next answer uses the correction"
+          "en": "The next answer uses the correction",
+          "fr": "La réponse suivante utilise la correction"
         }
       }
     ]

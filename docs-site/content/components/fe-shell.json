@@ -8,7 +8,8 @@
       "line": 13,
       "note": {
         "vi": "Khung chung của mọi màn hình.",
-        "en": "The frame every screen sits in."
+        "en": "The frame every screen sits in.",
+        "fr": "Le cadre dans lequel tient chaque écran."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 38,
       "note": {
         "vi": "Điều hướng chính, và là nơi thấy được mình đang ở đâu.",
-        "en": "The main navigation, and where you see where you are."
+        "en": "The main navigation, and where you see where you are.",
+        "fr": "La navigation principale, et l'endroit où l'on voit où l'on est."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 212,
       "note": {
         "vi": "Một chỗ duy nhất lo bẫy focus và phím Escape cho mọi hộp thoại.",
-        "en": "One place that owns focus trapping and the Escape key for every dialog."
+        "en": "One place that owns focus trapping and the Escape key for every dialog.",
+        "fr": "Un seul endroit responsable du piège à focus et de la touche Échap pour toutes les boîtes de dialogue."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 279,
       "note": {
         "vi": "Hộp thoại dùng chung, dựng trên useDialog.",
-        "en": "The shared dialog, built on useDialog."
+        "en": "The shared dialog, built on useDialog.",
+        "fr": "La boîte de dialogue commune, bâtie sur useDialog."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 27,
       "note": {
         "vi": "Hỏi xác nhận bằng chính hệ thống điều khiển của sản phẩm, không dùng window.confirm.",
-        "en": "Asks for confirmation with the product's own controls rather than window.confirm."
+        "en": "Asks for confirmation with the product's own controls rather than window.confirm.",
+        "fr": "Demande confirmation avec les contrôles du produit plutôt qu'avec window.confirm."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 243,
       "note": {
         "vi": "Ví dụ của lớp gọi API: mọi lời gọi đều đi qua một chỗ.",
-        "en": "An example of the API layer: every call goes through one place."
+        "en": "An example of the API layer: every call goes through one place.",
+        "fr": "Un exemple de la couche API : chaque appel passe par un seul endroit."
       }
     }
   ],
@@ -68,28 +74,32 @@
         "id": "route",
         "label": {
           "vi": "Một route Next.js",
-          "en": "A Next.js route"
+          "en": "A Next.js route",
+          "fr": "Une route Next.js"
         }
       },
       {
         "id": "shell",
         "label": {
           "vi": "AppShell",
-          "en": "AppShell"
+          "en": "AppShell",
+          "fr": "AppShell"
         }
       },
       {
         "id": "page",
         "label": {
           "vi": "Nội dung màn hình",
-          "en": "The screen's content"
+          "en": "The screen's content",
+          "fr": "Le contenu de l'écran"
         }
       },
       {
         "id": "api",
         "label": {
           "vi": "lib/api.ts",
-          "en": "lib/api.ts"
+          "en": "lib/api.ts",
+          "fr": "lib/api.ts"
         }
       }
     ],
@@ -117,7 +127,8 @@
         "id": "x-api",
         "label": {
           "vi": "HTTP tới API",
-          "en": "HTTP to the API"
+          "en": "HTTP to the API",
+          "fr": "HTTP vers l'API"
         }
       }
     ]
@@ -126,7 +137,8 @@
     {
       "caption": {
         "vi": "Escape có đúng một người sở hữu, nên không có hai lớp cùng đóng.",
-        "en": "Escape has exactly one owner, so two layers never close at once."
+        "en": "Escape has exactly one owner, so two layers never close at once.",
+        "fr": "Échap a exactement un propriétaire, donc deux couches ne se ferment jamais d'un coup."
       },
       "cite": {
         "kind": "excerpt",

@@ -1,59 +1,289 @@
 {
-  "siteTitle": { "vi": "Kiến trúc LedgerRAG", "en": "LedgerRAG architecture" },
-  "nav": {
-    "map":      { "vi": "Bản đồ hệ thống", "en": "System map" },
-    "grid":     { "vi": "Component", "en": "Components" },
-    "machines": { "vi": "Dây chuyền", "en": "Assembly lines" }
+  "siteTitle": {
+    "vi": "Kiến trúc LedgerRAG",
+    "en": "LedgerRAG architecture",
+    "fr": "Architecture de LedgerRAG"
   },
+  "tagline": {
+    "vi": "Mỗi khẳng định trên trang này trỏ vào một dòng có thật trong kho mã, và một guard sẽ đỏ khi hai bên lệch nhau.",
+    "en": "Every claim on this page points at real lines of the repository, and a guard goes red when the two drift apart.",
+    "fr": "Chaque affirmation de cette page renvoie à des lignes réelles du dépôt, et un garde-fou passe au rouge dès que les deux divergent."
+  },
+  "nav": {
+    "map": {
+      "vi": "Bản đồ hệ thống",
+      "en": "System map",
+      "fr": "Carte du système"
+    },
+    "grid": {
+      "vi": "Component",
+      "en": "Components",
+      "fr": "Composants"
+    },
+    "machines": {
+      "vi": "Dây chuyền",
+      "en": "Assembly lines",
+      "fr": "Chaînes de montage"
+    }
+  },
+  "columns": {
+    "external": {
+      "vi": "Bên ngoài",
+      "en": "Outside",
+      "fr": "Extérieur"
+    },
+    "services": {
+      "vi": "Dịch vụ",
+      "en": "Services",
+      "fr": "Services"
+    },
+    "stores": {
+      "vi": "Kho dữ liệu",
+      "en": "Stores",
+      "fr": "Entrepôts"
+    },
+    "models": {
+      "vi": "Vai trò model",
+      "en": "Model roles",
+      "fr": "Rôles de modèle"
+    }
+  },
+  "languages": [
+    {
+      "code": "vi",
+      "label": {
+        "vi": "Tiếng Việt",
+        "en": "Vietnamese",
+        "fr": "Vietnamien"
+      }
+    },
+    {
+      "code": "en",
+      "label": {
+        "vi": "Tiếng Anh",
+        "en": "English",
+        "fr": "Anglais"
+      }
+    },
+    {
+      "code": "fr",
+      "label": {
+        "vi": "Tiếng Pháp",
+        "en": "French",
+        "fr": "Français"
+      }
+    }
+  ],
   "actions": {
-    "close":         { "vi": "Đóng", "en": "Close" },
-    "switchLanguage":{ "vi": "English", "en": "Vietnamese" },
-    "openOnGitHub":  { "vi": "Mở trên GitHub", "en": "Open on GitHub" },
-    "showTextVersion": { "vi": "Bản văn bản của sơ đồ",
-                         "en": "Text version of the diagram" }
+    "close": {
+      "vi": "Đóng",
+      "en": "Close",
+      "fr": "Fermer"
+    },
+    "openOnGitHub": {
+      "vi": "Mở trên GitHub",
+      "en": "Open on GitHub",
+      "fr": "Ouvrir sur GitHub"
+    },
+    "showTextVersion": {
+      "vi": "Bản văn bản của sơ đồ",
+      "en": "Text version of the diagram",
+      "fr": "Version texte du schéma"
+    }
+  },
+  "hints": {
+    "selectWire": {
+      "vi": "Bấm vào một đường nối để đọc hợp đồng chạy trên nó. Bấm lần nữa để đóng, hoặc bấm Escape.",
+      "en": "Select a wire to read the contracts that run on it. Select it again to close, or press Escape.",
+      "fr": "Sélectionnez un fil pour lire les contrats qui y circulent. Sélectionnez-le à nouveau pour fermer, ou appuyez sur Échap."
+    },
+    "selectComponent": {
+      "vi": "Bấm vào tên một component để mở chi tiết: hàm, code thật, lý do, và phần còn nợ.",
+      "en": "Select a component name to open its detail: functions, real code, reasons, and what is still owed.",
+      "fr": "Sélectionnez le nom d'un composant pour ouvrir son détail : fonctions, code réel, raisons et dette restante."
+    }
   },
   "aria": {
-    "closePanel":   { "vi": "Đóng bảng chi tiết", "en": "Close detail panel" },
-    "phaseFilter":  { "vi": "Lọc theo giai đoạn", "en": "Filter by phase" },
-    "languageSwitch": { "vi": "Chuyển sang tiếng Anh",
-                        "en": "Switch to Vietnamese" },
-    "_note_language_names": { "vi": "Nhãn nút đổi ngôn ngữ gọi tên ngôn ngữ đích bằng ngôn ngữ đang hiển thị, không phải bằng chính nó — nếu không, chuỗi en sẽ chứa chữ tiếng Việt và vi phạm chính guard G8.",
-                              "en": "The language-switch label names the target language in the language currently on screen, not in itself — otherwise the en string would carry Vietnamese letters and break guard G8." },
-    "systemMap":    { "vi": "Sơ đồ hệ thống, bấm vào một cạnh để xem hợp đồng",
-                      "en": "System map; activate an edge to see its contract" }
+    "closePanel": {
+      "vi": "Đóng bảng chi tiết",
+      "en": "Close detail panel",
+      "fr": "Fermer le panneau de détail"
+    },
+    "phaseFilter": {
+      "vi": "Lọc theo giai đoạn",
+      "en": "Filter by phase",
+      "fr": "Filtrer par phase"
+    },
+    "languageSwitch": {
+      "vi": "Ngôn ngữ",
+      "en": "Language",
+      "fr": "Langue"
+    },
+    "machineSwitch": {
+      "vi": "Chọn dây chuyền",
+      "en": "Choose an assembly line",
+      "fr": "Choisir une chaîne de montage"
+    },
+    "_note_language_names": {
+      "vi": "Bộ chọn ngôn ngữ gọi tên mỗi ngôn ngữ bằng chính ngôn ngữ đang hiển thị, nên chuỗi en không bao giờ chứa chữ tiếng Việt và không vi phạm guard G8.",
+      "en": "The language picker names each language in the language currently on screen, so the en string never carries Vietnamese letters and never breaks guard G8.",
+      "fr": "Le sélecteur de langue nomme chaque langue dans la langue affichée, donc la chaîne en ne contient jamais de lettres vietnamiennes et ne casse jamais le garde-fou G8."
+    },
+    "systemMap": {
+      "vi": "Bản đồ hệ thống: các module xếp theo cột, nối với nhau bằng những đường mang hợp đồng",
+      "en": "System map: modules in columns, joined by wires that carry contracts",
+      "fr": "Carte du système : des modules en colonnes, reliés par des fils qui portent des contrats"
+    }
   },
   "empty": {
-    "noPhaseMatch": { "vi": "Không có component nào thuộc giai đoạn này",
-                      "en": "No component belongs to this phase" }
+    "noPhaseMatch": {
+      "vi": "Không có component nào thuộc giai đoạn này",
+      "en": "No component belongs to this phase",
+      "fr": "Aucun composant n'appartient à cette phase"
+    }
   },
   "headings": {
-    "ownership": { "vi": "Ai sở hữu, ai ghi", "en": "Who owns it, who writes it" },
-    "flow":      { "vi": "Luồng gọi", "en": "The call flow" },
-    "functions": { "vi": "Hàm", "en": "Functions" },
-    "code":      { "vi": "Code thật", "en": "The real code" },
-    "steps":     { "vi": "Các bước", "en": "Steps" },
-    "gates":     { "vi": "Điểm rẽ nhánh", "en": "Branch points" },
-    "edges":     { "vi": "Các cạnh", "en": "Edges" },
-    "exits":     { "vi": "Lối ra", "en": "Exits" },
-    "inlet":     { "vi": "Đầu vào", "en": "Inlet" }
+    "ownership": {
+      "vi": "Ai sở hữu, ai ghi",
+      "en": "Who owns it, who writes it",
+      "fr": "Qui possède, qui écrit"
+    },
+    "modules": {
+      "vi": "Các module",
+      "en": "Modules",
+      "fr": "Modules"
+    },
+    "wires": {
+      "vi": "Các đường nối",
+      "en": "Wires",
+      "fr": "Fils"
+    },
+    "flow": {
+      "vi": "Luồng gọi",
+      "en": "The call flow",
+      "fr": "Le flux d'appels"
+    },
+    "functions": {
+      "vi": "Hàm",
+      "en": "Functions",
+      "fr": "Fonctions"
+    },
+    "code": {
+      "vi": "Code thật",
+      "en": "The real code",
+      "fr": "Le code réel"
+    },
+    "steps": {
+      "vi": "Các bước",
+      "en": "Steps",
+      "fr": "Étapes"
+    },
+    "gates": {
+      "vi": "Điểm rẽ nhánh",
+      "en": "Branch points",
+      "fr": "Points de branchement"
+    },
+    "edges": {
+      "vi": "Các cạnh",
+      "en": "Edges",
+      "fr": "Arêtes"
+    },
+    "exits": {
+      "vi": "Lối ra",
+      "en": "Exits",
+      "fr": "Sorties"
+    },
+    "inlet": {
+      "vi": "Đầu vào",
+      "en": "Inlet",
+      "fr": "Entrée"
+    }
   },
   "labels": {
-    "owns":    { "vi": "Sở hữu", "en": "Owns" },
-    "writes":  { "vi": "Ghi", "en": "Writes" },
-    "reads":   { "vi": "Đọc", "en": "Reads" },
-    "store":   { "vi": "Kho dữ liệu", "en": "Store" },
-    "note":    { "vi": "Ghi chú", "en": "Note" },
-    "source":  { "vi": "Nguồn", "en": "Source" },
-    "auth":     { "vi": "Xác thực", "en": "Auth" },
-    "request":  { "vi": "Gửi lên", "en": "Request" },
-    "response": { "vi": "Trả về", "en": "Response" },
-    "errors":   { "vi": "Mã lỗi", "en": "Errors" },
-    "modules":  { "vi": "Module", "en": "Modules" },
-    "allPhases":{ "vi": "Mọi giai đoạn", "en": "Every phase" },
-    "debt":    { "vi": "Còn nợ", "en": "Outstanding" },
-    "why":     { "vi": "Vì sao viết thế này", "en": "Why it is written this way" },
-    "creates":   { "vi": "tạo ra", "en": "creates" },
-    "modifies":  { "vi": "sửa", "en": "modifies" },
-    "traverses": { "vi": "chạy qua", "en": "runs through" }
+    "owns": {
+      "vi": "Sở hữu",
+      "en": "Owns",
+      "fr": "Possède"
+    },
+    "writes": {
+      "vi": "Ghi",
+      "en": "Writes",
+      "fr": "Écrit"
+    },
+    "reads": {
+      "vi": "Đọc",
+      "en": "Reads",
+      "fr": "Lit"
+    },
+    "store": {
+      "vi": "Kho dữ liệu",
+      "en": "Store",
+      "fr": "Entrepôt"
+    },
+    "note": {
+      "vi": "Ghi chú",
+      "en": "Note",
+      "fr": "Note"
+    },
+    "source": {
+      "vi": "Nguồn",
+      "en": "Source",
+      "fr": "Source"
+    },
+    "auth": {
+      "vi": "Xác thực",
+      "en": "Auth",
+      "fr": "Authentification"
+    },
+    "request": {
+      "vi": "Gửi lên",
+      "en": "Request",
+      "fr": "Requête"
+    },
+    "response": {
+      "vi": "Trả về",
+      "en": "Response",
+      "fr": "Réponse"
+    },
+    "errors": {
+      "vi": "Mã lỗi",
+      "en": "Errors",
+      "fr": "Erreurs"
+    },
+    "modules": {
+      "vi": "Module",
+      "en": "Modules",
+      "fr": "Modules"
+    },
+    "allPhases": {
+      "vi": "Mọi giai đoạn",
+      "en": "Every phase",
+      "fr": "Toutes les phases"
+    },
+    "debt": {
+      "vi": "Còn nợ",
+      "en": "Outstanding",
+      "fr": "Dette restante"
+    },
+    "why": {
+      "vi": "Vì sao viết thế này",
+      "en": "Why it is written this way",
+      "fr": "Pourquoi c'est écrit ainsi"
+    },
+    "creates": {
+      "vi": "tạo ra",
+      "en": "creates",
+      "fr": "crée"
+    },
+    "modifies": {
+      "vi": "sửa",
+      "en": "modifies",
+      "fr": "modifie"
+    },
+    "traverses": {
+      "vi": "chạy qua",
+      "en": "runs through",
+      "fr": "traverse"
+    }
   }
 }

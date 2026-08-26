@@ -8,7 +8,8 @@
       "line": 39,
       "note": {
         "vi": "Dựng ứng dụng: gắn router, middleware xác thực, CORS. Không có logic nghiệp vụ.",
-        "en": "Builds the app: routers, the authentication middleware, CORS. No business logic."
+        "en": "Builds the app: routers, the authentication middleware, CORS. No business logic.",
+        "fr": "Construit l'application : routeurs, middleware d'authentification, CORS. Aucune logique métier."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 21,
       "note": {
         "vi": "Khởi tạo schema và kết nối khi tiến trình lên, dọn khi xuống.",
-        "en": "Creates the schema and the connections when the process starts, and tears them down."
+        "en": "Creates the schema and the connections when the process starts, and tears them down.",
+        "fr": "Crée le schéma et les connexions au démarrage du processus, et les démonte à l'arrêt."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 47,
       "note": {
         "vi": "Đọc danh tính từ header proxy. Ở chế độ disabled thì mọi người là cùng một admin ngầm, dành cho dev.",
-        "en": "Reads the identity from the proxy header. In disabled mode everyone is the same implicit admin, for development."
+        "en": "Reads the identity from the proxy header. In disabled mode everyone is the same implicit admin, for development.",
+        "fr": "Lit l'identité dans l'en-tête du proxy. En mode disabled, tout le monde est le même administrateur implicite, pour le développement."
       }
     },
     {
@@ -38,7 +41,8 @@
       "line": 79,
       "note": {
         "vi": "Chặn mọi đường trừ các đường mở. Đây là chỗ 401 xảy ra, không phải trong từng route.",
-        "en": "Gates every path but the open ones. This is where a 401 happens, not inside each route."
+        "en": "Gates every path but the open ones. This is where a 401 happens, not inside each route.",
+        "fr": "Filtre tous les chemins sauf les chemins ouverts. C'est ici qu'un 401 se produit, pas dans chaque route."
       }
     },
     {
@@ -48,7 +52,8 @@
       "line": 73,
       "note": {
         "vi": "Phân quyền theo route: có danh tính chưa đủ, phải nằm trong danh sách admin.",
-        "en": "Per-route authorization: having an identity is not enough, the user must be in the admin list."
+        "en": "Per-route authorization: having an identity is not enough, the user must be in the admin list.",
+        "fr": "Autorisation par route : avoir une identité ne suffit pas, il faut figurer dans la liste des administrateurs."
       }
     },
     {
@@ -58,7 +63,8 @@
       "line": 24,
       "note": {
         "vi": "Phục vụ ảnh đã lưu với no-cache và ETag: URL không đổi nhưng nội dung thì có.",
-        "en": "Serves a stored image with no-cache and an ETag: the URL never changes but the content does."
+        "en": "Serves a stored image with no-cache and an ETag: the URL never changes but the content does.",
+        "fr": "Sert une image stockée avec no-cache et un ETag : l'URL ne change jamais, le contenu si."
       }
     }
   ],
@@ -68,21 +74,24 @@
         "id": "req",
         "label": {
           "vi": "Request tới",
-          "en": "Request arrives"
+          "en": "Request arrives",
+          "fr": "La requête arrive"
         }
       },
       {
         "id": "resolve",
         "label": {
           "vi": "Đọc header danh tính",
-          "en": "Resolve the identity header"
+          "en": "Resolve the identity header",
+          "fr": "Résoudre l'en-tête d'identité"
         }
       },
       {
         "id": "route",
         "label": {
           "vi": "Chuyển tới route",
-          "en": "Dispatch to the route"
+          "en": "Dispatch to the route",
+          "fr": "Aiguiller vers la route"
         }
       }
     ],
@@ -100,7 +109,8 @@
         "to": "route",
         "label": {
           "vi": "đường mở, hoặc đã có danh tính",
-          "en": "open path, or an identity was presented"
+          "en": "open path, or an identity was presented",
+          "fr": "chemin ouvert, ou une identité a été présentée"
         }
       },
       {
@@ -108,7 +118,8 @@
         "to": "x401",
         "label": {
           "vi": "không có danh tính",
-          "en": "no identity"
+          "en": "no identity",
+          "fr": "aucune identité"
         }
       },
       {
@@ -120,7 +131,8 @@
         "to": "x-ok",
         "label": {
           "vi": "được phép",
-          "en": "allowed"
+          "en": "allowed",
+          "fr": "autorisé"
         }
       },
       {
@@ -128,7 +140,8 @@
         "to": "x403",
         "label": {
           "vi": "cần admin",
-          "en": "admin required"
+          "en": "admin required",
+          "fr": "administrateur requis"
         }
       }
     ],
@@ -137,14 +150,16 @@
         "id": "g-open",
         "label": {
           "vi": "Đường này có mở không?",
-          "en": "Is this path open?"
+          "en": "Is this path open?",
+          "fr": "Ce chemin est-il ouvert ?"
         }
       },
       {
         "id": "g-admin",
         "label": {
           "vi": "Route này có đòi admin không?",
-          "en": "Does this route require admin?"
+          "en": "Does this route require admin?",
+          "fr": "Cette route exige-t-elle un administrateur ?"
         }
       }
     ],
@@ -153,21 +168,24 @@
         "id": "x401",
         "label": {
           "vi": "401 chưa xác thực",
-          "en": "401 not authenticated"
+          "en": "401 not authenticated",
+          "fr": "401 non authentifié"
         }
       },
       {
         "id": "x403",
         "label": {
           "vi": "403 cần quyền admin",
-          "en": "403 admin role required"
+          "en": "403 admin role required",
+          "fr": "403 rôle administrateur requis"
         }
       },
       {
         "id": "x-ok",
         "label": {
           "vi": "Vào handler",
-          "en": "Into the handler"
+          "en": "Into the handler",
+          "fr": "Vers le gestionnaire"
         }
       }
     ]
@@ -176,7 +194,8 @@
     {
       "caption": {
         "vi": "Toàn bộ phần phân quyền admin — bốn dòng, ở đúng một chỗ.",
-        "en": "The whole of admin authorization - four lines, in exactly one place."
+        "en": "The whole of admin authorization - four lines, in exactly one place.",
+        "fr": "Toute l'autorisation administrateur - quatre lignes, à un seul endroit."
       },
       "cite": {
         "kind": "excerpt",
@@ -191,7 +210,8 @@
     {
       "text": {
         "vi": "Tin một header chỉ an toàn khi API chỉ với tới được qua proxy. Hở cổng 8000 ra mạng không tin cậy thì ai cũng tự xưng admin được.",
-        "en": "Trusting a header is safe only while the API is reachable through the proxy alone. Publish port 8000 to an untrusted network and anyone can call themselves admin."
+        "en": "Trusting a header is safe only while the API is reachable through the proxy alone. Publish port 8000 to an untrusted network and anyone can call themselves admin.",
+        "fr": "Faire confiance à un en-tête n'est sûr que tant que l'API n'est joignable que par le proxy. Exposez le port 8000 sur un réseau non fiable et n'importe qui peut se déclarer administrateur."
       },
       "cite": {
         "kind": "anchor",
@@ -204,7 +224,8 @@
     {
       "text": {
         "vi": "Health phải mở, nếu không health check của proxy sẽ chết cùng lúc với thứ nó đang giám sát.",
-        "en": "Health must stay open, otherwise the proxy's health check dies at the same moment as the thing it is watching."
+        "en": "Health must stay open, otherwise the proxy's health check dies at the same moment as the thing it is watching.",
+        "fr": "Health doit rester ouvert, sinon la sonde du proxy meurt au moment même que la chose qu'elle surveille."
       },
       "cite": {
         "kind": "anchor",

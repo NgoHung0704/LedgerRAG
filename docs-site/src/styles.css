@@ -1,37 +1,64 @@
+@import "./fonts.css";
+
+/* ── tokens ──────────────────────────────────────────────────────────────
+   The palette is the product's own: warm paper and ink-blue in light, deep
+   ink in dark. A module's KIND is carried by a 3px rail on its left edge,
+   never by a tinted fill — filled boxes in four colours read as decoration,
+   a rail reads as a label on a machine. */
 :root {
-  --bg: #fbfaf7;
-  --surface: #ffffff;
-  --ink: #14181f;
-  --muted: #5a6472;
-  --line: #d9d5cc;
-  --accent: #1f5c9e;
-  --debt: #9a3a1e;
-  --debt-bg: #fdf1ec;
-  --code-bg: #f3f1ec;
-  --service: #e8f0f9;
-  --store: #eef4ea;
-  --external: #f6f1e6;
-  --model: #f4ecf6;
-  --radius: 10px;
-  --shadow: 0 1px 2px rgb(20 24 31 / 6%), 0 6px 20px rgb(20 24 31 / 5%);
+  --paper: #f5f2ec;
+  --surface: #fffdf9;
+  --surface-2: #efece5;
+  --ink: #171a1d;
+  --muted: #5f6a72;
+  --line: #ded8cd;
+  --line-strong: #c3bcae;
+  --accent: #2f5d78;
+  --accent-soft: #e3edf3;
+  --debt: #8f3a1c;
+  --debt-soft: #fbeee8;
+  --wire: #7d7768;
+
+  --kind-external: #b07d2b;
+  --kind-service: #2f5d78;
+  --kind-store: #3f7351;
+  --kind-model: #6b4a86;
+
+  --r-box: 9px;
+  --r-pill: 999px;
+  --shadow-1: 0 1px 2px rgb(23 26 29 / 6%);
+  --shadow-2: 0 2px 6px rgb(23 26 29 / 7%), 0 14px 34px rgb(23 26 29 / 7%);
+
+  --fast: 140ms;
+  --base: 200ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #12151a;
-    --surface: #191d24;
-    --ink: #e9ecf1;
-    --muted: #9aa4b2;
-    --line: #2b313b;
-    --accent: #79b0e8;
-    --debt: #f0a58a;
-    --debt-bg: #2a1c17;
-    --code-bg: #11141a;
-    --service: #1b2632;
-    --store: #1b2820;
-    --external: #2a2418;
-    --model: #251c2b;
-    --shadow: none;
+    --paper: #0d1114;
+    --surface: #141a1f;
+    --surface-2: #1b2229;
+    --ink: #e6ecef;
+    --muted: #93a1ab;
+    --line: #232c34;
+    --line-strong: #33404b;
+    --accent: #7db8d4;
+    --accent-soft: #17242c;
+    --debt: #e39a78;
+    --debt-soft: #241713;
+    --wire: #6d7f8d;
+
+    --kind-external: #d6a44e;
+    --kind-service: #7db8d4;
+    --kind-store: #7cc194;
+    --kind-model: #b795d6;
+
+    --shadow-1: none;
+    --shadow-2: 0 12px 40px rgb(0 0 0 / 45%);
   }
 }
 
@@ -39,99 +66,189 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--paper);
   color: var(--ink);
-  font: 15px/1.55 ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  font-feature-settings: "cv05" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
-code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+code, pre, .mono { font-family: var(--mono); font-feature-settings: normal; }
 
-.app { max-width: 1400px; margin: 0 auto; padding: 0 20px 64px; }
+.app { max-width: 1440px; margin: 0 auto; padding: 0 24px 72px; }
 
-/* ---- top bar ---- */
+/* ── top bar ─────────────────────────────────────────────────────────── */
 .topbar {
-  position: sticky; top: 0; z-index: 5;
-  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
-  padding: 14px 0; margin-bottom: 20px;
-  background: var(--bg); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  padding: 14px 0 13px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
 }
-.site-title { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
-.nav { display: flex; gap: 4px; margin-left: auto; }
-.nav-item, .lang-switch, .phase-chip, .machine-tab, .card-open, .close {
-  font: inherit; color: inherit; cursor: pointer;
+.brand { display: flex; align-items: center; gap: 10px; }
+.mark {
+  width: 14px; height: 14px; border-radius: 3px;
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--surface);
+}
+.site-title {
+  margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+}
+.tagline {
+  margin: 18px 0 22px; max-width: 62ch;
+  color: var(--muted); font-size: 14.5px;
+}
+
+.nav { display: flex; gap: 2px; margin-left: auto; }
+.langs {
+  display: flex; gap: 2px; padding: 2px; border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+.nav-item, .lang, .phase-chip, .machine-tab, .close, .card-open, .family-head {
   background: transparent; border: 1px solid transparent;
-  border-radius: 999px; padding: 6px 14px;
+  border-radius: var(--r-pill); padding: 6px 14px;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease),
+              border-color var(--fast) var(--ease);
 }
-.nav-item:hover, .phase-chip:hover, .machine-tab:hover { background: var(--surface); }
+.nav-item:hover, .lang:hover, .phase-chip:hover, .machine-tab:hover {
+  background: var(--surface);
+}
 .nav-item[aria-current="page"] {
   background: var(--accent); color: var(--surface); border-color: var(--accent);
 }
-.lang-switch { border-color: var(--line); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lang { padding: 5px 12px; font-size: 13px; }
+.lang[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
 
-/* ---- diagrams ---- */
-.scroll-x { overflow-x: auto; padding-bottom: 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* A focus ring around an SVG <g> is drawn around the group's bounding box,
+   which for an L-shaped wire is a rectangle covering everything the wire
+   passes over - it reads as a stray box, not as focus. These elements say
+   where focus is far more loudly instead: the wire turns accent, its chip
+   fills, and the whole board dims around the two modules it joins. */
+[data-wire]:focus, [data-wire]:focus-visible,
+[data-part]:focus, [data-part]:focus-visible,
+.flow-node:focus, .flow-node:focus-visible { outline: none; }
+
+/* ── the board ───────────────────────────────────────────────────────── */
+.scroll-x { overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; }
+.board { position: relative; }
+
 svg.map, svg.flow, svg.machine {
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius); display: block;
+  display: block;
+  background:
+    radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
 }
 
-.node { fill: var(--service); stroke: var(--line); }
-.node-store { fill: var(--store); }
-.node-external { fill: var(--external); }
-.node-model { fill: var(--model); }
-.node-label { font-size: 12.5px; fill: var(--ink); }
-
-.edge { cursor: pointer; }
-.edge-hit { fill: none; stroke: transparent; stroke-width: 16; }
-.edge-line { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.edge-label {
-  font-size: 11px; fill: var(--muted);
-  paint-order: stroke; stroke: var(--surface); stroke-width: 4px;
-}
-.edge:hover .edge-line, .edge:focus-visible .edge-line,
-.edge-open .edge-line { stroke: var(--accent); stroke-width: 2.5; }
-.edge:hover .edge-label, .edge-open .edge-label { fill: var(--accent); }
-
-.flow-box { fill: var(--service); stroke: var(--line); }
-.flow-gate { fill: var(--external); }
-.flow-exit { fill: var(--store); }
-.flow-inlet { fill: var(--model); }
-.flow-label { font-size: 12px; fill: var(--ink); }
-.flow-edge path { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.flow-edge text {
-  font-size: 10.5px; fill: var(--muted);
-  paint-order: stroke; stroke: var(--surface); stroke-width: 4px;
+.stage {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  fill: var(--muted);
 }
 
-/* ---- the dimming lives on the wrapper ---------------------------------
-   Never on the element itself: two opacity rules on one element fight,
-   whereas a parent and a child multiply. */
-[data-dim-wrapper] { transition: opacity 160ms ease; }
+.node { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
+.rail { fill: var(--kind-service); }
+.rail-external { fill: var(--kind-external); }
+.rail-store { fill: var(--kind-store); }
+.rail-model { fill: var(--kind-model); }
+.node-label { font-size: 12.5px; font-weight: 500; fill: var(--ink); }
+
+.wire { cursor: pointer; }
+.wire-hit { fill: none; stroke: transparent; stroke-width: 18; }
+.wire-line {
+  fill: none; stroke: var(--wire); stroke-width: 2; stroke-linecap: round;
+  transition: stroke var(--fast) var(--ease), stroke-width var(--fast) var(--ease);
+}
+.tip { fill: var(--wire); transition: fill var(--fast) var(--ease); }
+.wire-active .wire-line { stroke: var(--accent); stroke-width: 2.5; }
+.wire-active .tip { fill: var(--accent); }
+
+.chip circle {
+  fill: var(--surface); stroke: var(--line-strong);
+  transition: fill var(--fast) var(--ease), stroke var(--fast) var(--ease);
+}
+.chip text {
+  font-family: var(--mono); font-size: 11px; font-weight: 600; fill: var(--muted);
+  transition: fill var(--fast) var(--ease);
+}
+.wire-active .chip circle { fill: var(--accent); stroke: var(--accent); }
+.wire-active .chip text { fill: var(--surface); }
+
+/* The wire's name, set in real type instead of rotated SVG glyphs. It appears
+   only for the wire under the pointer or the keyboard, so the board is never
+   carrying more than one label at a time. */
+.wire-label {
+  position: absolute; transform: translate(-50%, -160%);
+  display: flex; flex-direction: column; gap: 2px;
+  max-width: 230px; padding: 7px 11px;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  box-shadow: var(--shadow-2);
+  font-size: 12.5px; line-height: 1.35; text-align: center;
+  pointer-events: none;
+  animation: pop var(--fast) var(--ease);
+}
+@keyframes pop { from { opacity: 0; transform: translate(-50%, -145%); } }
+
+.hint { margin: 12px 0 0; color: var(--muted); font-size: 13.5px; }
+
+/* ── the spotlight ───────────────────────────────────────────────────────
+   Dimming goes on the WRAPPER. On the element itself, two opacity rules
+   fight; on a parent and a child they multiply. */
+[data-dim-wrapper] { transition: opacity var(--base) var(--ease); }
 [data-dim-wrapper].dimmed { opacity: 0.28; }
+.board-spotlight [data-dim-wrapper].dimmed { opacity: 0.14; }
+
+/* One orchestrated moment: the wires draw themselves in, left to right,
+   once, on first paint. Nothing else on the page moves by itself. */
+.wire-line { animation: draw 620ms var(--ease) both; }
+.wire { animation: fade-in 320ms var(--ease) both; }
+.wire-line, .wire { animation-delay: calc(var(--i, 0) * 16ms); }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes fade-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
+  *, *::before, *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
-/* ---- text version ---- */
+/* ── text version ────────────────────────────────────────────────────── */
 .diagram-text {
-  margin: 16px 0; padding: 12px 16px;
+  margin: 18px 0 0; padding: 12px 18px;
   background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-box);
 }
-.diagram-text summary { cursor: pointer; color: var(--accent); }
-.diagram-text h3 { font-size: 13px; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--muted); margin: 16px 0 6px; }
-.diagram-text ul { margin: 0; padding-left: 18px; }
-.diagram-text li { margin-bottom: 4px; }
-.dt-label { font-weight: 600; }
+.diagram-text summary {
+  cursor: pointer; color: var(--accent); font-size: 14px; font-weight: 500;
+}
+.diagram-text h3 {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin: 18px 0 6px;
+}
+.diagram-text ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.diagram-text li { margin-bottom: 5px; }
+.dt-label { font-weight: 500; }
 .dt-detail { color: var(--muted); }
 .dt-detail::before { content: " — "; }
 
-/* ---- grid ---- */
-.phase-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
-.phase-chip, .machine-tab { border-color: var(--line); }
+/* ── phase filter + grid ─────────────────────────────────────────────── */
+.phase-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.phase-chip, .machine-tab {
+  border-color: var(--line-strong); background: var(--surface);
+  font-size: 13.5px;
+}
 .phase-chip[aria-pressed="true"], .machine-tab[aria-pressed="true"] {
   background: var(--accent); color: var(--surface); border-color: var(--accent);
 }
@@ -139,85 +256,161 @@ svg.map, svg.flow, svg.machine {
 
 .grid {
   list-style: none; margin: 0; padding: 0;
-  display: grid; gap: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: grid; gap: 14px; align-items: start;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
 }
 .card {
-  height: 100%; padding: 14px 16px;
+  padding: 16px 18px;
   background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow);
+  border-radius: var(--r-box); box-shadow: var(--shadow-1);
+  transition: border-color var(--fast) var(--ease),
+              box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
-.card h3 { margin: 0 0 6px; font-size: 15px; }
-.card-open { padding: 0; color: var(--accent); font-weight: 650; }
-.card-summary { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
-.rel-list { list-style: none; margin: 0 0 10px; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 6px; }
-.rel { display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11.5px; padding: 3px 8px; border-radius: 999px;
-  background: var(--code-bg); }
-.rel-creates { box-shadow: inset 2px 0 0 var(--accent); }
-.rel-modifies { box-shadow: inset 2px 0 0 var(--debt); }
-.rel-kind { color: var(--muted); }
+.card:hover {
+  border-color: var(--line-strong); box-shadow: var(--shadow-2);
+  transform: translateY(-1px);
+}
+.card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.card-open { padding: 0; color: var(--accent); font-weight: 600; text-align: left; }
+.card-summary { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
+
+.rel-list { list-style: none; margin: 0 0 12px; padding: 0;
+  display: flex; flex-direction: column; gap: 5px; }
+.rel {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center;
+  gap: 8px; font-size: 12px; padding: 4px 8px 4px 10px;
+  border-radius: 6px; background: var(--surface-2);
+  border-left: 2px solid var(--line-strong);
+}
+.rel-creates { border-left-color: var(--kind-service); }
+.rel-modifies { border-left-color: var(--kind-external); }
+.rel-traverses { border-left-color: var(--line-strong); }
+.rel-kind { color: var(--muted); font-family: var(--mono); font-size: 11px; }
 .card-modules summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 .card-modules ul { margin: 6px 0 0; padding-left: 18px; font-size: 12px; }
+.card-modules code { font-size: 11.5px; }
 .empty { color: var(--muted); }
 
-/* ---- panels and detail ---- */
+/* ── panels ──────────────────────────────────────────────────────────── */
 .panel, .layer-detail {
-  margin: 18px 0; padding: 16px 18px;
+  margin: 18px 0; padding: 18px 20px;
   background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow);
-  animation: fade-in 140ms ease-out;
+  border-radius: var(--r-box); box-shadow: var(--shadow-2);
+  animation: rise 180ms var(--ease);
 }
-/* Entry only. There is no exit animation, so no half-dead panel can sit in a
-   stack and swallow the next Escape. */
-@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } }
+/* Entry only. With no exit animation, no half-dead panel can sit in a stack
+   and swallow the next Escape. */
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 
 .panel-head, .detail-head {
-  display: flex; align-items: baseline; gap: 12px;
-  border-bottom: 1px solid var(--line); padding-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--line); padding-bottom: 12px;
 }
-.panel-head h2, .detail-head h2 { margin: 0; font-size: 17px; }
-.close { margin-left: auto; border-color: var(--line); }
-.panel-summary, .detail-summary { color: var(--muted); }
+.panel-head h2, .detail-head h2 {
+  margin: 0; font-size: 16px; font-weight: 600;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.arrow { color: var(--muted); }
+.close { margin-left: auto; border-color: var(--line-strong); font-size: 13.5px; }
+.panel-summary, .detail-summary, .family-summary { color: var(--muted); }
 
-.ops { list-style: none; margin: 0; padding: 0; }
-.op { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.families { list-style: none; margin: 0; padding: 0; }
+.family { border-bottom: 1px solid var(--line); }
+.family:last-child { border-bottom: 0; }
+.family-head {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 12px 4px; border-radius: 0; text-align: left;
+}
+.family-head:hover { color: var(--accent); }
+.family-name { font-weight: 500; }
+.count {
+  margin-left: auto; font-family: var(--mono); font-size: 11px;
+  padding: 1px 8px; border-radius: var(--r-pill);
+  background: var(--surface-2); color: var(--muted);
+}
+.family-body { padding: 0 4px 14px; animation: rise 160ms var(--ease); }
+
+.op { padding: 12px 0; border-top: 1px dashed var(--line); }
 .op-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.method { font-size: 11.5px; font-weight: 700; padding: 2px 8px;
-  border-radius: 5px; background: var(--code-bg); }
-.method-get { color: var(--accent); }
-.method-post, .method-put, .method-patch { color: #7a5300; }
+.method {
+  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 5px;
+  background: var(--surface-2); letter-spacing: 0.03em;
+}
+.method-get { color: var(--kind-service); }
+.method-post, .method-put, .method-patch { color: var(--kind-external); }
 .method-delete { color: var(--debt); }
-.path { font-size: 13px; }
+.path { font-size: 12.5px; }
 .op-source, .fn-source, .citation { color: var(--accent); font-size: 12px; }
-.op-body { display: grid; grid-template-columns: max-content 1fr;
-  gap: 2px 14px; margin: 8px 0 0; font-size: 13.5px; }
+.citation code { font-size: 11.5px; }
+.op-body {
+  display: grid; grid-template-columns: max-content 1fr; gap: 3px 14px;
+  margin: 10px 0 0; font-size: 13.5px;
+}
 .op-body dt { color: var(--muted); }
 .op-body dd { margin: 0; }
 .errors { list-style: none; margin: 0; padding: 0; }
 .errors li { display: flex; gap: 8px; }
+.errors code { color: var(--debt); }
 
+/* ── layer 3 ─────────────────────────────────────────────────────────── */
+.layer-detail h3 {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin: 26px 0 10px;
+}
 .detail-functions ul, .cards { list-style: none; margin: 0; padding: 0; }
-.detail-functions li { padding: 10px 0; border-bottom: 1px solid var(--line); }
-.detail-functions p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
-.decl { display: block; font-size: 13px; }
-.excerpt { margin: 14px 0; }
-.excerpt figcaption { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
-.excerpt pre { margin: 0 0 6px; padding: 12px 14px; overflow-x: auto;
-  background: var(--code-bg); border-radius: 8px; font-size: 12.5px; }
+.detail-functions li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.detail-functions p { margin: 5px 0 0; color: var(--muted); font-size: 13.5px; }
+.decl { display: block; font-size: 12.5px; margin-bottom: 3px; }
+.excerpt { margin: 16px 0; }
+.excerpt figcaption { color: var(--muted); font-size: 13px; margin-bottom: 7px; }
+.excerpt pre {
+  margin: 0 0 7px; padding: 14px 16px; overflow-x: auto;
+  background: var(--surface-2); border-radius: 8px;
+  font-size: 12.5px; line-height: 1.5;
+}
 .cards { display: grid; gap: 10px; }
-.why-card, .debt-card { padding: 12px 14px; border-radius: 8px;
-  background: var(--code-bg); }
-.debt-card { background: var(--debt-bg); box-shadow: inset 3px 0 0 var(--debt); }
-.why-card p, .debt-card p { margin: 0 0 6px; }
+.why-card, .debt-card {
+  padding: 13px 15px; border-radius: 8px; background: var(--surface-2);
+  border-left: 2px solid var(--line-strong);
+}
+.debt-card { background: var(--debt-soft); border-left-color: var(--debt); }
+.why-card p, .debt-card p { margin: 0 0 7px; font-size: 14px; }
 
-/* ---- ownership ---- */
-.ownership { margin-top: 28px; }
-.ownership h2 { font-size: 16px; }
+.flow-box { fill: var(--surface); stroke: var(--line-strong); }
+.flow-gate { fill: var(--accent-soft); }
+.flow-exit { fill: var(--surface-2); }
+.flow-inlet { fill: var(--accent-soft); }
+.flow-label { font-size: 12px; font-weight: 500; fill: var(--ink); }
+.flow-edge path {
+  fill: none; stroke: var(--wire); stroke-width: 2; stroke-linecap: round;
+  transition: stroke var(--fast) var(--ease), stroke-width var(--fast) var(--ease);
+}
+.flow-edge.wire-active path { stroke: var(--accent); stroke-width: 2.5; }
+.flow-node { cursor: default; }
+.flow-node:focus-visible .flow-box, .flow-node:hover .flow-box {
+  stroke: var(--accent);
+}
+
+/* ── ownership ───────────────────────────────────────────────────────── */
+.ownership { margin-top: 34px; }
+.ownership h2 { font-size: 16px; font-weight: 600; }
 .ownership table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .ownership th, .ownership td {
-  text-align: left; vertical-align: top; padding: 8px 10px;
+  text-align: left; vertical-align: top; padding: 9px 12px;
   border-bottom: 1px solid var(--line);
 }
-.ownership th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.ownership th {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap;
+}
+.ownership td code { font-size: 12px; }
+
+@media (max-width: 720px) {
+  .app { padding: 0 16px 56px; }
+  .topbar { gap: 12px; }
+  .nav { margin-left: 0; }
+  .op-body { grid-template-columns: 1fr; }
+  .op-body dt { margin-top: 6px; }
+}

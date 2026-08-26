@@ -8,7 +8,8 @@
       "line": 56,
       "note": {
         "vi": "Đổi endpoint và model của từng vai trò lúc chạy, và kéo model mới về.",
-        "en": "Repoints each role's endpoint and model at runtime, and pulls new models."
+        "en": "Repoints each role's endpoint and model at runtime, and pulls new models.",
+        "fr": "Redirige à chaud le point de terminaison et le modèle de chaque rôle, et télécharge de nouveaux modèles."
       }
     },
     {
@@ -18,7 +19,8 @@
       "line": 21,
       "note": {
         "vi": "Nhật ký kiểm toán GDPR, mới nhất trước, chỉ admin xem được.",
-        "en": "The GDPR audit log, most recent first, visible to admins only."
+        "en": "The GDPR audit log, most recent first, visible to admins only.",
+        "fr": "Le journal d'audit RGPD, du plus récent au plus ancien, visible des seuls administrateurs."
       }
     },
     {
@@ -28,7 +30,8 @@
       "line": 16,
       "note": {
         "vi": "Soi nhận diện bảng trên một PDF mà không ingest nó — tệp được phân tích trong bộ nhớ rồi bỏ.",
-        "en": "Inspects table detection on a PDF without ingesting it - the file is analysed in memory and discarded."
+        "en": "Inspects table detection on a PDF without ingesting it - the file is analysed in memory and discarded.",
+        "fr": "Inspecte la détection de tableaux sur un PDF sans l'ingérer - le fichier est analysé en mémoire puis jeté."
       }
     }
   ],
@@ -38,28 +41,32 @@
         "id": "ops",
         "label": {
           "vi": "Màn hình vận hành",
-          "en": "An operator screen"
+          "en": "An operator screen",
+          "fr": "Un écran d'exploitation"
         }
       },
       {
         "id": "models",
         "label": {
           "vi": "Cấu hình vai trò model",
-          "en": "Model role configuration"
+          "en": "Model role configuration",
+          "fr": "Configuration des rôles de modèle"
         }
       },
       {
         "id": "audit",
         "label": {
           "vi": "Nhật ký kiểm toán",
-          "en": "The audit log"
+          "en": "The audit log",
+          "fr": "Le journal d'audit"
         }
       },
       {
         "id": "diag",
         "label": {
           "vi": "Chẩn đoán nhận diện bảng",
-          "en": "Table-detection diagnostics"
+          "en": "Table-detection diagnostics",
+          "fr": "Diagnostic de la détection de tableaux"
         }
       }
     ],
@@ -87,7 +94,8 @@
         "id": "x-live",
         "label": {
           "vi": "API và worker nhận ngay, không khởi động lại",
-          "en": "The API and the worker pick it up with no restart"
+          "en": "The API and the worker pick it up with no restart",
+          "fr": "L'API et le worker le prennent en compte sans redémarrage"
         }
       }
     ]
