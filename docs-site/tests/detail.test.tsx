@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { githubUrl } from "../src/github";
+import { sourceUrl } from "../src/forge";
 import { ComponentDetail } from "../src/views/ComponentDetail";
 import { content, type ComponentDetail as Detail } from "../src/content";
 
 describe("layer 3", () => {
-  it("links to the exact lines on GitHub", () => {
-    expect(githubUrl("tablerag/api/main.py", 34, 71)).toBe(
-      "https://github.com/NgoHung0704/LedgerRAG/blob/main/tablerag/api/main.py#L34-L71");
-    expect(githubUrl("tablerag/api/main.py", 34, 34)).toBe(
-      "https://github.com/NgoHung0704/LedgerRAG/blob/main/tablerag/api/main.py#L34");
+  it("links to the exact lines, on whichever forge the build points at", () => {
+    // The forge is a build variable, so this pins the SHAPE of the link and
+    // the line fragment, not one host.
+    expect(sourceUrl("tablerag/api/main.py", 34, 71))
+      .toMatch(/^https?:\/\/.+\/tablerag\/api\/main\.py#L34-L71$/);
+    expect(sourceUrl("tablerag/api/main.py", 34, 34))
+      .toMatch(/^https?:\/\/.+\/tablerag\/api\/main\.py#L34$/);
+    // a single line takes no range
+    expect(sourceUrl("a.py", 5, 5).endsWith("#L5")).toBe(true);
   });
 
   it("shows every function the content declares, with its file and line", () => {

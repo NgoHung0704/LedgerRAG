@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { content, type Citation } from "../content";
-import { githubUrl } from "../github";
+import { sourceUrl } from "../forge";
 import { pick } from "../i18n";
 import type { Lang, Route } from "../route";
 import { Citation as Source } from "./Citation";
@@ -84,10 +84,10 @@ export function ContractPanel(
                         {op.cite ? (
                           <a
                             className="op-source"
-                            href={githubUrl(op.cite.file, op.cite.from, op.cite.to)}
+                            href={sourceUrl(op.cite.file, op.cite.from, op.cite.to)}
                             target="_blank" rel="noreferrer"
                           >
-                            {pick(content.ui.actions.openOnGitHub, lang)}
+                            {pick(content.ui.actions.openSource, lang)}
                           </a>
                         ) : null}
                       </div>

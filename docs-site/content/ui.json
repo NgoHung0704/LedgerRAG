@@ -80,15 +80,15 @@
       "en": "Close",
       "fr": "Fermer"
     },
-    "openOnGitHub": {
-      "vi": "Mở trên GitHub",
-      "en": "Open on GitHub",
-      "fr": "Ouvrir sur GitHub"
-    },
     "showTextVersion": {
       "vi": "Bản văn bản của sơ đồ",
       "en": "Text version of the diagram",
       "fr": "Version texte du schéma"
+    },
+    "openSource": {
+      "vi": "Mở mã nguồn",
+      "en": "Open the source",
+      "fr": "Ouvrir la source"
     }
   },
   "hints": {

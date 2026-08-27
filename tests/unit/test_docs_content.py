@@ -372,3 +372,23 @@ def test_every_operation_carries_a_citation():
              for op in edge.get("operations", [])
              if not isinstance(op.get("cite"), dict)]
     assert not naked, "these operations cite nothing:\n  " + "\n  ".join(naked)
+
+
+HARDCODED_BASE = re.compile(r"/LedgerRAG/")
+
+
+def test_the_site_does_not_hardcode_where_it_is_served_from():
+    """The base path and the forge URL are build variables (SITE_BASE,
+    SITE_FORGE). Written into a source file instead, the site is correct on
+    exactly one host and silently blank on every other one — the font URLs
+    were, and 404'd everywhere but GitHub Pages."""
+    offenders = []
+    for path in sorted(SITE_SRC.rglob("*")):
+        if path.suffix not in (".ts", ".tsx", ".css") or not path.is_file():
+            continue
+        for i, line in enumerate(norm(path.read_text(encoding="utf-8")).split("\n"), 1):
+            if HARDCODED_BASE.search(line):
+                offenders.append(f"{path.name}:{i}: {line.strip()}")
+    assert not offenders, (
+        "these hardcode the deploy target; use SITE_BASE / SITE_FORGE:\n  "
+        + "\n  ".join(offenders))

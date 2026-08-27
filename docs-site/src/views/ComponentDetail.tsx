@@ -1,5 +1,5 @@
 import { content } from "../content";
-import { githubUrl } from "../github";
+import { sourceUrl } from "../forge";
 import { pick } from "../i18n";
 import type { Lang, Route } from "../route";
 import { Citation } from "./Citation";
@@ -77,7 +77,7 @@ export function ComponentDetail(
               <code className="decl">{fn.decl}</code>
               <a
                 className="fn-source"
-                href={githubUrl(fn.file, fn.line, fn.line)}
+                href={sourceUrl(fn.file, fn.line, fn.line)}
                 target="_blank"
                 rel="noreferrer"
               >

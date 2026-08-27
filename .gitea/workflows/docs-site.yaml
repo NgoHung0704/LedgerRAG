@@ -1,0 +1,81 @@
+# The architecture page, built and published from Gitea.
+#
+# Gitea Actions reads GitHub's syntax, but not GitHub's API: actions/
+# upload-pages-artifact and actions/deploy-pages talk to a service that does
+# not exist here, so .github/workflows/ci.yml cannot simply be copied. What
+# survives is the part that matters — the guards run first, and nothing is
+# published behind a red one.
+#
+# Two variables decide where the build is correct:
+#   SITE_BASE   the path the site is served from. "/" for a domain or
+#               subdomain root; "/LedgerRAG/" if it hangs off a sub-path.
+#   SITE_FORGE  where the citations point. Every claim on the page is a link
+#               into these lines; aimed at github.com from a company Gitea
+#               they all render and all go nowhere useful.
+#
+# Secrets to set under Settings -> Actions -> Secrets:
+#   DEPLOY_HOST, DEPLOY_USER, DEPLOY_KEY, DEPLOY_PATH
+name: Docs site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check tablerag tests spike
+      - name: Unit tests and drift guards
+        run: pytest tests/unit -q
+
+  build-and-deploy:
+    needs: guards
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: docs-site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Behaviour tests
+        run: npx vitest run
+      - name: Build
+        env:
+          SITE_BASE: ${{ vars.SITE_BASE || '/' }}
+          SITE_FORGE: ${{ vars.SITE_FORGE }}
+        run: npx vite build
+
+      # The runner is a container. `rsync ./dist/ /var/www/...` would copy into
+      # the CONTAINER's filesystem and vanish with it — the web root has to be
+      # reached over the network, or the runner has to be a host runner with
+      # that directory bind-mounted.
+      - name: Publish to the web root
+        if: github.ref == 'refs/heads/main'
+        env:
+          KEY: ${{ secrets.DEPLOY_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PATH_ON_HOST: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # --delete so a file removed from the build is removed from the site;
+          # a stale asset served next to a fresh index.html is a blank page.
+          rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" \
+            dist/ "$USER@$HOST:$PATH_ON_HOST/"

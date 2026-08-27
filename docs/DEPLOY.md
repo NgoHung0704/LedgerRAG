@@ -309,3 +309,74 @@ LEDGERRAG_AUTH__ADMINS=alice,boss@company.fr     # admins; everyone else = user
 > the API behind the same proxy, and do not publish the API port to untrusted
 > networks. Leave `LEDGERRAG_AUTH__MODE=disabled` (the default) only for a
 > single-tenant box on a trusted network — then everyone is one implicit admin.
+
+---
+
+## The architecture page (`docs-site/`)
+
+A static site. No server, no API, no database — hash routing, so any web root
+serves it without rewrite rules.
+
+Two variables decide where a build is correct:
+
+| Variable | What it is | Wrong value looks like |
+|---|---|---|
+| `SITE_BASE` | the path the site is served from | a blank page, assets 404 |
+| `SITE_FORGE` | where the citations link | every link renders, none is useful |
+
+```bash
+cd docs-site && npm ci
+
+# a domain or subdomain root, citations at a company Gitea
+SITE_BASE=/ \
+SITE_FORGE=https://git.example.com/team/LedgerRAG/src/branch/main \
+  npx vite build
+
+# GitHub Pages, under /LedgerRAG/ (both defaults)
+npx vite build
+```
+
+`dist/` is then whatever the host wants: an Nginx root, a Caddy `file_server`,
+a Cloudflare Pages direct upload.
+
+### Gitea
+
+Gitea has no built-in Pages, but Gitea Actions reads GitHub's workflow syntax,
+so `.gitea/workflows/docs-site.yaml` runs the same gates and then publishes.
+It does **not** reuse `.github/workflows/ci.yml`: `actions/upload-pages-artifact`
+and `actions/deploy-pages` call a GitHub API that Gitea does not have.
+
+Set `SITE_BASE` and `SITE_FORGE` under **Settings → Actions → Variables**, and
+`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KEY`, `DEPLOY_PATH` under **Secrets**.
+
+Two things that catch people out:
+
+- **A container runner cannot write the host's web root.** `rsync ./dist/
+  /var/www/...` inside a workflow copies into the container and vanishes with
+  it. Either reach the web root over SSH (what the workflow does), or register
+  a host runner with that directory bind-mounted.
+- **`runs-on: ubuntu-latest` is a label, not a promise.** It resolves to
+  whatever image your runner registered under that name. If the job cannot
+  find `node` or `python`, check the runner's labels before the workflow.
+
+Nginx, for the SSH route:
+
+```nginx
+server {
+    listen 80;
+    server_name ledger-rag.example.com;
+    root /var/www/ledger-rag;
+    index index.html;
+}
+```
+
+### Keeping the page honest
+
+The page's claims are checked by 26 guards in `tests/unit/test_docs_content.py`,
+which run inside `make test-unit`. They fail when the page and the code drift:
+an endpoint documented that no route declares, a route with no contract, a
+module in no component, a store with no stated writer, an excerpt that no
+longer matches the file, a count written in prose that the code disagrees with.
+
+Deploy behind them — `needs: guards` in the workflow — or the page outlives the
+truth of what it says.

@@ -1,5 +1,5 @@
 import { content, type Citation as Cite } from "../content";
-import { githubUrl } from "../github";
+import { sourceUrl } from "../forge";
 import { pick } from "../i18n";
 import type { Lang } from "../route";
 
@@ -10,10 +10,10 @@ export function Citation({ cite, lang }: { cite: Cite; lang: Lang }) {
   return (
     <a
       className="citation"
-      href={githubUrl(cite.file, cite.from, cite.to)}
+      href={sourceUrl(cite.file, cite.from, cite.to)}
       target="_blank"
       rel="noreferrer"
-      title={pick(content.ui.actions.openOnGitHub, lang)}
+      title={pick(content.ui.actions.openSource, lang)}
     >
       <code>
         {cite.from === cite.to
