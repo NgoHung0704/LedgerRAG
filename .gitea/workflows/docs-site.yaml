@@ -6,14 +6,20 @@
 # survives is the part that matters — the guards run first, and nothing is
 # published behind a red one.
 #
-# Two variables decide where the build is correct:
-#   SITE_BASE   the path the site is served from. "/" for a domain or
-#               subdomain root; "/LedgerRAG/" if it hangs off a sub-path.
-#   SITE_FORGE  where the citations point. Every claim on the page is a link
-#               into these lines; aimed at github.com from a company Gitea
-#               they all render and all go nowhere useful.
+# This works with no web server at all: every run leaves a single self-
+# contained .html on the run page, which downloads and opens anywhere,
+# offline. If you also set the DEPLOY_* secrets it publishes to a web root
+# over SSH, and the page gets a URL.
 #
-# Secrets to set under Settings -> Actions -> Secrets:
+# Settings -> Actions -> Variables (both optional):
+#   SITE_BASE    path the site is served from. "/" for a domain or subdomain
+#                root, "/LedgerRAG/" if it hangs off a sub-path. Default "/".
+#   SITE_FORGE   where the citations link. Every claim on the page is a link
+#                into these lines; aimed at github.com from a company Gitea
+#                they all render and none goes anywhere useful. Set it to
+#                https://<your-gitea>/ahn/LedgerRAG/src/branch/main
+#
+# Settings -> Actions -> Secrets (only for the SSH publish):
 #   DEPLOY_HOST, DEPLOY_USER, DEPLOY_KEY, DEPLOY_PATH
 name: Docs site
 
@@ -38,7 +44,7 @@ jobs:
       - name: Unit tests and drift guards
         run: pytest tests/unit -q
 
-  build-and-deploy:
+  build:
     needs: guards
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: docs-site } }
@@ -52,14 +58,38 @@ jobs:
         run: npx tsc --noEmit
       - name: Behaviour tests
         run: npx vitest run
-      - name: Build
+
+      - name: Build for a web root
         env:
           SITE_BASE: ${{ vars.SITE_BASE || '/' }}
           SITE_FORGE: ${{ vars.SITE_FORGE }}
         run: npx vite build
 
-      # The runner is a container. `rsync ./dist/ /var/www/...` would copy into
-      # the CONTAINER's filesystem and vanish with it — the web root has to be
+      - name: Keep the hosted build
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs-site-dist
+          path: docs-site/dist
+
+      # One file, everything inside it. This is what makes the page readable
+      # from Gitea with no infrastructure: download it from this run and open
+      # it. Built separately because it needs relative asset paths.
+      - name: Build the single-file copy
+        env:
+          SITE_FORGE: ${{ vars.SITE_FORGE }}
+        run: node tools/bundle.mjs
+
+      - name: Keep the single file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ledgerrag-architecture-html
+          path: docs-site/dist-standalone/ledgerrag-architecture.html
+
+      # Optional. Skipped, not failed, when the secrets are not set — the run
+      # above is already useful without a server.
+      #
+      # The runner is a container: `rsync ./dist/ /var/www/...` would copy into
+      # the CONTAINER's filesystem and vanish with it. The web root has to be
       # reached over the network, or the runner has to be a host runner with
       # that directory bind-mounted.
       - name: Publish to the web root
@@ -68,14 +98,21 @@ jobs:
           KEY: ${{ secrets.DEPLOY_KEY }}
           HOST: ${{ secrets.DEPLOY_HOST }}
           USER: ${{ secrets.DEPLOY_USER }}
-          PATH_ON_HOST: ${{ secrets.DEPLOY_PATH }}
+          TARGET: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -euo pipefail
+          if [ -z "${HOST:-}" ]; then
+            echo "DEPLOY_HOST is not set - keeping the artifacts, skipping the publish"
+            exit 0
+          fi
+          # dist/ currently holds the RELATIVE build; redo the hosted one.
+          SITE_BASE="${{ vars.SITE_BASE || '/' }}" \
+          SITE_FORGE="${{ vars.SITE_FORGE }}" npx vite build
           install -d -m 700 ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
           # --delete so a file removed from the build is removed from the site;
-          # a stale asset served next to a fresh index.html is a blank page.
+          # a stale asset served beside a fresh index.html is a blank page.
           rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" \
-            dist/ "$USER@$HOST:$PATH_ON_HOST/"
+            dist/ "$USER@$HOST:$TARGET/"

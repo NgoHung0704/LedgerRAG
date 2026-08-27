@@ -52,3 +52,5 @@ tests/eval/tables/pdfs/*.pdf
 # customer documents verbatim — answers, cited passages, the lot. Untracked but
 # not ignored meant one `git add -A` away from publishing them.
 tests/eval/qa/results/
+# the single-file build of the architecture page (a release artefact, not source)
+docs-site/dist-standalone/

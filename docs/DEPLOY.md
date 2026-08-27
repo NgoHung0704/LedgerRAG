@@ -339,6 +339,21 @@ npx vite build
 `dist/` is then whatever the host wants: an Nginx root, a Caddy `file_server`,
 a Cloudflare Pages direct upload.
 
+### One file, no server
+
+```bash
+cd docs-site && npm run build:standalone
+# dist-standalone/ledgerrag-architecture.html  — 682 KB
+```
+
+Script, styles and both typefaces inlined. It opens from `file://`, offline,
+with nothing behind it. This is what makes the page readable from a Gitea that
+has no Pages and no web root: the workflow leaves it on every run page, and
+anyone can download it and double-click it.
+
+The citations still point at whatever `SITE_FORGE` was set to when it was
+built — set the variable, or the links go to github.com.
+
 ### Gitea
 
 Gitea has no built-in Pages, but Gitea Actions reads GitHub's workflow syntax,
@@ -346,8 +361,12 @@ so `.gitea/workflows/docs-site.yaml` runs the same gates and then publishes.
 It does **not** reuse `.github/workflows/ci.yml`: `actions/upload-pages-artifact`
 and `actions/deploy-pages` call a GitHub API that Gitea does not have.
 
-Set `SITE_BASE` and `SITE_FORGE` under **Settings → Actions → Variables**, and
-`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KEY`, `DEPLOY_PATH` under **Secrets**.
+It needs no web server to be useful: every run leaves the single-file build on
+its run page as an artifact. Set `SITE_BASE` and `SITE_FORGE` under
+**Settings → Actions → Variables** so the links point at your Gitea; add
+`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KEY`, `DEPLOY_PATH` under **Secrets**
+only when you want a URL as well — without them the publish step says so and
+skips, rather than failing the run.
 
 Two things that catch people out:
 
