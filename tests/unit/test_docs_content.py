@@ -35,7 +35,7 @@ VERBATIM_FIELDS = {"anchor", "code", "decl", "file"}
 # The languages the page is written in. Adding one here is what forces every
 # content file to carry it — a language half-added is worse than none, because
 # the reader who picked it gets a page that silently falls back.
-LANGS = ("vi", "en", "fr")
+LANGS = ("en", "fr", "vi")
 
 MIN_ANCHOR = 12
 

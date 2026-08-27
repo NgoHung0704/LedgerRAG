@@ -9,7 +9,7 @@ export interface Route {
 const NO_ID = "-";
 
 const DEFAULT: Route = {
-  lang: "vi", view: "map", id: null, sub: null, phase: null,
+  lang: "en", view: "map", id: null, sub: null, phase: null,
 };
 
 export function parseRoute(hash: string): Route {
@@ -19,7 +19,7 @@ export function parseRoute(hash: string): Route {
   if (parts.length === 0) return { ...DEFAULT, phase };
   const [lang, view, id, subKind, subId] = parts;
   return {
-    lang: (["vi", "en", "fr"].includes(lang) ? lang : "vi") as Lang,
+    lang: (["en", "fr", "vi"].includes(lang) ? lang : "en") as Lang,
     view: (["map", "grid", "c", "machine"].includes(view) ? view : "map") as View,
     id: id && id !== NO_ID ? id : null,
     sub: subKind && subId

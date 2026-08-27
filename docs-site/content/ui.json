@@ -50,14 +50,6 @@
   },
   "languages": [
     {
-      "code": "vi",
-      "label": {
-        "vi": "Tiếng Việt",
-        "en": "Vietnamese",
-        "fr": "Vietnamien"
-      }
-    },
-    {
       "code": "en",
       "label": {
         "vi": "Tiếng Anh",
@@ -71,6 +63,14 @@
         "vi": "Tiếng Pháp",
         "en": "French",
         "fr": "Français"
+      }
+    },
+    {
+      "code": "vi",
+      "label": {
+        "vi": "Tiếng Việt",
+        "en": "Vietnamese",
+        "fr": "Vietnamien"
       }
     }
   ],

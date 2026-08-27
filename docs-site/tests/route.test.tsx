@@ -1,8 +1,23 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { parseRoute, formatRoute, popOne } from "../src/route";
+import { LANGS } from "../src/i18n";
+import { content } from "../src/content";
 
 describe("route", () => {
   beforeEach(() => { window.location.hash = ""; });
+
+  it("opens in English, and falls back to it for an unknown language", () => {
+    expect(parseRoute("").lang).toBe("en");
+    expect(parseRoute("#/").lang).toBe("en");
+    expect(parseRoute("#/de/map").lang).toBe("en");
+    expect(parseRoute("#/fr/map").lang).toBe("fr");
+    expect(parseRoute("#/vi/map").lang).toBe("vi");
+  });
+
+  it("offers the languages in the order the page states", () => {
+    expect(LANGS).toEqual(["en", "fr", "vi"]);
+    expect(content.ui.languages.map((l) => l.code)).toEqual(["en", "fr", "vi"]);
+  });
 
   it("round-trips every segment", () => {
     const r = parseRoute("#/vi/c/ingest-tables/fn/parse_table_region");

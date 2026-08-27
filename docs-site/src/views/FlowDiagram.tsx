@@ -55,9 +55,13 @@ export function FlowDiagram(
     const y1 = from.y + from.h / 2;
     const y2 = to.y + to.h / 2;
     const turnX = from.x + BOX_WIDTH + COL_GAP / 2 + offsets[i];
+    // A target that is not to the RIGHT of the source is reached on its right
+    // edge. Ending at to.x would run the wire through the box, strike out its
+    // label and leave the arrowhead pointing backwards on the far side.
+    const endX = to.x > from.x ? to.x : to.x + BOX_WIDTH;
     return {
       key: `${edge.from}-${edge.to}-${i}`, edge,
-      d: wirePath(from.x + BOX_WIDTH, y1, turnX, to.x, y2),
+      d: wirePath(from.x + BOX_WIDTH, y1, turnX, endX, y2),
       midX: turnX, midY: (y1 + y2) / 2,
     };
   }).filter((r): r is NonNullable<typeof r> => r !== null);

@@ -110,7 +110,47 @@ for (const [vpName, viewport] of viewports) {
         spill.forEach((label) =>
           problems.push(`${scheme}/${vpName}/${name}/${lang}: label spills its box: ${label}`));
 
-        // 3. Do two edge labels sit on top of each other?
+        // 3. Does a wire run THROUGH a box instead of stopping at its edge?
+        //    A wire that ends on the far side of its target crosses it, strikes
+        //    through its label, and plants the arrowhead pointing the wrong way.
+        //    Matched on the class list rather than a regex: the first version
+        //    of this check carried a literal backspace where its  should
+        //    have been, matched nothing, and passed while the bug was on screen.
+        const crossings = await page.evaluate(() => {
+          const isBox = (el) => {
+            const cls = el.getAttribute("class") || "";
+            return cls.split(/\s+/).some((c) => c === "node" || c === "flow-box");
+          };
+          const boxes = [...document.querySelectorAll("svg rect")]
+            .filter(isBox).map((el) => el.getBoundingClientRect());
+          const wires = [...document.querySelectorAll(
+            "path[data-wire-path], path[data-flow-edge], path[data-machine-edge]")];
+          const hits = new Set();
+          wires.forEach((path) => {
+            const id = path.dataset.wirePath ?? path.dataset.flowEdge
+              ?? path.dataset.machineEdge;
+            const total = path.getTotalLength();
+            const svg = path.ownerSVGElement.getBoundingClientRect();
+            for (let d = 4; d < total - 4; d += 4) {
+              const at = path.getPointAtLength(d);
+              const x = svg.x + at.x;
+              const y = svg.y + at.y;
+              const inside = boxes.some((b) =>
+                x > b.left + 3 && x < b.right - 3 &&
+                y > b.top + 3 && y < b.bottom - 3);
+              if (inside) { hits.add(id); return; }
+            }
+          });
+          // Only a view that HAS wires needs boxes to test them against.
+          if (wires.length && !boxes.length) {
+            hits.add("(this check found no boxes to test against)");
+          }
+          return [...hits];
+        });
+        crossings.forEach((id) =>
+          problems.push(`${scheme}/${vpName}/${name}/${lang}: wire runs through a box: ${id}`));
+
+        // 4. Do two edge labels sit on top of each other?
         const collisions = await page.evaluate(() => {
           const labels = [...document.querySelectorAll("text[data-edge-label]")]
             .map((el) => ({ id: el.dataset.edgeLabel, r: el.getBoundingClientRect() }))
@@ -132,7 +172,7 @@ for (const [vpName, viewport] of viewports) {
         collisions.forEach((pair) =>
           problems.push(`${scheme}/${vpName}/${name}/${lang}: edge labels collide: ${pair}`));
 
-        // 4. The language switch must leave nothing of the other behind.
+        // 5. The language switch must leave nothing of the other behind.
         const text = await page.evaluate(() => document.body.innerText);
         if (lang === "en" && VN.test(text)) {
           problems.push(

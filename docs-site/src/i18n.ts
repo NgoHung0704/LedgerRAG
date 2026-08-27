@@ -5,6 +5,6 @@ import type { Lang } from "./route";
  *  tests/unit/test_docs_content.py, not something the UI papers over. */
 export type L = { vi: string; en: string; fr: string };
 
-export const LANGS = ["vi", "en", "fr"] as const;
+export const LANGS = ["en", "fr", "vi"] as const;
 
 export const pick = (value: L, lang: Lang): string => value[lang];
