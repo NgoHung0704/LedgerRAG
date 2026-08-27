@@ -342,8 +342,8 @@ a Cloudflare Pages direct upload.
 ### One file, no server
 
 ```bash
-cd docs-site && npm run build:standalone
-# dist-standalone/ledgerrag-architecture.html  — 682 KB
+make docs-standalone SITE_FORGE=https://gitea.example.fr/team/LedgerRAG/src/branch/main
+# docs-site/dist-standalone/ledgerrag-architecture.html  — 682 KB
 ```
 
 Script, styles and both typefaces inlined. It opens from `file://`, offline,
@@ -368,7 +368,23 @@ its run page as an artifact. Set `SITE_BASE` and `SITE_FORGE` under
 only when you want a URL as well — without them the publish step says so and
 skips, rather than failing the run.
 
-Two things that catch people out:
+**Enabling Actions does not create a runner.** A run that sits at `0s` with an
+empty circle is queued with nothing to claim it: register `act_runner` and give
+it a label the workflow asks for.
+
+```bash
+# Paramètres -> Actions -> Exécuteurs -> "Créer un nouvel exécuteur" gives the token
+docker run -d --name gitea-runner --restart always   -v /var/run/docker.sock:/var/run/docker.sock   -v /srv/gitea-runner:/data   -e GITEA_INSTANCE_URL=https://gitea.example.fr   -e GITEA_RUNNER_REGISTRATION_TOKEN=<token>   -e GITEA_RUNNER_LABELS='ubuntu-latest:docker://gitea/runner-images:ubuntu-latest'   gitea/act_runner:latest
+```
+
+**A runner on an internal network cannot run this workflow as written.** It
+fetches `actions/checkout` and friends from github.com, its image from Docker
+Hub, its Python packages from PyPI and its JavaScript from the npm registry. On
+a box with no egress every one of those fails. Either give the runner a proxy /
+internal mirrors, or skip it: `make docs-standalone` on any machine that has the
+repo produces the same file the workflow would have published.
+
+Two more things that catch people out:
 
 - **A container runner cannot write the host's web root.** `rsync ./dist/
   /var/www/...` inside a workflow copies into the container and vanishes with

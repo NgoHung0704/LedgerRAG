@@ -1,4 +1,4 @@
-.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-detection eval-figures eval-funds eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build frontend-test
+.PHONY: up down logs test test-unit test-integration spike-tables spike-run spike-grade eval-tables eval-detection eval-figures eval-funds eval-parser eval-visuals eval-qa eval-accords eval-convention eval-routing eval-followup eval-adversarial eval-attacks lint docs-relink docs-test docs-build docs-standalone frontend-test
 
 up:
 	docker compose up -d --build
@@ -206,3 +206,10 @@ docs-test:
 
 docs-build:
 	cd docs-site && npx vite build
+
+# One self-contained .html — script, styles and both typefaces inlined. Opens
+# from file://, offline. This is how the page is read where there is no web
+# root to put it on. Point the citations somewhere with SITE_FORGE, e.g.
+#   make docs-standalone SITE_FORGE=https://gitea.example.fr/team/LedgerRAG/src/branch/main
+docs-standalone:
+	cd docs-site && npm run build:standalone
