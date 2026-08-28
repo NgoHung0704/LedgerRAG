@@ -210,7 +210,23 @@ export function Portal({ children }: { children: React.ReactNode }) {
  *  to whatever opened it. Without this a keyboard user tabs straight out of an
  *  open dialog into the page behind it and cannot find their way back. */
 export function useDialog(onClose: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
+  // A callback ref, not useRef: Portal renders its children one commit late
+  // (it guards on `mounted` for SSR), so on open the effect below used to run
+  // while the dialog DOM did not exist yet and focused nothing. A ref that is
+  // STATE re-runs the effect the moment the node attaches. Before this, the
+  // dialog got its focus only by accident — the effect re-ran on every parent
+  // render, which is the very bug being fixed here.
+  // HTMLElement, not HTMLDivElement: callers attach this to whatever element
+  // carries role="dialog", and SourceModal's is not a div.
+  const [node, setNode] = useState<HTMLElement | null>(null);
+  // Held in a ref, and deliberately NOT an effect dependency. Every caller
+  // passes an inline arrow, so `onClose` is a new function on every parent
+  // render; listing it below re-ran this effect on a timer (the KB list polls
+  // while a document ingests). The teardown restores focus to the opener,
+  // which is right on close and catastrophic mid-typing: the field you were
+  // filling in lost focus every three seconds.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   // Captured during render, which is BEFORE React commits an `autoFocus` — by
   // the time the effect below runs, activeElement is already the focused field
   // inside the dialog, and restoring to that on close would drop focus to the
@@ -224,14 +240,15 @@ export function useDialog(onClose: () => void) {
   const focusables = useCallback(
     () =>
       Array.from(
-        ref.current?.querySelectorAll<HTMLElement>(
+        node?.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ) ?? [],
       ).filter((el) => el.offsetParent !== null),
-    [],
+    [node],
   );
 
   useEffect(() => {
+    if (!node) return;
     // the page behind must not scroll under the dialog
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -240,14 +257,14 @@ export function useDialog(onClose: () => void) {
     // dialog it was put there deliberately — leave it. Landing on the close
     // button when there is a form to fill in makes a dialog feel like it
     // opened on its way out.
-    if (!ref.current?.contains(document.activeElement)) {
-      (focusables()[0] ?? ref.current)?.focus();
+    if (!node.contains(document.activeElement)) {
+      (focusables()[0] ?? node)?.focus();
     }
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        closeRef.current();
         return;
       }
       if (e.key !== "Tab") return;
@@ -271,9 +288,9 @@ export function useDialog(onClose: () => void) {
       // may well have deleted that row
       if (opener?.isConnected) opener.focus?.();
     };
-  }, [onClose, focusables, opener]);
+  }, [focusables, opener, node]);
 
-  return ref;
+  return setNode;
 }
 
 export function Modal({

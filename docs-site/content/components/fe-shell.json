@@ -38,7 +38,7 @@
       "name": "Modal",
       "decl": "export function Modal({",
       "file": "frontend/components/ui.tsx",
-      "line": 279,
+      "line": 296,
       "note": {
         "vi": "Hộp thoại dùng chung, dựng trên useDialog.",
         "en": "The shared dialog, built on useDialog.",
@@ -136,16 +136,16 @@
   "excerpts": [
     {
       "caption": {
-        "vi": "Escape có đúng một người sở hữu, nên không có hai lớp cùng đóng.",
-        "en": "Escape has exactly one owner, so two layers never close at once.",
-        "fr": "Échap a exactement un propriétaire, donc deux couches ne se ferment jamais d'un coup."
+        "vi": "Callback truyền vào không được nằm trong mảng phụ thuộc của effect: mỗi lần cha render lại là một hàm mới, và effect chạy lại sẽ cướp focus.",
+        "en": "A callback passed in must not be an effect dependency: every parent render makes a new function, and re-running the effect steals focus.",
+        "fr": "Un callback reçu en prop ne doit pas être une dépendance d'effet : chaque rendu du parent en crée un nouveau, et rejouer l'effet vole le focus."
       },
       "cite": {
         "kind": "excerpt",
         "file": "frontend/components/ui.tsx",
-        "from": 212,
-        "to": 221,
-        "code": "export function useDialog(onClose: () => void) {\n  const ref = useRef<HTMLDivElement>(null);\n  // Captured during render, which is BEFORE React commits an `autoFocus` — by\n  // the time the effect below runs, activeElement is already the focused field\n  // inside the dialog, and restoring to that on close would drop focus to the\n  // body.\n  const [opener] = useState<HTMLElement | null>(() =>\n    typeof document === \"undefined\"\n      ? null\n      : (document.activeElement as HTMLElement | null),"
+        "from": 222,
+        "to": 229,
+        "code": "  // Held in a ref, and deliberately NOT an effect dependency. Every caller\n  // passes an inline arrow, so `onClose` is a new function on every parent\n  // render; listing it below re-ran this effect on a timer (the KB list polls\n  // while a document ingests). The teardown restores focus to the opener,\n  // which is right on close and catastrophic mid-typing: the field you were\n  // filling in lost focus every three seconds.\n  const closeRef = useRef(onClose);\n  closeRef.current = onClose;"
       }
     }
   ],

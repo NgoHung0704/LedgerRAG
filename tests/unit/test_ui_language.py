@@ -106,10 +106,15 @@ from tests.unit.ui_text_scan import visible_text  # noqa: E402
 # element editor and the boilerplate panel are NOT here: they were not part of
 # what was asked for, and their copy is dense with rowspan / records / grid
 # vocabulary that reads worse translated than left alone.
+# `.test.tsx` is excluded for a different reason from the three files below:
+# a test harness is not a screen. Its copy is fixtures — buttons named "ouvrir"
+# so an assertion can find them — and translating it would make the tests
+# depend on the catalogue they are meant to be independent of.
 UI_FILES = sorted(
     [p for p in pathlib.Path("frontend/components").glob("*.tsx")
-     if p.name not in {"ElementEditor.tsx", "BoilerplatePanel.tsx",
-                       "RecordsTable.tsx"}]
+     if not p.name.endswith(".test.tsx")
+     and p.name not in {"ElementEditor.tsx", "BoilerplatePanel.tsx",
+                        "RecordsTable.tsx"}]
     + [p for p in pathlib.Path("frontend/app").rglob("page.tsx")
        if "doc" not in p.parts])
 
