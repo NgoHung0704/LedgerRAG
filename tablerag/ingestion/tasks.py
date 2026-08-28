@@ -407,6 +407,31 @@ def process_document(self, doc_id_str: str) -> None:
                                  min_chars=settings.scan_min_chars_per_page,
                                  table_dpi=settings.table_crop_dpi)
 
+        # --- figure noise: two causes, both measured on one 24-page doc that
+        # produced 262 figures and three hours of VLM (see layout.py) ---
+        from tablerag.ingestion.layout import (
+            collapse_crowded_figures,
+            repeated_figure_boxes,
+        )
+
+        furniture = repeated_figure_boxes(pages)
+        dropped = collapsed = 0
+        for layout in pages:
+            if furniture:
+                keep = [r for r in layout.regions
+                        if r.type != "figure" or r.bbox not in furniture]
+                dropped += len(layout.regions) - len(keep)
+                layout.regions = keep
+            figures = [r for r in layout.regions if r.type == "figure"]
+            folded = collapse_crowded_figures(figures)
+            if folded is not figures and len(folded) != len(figures):
+                collapsed += len(figures) - len(folded)
+                layout.regions = [r for r in layout.regions
+                                  if r.type != "figure"] + folded
+        if dropped or collapsed:
+            logger.info("doc %s figures: %d page furniture dropped, "
+                        "%d folded into diagrams", doc_id, dropped, collapsed)
+
         # --- idempotency barrier: wipe any previous output for this doc ---
         vector_store.ensure_collections()
         vector_store.delete_doc(doc_id)

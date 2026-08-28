@@ -659,6 +659,101 @@ def drawn_around_text(page: fitz.Page, box: fitz.Rect,
     return union > 0 and covered / union > _VEC_MAX_TABLE_COVER
 
 
+# --- figure noise ----------------------------------------------------------
+#
+# One 24-page procedure produced 262 figures and took three hours to ingest,
+# all of it VLM descriptions. The page distribution named two separate causes:
+#
+#     page  1    : 16
+#     pages 3–7  : 22, 27, 34, 38, 28     ← one diagram per page, in pieces
+#     pages 14–24: 4, 4, 4, 4, …          ← the same three boxes, every page
+#
+# Neither is a figure a reader would point at.
+
+# how far apart two boxes may sit and still be "the same place". A template
+# puts its logo at the same coordinates on every page, but the numbers come
+# back with sub-point noise, and exact equality would match none of them.
+_FURNITURE_TOLERANCE = 1.0
+# Furniture is on MOST pages, not merely on several. An earlier version asked
+# for three and deleted content: a figure drifting a point per page put three
+# consecutive pages in one quantisation bucket, and a real picture was called a
+# logo. A share of the document cannot be fooled that way — a template element
+# is on all of them, a drifting figure on a couple.
+_FURNITURE_MIN_SHARE = 0.5
+_FURNITURE_FLOOR_PAGES = 3
+
+
+def repeated_figure_boxes(
+    pages: list["PageLayout"],
+    min_pages: int | None = None,
+    tolerance: float = _FURNITURE_TOLERANCE,
+) -> set[tuple[float, float, float, float]]:
+    """Figure boxes that sit in the same place on `min_pages` pages or more.
+
+    A rule, a header block, a logo: the document's furniture, not its content.
+    Describing them costs one VLM call per page and tells a reader nothing they
+    could not see — 72 of the 262 calls on the measured document were three
+    boxes repeated 24 times.
+
+    Only figures. A TABLE in the same place on every page is a cross-page
+    table, which is the thing this product exists to read; the type check is
+    what stops this from deleting it.
+
+    `min_pages` defaults to half the document, floored at three. A share
+    rather than a count, because "appears three times" is satisfied by noise:
+    a figure that moves a point per page lands three consecutive pages in one
+    bucket, and an earlier version of this deleted real pictures that way.
+
+    Returns the boxes as they appear on the FIRST page carrying them, so a
+    caller can compare with the same tolerance it was found with.
+    """
+    if min_pages is None:
+        min_pages = max(_FURNITURE_FLOOR_PAGES,
+                        int(len(pages) * _FURNITURE_MIN_SHARE))
+    seen: dict[tuple[int, ...], tuple[tuple[float, ...], set[int]]] = {}
+    for page in pages:
+        for region in page.regions:
+            if region.type != "figure":
+                continue
+            key = tuple(round(v / tolerance) for v in region.bbox)
+            first, on_pages = seen.setdefault(key, (region.bbox, set()))
+            on_pages.add(page.page)
+    return {first for first, on_pages in seen.values()
+            if len(on_pages) >= min_pages}
+
+
+# above this many figure regions, a page is a diagram that was cut up rather
+# than a page holding that many pictures. Chosen from ONE document — its
+# ordinary pages held 4 to 12 and the diagram pages held 16 to 38 — so it is a
+# starting value, not a measured one, and it belongs in settings for that
+# reason. Measure it on a second corpus before trusting it.
+_CROWDED_PAGE_FIGURES = 14
+
+
+def collapse_crowded_figures(figures: list["Region"],
+                             limit: int = _CROWDED_PAGE_FIGURES) -> list["Region"]:
+    """Fold a page's figure regions into one when there are implausibly many.
+
+    `detect_vector_figures` clusters drawing paths, and a process diagram of
+    thirty boxes and arrows comes back as thirty clusters. Describing each is
+    thirty VLM calls that answer nothing: what a reader wants is what the
+    DIAGRAM says, and that is only visible whole.
+
+    So the same judgement the text path already makes — `looks_like_column_layout`
+    deciding a page is a diagram rather than prose — applied to figures. The
+    survivor carries `layout_suspect` so the reader, and the review queue, can
+    tell it apart from a figure the detector found cleanly.
+    """
+    if len(figures) <= limit:
+        return figures
+    xs0, ys0, xs1, ys1 = zip(*(f.bbox for f in figures))
+    return [Region(type="figure",
+                   bbox=(min(xs0), min(ys0), max(xs1), max(ys1)),
+                   vector=all(f.vector for f in figures),
+                   layout_suspect=True,
+                   context=next((f.context for f in figures if f.context), ""))]
+
+
 def detect_vector_figures(page: fitz.Page,
                           table_rects: list[fitz.Rect]) -> list[Region]:
     """Charts drawn as vector paths — invisible to the image-block rule."""
