@@ -264,6 +264,35 @@ Containers that crash should not be allowed to dump at all — `--ulimit core=0`
 at `docker run` (it cannot be changed later with `docker update`). Worth setting
 on any model server, since their core dumps are the size of their VRAM.
 
+### A document that ingests forever
+
+Symptom: a document sits at **parsing** for a day, and the worker log shows the
+SAME task id finishing and being received again on a cycle:
+
+```
+18:28:18  Task ingestion.process_document[3f915670-…] succeeded in 10776s
+18:28:18  Task ingestion.process_document[3f915670-…] received
+21:27:47  succeeded in 10769s      ← same id, again
+```
+
+`celery … inspect active` confirms it: `'acknowledged': False,
+'redelivered': True`.
+
+Cause: `task_acks_late` is on by design — a worker killed mid-job must get the
+job back, and ingestion wipes a document's elements before rewriting them, so a
+redelivery cannot duplicate anything. But the ack then lands only when the task
+FINISHES, and Redis redelivers anything unacknowledged after
+`visibility_timeout`. That default is one hour; a 24-page document measured
+10 776 s. Every hour Redis concluded the worker had died.
+
+`LEDGERRAG_INGEST_VISIBILITY_TIMEOUT` (default 21 600 = 6 h) must exceed your
+**longest** document, not your typical one. Raising it costs recovery time: a
+worker that really dies leaves its job untouched for that long. Set it from a
+measurement — the worker log prints `succeeded in Ns` for every ingestion.
+
+Recovery needs no intervention. Deploy the fix and restart the worker; the
+unacknowledged job is redelivered once more, finishes, acks, and stops.
+
 ## 7. Backups (GDPR / DR)
 
 ```bash

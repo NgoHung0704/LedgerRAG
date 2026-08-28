@@ -96,6 +96,17 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://ledgerrag:ledgerrag@localhost:5432/ledgerrag"
     redis_url: str = "redis://localhost:6379/0"
+    # How long Redis waits for an unacknowledged task before handing it to
+    # another worker. It MUST exceed the longest possible ingestion, because
+    # `task_acks_late` means the ack lands only when the task finishes: a
+    # document that takes longer is redelivered mid-flight and re-ingests
+    # forever. Measured 2026-08-27: 24 pages took 10 776 s, and the Redis
+    # default of 3600 looped it every three hours for a day.
+    #
+    # Six hours is roughly twice the longest measurement. Raising it costs
+    # recovery time — a worker that really dies leaves its job untouched for
+    # this long — which is the cheaper failure of the two.
+    ingest_visibility_timeout: int = 21600
     qdrant_url: str = "http://localhost:6333"
     # Qdrant REST timeout (seconds). The client library defaults to 5s, which a
     # bulk upload trips: many workers issue synchronous upsert(wait=True) at once

@@ -19,6 +19,14 @@ def create_celery() -> Celery:
     # redelivered and reprocessing wipes the doc's previous elements first
     # (Phase 1 DoD: no duplicate elements after kill+retry).
     app.conf.task_acks_late = True
+    # acks_late does not work on its own. The ack lands when the task finishes,
+    # and Redis redelivers anything unacknowledged after visibility_timeout —
+    # one hour by default, against ingestions measured at three. The same
+    # document then re-ingests every three hours forever, flipping its status
+    # done → parsing → done and burning the GPU on work already finished.
+    app.conf.broker_transport_options = {
+        "visibility_timeout": settings.ingest_visibility_timeout,
+    }
     app.conf.worker_prefetch_multiplier = 1
     app.conf.broker_connection_retry_on_startup = True
     return app
