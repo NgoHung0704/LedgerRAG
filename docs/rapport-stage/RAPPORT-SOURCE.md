@@ -234,7 +234,7 @@ tablerag/
   ingestion/   worker Celery : extraction → découpage → embedding → indexation
   query/       étapes du pipeline de question (asynchrone, streaming)
   storage/     ORM PostgreSQL + dépôts, client Qdrant, stockage objet
-frontend/      Next.js 14 (App Router), React 18, 10 écrans
+frontend/      Next.js 14 (App Router), React 18, 9 écrans (détail au §6.8)
 tests/
   unit/        1 052 tests, sans dépendance externe
   eval/        14 bancs d'essai exigeant le serveur réel
@@ -491,6 +491,52 @@ expose, sur chaque élément analysé :
   dernière erreur réelle), diagnostics, journal d'audit RGPD, authentification
   par proxy inverse.
 - **Interface en 5 langues** (en, fr, vi, es, de).
+
+### 6.8 Le frontend : les écrans et ce qu'ils permettent
+
+> Ajouté suite à l'annotation du tuteur entreprise (Julien Savary, CETIAT) sur
+> la première version du rapport : « il manque une description du côté
+> frontend, avec les possibilités offertes aux utilisateurs. » Les §6.1 à 6.7
+> décrivaient le produit par capacité ; cette section le décrit **par écran**,
+> ce que voit et peut faire chacun des deux profils d'utilisateur (C4 de
+> `SPEC.md` : l'utilisateur final n'est pas un ingénieur, la personne qui
+> *installe* l'est). Le détail pas-à-pas de chaque écran, pensé pour le
+> lecteur non technique, est dans `docs/rapport-stage/GUIDE-UTILISATEUR.md`
+> (43 K, 5 langues d'interface) ; cette section en est le résumé pour le
+> rapport.
+
+**Techniquement :** Next.js 14 (App Router), React 18, 9 écrans, chat en flux
+continu (SSE) avec citations qui apparaissent au fil du texte, interface
+traduite en 5 langues. Aucun écran ne demande de connaissance du système
+sous-jacent (Postgres, Qdrant, Celery) — c'est un principe non négociable de
+`SPEC.md` (C4), pas un choix d'ergonomie parmi d'autres.
+
+**Pour l'utilisateur final (collègue, aucune compétence technique requise) :**
+
+| Écran | Ce qu'il permet |
+|---|---|
+| **Demander** (`/ask`) | Poser une question sur l'ensemble des bases ; le routeur choisit lui-même la ou les bases pertinentes et affiche son choix. Reste l'écran d'usage courant. |
+| **Discussion d'une base** (onglet dans `/kb/{id}`) | Même chat, mais limité à un seul corpus — utile quand deux bases se ressemblent et qu'on veut éviter toute confusion. |
+| **Assistant** (`/assistants/{id}`) | Ce que les collègues utilisent au quotidien : un chat pré-configuré (périmètre documentaire fixé, ton, message d'accueil, contact à qui s'adresser en cas de doute), avec ses conversations sauvegardées et rejouables. |
+| **Réponse, quel que soit l'écran** | Citations cliquables *dans la phrase*, hiérarchisées par force de lien ; bloc « chiffres vérifiés / non rattachés aux sources » ; bandeau « voir aussi » pour une figure non lue par le modèle mais présente sur la page ; retours 👍/👎 par réponse. |
+| **Assistant intégré** (`/embed/{token}`, pas un écran LedgerRAG à proprement parler) | La même conversation, encapsulée sans aucun habillage LedgerRAG, pour apparaître dans une application intranet tierce via `<iframe>`. |
+
+**Pour la personne qui administre le déploiement (compétence technique attendue) :**
+
+| Écran | Ce qu'il permet |
+|---|---|
+| **Bases de connaissances** (`/`) | Créer/renommer/supprimer une base, voir en un coup d'œil l'état d'ingestion de chacune (en cours / prêt / en échec) sans l'ouvrir. |
+| **Une base** (`/kb/{id}`) | Déposer des documents (glisser-déposer), suivre leur statut en direct, régler nom/description (**le champ que lit le routeur**)/locale numérique/consignes/vérification des chiffres, et — depuis fin août — activer une **clé d'API de recherche externe** pour la brancher sur une autre plateforme RAG. |
+| **Inspecteur de document** (`/doc/{docId}`) | Les 16 opérations de correction humaine détaillées au §6.5, élément par élément — ce qui distingue le produit d'un démonstrateur. |
+| **Assistants** (`/assistants`) | Créer un assistant, l'attacher à une ou plusieurs bases, générer/révoquer son jeton d'intégration `<iframe>`. |
+| **Fournisseurs de modèles** (`/models`) | Quel modèle sert chaque rôle et *quelle couche a décidé* (base / environnement / défaut) — l'écran qui a permis de trouver le reclasseur mal configuré du §7.5/§7.9. |
+| **Diagnostics** (`/diagnostics`) | État des services (base de données, index vectoriel, stockage objet, file de tâches) et outils de vérification de la chaîne d'ingestion. |
+| **Journal d'audit** (`/audit`) | Traçabilité RGPD : dépôts, questions posées, changements de configuration, par personne et par date. |
+
+**Ce qui ne varie jamais entre les deux profils :** le principe d'échec honnête
+(§5.1) est porté par l'interface elle-même, pas seulement par le pipeline — un
+avertissement de faible confiance ou un chiffre non retrouvé s'affiche
+identiquement quel que soit l'écran d'où la question est posée.
 
 ---
 
